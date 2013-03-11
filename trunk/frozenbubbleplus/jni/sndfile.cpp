@@ -19,7 +19,6 @@ extern BOOL MMCMP_Unpack(LPCBYTE *ppMemFile, LPDWORD pdwMemLength);
 extern void AMSUnpack(const char *psrc, UINT inputlen, char *pdest, UINT dmax, char packcharacter);
 extern WORD MDLReadBits(DWORD &bitbuf, UINT &bitnum, LPBYTE &ibuf, CHAR n);
 extern int DMFUnpack(LPBYTE psample, LPBYTE ibuf, LPBYTE ibufmax, UINT maxlen);
-extern DWORD ITReadBits(DWORD &bitbuf, UINT &bitnum, LPBYTE &ibuf, CHAR n);
 extern void ITUnpack8Bit(signed char *pSample, DWORD dwLen, LPBYTE lpMemFile, DWORD dwMemLength, BOOL b215);
 extern void ITUnpack16Bit(signed char *pSample, DWORD dwLen, LPBYTE lpMemFile, DWORD dwMemLength, BOOL b215);
 
@@ -772,8 +771,8 @@ UINT CSoundFile::GetSaveFormats() const
 	if ((!m_nSamples) || (!m_nChannels) || (m_nType == MOD_TYPE_NONE)) return 0;
 	switch(m_nType)
 	{
-	case MOD_TYPE_MOD:	n = MOD_TYPE_MOD;
-	case MOD_TYPE_S3M:	n = MOD_TYPE_S3M;
+	case MOD_TYPE_MOD:	n = MOD_TYPE_MOD; break;
+	case MOD_TYPE_S3M:	n = MOD_TYPE_S3M; break;
 	}
 	n |= MOD_TYPE_XM | MOD_TYPE_IT;
 	if (!m_nInstruments)
@@ -1530,6 +1529,7 @@ UINT CSoundFile::ReadSample(MODINSTRUMENT *pIns, UINT nFlags, LPCSTR lpMemFile, 
 		len = pIns->nLength;
 		if (len > dwMemLength) len = pIns->nLength = dwMemLength;
 		memcpy(pIns->pSample, lpMemFile, len);
+		break;
 	}
 	if (len > dwMemLength)
 	{

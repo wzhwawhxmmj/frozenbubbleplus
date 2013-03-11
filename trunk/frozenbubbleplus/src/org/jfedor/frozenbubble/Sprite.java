@@ -16,9 +16,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to:
+ * Free Software Foundation, Inc.
+ * 675 Mass Ave
+ * Cambridge, MA 02139, USA
  *
  *
  * Artwork:
@@ -51,12 +53,13 @@
 
 package org.jfedor.frozenbubble;
 
+import java.util.Vector;
+
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Bundle;
-import java.util.Vector;
 
 public abstract class Sprite
 {

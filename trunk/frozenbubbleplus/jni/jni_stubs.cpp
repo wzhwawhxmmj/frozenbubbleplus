@@ -23,7 +23,7 @@ struct _ModPlugFile
 // for using usleep() when debugging crashes (to give time for log text to show up??)
 //#include <fcntl.h>
 
-#include "com_peculiargames_andmodplug_PlayerThread.h"
+#include "andmodplug_PlayerThread.h"
 
 
 	const ModPlug_Settings gSettings8000 =
