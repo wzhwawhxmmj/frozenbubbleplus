@@ -16,9 +16,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to:
+ * Free Software Foundation, Inc.
+ * 675 Mass Ave
+ * Cambridge, MA 02139, USA
  *
  *
  * Artwork:
@@ -59,6 +61,8 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
+
+import com.efortin.frozenbubble.HighscoreManager;
 
 public class FrozenGame extends GameScreen {
   public final static int HORIZONTAL_MOVE = 0;
@@ -615,8 +619,14 @@ public class FrozenGame extends GameScreen {
         //   If endOfGame is set, then the play result absolutely
         //   cannot be GAME_PLAYING.
         //
-        //   TODO: Figure out how play_result can be GAME_PLAYING here.
-        //         Thus, game_result can be eliminated when fixed.
+        //   TODO: Figure out how play_result is entering this
+        //         execution path with a value of GAME_PLAYING.
+        //
+        //         If this is addressed, then game_result can be
+        //         eliminated.  The good news is that this issue only
+        //         occurs when the level was lost, so this redundant
+        //         variable workaround is a bona-fide fix, if
+        //         suboptimal as the root cause remains unknown.
         //
         //
         if ( play_result == GAME_PLAYING )

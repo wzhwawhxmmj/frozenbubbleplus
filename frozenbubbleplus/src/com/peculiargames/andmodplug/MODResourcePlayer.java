@@ -1,10 +1,64 @@
-// This is basically a convenience class that adds
-// a layer on top of the PlayerThreadOLD so that you
-// don't have to mess around with loading the MOD
-// file data from a MOD file resource (R.raw.)
-// yourself.
+/*
+ *                 [[ Frozen-Bubble ]]
+ *
+ * Copyright © 2000-2003 Guillaume Cottenceau.
+ * Java sourcecode - Copyright © 2003 Glenn Sanson.
+ * MOD player source - Copyright © 2011 Patrick Casey.
+ * Additional source - Copyright © 2013 Eric Fortin.
+ *
+ * This code is distributed under the GNU General Public License
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to:
+ * Free Software Foundation, Inc.
+ * 675 Mass Ave
+ * Cambridge, MA 02139, USA
+ *
+ *
+ * Artwork:
+ *    Alexis Younes <73lab at free.fr>
+ *      (everything but the bubbles)
+ *    Amaury Amblard-Ladurantie <amaury at linuxfr.org>
+ *      (the bubbles)
+ *
+ * Soundtrack:
+ *    Matthias Le Bidan <matthias.le_bidan at caramail.com>
+ *      (the three musics and all the sound effects)
+ *
+ * Design & Programming:
+ *    Guillaume Cottenceau <guillaume.cottenceau at free.fr>
+ *      (design and manage the project, whole Perl sourcecode)
+ *
+ * Java version:
+ *    Glenn Sanson <glenn.sanson at free.fr>
+ *      (whole Java sourcecode, including JIGA classes
+ *             http://glenn.sanson.free.fr/jiga/)
+ *
+ * Android port:
+ *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
+ *    Eric Fortin <videogameboy76 at yahoo.com>
+ *    Copyright (c) Google Inc.
+ *
+ *          [[ http://glenn.sanson.free.fr/fb/ ]]
+ *          [[ http://www.frozen-bubble.org/   ]]
+ */
+
+//
+// This is basically a convenience class that adds a layer on top of
+// the PlayerThreadOLD so that you don't have to mess around with
+// loading the MOD file data from a MOD file resource (R.raw.).
 //
 // Dec 7 2011   P.A.Casey
+//
 //
 
 package com.peculiargames.andmodplug;
@@ -13,143 +67,138 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import android.content.Context;
-import android.util.Log;
 
 /**
- * Convenience class extending PlayerThread, handling all the file operations,
- * accepting Android resource ids for MOD/XM song files.
- *	                  
+ * Convenience class extending PlayerThread, handling all the file
+ * operations, accepting Android resource IDs for MOD/XM song files.
+ *
  * <p>   <b>Typical call order:</b>
- * <br>   <code>mrp = MODResourcePlayer(); // get player instance (in topmost activity, etc.)</code>
- * <br>	  <code>mrp.LoadMODResource(R.raw.coolsong);  // load MOD/XM data into player</code>
- * <br>   <code>mrp.start();   // start thread (playing song)</code>
+ * <br>  <code>// get player instance (in topmost activity, etc.)
+ * <br>  mrp = MODResourcePlayer();
+ * <br>  // load MOD/XM data into player
+ * <br>  mrp.LoadMODResource(R.raw.coolsong);
+ * <br>  mrp.start();  // start thread (playing song)</code>
  * <br>
- * 	<b>then when changing songs (new game level or transition to another sub-activity, etc.):</b> 
- * 	<br>  <code>mrp.PausePlay();</code>
- *  <br>  <code>mrp.LoadMODResource(R.raw.newcoolsong);</code>
- *  <br>  <code>mrp.UnPausePlay();</code>
- *  <br> <code>// repeat...</code>
- * 
+ * <b>   Then when changing songs (new game level or transition to
+ *       another sub-activity, etc.):</b> 
+ * <br>  <code>mrp.PausePlay();
+ * <br>  mrp.LoadMODResource(R.raw.newcoolsong);
+ * <br>  mrp.UnPausePlay();
+ * <br>  // repeat...</code>
+ *
  * @author    P.A. Casey (crow) Peculiar-Games.com
- *              
+ *
  * @version   1.0
- *  
+ *
  */
 public class MODResourcePlayer extends PlayerThread {
+  // application context, for accessing the resources (specifically the
+  // R.raw. resources which are MOD music files)
+  private Context mContext;
+  private InputStream mModfileInStream;
+  private byte[] modData = null;
+  private int modsize;  // holds the size in bytes of the mod file
 
-	//
-	// prefix for Log output
-	private final static String LOGPREFIX = "MODRESPLAYER";
-	
-	// application context, for accessing the resources (specifically the
-	// R.raw. resources which are MOD music files)
-	private Context mContext;
-	
-	private InputStream mModfileInStream;
-	private byte[] modData = null;
-	private int modsize;    // holds the size in bytes of the mod file
+  /**
+   * Allocates a MOD/XM/etc. song Player object that can handle Android
+   * resource files (typically the songs are stored in the res/raw
+   * project directory and conform to Android build process rules,
+   * lower-case names, etc.)
+   * <p>
+   * <b>Note about extensions:</b> developers using Eclipse as an IDE
+   * should note that it allows the .xm file extension but may be fussy
+   * about other tracker format extensions.
+   *
+   * The cont argument is the application context which allows
+   * MODResourcePlayer to load resources directly.
 
-	/**
-	 * Allocates a MOD/XM/etc. song Player object that can handle Android resource
-	 * files (typically the songs are stored in the res/raw project directory
-	 * and conform to Android build process rules, lower-case names, etc.)
-	 * <p>
-	 * <b>Note about extensions:</b> developers using Eclipse as an IDE should note
-	 * that it allows the .xm file extension but may be fussy about other tracker
-	 * format extensions.
-	 *	                          	
-	 * The cont argument is the application context which allows MODResourcePlayer to
-	 * load resources directly.
-	                          
-	@param  cont application Context
-	 *  
-	 */
-	public MODResourcePlayer(Context cont) {
-		// get super class (PlayerThread) with default rate
-		super(0);
-		
-		mContext = cont;
-		
-		// full volume
-        setVolume(255);
-	}
-	
-	/**
-	 * Load a MOD/XM/etc. song file from an Android resource.
-	 * <p>
-	 * <b>Note about extensions:</b> developers using Eclipse as an IDE should note
-	 * that it allows the .xm file extension but may be fussy about other tracker
-	 * format extensions.
-	 *	                          	
-	 * The modresource argument is the resource id for the MOD/XM song file, e.g. R.raw.coolsong
-	                          
-	@param  modresource Android resource id for a MOD/XM/etc. (tracker format) song file
-	 *  
-	 */
-	public boolean LoadMODResource(int modresource) {
-		int currfilesize = 0;
-		
-		// unload any mod file we have currently loaded
-		UnLoadMod();
-		
-		// get an input stream for the MOD file resource
-        mModfileInStream = 	mContext.getResources().openRawResource(modresource);
-        try {
-			currfilesize = mModfileInStream.available();
-		} catch (IOException e) {
-			Log.w(LOGPREFIX, "Can't get the file size for MOD file resource!");
-			return false;
-		}
-		
-		// if the mod file data buffer has yet to be allocated or is too small
-		// we need to get a new one
-		if (modData == null || modData.length < currfilesize) {
-			// allocate a new buffer that can hold the current MOD file data
-	        modData = new byte[currfilesize];
-		}
-		
-        // could use better error checking
-        try {
-        	modsize = mModfileInStream.read(modData,0, currfilesize);
-    		Log.v(LOGPREFIX, "read in "+modsize+" bytes from the mod file");
-        } catch (IOException e) {
-			// Auto-generated catch block
-        	// may need better error handling here...
-			e.printStackTrace();
-		}
+  @param  cont application Context
+   *
+   */
+  public MODResourcePlayer(Context cont) {
+    // get super class (PlayerThread) with default rate
+    super(0);
+    mContext = cont;
+    // full volume
+    setVolume(255);
+  }
 
-        // load it into the player
-        LoadMODData(modData);
-		
-		return true;
-	}
-	
+  /**
+   * Load a MOD/XM/etc. song file from an Android resource.
+   * <p>
+   * <b>Note about extensions:</b> developers using Eclipse as an IDE
+   * should note that it allows the .xm file extension but may be fussy
+   * about other tracker format extensions.
+   *
+   * The modresource argument is the resource id for the MOD/XM song
+   * file, e.g. R.raw.coolsong
 
+  @param  modresource Android resource id for a MOD/XM/etc. (tracker
+   *      format) song file
+   *
+   */
+  public boolean LoadMODResource(int modresource) {
+    int currfilesize = 0;
 
-	/**
-	 * Stop playing the song, close down the player and <code>join()</code> the player thread.
-	 * <p>
-	 * Typically called in the application's (Activity's) <code>onPause()</code> method 
-	 */
-	public void StopAndClose() {
-        
-		PausePlay();
-		
-    	boolean retry = true;
+    // unload any mod file we have currently loaded
+    UnLoadMod();
 
-    	// now close and join() the mod player thread
-    	StopThread();
-        while (retry) {
-        	try {
-        		join();
-        		retry = false;
-        	} catch (InterruptedException e) {
-        		// keep trying to close the player thread
-        	}
-        }
-        PlayerThread.CloseLIBMODPLUG();
+    // get an input stream for the MOD file resource
+    mModfileInStream = mContext.getResources().openRawResource(modresource);
+    try {
+      currfilesize = mModfileInStream.available();
+    } catch (IOException e) {
+      return false;
+    }
 
-        InvalidatePlayer();
-	}
-	
+    //
+    // If the mod file data buffer has yet to be allocated or is too
+    // small, we need to get a new one.
+    //
+    //
+    if (modData == null || modData.length < currfilesize) {
+      // allocate a new buffer that can hold the current MOD file data
+      modData = new byte[currfilesize];
+    }
+
+    // could use better error checking
+    try {
+      modsize = mModfileInStream.read(modData,0, currfilesize);
+      PlayerThread.setModSize(modsize);
+    } catch (IOException e) {
+      // Auto-generated catch block
+      // may need better error handling here...
+      e.printStackTrace();
+    }
+
+    // load it into the player
+    LoadMODData(modData);
+    return true;
+  }
+
+  /**
+   * Stop playing the song, close down the player and
+   * <code>join()</code> the player thread.
+   * <p>
+   * Typically called in the application's (Activity's)
+   * <code>onPause()</code> method 
+   */
+  public void StopAndClose() {
+    PausePlay();
+    boolean retry = true;
+
+    // now close and join() the mod player thread
+    StopThread();
+    while (retry) {
+      try {
+        join();
+        retry = false;
+      } catch (InterruptedException e) {
+        // keep trying to close the player thread
+      }
+    }
+
+    PlayerThread.CloseLIBMODPLUG();
+    InvalidatePlayer();
+  }
 }

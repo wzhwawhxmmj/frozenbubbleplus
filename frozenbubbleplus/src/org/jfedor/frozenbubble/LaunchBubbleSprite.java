@@ -16,9 +16,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 675 Mass Ave, Cambridge, MA 02139, USA.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to:
+ * Free Software Foundation, Inc.
+ * 675 Mass Ave
+ * Cambridge, MA 02139, USA
  *
  *
  * Artwork:
@@ -37,7 +39,6 @@
  *
  * Java version:
  *    Glenn Sanson <glenn.sanson at free.fr>
- *    Eric Fortin  <videogameboy76 at yahoo.com>
  *      (whole Java sourcecode, including JIGA classes
  *             http://glenn.sanson.free.fr/jiga/)
  *
@@ -52,11 +53,12 @@
 
 package org.jfedor.frozenbubble;
 
+import java.util.Vector;
+
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import java.util.Vector;
 
 public class LaunchBubbleSprite extends Sprite
 {
