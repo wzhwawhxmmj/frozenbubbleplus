@@ -268,7 +268,7 @@ public class BubbleSprite extends Sprite
     BubbleSprite[][] grid = frozen.getGrid();
 
     if ( grid[currentPosition.x][currentPosition.y] == null )
-        lastOpenPosition = currentPosition;
+      lastOpenPosition = currentPosition;
 
     Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
 
@@ -451,10 +451,10 @@ public class BubbleSprite extends Sprite
   boolean checkCollision(BubbleSprite sprite)
   {
     double value =
-        (sprite.getSpriteArea().left - this.realX) *
-        (sprite.getSpriteArea().left - this.realX) +
-        (sprite.getSpriteArea().top - this.realY) *
-        (sprite.getSpriteArea().top - this.realY);
+      (sprite.getSpriteArea().left - this.realX) *
+      (sprite.getSpriteArea().left - this.realX) +
+      (sprite.getSpriteArea().top - this.realY) *
+      (sprite.getSpriteArea().top - this.realY);
 
     return (value < MINIMUM_DISTANCE);
   }
