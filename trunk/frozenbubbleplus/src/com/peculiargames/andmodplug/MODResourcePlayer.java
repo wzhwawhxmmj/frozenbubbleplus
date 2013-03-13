@@ -52,15 +52,6 @@
  *          [[ http://www.frozen-bubble.org/   ]]
  */
 
-//
-// This is basically a convenience class that adds a layer on top of
-// the PlayerThreadOLD so that you don't have to mess around with
-// loading the MOD file data from a MOD file resource (R.raw.).
-//
-// Dec 7 2011   P.A.Casey
-//
-//
-
 package com.peculiargames.andmodplug;
 
 import java.io.IOException;
@@ -92,8 +83,11 @@ import android.content.Context;
  *
  */
 public class MODResourcePlayer extends PlayerThread {
-  // application context, for accessing the resources (specifically the
-  // R.raw. resources which are MOD music files)
+  //
+  // Application context, for accessing the resources - specifically the
+  // the R.raw.<filename> resources which are MOD music files.
+  //
+  //
   private Context mContext;
   private InputStream mModfileInStream;
   private byte[] modData = null;
@@ -111,8 +105,8 @@ public class MODResourcePlayer extends PlayerThread {
    *
    * The cont argument is the application context which allows
    * MODResourcePlayer to load resources directly.
-
-  @param  cont application Context
+   *
+   * @param  cont application Context
    *
    */
   public MODResourcePlayer(Context cont) {
@@ -132,18 +126,24 @@ public class MODResourcePlayer extends PlayerThread {
    *
    * The modresource argument is the resource id for the MOD/XM song
    * file, e.g. R.raw.coolsong
-
-  @param  modresource Android resource id for a MOD/XM/etc. (tracker
-   *      format) song file
+   *
+   * @param  modresource Android resource id for a MOD/XM/etc. (tracker
+   *         format) song file
    *
    */
   public boolean LoadMODResource(int modresource) {
     int currfilesize = 0;
 
-    // unload any mod file we have currently loaded
+    //
+    // Unload any mod file we have currently loaded.
+    //
+    //
     UnLoadMod();
 
-    // get an input stream for the MOD file resource
+    //
+    // Get an input stream for the MOD file resource.
+    //
+    //
     mModfileInStream = mContext.getResources().openRawResource(modresource);
     try {
       currfilesize = mModfileInStream.available();
@@ -157,21 +157,28 @@ public class MODResourcePlayer extends PlayerThread {
     //
     //
     if (modData == null || modData.length < currfilesize) {
-      // allocate a new buffer that can hold the current MOD file data
+      //
+      // Allocate a new buffer that can hold the current MOD file data.
+      //
+      //
       modData = new byte[currfilesize];
     }
 
-    // could use better error checking
     try {
       modsize = mModfileInStream.read(modData,0, currfilesize);
       PlayerThread.setModSize(modsize);
     } catch (IOException e) {
-      // Auto-generated catch block
-      // may need better error handling here...
+      //
+      // Auto-generated catch block.
+      //
+      //
       e.printStackTrace();
     }
 
-    // load it into the player
+    //
+    // Load the song into the player.
+    //
+    //
     LoadMODData(modData);
     return true;
   }
