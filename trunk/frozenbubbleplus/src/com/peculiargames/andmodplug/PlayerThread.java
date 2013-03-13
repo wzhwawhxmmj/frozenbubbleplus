@@ -208,9 +208,11 @@ public class PlayerThread extends Thread {
   private boolean mLoad_ok;
 
   // for storing info about the MOD file currently loaded
-  private String mModname;
-  private int mNumChannels;
-  private int mRate;
+  private String  mModname;
+  private int     mNumChannels;
+  private int     mRate;
+  private int     posWas;
+  private boolean songFinished;
 
   // could probably get rid of this, unneeded when using libmodplug as
   // single-entrant library?!?
@@ -218,9 +220,6 @@ public class PlayerThread extends Thread {
 
   // start the player in a paused state?
   private boolean mStart_paused;
-
-  // play once through (one packet of sample data) then pause
-  private boolean mPlay_once;
 
   private static final int NUM_RATES = 5;
   private final int[] try_rates = {44100, 32000, 22000, 16000, 8000};
@@ -323,8 +322,10 @@ public class PlayerThread extends Thread {
     if (mLoad_ok)
     {
       // get info (name and number of tracks) for the loaded MOD file
-      mModname = ModPlug_JGetName();
+      mModname     = ModPlug_JGetName();
       mNumChannels = ModPlug_JNumChannels();
+      posWas       = 0;
+      songFinished = false;
     }
   }
 
@@ -358,7 +359,6 @@ public class PlayerThread extends Thread {
     // no Activity owns this player yet
     mOwner         = null;
     mStart_paused  = false;
-    mPlay_once     = false;
     sPlayerStarted = false;
 
     // try to get the audio track
@@ -509,8 +509,10 @@ public class PlayerThread extends Thread {
     mLoad_ok = ModPlug_JLoad(modData, modData.length);
 
     if (mLoad_ok) {
-      mModname = ModPlug_JGetName();
+      mModname     = ModPlug_JGetName();
       mNumChannels = ModPlug_JNumChannels();
+      posWas       = 0;
+      songFinished = false;
     }
 
     //
@@ -588,13 +590,6 @@ public class PlayerThread extends Thread {
             pattern_change = true;
         }
 
-        synchronized(this)
-        {
-          if (!sPlayerStarted)
-          {
-          }
-        }
-
         //
         // Pass a packet of sound sample data to the audio track
         // (blocks until audio track can accept the new data).
@@ -603,7 +598,7 @@ public class PlayerThread extends Thread {
         mMytrack.write(mBuffer, 0, BUFFERSIZE);
 
         //
-        // Send player started event.
+        // Send player events.
         //
         //
         synchronized(this)
@@ -618,38 +613,34 @@ public class PlayerThread extends Thread {
           }
         }
 
-        if (mPlay_once)
+        synchronized(this)
         {
-          mPlay_once = false;
-          mPlaying   = false;
+          if (pattern_change)
+          {
+            pattern_change = false;
+
+            if (mPlayerListener != null)
+              mPlayerListener.onPlayerEvent(EVENT_PATTERN_CHANGE);
+          }
         }
 
-        if (pattern_change)
+        synchronized(this)
         {
-          pattern_change = false;
+          int posNow = getCurrentPos();
 
-          if (mPlayerListener != null)
-            mPlayerListener.onPlayerEvent(EVENT_PATTERN_CHANGE);
+          if ((posNow >= posWas) && (posNow < getMaxPos()))
+            songFinished = false;
+
+          if (!songFinished && ((posNow < posWas) || (posNow >= getMaxPos())))
+          {
+            if (mPlayerListener != null)
+              mPlayerListener.onPlayerEvent(EVENT_SONG_COMPLETED);
+
+            songFinished = true;
+          }
+
+          posWas = posNow;
         }
-        //
-        //   TODO: Implement a listener notification for when a song is
-        //         completed.  This could be implemented either via
-        //         registering a listener with libmodplug (preferred),
-        //         or checking the current song position versus the
-        //         previous position.  An example is illustrated by the
-        //         following section of code, but it is unverified.
-        //
-        //posNow = getCurrentPos();
-        //
-        //if (posNow < posWas)
-        //{
-        //   if (mPlayerListener != null)
-        //      mPlayerListener.onPlayerEvent(EVENT_SONG_COMPLETED);
-        //}
-        //
-        //posWas = posNow;
-        //
-        //
       }
 
       // ******************* WAIT CODE ***********************
@@ -803,11 +794,6 @@ public class PlayerThread extends Thread {
     mStart_paused = flag;
   }
 
-  public void playthroughOnce(boolean flag) {
-    // to wake up the audio pcm playback track
-    mPlay_once = flag;
-  }
-
   //
   // Closing down code.
   //
@@ -890,6 +876,14 @@ public class PlayerThread extends Thread {
    */
   public int getCurrentPos() {
     return ModPlug_GetCurrentPos();
+  }
+  /**
+   * EXPERIMENTAL: Get the maximum "position" in song
+   *                              
+   * @return the maximum position
+   */
+  public int getMaxPos() {
+    return ModPlug_GetMaxPos();
   }
   /**
    * EXPERIMENTAL: Get the current order
@@ -1041,6 +1035,7 @@ public class PlayerThread extends Thread {
 
   // More info
   public native int ModPlug_GetCurrentPos();
+  public native int ModPlug_GetMaxPos();
   public native int ModPlug_GetCurrentOrder();
   public native int ModPlug_GetCurrentPattern();
   public native int ModPlug_GetCurrentRow();
