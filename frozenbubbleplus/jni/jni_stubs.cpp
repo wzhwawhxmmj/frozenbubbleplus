@@ -279,6 +279,19 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 
 /*
  * Class:     com_peculiargames_andmodplug_PlayerThread
+ * Method:    ModPlug_GetMaxPos
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetMaxPos
+  (JNIEnv *, jobject)
+{
+	  jint maxpos;
+	  maxpos = currmodFile->mSoundFile.GetMaxPosition();
+	  return maxpos;
+}
+
+/*
+ * Class:     com_peculiargames_andmodplug_PlayerThread
  * Method:    ModPlug_GetCurrentOrder
  * Signature: ()I
  */

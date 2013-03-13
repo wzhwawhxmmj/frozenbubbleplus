@@ -659,7 +659,6 @@ public class FrozenBubble extends Activity implements GameView.GameListener
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[mod_now]);
-    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     if ( getMusicOn() == true )
     {
       resplayer.setVolume( 255 );
