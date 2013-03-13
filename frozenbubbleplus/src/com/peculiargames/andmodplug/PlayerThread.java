@@ -57,7 +57,7 @@
 // getting commands from the Activity.
 //
 // TODO:  Needs more error checking (I ignore the minbuffer size when
-//        getting the audio track, LoadMODData() may fail, etc. etc.
+//        getting the audio track, LoadMODData() may fail, etc.
 //
 //    Typical call order:
 //
@@ -132,12 +132,7 @@ import android.util.Log;
  */
 public class PlayerThread extends Thread {
 
-  //
-  // version number for this build of AndModPlug
-  public static final String VERS = "1.0";
-
-  //
-  // prefix for Log output
+  public  final static String VERS      = "1.0";
   private final static String LOGPREFIX = "PLAYERTHREAD";
 
   // flags for pattern changes
@@ -162,8 +157,11 @@ public class PlayerThread extends Thread {
    */
   public final static int LOOP_SONG_FOREVER = -1;
 
-  // limit volume volume steps to 8 steps (just an arbitrary decision)
-  // there's also a setVolume() method that accepts a float
+  //
+  // Limit volume volume steps to 8 steps (just an arbitrary decision).
+  // There's also a setVolume() method that accepts a float.
+  //
+  //
   public final static float[] sVolume_floats = {0.0f, 0.125f, 0.25f, 0.375f,
                                                 0.5f, 0.625f, 0.75f, 1.0f};
 
@@ -182,31 +180,33 @@ public class PlayerThread extends Thread {
   //
   public static Object sRDlock;
 
-  // mark the player as invalid (for when an Activity shuts it down,
-  // but Android allows a reference to the player to persist -- better
+  //
+  // Mark the player as invalid for when an Activity shuts it down, but
+  // Android allows a reference to the player to persist.  A better
   // solution is probably to just null out the reference to the
-  // PlayerThread object in whichever Activity shuts it down)
-  public boolean mPlayerValid = false;
-  
-  private boolean mWaitFlag = false;
+  // PlayerThread object in whichever Activity shuts it down.
+  //
+  //
+  public  boolean mPlayerValid = false;
+  private boolean mWaitFlag    = false;
   private boolean mFlushedData = false;
-  private boolean mPlaying = true;
-  private boolean mRunning = true;
+  private boolean mPlaying     = true;
+  private boolean mRunning     = true;
 
+  //
   // Android will report the minimum buffer size needed to keep playing
-  // audio at our requested rate smoothly
+  // audio at our requested rate smoothly.
+  //
+  //
   private int mMinbuffer;
   private static int mModsize;  // holds the size in bytes of the mod file
-
   private final static int BUFFERSIZE = 20000;  // the sample buffer size
 
   // buffer for audio data
   private static short[] mBuffer;  
-
   private AudioTrack mMytrack;
-  
   private boolean mLoad_ok;
-  
+
   // for storing info about the MOD file currently loaded
   private String mModname;
   private int mNumChannels;
@@ -226,10 +226,11 @@ public class PlayerThread extends Thread {
   private final int[] try_rates = {44100, 32000, 22000, 16000, 8000};
 
   //
-  // ownership code -- for when several activities try to share a
+  // Ownership code -- for when several activities try to share a
   //                   single mod player instance...
   //
-  // probably needs to be synchronized...
+  // This probably needs to be synchronized...
+  //
   //
   private Object mOwner;
 
@@ -281,15 +282,16 @@ public class PlayerThread extends Thread {
   // Constructors
   //*******************************************************************
   //
-  //  here's (one of) the constructor(s) -- grabs an audio track and
+  //  Here's (one of) the constructor(s) -- grabs an audio track and
   //  loads a mod file
   //
-  //  mod file data has already been read in (using a FileStream) by
+  //  MOD file data has already been read in (using a FileStream) by
   //  the caller -- that functionality could probably be included here,
   //  but for now we'll do it this way.
   //
-  //  you could use this in the top parent activity (like a game menu)
-  //  to create a PlayerThread and load the mod data in one call
+  //  You could use this in the top parent activity (like a game menu)
+  //  to create a PlayerThread and load the mod data in one call.
+  //
   //
   /**
    * Allocates a MOD/XM/etc. song PlayerThread  
@@ -299,18 +301,20 @@ public class PlayerThread extends Thread {
    * set the rate audio data will play at - will be overridden if the
    * OS doesn't allow that rate. 
    *
-
-  @param  modData  a byte[] array containing the MOD file data.
    *
-
-  @param  desiredrate rate of playback (e.g. 44100Hz, or 0 for default
-   *      rate) for system audio data playback.
+   * @param  modData  a byte[] array containing the MOD file data.
+   *
+   * @param  desired rate rate of playback (e.g. 44100Hz, or 0 for
+   *         default rate) for system audio data playback.
    *
    */
   public PlayerThread(byte[] modData, int desiredrate)
   {
-    // just call the regular constructor and then load in the supplied
-    // MOD file data
+    //
+    // Just call the regular constructor and then load in the supplied
+    // MOD file data.
+    //
+    //
     this(desiredrate);
 
     // load the mod file (data) into libmodplug
@@ -325,7 +329,7 @@ public class PlayerThread extends Thread {
   }
 
   //
-  //  This one just gets an audio track. the mod file will be loaded
+  //  This method just gets an audio track. The mod file will be loaded
   //  later with a call to LoadMODData().
   //
   //
@@ -383,14 +387,18 @@ public class PlayerThread extends Thread {
   {
     int rateindex = 0;
 
-    // get a stereo audio track from Android 
+    //
+    // Get a stereo audio track from Android.
+    //
     // PACKETSIZE is the amount of data we request from libmodplug,
     // minbuffer is the size Android tells us is necessary to play
     // smoothly for the rate, configuration we want and is a separate
-    // buffer the OS handles
-
-    // init the track and player for the desired rate (or if none
-    // specified, highest possible)
+    // buffer the OS handles.
+    //
+    // Init the track and player for the desired rate, or if none
+    // specified, highest possible.
+    //
+    //
     if (desiredrate == 0)
     {
       boolean success = false;
@@ -490,8 +498,8 @@ public class PlayerThread extends Thread {
    *   e.printStackTrace();
    * <br>
    * }
-
-  @param  modData  a byte[] array containing the MOD file data.
+   *
+   * @param  modData  a byte[] array containing the MOD file data.
    *
    */
   public void LoadMODData(byte[] modData) {
@@ -624,16 +632,24 @@ public class PlayerThread extends Thread {
             mPlayerListener.onPlayerEvent(EVENT_PATTERN_CHANGE);
         }
         //
-        //   TODO: Implement a listener notification for when a
-        //         song is completed.
+        //   TODO: Implement a listener notification for when a song is
+        //         completed.  This could be implemented either via
+        //         registering a listener with libmodplug (preferred),
+        //         or checking the current song position versus the
+        //         previous position.  An example is illustrated by the
+        //         following section of code, but it is unverified.
         //
+        //posNow = getCurrentPos();
         //
-        //if (song_complete) {
-        //   song_complete = false;
-        //
+        //if (posNow < posWas)
+        //{
         //   if (mPlayerListener != null)
         //      mPlayerListener.onPlayerEvent(EVENT_SONG_COMPLETED);
         //}
+        //
+        //posWas = posNow;
+        //
+        //
       }
 
       // ******************* WAIT CODE ***********************
@@ -751,9 +767,7 @@ public class PlayerThread extends Thread {
   /**
    * Sets playback volume for the MOD/XM player.
    *
-   * The argument is an integer from 0 (sound off) to 255 (full volume)
-
-  @param  vol an integer from 0 (sound off) to 255 (full volume)
+   * @param  vol an integer from 0 (sound off) to 255 (full volume)
    *
    */
   public void setVolume(int vol) {
@@ -766,11 +780,8 @@ public class PlayerThread extends Thread {
   /**
    * Sets playback volume for the MOD/XM player.
    *
-   * The vol argument is floating point number from 0.0f (sound off)
-   * to 1.0f (full volume)
-
-  @param  vol a floating point number from 0.0f (sound off) to 1.0f
-   *      (full volume)
+   * @param  vol a floating point number from 0.0f (sound off) to 1.0f
+   *         (full volume)
    *
    */
   public void setVolume(float vol) {
@@ -784,8 +795,11 @@ public class PlayerThread extends Thread {
   //
   //
   public void startPaused(boolean flag) {
-    // set before calling the thread's start() method, will cause it
-    // to start in paused mode
+    //
+    // Set before calling the thread's start() method.  This will cause
+    // it to start in paused mode.
+    //
+    //
     mStart_paused = flag;
   }
 
@@ -1047,8 +1061,8 @@ public class PlayerThread extends Thread {
       //System.loadLibrary("modplug");
     }
     catch (UnsatisfiedLinkError ule) {
-      Log.e("PLAYERTHREAD", "WARNING: Could not load libmodplug-"+VERS+".so");
-      Log.e("PLAYERTHREAD", "------ older or differently named libmodplug???");
+      Log.e(LOGPREFIX, "WARNING: Could not load libmodplug-"+VERS+".so");
+      Log.e(LOGPREFIX, "------ older or differently named libmodplug???");
     }
 
     //
