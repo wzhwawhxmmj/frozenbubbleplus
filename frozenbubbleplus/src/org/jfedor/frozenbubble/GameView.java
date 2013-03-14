@@ -45,16 +45,19 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright (c) Google Inc.
+ *    Copyright © Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
  */
-// This file is derived from the LunarView.java file which is part of
-// the Lunar Lander game included with Android documentation.  The copyright
-// notice for the Lunar Lander is reproduced below.
+
+/* This file is derived from the LunarView.java file which is part of
+ * the Lunar Lander game included with Android documentation.  The
+ * copyright notice for the Lunar Lander is reproduced below.
+ */
+
 /*
- * Copyright (C) 2007 Google Inc.
+ * Copyright © 2007 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +67,10 @@
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.  See the License for the specific language governing
+ * permissions and limitations under the License.
+ *
  */
 
 package org.jfedor.frozenbubble;
@@ -879,6 +883,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         }
         return false;
       }
+    }
+
+    public void setPosition( double value )
+    {
+      mFrozenGame.setPosition( value );
     }
 
     private void drawBackground( Canvas c )
