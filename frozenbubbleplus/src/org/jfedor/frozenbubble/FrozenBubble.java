@@ -97,19 +97,19 @@ import com.peculiargames.andmodplug.PlayerThread;
 public class FrozenBubble extends Activity
   implements GameView.GameListener, AccelerometerManager.AccelerometerListener
 {
-  public final static int SOUND_WON     = 0;
-  public final static int SOUND_LOST    = 1;
-  public final static int SOUND_LAUNCH  = 2;
-  public final static int SOUND_DESTROY = 3;
-  public final static int SOUND_REBOUND = 4;
-  public final static int SOUND_STICK   = 5;
-  public final static int SOUND_HURRY   = 6;
-  public final static int SOUND_NEWROOT = 7;
-  public final static int SOUND_NOH     = 8;
-  public final static int NUM_SOUNDS    = 9;
+  public final static int SOUND_WON                = 0;
+  public final static int SOUND_LOST               = 1;
+  public final static int SOUND_LAUNCH             = 2;
+  public final static int SOUND_DESTROY            = 3;
+  public final static int SOUND_REBOUND            = 4;
+  public final static int SOUND_STICK              = 5;
+  public final static int SOUND_HURRY              = 6;
+  public final static int SOUND_NEWROOT            = 7;
+  public final static int SOUND_NOH                = 8;
+  public final static int NUM_SOUNDS               = 9;
 
-  public final static int GAME_NORMAL     = 0;
-  public final static int GAME_COLORBLIND = 1;
+  public final static int GAME_NORMAL              = 0;
+  public final static int GAME_COLORBLIND          = 1;
 
   public final static int MENU_COLORBLIND_MODE_ON  = 1;
   public final static int MENU_COLORBLIND_MODE_OFF = 2;
@@ -252,103 +252,13 @@ public class FrozenBubble extends Activity
       setFullscreen();
       return true;
     case MENU_SOUND_OPTIONS:
-      boolean isCheckedItem[] = {getSoundOn(), getMusicOn()};
-      AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-      //
-      // Set the dialog title.
-      //
-      //
-      builder.setTitle(R.string.menu_sound_options)
-      //
-      // Specify the list array, the items to be selected by default
-      // (null for none), and the listener through which to receive
-      // callbacks when items are selected.
-      //
-      //
-      .setMultiChoiceItems(R.array.sound_options_array, isCheckedItem,
-                           new DialogInterface.OnMultiChoiceClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog,
-                            int which,
-                            boolean isChecked)
-        {
-          switch ( which )
-          {
-            case 0:
-              setSoundOn( isChecked );
-              break;
-            case 1:
-              setMusicOn( isChecked );
-              break;
-          }
-        }
-      })
-      // Set the action buttons
-      .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int id) {
-          // User clicked OK.
-          if ( resplayer != null )
-          {
-            if ( getMusicOn() == true )
-            {
-              resplayer.setVolume( 255 );
-            }
-            else
-            {
-              resplayer.setVolume( 0 );
-            }
-          }
-        }
-      });
-      builder.create();
-      builder.show();
+      soundOptionsDialog();
       return true;
     case MENU_ABOUT:
       mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
       return true;
     case MENU_TARGET_MODE:
-      AlertDialog.Builder dialog = new AlertDialog.Builder(FrozenBubble.this);
-      //
-      // Set the dialog title.
-      //
-      //
-      dialog.setTitle(R.string.menu_target_mode)
-      //
-      // Specify the list array, the item to be selected by default,
-      // and the listener through which to receive callbacks when the
-      // item is selected.
-      //
-      //
-      .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
-                           new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog,
-                            int which)
-        {
-          switch ( which )
-          {
-            case 0:
-              setTargetMode( AIM_TO_SHOOT );
-              break;
-            case 1:
-              setTargetMode( POINT_TO_SHOOT );
-              break;
-            case 2:
-              setTargetMode( ROTATE_TO_SHOOT );
-              break;
-          }
-        }
-      })
-      // Set the action buttons
-      .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-        @Override
-        public void onClick(DialogInterface dialog, int id) {
-          // User clicked OK.
-        }
-      });
-      dialog.create();
-      dialog.show();
+      targetOptionsDialog();
       return true;
     case MENU_DONT_RUSH_ME:
       setDontRushMe(true);
@@ -380,6 +290,105 @@ public class FrozenBubble extends Activity
         WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
     }
     mGameView.requestLayout();
+  }
+
+  private void soundOptionsDialog()
+  {
+    boolean isCheckedItem[] = {getSoundOn(), getMusicOn()};
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    //
+    // Set the dialog title.
+    //
+    //
+    builder.setTitle(R.string.menu_sound_options)
+    //
+    // Specify the list array, the items to be selected by default
+    // (null for none), and the listener through which to receive
+    // callbacks when items are selected.
+    //
+    //
+    .setMultiChoiceItems(R.array.sound_options_array, isCheckedItem,
+                         new DialogInterface.OnMultiChoiceClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which, boolean isChecked)
+      {
+        switch ( which )
+        {
+          case 0:
+            setSoundOn( isChecked );
+            break;
+          case 1:
+            setMusicOn( isChecked );
+            break;
+        }
+      }
+    })
+    // Set the action buttons
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked OK.
+        if ( resplayer != null )
+        {
+          if ( getMusicOn() == true )
+          {
+            resplayer.setVolume( 255 );
+          }
+          else
+          {
+            resplayer.setVolume( 0 );
+          }
+        }
+      }
+    });
+    builder.create();
+    builder.show();
+  }
+
+  private void targetOptionsDialog()
+  {
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    //
+    // Set the dialog title.
+    //
+    //
+    builder.setTitle(R.string.menu_target_mode)
+    //
+    // Specify the list array, the item to be selected by default,
+    // and the listener through which to receive callbacks when the
+    // item is selected.
+    //
+    //
+    .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
+                          new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface builder, int which)
+      {
+        switch ( which )
+        {
+          case 0:
+            setTargetMode( AIM_TO_SHOOT );
+            break;
+          case 1:
+            setTargetMode( POINT_TO_SHOOT );
+            break;
+          case 2:
+            setTargetMode( ROTATE_TO_SHOOT );
+            break;
+        }
+      }
+    })
+    // Set the action buttons
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface builder, int id) {
+        // User clicked OK.
+      }
+    });
+
+    builder.create();
+    builder.show();
   }
 
   public synchronized static void setMode(int newMode)
@@ -554,7 +563,7 @@ public class FrozenBubble extends Activity
     editor.commit();
 
     if (AccelerometerManager.isListening())
-    	AccelerometerManager.stopListening();
+      AccelerometerManager.stopListening();
 
     if (mGameView != null)
       mGameView.cleanUp( );

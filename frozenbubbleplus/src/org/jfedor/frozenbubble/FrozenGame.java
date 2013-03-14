@@ -162,24 +162,23 @@ public class FrozenGame extends GameScreen {
                     LevelManager levelManager_arg,
                     HighscoreManager highscoreManager_arg)
   {
-    random = new Random(System.currentTimeMillis());
-    launcher = launcher_arg;
-    penguins = penguins_arg;
-    background = background_arg;
-    bubbles = bubbles_arg;
-    bubblesBlind = bubblesBlind_arg;
-    frozenBubbles = frozenBubbles_arg;
-    targetedBubbles = targetedBubbles_arg;
-    bubbleBlink = bubbleBlink_arg;
-    gameWon = gameWon_arg;
-    gameLost = gameLost_arg;
-    gamePaused = gamePaused_arg;
-    soundManager = soundManager_arg;
-    levelManager = levelManager_arg;
-    highscoreManager = highscoreManager_arg;
-    play_result = GAME_PLAYING;
-    game_result = GAME_LOST;
-
+    random               = new Random(System.currentTimeMillis());
+    launcher             = launcher_arg;
+    penguins             = penguins_arg;
+    background           = background_arg;
+    bubbles              = bubbles_arg;
+    bubblesBlind         = bubblesBlind_arg;
+    frozenBubbles        = frozenBubbles_arg;
+    targetedBubbles      = targetedBubbles_arg;
+    bubbleBlink          = bubbleBlink_arg;
+    gameWon              = gameWon_arg;
+    gameLost             = gameLost_arg;
+    gamePaused           = gamePaused_arg;
+    soundManager         = soundManager_arg;
+    levelManager         = levelManager_arg;
+    highscoreManager     = highscoreManager_arg;
+    play_result          = GAME_PLAYING;
+    game_result          = GAME_LOST;
     launchBubblePosition = 20;
 
     penguin = new PenguinSprite(penguins_arg, random);
@@ -236,15 +235,15 @@ public class FrozenGame extends GameScreen {
 
   public void cleanUp()
   {
-	  //
-	  //   If the pause bitmap is displayed, remove it.
-	  //
-	  //
-	  resume();
+    //
+    //   If the pause bitmap is displayed, remove it.
+    //
+    //
+    resume();
   }
 
   public void saveState(Bundle map) {
-	cleanUp();
+    cleanUp();
     Vector<Sprite> savedSprites = new Vector<Sprite>();
     saveSprites(map, savedSprites);
     for (int i = 0; i < jumping.size(); i++) {
@@ -839,14 +838,14 @@ public class FrozenGame extends GameScreen {
   }
 
   public void setPosition(double value) {
-	  launchBubblePosition = value;
+    launchBubblePosition = value;
     if (launchBubblePosition < 1) {
-        launchBubblePosition = 1;
+      launchBubblePosition = 1;
     }
     if (launchBubblePosition > 39) {
-        launchBubblePosition = 39;
+      launchBubblePosition = 39;
     }
-	  launchBubble.changeDirection((int)launchBubblePosition);
-	  penguin.updateState(PenguinSprite.STATE_VOID);
+    launchBubble.changeDirection((int)launchBubblePosition);
+    penguin.updateState(PenguinSprite.STATE_VOID);
   }
 }
