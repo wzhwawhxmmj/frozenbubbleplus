@@ -45,7 +45,7 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright (c) Google Inc.
+ *    Copyright © Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
@@ -836,5 +836,17 @@ public class FrozenGame extends GameScreen {
       nextBubble.changeImage(bubblesBlind[nextColor]);
     }
     super.paint(c, scale, dx, dy);
+  }
+
+  public void setPosition(double value) {
+	  launchBubblePosition = value;
+    if (launchBubblePosition < 1) {
+        launchBubblePosition = 1;
+    }
+    if (launchBubblePosition > 39) {
+        launchBubblePosition = 39;
+    }
+	  launchBubble.changeDirection((int)launchBubblePosition);
+	  penguin.updateState(PenguinSprite.STATE_VOID);
   }
 }

@@ -10,8 +10,7 @@
     <string name="menu_fullscreen_off">Fullscreen Off</string>
     <string name="menu_sound_options">Sound Options</string>
     <string name="menu_about">About Frozen Bubble Plus</string>
-    <string name="menu_touchscreen_aim_then_shoot">Aim Then Shoot</string>
-    <string name="menu_touchscreen_point_to_shoot">Point To Shoot</string>
+    <string name="menu_target_mode">Targeting Mode</string>
     <string name="menu_dont_rush_me">Don\'t Rush Me</string>
     <string name="menu_rush_me">Rush Me</string>
     <string name="menu_editor">Level Editor</string>
@@ -19,6 +18,11 @@
     <string name="ok">OK</string>
     <string name="title_activity_frozen_bubble">Frozen Bubble Plus</string>
     <string name="title_activity_splash_screen">Frozen Bubble Plus</string>
+    <string-array name="shoot_mode_array">
+        <item>Aim Then Shoot</item>
+        <item>Point To Shoot</item>
+        <item>Rotate To Shoot</item>
+    </string-array>
     <string-array name="sound_options_array">
         <item>Play Sound Effects</item>
         <item>Play Level Music</item>

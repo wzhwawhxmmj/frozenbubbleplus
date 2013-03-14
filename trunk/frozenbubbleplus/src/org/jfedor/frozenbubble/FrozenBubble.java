@@ -45,7 +45,7 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright (c) Google Inc.
+ *    Copyright © Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
@@ -80,6 +80,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -89,10 +90,12 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import com.efortin.frozenbubble.AccelerometerManager;
 import com.peculiargames.andmodplug.MODResourcePlayer;
 import com.peculiargames.andmodplug.PlayerThread;
 
-public class FrozenBubble extends Activity implements GameView.GameListener
+public class FrozenBubble extends Activity
+  implements GameView.GameListener, AccelerometerManager.AccelerometerListener
 {
   public final static int SOUND_WON     = 0;
   public final static int SOUND_LOST    = 1;
@@ -108,32 +111,34 @@ public class FrozenBubble extends Activity implements GameView.GameListener
   public final static int GAME_NORMAL     = 0;
   public final static int GAME_COLORBLIND = 1;
 
-  public final static int MENU_COLORBLIND_MODE_ON         = 1;
-  public final static int MENU_COLORBLIND_MODE_OFF        = 2;
-  public final static int MENU_FULLSCREEN_ON              = 3;
-  public final static int MENU_FULLSCREEN_OFF             = 4;
-  public final static int MENU_SOUND_OPTIONS              = 5;
-  public final static int MENU_DONT_RUSH_ME               = 6;
-  public final static int MENU_RUSH_ME                    = 7;
-  public final static int MENU_NEW_GAME                   = 8;
-  public final static int MENU_ABOUT                      = 9;
-  public final static int MENU_EDITOR                     = 10;
-  public final static int MENU_TOUCHSCREEN_AIM_THEN_SHOOT = 11;
-  public final static int MENU_TOUCHSCREEN_POINT_TO_SHOOT = 12;
+  public final static int MENU_COLORBLIND_MODE_ON  = 1;
+  public final static int MENU_COLORBLIND_MODE_OFF = 2;
+  public final static int MENU_FULLSCREEN_ON       = 3;
+  public final static int MENU_FULLSCREEN_OFF      = 4;
+  public final static int MENU_SOUND_OPTIONS       = 5;
+  public final static int MENU_DONT_RUSH_ME        = 6;
+  public final static int MENU_RUSH_ME             = 7;
+  public final static int MENU_NEW_GAME            = 8;
+  public final static int MENU_ABOUT               = 9;
+  public final static int MENU_EDITOR              = 10;
+  public final static int MENU_TARGET_MODE         = 11;
+
+  public final static int AIM_TO_SHOOT             = 0;
+  public final static int POINT_TO_SHOOT           = 1;
+  public final static int ROTATE_TO_SHOOT          = 2;
 
   public final static String PREFS_NAME = "frozenbubble";
 
-  private static int     gameMode     = GAME_NORMAL;
-  private static boolean musicOn      = true;
-  private static boolean soundOn      = true;
-  private static boolean dontRushMe   = false;
-  private static boolean aimThenShoot = false;
-
-  private boolean fullscreen = true;
+  private static boolean fullscreen = true;
+  private static int     gameMode   = GAME_NORMAL;
+  private static boolean musicOn    = true;
+  private static boolean soundOn    = true;
+  private static boolean dontRushMe = false;
+  private static int     targetMode = POINT_TO_SHOOT;
 
   private GameThread mGameThread;
   private GameView   mGameView;
-  
+
   private static final String EDITORACTION = "org.jfedor.frozenbubble.GAME";
   private boolean activityCustomStarted = false;
   /*************************************************************************/
@@ -182,29 +187,27 @@ public class FrozenBubble extends Activity implements GameView.GameListener
   public boolean onCreateOptionsMenu(Menu menu)
   {
     super.onCreateOptionsMenu(menu);
-    menu.add(0, MENU_COLORBLIND_MODE_ON,         0,
+    menu.add(0, MENU_COLORBLIND_MODE_ON,  0,
              R.string.menu_colorblind_mode_on);
-    menu.add(0, MENU_COLORBLIND_MODE_OFF,        0,
+    menu.add(0, MENU_COLORBLIND_MODE_OFF, 0,
              R.string.menu_colorblind_mode_off);
-    menu.add(0, MENU_FULLSCREEN_ON,              0,
+    menu.add(0, MENU_FULLSCREEN_ON,       0,
              R.string.menu_fullscreen_on);
-    menu.add(0, MENU_FULLSCREEN_OFF,             0,
+    menu.add(0, MENU_FULLSCREEN_OFF,      0,
              R.string.menu_fullscreen_off);
-    menu.add(0, MENU_SOUND_OPTIONS,              0,
+    menu.add(0, MENU_SOUND_OPTIONS,       0,
              R.string.menu_sound_options);
-    menu.add(0, MENU_TOUCHSCREEN_AIM_THEN_SHOOT, 0,
-             R.string.menu_touchscreen_aim_then_shoot);
-    menu.add(0, MENU_TOUCHSCREEN_POINT_TO_SHOOT, 0,
-             R.string.menu_touchscreen_point_to_shoot);
-    menu.add(0, MENU_DONT_RUSH_ME,               0,
+    menu.add(0, MENU_TARGET_MODE,         0,
+             R.string.menu_target_mode);
+    menu.add(0, MENU_DONT_RUSH_ME,        0,
              R.string.menu_dont_rush_me);
-    menu.add(0, MENU_RUSH_ME,                    0,
+    menu.add(0, MENU_RUSH_ME,             0,
              R.string.menu_rush_me);
-    menu.add(0, MENU_ABOUT,                      0,
+    menu.add(0, MENU_ABOUT,               0,
              R.string.menu_about);
-    menu.add(0, MENU_NEW_GAME,                   0,
+    menu.add(0, MENU_NEW_GAME,            0,
              R.string.menu_new_game);
-    menu.add(0, MENU_EDITOR,                     0,
+    menu.add(0, MENU_EDITOR,              0,
              R.string.menu_editor);
     return true;
   }
@@ -213,19 +216,16 @@ public class FrozenBubble extends Activity implements GameView.GameListener
   public boolean onPrepareOptionsMenu(Menu menu)
   {
     super.onPrepareOptionsMenu(menu);
-    menu.findItem(MENU_SOUND_OPTIONS).setVisible(true);
-    menu.findItem(MENU_COLORBLIND_MODE_ON).setVisible(
+    menu.findItem(MENU_SOUND_OPTIONS      ).setVisible(true);
+    menu.findItem(MENU_COLORBLIND_MODE_ON ).setVisible(
                   getMode() == GAME_NORMAL);
     menu.findItem(MENU_COLORBLIND_MODE_OFF).setVisible(
                   getMode() != GAME_NORMAL);
-    menu.findItem(MENU_FULLSCREEN_ON).setVisible(!fullscreen);
-    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
-    menu.findItem(MENU_TOUCHSCREEN_AIM_THEN_SHOOT).setVisible(
-                  !getAimThenShoot());
-    menu.findItem(MENU_TOUCHSCREEN_POINT_TO_SHOOT).setVisible(
-                  getAimThenShoot());
-    menu.findItem(MENU_DONT_RUSH_ME).setVisible(!getDontRushMe());
-    menu.findItem(MENU_RUSH_ME).setVisible(getDontRushMe());
+    menu.findItem(MENU_FULLSCREEN_ON      ).setVisible(!fullscreen);
+    menu.findItem(MENU_FULLSCREEN_OFF     ).setVisible(fullscreen);
+    menu.findItem(MENU_TARGET_MODE        ).setVisible(true);
+    menu.findItem(MENU_DONT_RUSH_ME       ).setVisible(!getDontRushMe());
+    menu.findItem(MENU_RUSH_ME            ).setVisible(getDontRushMe());
     return true;
   }
 
@@ -307,11 +307,48 @@ public class FrozenBubble extends Activity implements GameView.GameListener
     case MENU_ABOUT:
       mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
       return true;
-    case MENU_TOUCHSCREEN_AIM_THEN_SHOOT:
-      setAimThenShoot(true);
-      return true;
-    case MENU_TOUCHSCREEN_POINT_TO_SHOOT:
-      setAimThenShoot(false);
+    case MENU_TARGET_MODE:
+      AlertDialog.Builder dialog = new AlertDialog.Builder(FrozenBubble.this);
+      //
+      // Set the dialog title.
+      //
+      //
+      dialog.setTitle(R.string.menu_target_mode)
+      //
+      // Specify the list array, the item to be selected by default,
+      // and the listener through which to receive callbacks when the
+      // item is selected.
+      //
+      //
+      .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
+                           new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog,
+                            int which)
+        {
+          switch ( which )
+          {
+            case 0:
+              setTargetMode( AIM_TO_SHOOT );
+              break;
+            case 1:
+              setTargetMode( POINT_TO_SHOOT );
+              break;
+            case 2:
+              setTargetMode( ROTATE_TO_SHOOT );
+              break;
+          }
+        }
+      })
+      // Set the action buttons
+      .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+        @Override
+        public void onClick(DialogInterface dialog, int id) {
+          // User clicked OK.
+        }
+      });
+      dialog.create();
+      dialog.show();
       return true;
     case MENU_DONT_RUSH_ME:
       setDontRushMe(true);
@@ -377,12 +414,25 @@ public class FrozenBubble extends Activity implements GameView.GameListener
 
   public synchronized static boolean getAimThenShoot()
   {
-    return aimThenShoot;
+    return ((targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT));
   }
 
-  public synchronized static void setAimThenShoot(boolean ats)
+  public synchronized void setTargetMode(int tm)
   {
-    aimThenShoot = ats;
+    targetMode = tm;
+
+    if ((targetMode == ROTATE_TO_SHOOT) &&
+        AccelerometerManager.isSupported(getApplicationContext()))
+    {
+      AccelerometerManager.startListening(getApplicationContext(),this);
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    if ((targetMode != ROTATE_TO_SHOOT) && AccelerometerManager.isListening())
+    {
+      AccelerometerManager.stopListening();
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+    }
   }
 
   public synchronized static boolean getDontRushMe()
@@ -444,7 +494,9 @@ public class FrozenBubble extends Activity implements GameView.GameListener
       mGameThread.restoreState(savedInstanceState);
     }
     mGameView.requestFocus();
+
     setFullscreen();
+    setTargetMode(targetMode);
     newPlayer( true );
   }
 
@@ -500,6 +552,9 @@ public class FrozenBubble extends Activity implements GameView.GameListener
     SharedPreferences.Editor editor = sp.edit();
     editor.putBoolean("showSplashScreen", true);
     editor.commit();
+
+    if (AccelerometerManager.isListening())
+    	AccelerometerManager.stopListening();
 
     if (mGameView != null)
       mGameView.cleanUp( );
@@ -558,6 +613,12 @@ public class FrozenBubble extends Activity implements GameView.GameListener
         newPlayer( true );
       }
     }
+  }
+
+  public void onAccelerationChanged(float x, float y, float z)
+  {
+    if ( mGameThread != null )
+      mGameThread.setPosition(20f+x*2f);
   }
 
   public void onGameEvent(int type)
@@ -624,7 +685,7 @@ public class FrozenBubble extends Activity implements GameView.GameListener
     }
   }
 
-  void newPlayer( boolean startPausedFlag )
+  private void newPlayer( boolean startPausedFlag )
   {
     //*****************************************
     // Start up the MOD player
@@ -680,7 +741,7 @@ public class FrozenBubble extends Activity implements GameView.GameListener
   //   The current MOD index may have been modified externally.
   //
   //
-  public void playCurrentMOD()
+  private void playCurrentMOD()
   {
     if (resplayer != null)
     {
@@ -695,7 +756,7 @@ public class FrozenBubble extends Activity implements GameView.GameListener
       newPlayer( false );
   }
 
-  public void savePlayerState()
+  private void savePlayerState()
   {
     //
     //   Save song number and current pattern so we can resume from
