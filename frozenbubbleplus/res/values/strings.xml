@@ -21,7 +21,7 @@
     <string-array name="shoot_mode_array">
         <item>Aim Then Shoot</item>
         <item>Point To Shoot</item>
-        <item>Rotate To Shoot</item>
+        <item>Rotate Then Shoot</item>
     </string-array>
     <string-array name="sound_options_array">
         <item>Play Sound Effects</item>

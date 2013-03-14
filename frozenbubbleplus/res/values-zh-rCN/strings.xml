@@ -21,7 +21,7 @@
   <string-array name="shoot_mode_array">
         <item>瞄准后射击</item>
         <item>点击射击</item>
-        <item>旋转拍摄</item>
+        <item>旋转和射击</item>
     </string-array>
 	<string-array name="sound_options_array">
         <item>播放声音效果</item>

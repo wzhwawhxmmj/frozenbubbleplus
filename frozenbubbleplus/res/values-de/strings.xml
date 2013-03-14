@@ -21,7 +21,7 @@
     <string-array name="shoot_mode_array">
         <item>Einstellen, dann Schießen</item>
         <item>Zeigen zum Schießen</item>
-        <item>Rotieren zum Schießen</item>
+        <item>Rotieren, dann Schießen</item>
     </string-array>
     <string-array name="sound_options_array">
         <item>Spielen Soundeffekte</item>
