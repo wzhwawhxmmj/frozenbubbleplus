@@ -56,7 +56,7 @@
 // This class is for a separate thread to control the modplug player,
 // getting commands from the Activity.
 //
-// TODO:  Needs more error checking (I ignore the minbuffer size when
+// TODO:  Needs more error checking - I ignore the minbuffer size when
 //        getting the audio track, LoadMODData() may fail, etc.
 //
 //    Typical call order:
