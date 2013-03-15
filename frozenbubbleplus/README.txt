@@ -1,4 +1,4 @@
-The Android port of the Frozen Bubble game.  Developed with SDK v20.0.1,
+The Android port of the Frozen Bubble game.  Developed with SDK v21.1.0,
 using API level 10 (Gingerbread).
 
 The code is based on the Java version of Frozen Bubble created by Glenn
@@ -7,7 +7,7 @@ Sanson.  The original Frozen Bubble was created by Guillaume Cottenceau
 Matthias Le Bidan (soundtrack).
 
 The Android port was initially created by Pawel Aleksander Fedorynski, with
-additional development for the Amazon Kindle performed by Eric Fortin.
+additional development provided by Eric Fortin.
 
 This code is distributed under the GNU General Public License.
 
