@@ -77,21 +77,12 @@ public class SplashScreen extends Activity
    * Called when the activity is first created.
    */
   @Override
-  public void onCreate(Bundle savedInstanceState)
+  public void onCreate( Bundle savedInstanceState )
   {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_splash_screen);
+    super.onCreate( savedInstanceState );
+    setContentView( R.layout.activity_splash_screen );
 
-    SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    boolean showSplashScreen = sp.getBoolean("showSplashScreen", true);
-    if ( showSplashScreen )
-    {
-      SharedPreferences.Editor editor = sp.edit();
-      editor.putBoolean("showSplashScreen", false);
-      editor.commit();
-    }
-    else
+    if ( ! displaySplashScreen() )
     {
       startFrozenBubble();
       return;
@@ -108,7 +99,7 @@ public class SplashScreen extends Activity
       {
         try
         {
-          synchronized(this)
+          synchronized( this )
           {
             //
             //   TODO: The splash screen waits before launching the
@@ -121,9 +112,9 @@ public class SplashScreen extends Activity
             //         doing this right now, because there is no lag.
             //
             //
-            wait(_splashTime);  //wait 3 seconds
+            wait( _splashTime );  //wait 3 seconds
           }
-        } catch(InterruptedException e) {}
+        } catch( InterruptedException e ) {}
         finally
         {
           startFrozenBubble();
@@ -138,16 +129,32 @@ public class SplashScreen extends Activity
    * Invoked when the screen is touched.
    */
   @Override
-  public boolean onTouchEvent(MotionEvent event)
+  public boolean onTouchEvent( MotionEvent event )
   {
-    if (event.getAction() == MotionEvent.ACTION_DOWN)
+    if ( event.getAction() == MotionEvent.ACTION_DOWN )
     {
-      synchronized(splashThread)
+      synchronized( splashThread )
       {
         splashThread.notifyAll();
       }
     }
     return true;
+  }
+
+  private boolean displaySplashScreen()
+  {
+    SharedPreferences sp = getSharedPreferences( FrozenBubble.PREFS_NAME,
+                                                 Context.MODE_PRIVATE );
+    boolean showSplashScreen = sp.getBoolean( "showSplashScreen", true );
+
+    if ( showSplashScreen )
+    {
+      SharedPreferences.Editor editor = sp.edit();
+      editor.putBoolean( "showSplashScreen", false );
+      editor.commit();
+    }
+
+    return showSplashScreen;
   }
 
   private void startFrozenBubble()
@@ -157,7 +164,7 @@ public class SplashScreen extends Activity
     //
     //
     Intent intent = new Intent( this, FrozenBubble.class );
-    startActivity(intent);
+    startActivity( intent );
     //
     //   Terminate the splash screen activity.
     //

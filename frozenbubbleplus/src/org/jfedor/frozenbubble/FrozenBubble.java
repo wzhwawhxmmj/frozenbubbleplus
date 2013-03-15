@@ -577,31 +577,7 @@ public class FrozenBubble extends Activity
   protected void onDestroy() {
     //Log.i("frozen-bubble", "FrozenBubble.onDestroy()");
     super.onDestroy();
-    //
-    //   Since the game activity has been destroyed, on the next launch
-    //   of the application, display the splash screen.
-    //
-    //
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sp.edit();
-    editor.putBoolean("showSplashScreen", true);
-    editor.commit();
-
-    if (AccelerometerManager.isListening())
-      AccelerometerManager.stopListening();
-
-    if (mGameView != null)
-      mGameView.cleanUp( );
-    
-    mGameView   = null;
-    mGameThread = null;
-
-    if (resplayer != null)
-    {
-      resplayer.StopAndClose();
-      resplayer = null;
-    }
+    cleanUp();
   }
 
   /**
@@ -647,6 +623,36 @@ public class FrozenBubble extends Activity
         setFullscreen();
         newPlayer( true );
       }
+    }
+  }
+
+  public void cleanUp()
+  {
+    //
+    //   Since this activity is being destroyed, set the flag to ensure
+    //   that the application displays the splash screen the next time
+    //   it is launched.
+    //
+    //
+    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sp.edit();
+    editor.putBoolean("showSplashScreen", true);
+    editor.commit();
+
+    if (AccelerometerManager.isListening())
+      AccelerometerManager.stopListening();
+
+    if (mGameView != null)
+      mGameView.cleanUp( );
+
+    mGameView   = null;
+    mGameThread = null;
+
+    if (resplayer != null)
+    {
+      resplayer.StopAndClose();
+      resplayer = null;
     }
   }
 
