@@ -234,8 +234,7 @@ public class FrozenBubble extends Activity
   {
     switch (item.getItemId()) {
     case MENU_NEW_GAME:
-      mGameThread.newGame();
-      newPlayer( true );
+      newGameDialog();
       return true;
     case MENU_COLORBLIND_MODE_ON:
       setMode(GAME_COLORBLIND);
@@ -290,6 +289,33 @@ public class FrozenBubble extends Activity
         WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
     }
     mGameView.requestLayout();
+  }
+
+  private void newGameDialog()
+  {
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    //
+    // Set the dialog title.
+    //
+    //
+    builder.setTitle(R.string.menu_new_game)
+    // Set the action buttons
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked OK.  Start a new game and music player.
+        mGameThread.newGame();
+        newPlayer( true );
+      }
+    })
+    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked Cancel.  Do nothing.
+      }
+    });
+    builder.create();
+    builder.show();
   }
 
   private void soundOptionsDialog()
@@ -434,7 +460,7 @@ public class FrozenBubble extends Activity
         AccelerometerManager.isSupported(getApplicationContext()))
     {
       AccelerometerManager.startListening(getApplicationContext(),this);
-      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT);
     }
 
     if ((targetMode != ROTATE_TO_SHOOT) && AccelerometerManager.isListening())
@@ -454,7 +480,9 @@ public class FrozenBubble extends Activity
     dontRushMe = dont;
   }
 
-  /** Called when the activity is first created. */
+  /*
+   * Called when the activity is first created.
+   */
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -541,19 +569,17 @@ public class FrozenBubble extends Activity
     savePlayerState( );
   }
 
-  @Override
-  protected void onStop() {
-    //Log.i("frozen-bubble", "FrozenBubble.onStop()");
-    super.onStop();
-  }
-
+  /**
+   * Invoked when the Activity is finishing or being destroyed by the
+   * system.
+   */
   @Override
   protected void onDestroy() {
     //Log.i("frozen-bubble", "FrozenBubble.onDestroy()");
     super.onDestroy();
     //
     //   Since the game activity has been destroyed, on the next launch
-    //   launch of the application, display the splash screen.
+    //   of the application, display the splash screen.
     //
     //
     SharedPreferences sp = getSharedPreferences(PREFS_NAME,

@@ -3,7 +3,7 @@
     <string name="app_name">Frozen Bubble Plus</string>
     <string name="install_editor">Weiterleitung zum Android Market für den Download des Level-Editors…</string>
     <string name="market_missing">Android Market nicht gefunden! Bitten installieren Sie den Level-Editor manuell.</string>
-    <string name="menu_new_game">Neues Spiel</string>
+    <string name="menu_new_game">Starten neues Spiel</string>
     <string name="menu_colorblind_mode_on">Darstellung mit Symbolen</string>
     <string name="menu_colorblind_mode_off">Darstellung ohne Symbole</string>
     <string name="menu_fullscreen_on">Vollbild An</string>
@@ -15,6 +15,7 @@
     <string name="menu_rush_me">Zeitdruck</string>
     <string name="menu_editor">Level-Editor</string>
     <string name="menu_settings">Einstellungen</string>
+    <string name="cancel">Abbrechen</string>
     <string name="ok">OK</string>
     <string name="title_activity_frozen_bubble">Frozen Bubble Plus</string>
     <string name="title_activity_splash_screen">Frozen Bubble Plus</string>
