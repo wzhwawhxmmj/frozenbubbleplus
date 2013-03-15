@@ -66,11 +66,16 @@ import android.view.MotionEvent;
 public class SplashScreen extends Activity
 {
 
-  // maximum time until we go to the next activity
+  //
+  //   Maximum time until we go to the next activity.
+  //
+  //
   protected int _splashTime = 3000;
   private Thread splashThread;
 
-  /** Called when the activity is first created. */
+  /*
+   * Called when the activity is first created.
+   */
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
@@ -92,7 +97,10 @@ public class SplashScreen extends Activity
       return;
     }
 
-    // thread for displaying the SplashScreen
+    //
+    //   Thread for displaying the SplashScreen.
+    //
+    //
     splashThread = new Thread()
     {
       @Override
@@ -126,7 +134,9 @@ public class SplashScreen extends Activity
     splashThread.start();
   }
 
-  //Function that will handle the touch
+  /**
+   * Invoked when the screen is touched.
+   */
   @Override
   public boolean onTouchEvent(MotionEvent event)
   {
