@@ -91,6 +91,7 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
+import com.efortin.frozenbubble.ScrollingCredits;
 import com.peculiargames.andmodplug.MODResourcePlayer;
 import com.peculiargames.andmodplug.PlayerThread;
 
@@ -291,6 +292,13 @@ public class FrozenBubble extends Activity
     mGameView.requestLayout();
   }
 
+  public void newGame()
+  {
+    // Start a new game and music player.
+    mGameThread.newGame();
+    newPlayer( true );
+  }
+
   private void newGameDialog()
   {
     AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
@@ -303,9 +311,8 @@ public class FrozenBubble extends Activity
     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int id) {
-        // User clicked OK.  Start a new game and music player.
-        mGameThread.newGame();
-        newPlayer( true );
+        // User clicked OK.  Start a new game.
+        newGame();
       }
     })
     .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -537,7 +544,7 @@ public class FrozenBubble extends Activity
     newPlayer( true );
   }
 
-  /**
+  /*
    * Invoked when the Activity loses user focus.
    */
   @Override
@@ -565,11 +572,13 @@ public class FrozenBubble extends Activity
     //   Pause the MOD player and preserve song information.
     //
     //
-    resplayer.PausePlay();
+    if (resplayer != null)
+      resplayer.PausePlay();
+
     savePlayerState( );
   }
 
-  /**
+  /*
    * Invoked when the Activity is finishing or being destroyed by the
    * system.
    */
@@ -580,7 +589,7 @@ public class FrozenBubble extends Activity
     cleanUp();
   }
 
-  /**
+  /*
    * Notification that something is about to happen, to give the Activity a
    * chance to save state.
    *
@@ -675,7 +684,8 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_GAME_PAUSED:
-        resplayer.PausePlay();
+        if (resplayer != null)
+          resplayer.PausePlay();
         break;
 
       case GameView.EVENT_GAME_RESUME:
@@ -718,7 +728,38 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_LEVEL_START:
-        playCurrentMOD( );
+        if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
+        {
+          //
+          //   The MOD player does not currently support multiple
+          //   instances.  Since the credit screen creates its own
+          //   player, destroy the current player.  It will be re-
+          //   created when this activity regains user focus.
+          //
+          //
+          if (resplayer != null)
+          {
+            resplayer.StopAndClose();
+            resplayer = null;
+          }
+          //
+          //   Set the game state to display the about screen as a
+          //   backup just in case anything goes awry with displaying
+          //   the end-of-game credits.  It will be displayed after the
+          //   user touches the screen when the credits are finished.
+          //
+          //
+          mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+          //
+          //   Create an intent to launch the activity to display the
+          //   credits screen, then start the activity.
+          //
+          //
+          Intent intent = new Intent( this, ScrollingCredits.class );
+          startActivity( intent );
+        }
+        else
+          playCurrentMOD( );
         break;
 
       default:
@@ -740,7 +781,7 @@ public class FrozenBubble extends Activity
     //
     if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
     {
-      mod_now = 0;
+      mod_now = DEFAULT_SONG;
     }
     else
     {
@@ -807,7 +848,12 @@ public class FrozenBubble extends Activity
     SharedPreferences.Editor prefs =
       getSharedPreferences(PLAYER_PREFS_NAME, 0).edit();
     prefs.putInt(PREFS_SONGNUM, mod_now);
-    prefs.putInt(PREFS_SONGPATTERN, resplayer.getCurrentPattern());
+
+    if (resplayer != null)
+      prefs.putInt(PREFS_SONGPATTERN, resplayer.getCurrentPattern());
+    else
+      prefs.putInt(PREFS_SONGPATTERN, 0);
+
     prefs.commit();
   }
 

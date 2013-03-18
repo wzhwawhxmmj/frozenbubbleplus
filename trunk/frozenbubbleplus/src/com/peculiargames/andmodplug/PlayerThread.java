@@ -99,7 +99,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
-/**
+/*
  * Player class for MOD/XM song files (extends Java Thread). Has
  * methods to load song file data, play the song, get information about
  * the song, pause, unpause, etc.
@@ -136,23 +136,23 @@ public class PlayerThread extends Thread {
   private final static String LOGPREFIX = "PLAYERTHREAD";
 
   // flags for pattern changes
-  /**
+  /*
    * constant for <code>setPatternLoopRange()</code> calls - change to
    * new pattern range immediately
    */
   public final static int PATTERN_CHANGE_IMMEDIATE = 1;
-  /**
+  /*
    * constant for <code>setPatternLoopRange()</code> calls - change to
    * new pattern range after currently playing pattern finishes
    */
   public final static int PATTERN_CHANGE_AFTER_CURRENT = 2;
-  /**
+  /*
    * constant for <code>setPatternLoopRange()</code> calls - change to
    * new pattern range after current range of patterns finishes playing
    */
   public final static int PATTERN_CHANGE_AFTER_GROUP = 3;
   // values for song loop counts
-  /**
+  /*
    * constant for <code>setLoopCount()</code> calls - loop song forever
    */
   public final static int LOOP_SONG_FOREVER = -1;
@@ -292,7 +292,7 @@ public class PlayerThread extends Thread {
   //  to create a PlayerThread and load the mod data in one call.
   //
   //
-  /**
+  /*
    * Allocates a MOD/XM/etc. song PlayerThread  
    *
    * The modData argument is a byte[] array with the MOD file preloaded
@@ -334,7 +334,7 @@ public class PlayerThread extends Thread {
   //  later with a call to LoadMODData().
   //
   //
-  /**
+  /*
    * Allocates a MOD/XM/etc. song PlayerThread  
    *
    * The desiredrate argument is a specifier that attempts to set the
@@ -555,11 +555,9 @@ public class PlayerThread extends Thread {
     }
   }
 
-  //
-  // The thread's run() call, where the actual sounds get played.
-  //
-  //
-  /**
+  /*
+   * The thread's run() call, where the modules are played.
+   * 
    * Start playing the MOD/XM song (hopefully it's been previously
    * loaded using <code>LoadMODData()</code> or
    * <code>LoadMODResource()</code> ;)
@@ -674,7 +672,7 @@ public class PlayerThread extends Thread {
 
   //
   // MOD file info getters
-  /**
+  /*
    * Get the name of the song.
    *
    * @return the name of the song (from the MOD/XM file header)
@@ -683,7 +681,7 @@ public class PlayerThread extends Thread {
     return mModname;
   }
 
-  /**
+  /*
    * Get the number of channels used in the song (MOD/XM songs
    * typically use from 4 to 32 channels in a pattern, mixed together
    * for awesomeness).
@@ -694,14 +692,14 @@ public class PlayerThread extends Thread {
     return mNumChannels;
   }
 
-  /**
+  /*
    * Set the file size of the MOD/XM song.
    */
   public static void setModSize(int modsize) {
     mModsize = modsize;
   }
 
-  /**
+  /*
    * Get the file size of the MOD/XM song.
    *
    * @return the size of the song file
@@ -714,7 +712,7 @@ public class PlayerThread extends Thread {
     return mRate;
   }
 
-  /**
+  /*
    * Pauses playback of the current song.
    */
   public void PausePlay() {
@@ -735,7 +733,7 @@ public class PlayerThread extends Thread {
     }
   }
 
-  /**
+  /*
    * Resumes playback of the current song.
    */
   public void UnPausePlay() {
@@ -755,7 +753,7 @@ public class PlayerThread extends Thread {
     }
   }
 
-  /**
+  /*
    * Sets playback volume for the MOD/XM player.
    *
    * @param  vol an integer from 0 (sound off) to 255 (full volume)
@@ -768,7 +766,7 @@ public class PlayerThread extends Thread {
     mMytrack.setStereoVolume(sVolume_floats[vol], sVolume_floats[vol]);
   }
 
-  /**
+  /*
    * Sets playback volume for the MOD/XM player.
    *
    * @param  vol a floating point number from 0.0f (sound off) to 1.0f
@@ -798,7 +796,7 @@ public class PlayerThread extends Thread {
   // Closing down code.
   //
   //
-  /**
+  /*
    * Stop the player thread (completely stops it, as opposed to
    * pausing).
    *
@@ -828,7 +826,7 @@ public class PlayerThread extends Thread {
     }
   }
 
-  /**
+  /*
    * Close the native internal tracker library (libmodplug) and de-
    * allocate any resources.
    */
@@ -842,7 +840,7 @@ public class PlayerThread extends Thread {
   // Hack function to modify tempo on the fly.
   //
   //
-  /**
+  /*
    * EXPERIMENTAL method for modifying the song's tempo (+ or -) by
    * <code>mt</code>.
    * @param  mt modifier for the song's "native" tempo (positive values
@@ -851,7 +849,7 @@ public class PlayerThread extends Thread {
   public void modifyTempo(int mt) {
     ModPlug_ChangeTempo(mt);
   }
-  /**
+  /*
    * EXPERIMENTAL method for setting the song's tempo to
    * <code>temp</code>.
    * @param  temp the tempo for the song (overrides song's "native"
@@ -861,7 +859,7 @@ public class PlayerThread extends Thread {
     ModPlug_SetTempo(temp);
   }
 
-  /**
+  /*
    * EXPERIMENTAL: Get the default tempo from the song's header.
    *                              
    * @return the tempo
@@ -869,7 +867,7 @@ public class PlayerThread extends Thread {
   public int getSongDefaultTempo() {
     return ModPlug_GetNativeTempo();
   }
-  /**
+  /*
    * EXPERIMENTAL: Get the current "position" in song
    *                              
    * @return the position
@@ -877,7 +875,7 @@ public class PlayerThread extends Thread {
   public int getCurrentPos() {
     return ModPlug_GetCurrentPos();
   }
-  /**
+  /*
    * EXPERIMENTAL: Get the maximum "position" in song
    *                              
    * @return the maximum position
@@ -885,7 +883,7 @@ public class PlayerThread extends Thread {
   public int getMaxPos() {
     return ModPlug_GetMaxPos();
   }
-  /**
+  /*
    * EXPERIMENTAL: Get the current order
    *                              
    * @return the order
@@ -893,7 +891,7 @@ public class PlayerThread extends Thread {
   public int getCurrentOrder() {
     return ModPlug_GetCurrentOrder();
   }
-  /**
+  /*
    * EXPERIMENTAL: Get the current pattern
    *                              
    * @return the pattern
@@ -901,7 +899,7 @@ public class PlayerThread extends Thread {
   public int getCurrentPattern() {
     return ModPlug_GetCurrentPattern();
   }
-  /**
+  /*
    * EXPERIMENTAL: set the current pattern (pattern is changed but
    * plays from current row in pattern).
    *                              
@@ -910,7 +908,7 @@ public class PlayerThread extends Thread {
   public void setCurrentPattern(int pattern) {
     ModPlug_SetCurrentPattern(pattern);
   }
-  /**
+  /*
    * EXPERIMENTAL: set the next pattern to play after current pattern
    * finishes.
    *                              
@@ -920,7 +918,7 @@ public class PlayerThread extends Thread {
   public void setNextPattern(int pattern) {
     ModPlug_SetNextPattern(pattern);
   }
-  /**
+  /*
    * EXPERIMENTAL: Get the current row in the pattern
    *                              
    * @return the row
@@ -928,7 +926,7 @@ public class PlayerThread extends Thread {
   public int getCurrentRow() {
     return ModPlug_GetCurrentRow();
   }
-  /**
+  /*
    * EXPERIMENTAL: Set log printing flag
    *                              
    * @param flag true to start printing debug information to log
@@ -937,7 +935,7 @@ public class PlayerThread extends Thread {
   public void setLogOutput(boolean flag) {
     ModPlug_LogOutput(flag);
   }
-   /**
+   /*
    * EXPERIMENTAL method to change patterns in a song (playing in
    * PATTERN LOOP mode). Waits for the currently playing pattern to
    * finish.
@@ -948,7 +946,7 @@ public class PlayerThread extends Thread {
   public void changePattern(int newpattern) {
     ModPlug_ChangePattern(newpattern);
   }
-   /**
+   /*
    * EXPERIMENTAL method to change song to PATTERN LOOP mode, repeating
    * <code>pattern</code>
    * @param  pattern the song pattern to start playing(repeating) in
@@ -957,7 +955,7 @@ public class PlayerThread extends Thread {
   public void repeatPattern(int pattern) {
     ModPlug_RepeatPattern(pattern);
   }
-  /**
+  /*
    * EXPERIMENTAL method to loop song in a group of patterns.
    * @param  from  start of pattern range to play in loop
    * @param  to end of pattern range to play in loop
@@ -968,14 +966,14 @@ public class PlayerThread extends Thread {
   public void setPatternLoopRange(int from, int to, int when) {
     ModPlug_SetPatternLoopRange(from, to, when);
   }
-  /**
+  /*
    * EXPERIMENTAL method to loop song the specified number of times.
    * @param  number of times to loop (-1 = forever)
    */
   public void setLoopCount(int loopcount) {
     ModPlug_SetLoopCount(loopcount);
   }
-  /**
+  /*
    * EXPERIMENTAL method to set song to PATTERN LOOP mode, repeating
    * any pattern playing or subsequently set via
    * <code>changePattern()</code>
@@ -990,7 +988,7 @@ public class PlayerThread extends Thread {
   // until any GetSoundData() call in the player thread has finished.
   //
   //
-  /**
+  /*
    * Unload MOD/XM data previously loaded into the native player
    * library.
    */
