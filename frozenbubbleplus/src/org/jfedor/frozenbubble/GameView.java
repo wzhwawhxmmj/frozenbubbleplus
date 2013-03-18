@@ -508,7 +508,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                 {
                   if (mMode == STATE_ABOUT)
                   {
-                     drawAboutScreen(c);
+                    drawAboutScreen(c);
                   }
                   else if ( mMode == STATE_HIGHSCORE )
                   {

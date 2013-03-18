@@ -1,31 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Frozen Bubble Plus</string>
-    <string name="install_editor">Redirecting you to the Market to download the Frozen Bubble Level Editor…</string>
-    <string name="market_missing">Cannot find Android Market! Please install Frozen Bubble Level Editor manually.</string>
-    <string name="menu_new_game">Start New Game</string>
-    <string name="menu_colorblind_mode_on">Colorblind Mode On</string>
-    <string name="menu_colorblind_mode_off">Colorblind Mode Off</string>
-    <string name="menu_fullscreen_on">Fullscreen On</string>
-    <string name="menu_fullscreen_off">Fullscreen Off</string>
-    <string name="menu_sound_options">Sound Options</string>
-    <string name="menu_about">About Frozen Bubble Plus</string>
-    <string name="menu_target_mode">Targeting Mode</string>
-    <string name="menu_dont_rush_me">Don\'t Rush Me</string>
-    <string name="menu_rush_me">Rush Me</string>
-    <string name="menu_editor">Level Editor</string>
-    <string name="menu_settings">Settings</string>
-    <string name="cancel">Cancel</string>
-    <string name="ok">OK</string>
-    <string name="title_activity_frozen_bubble">Frozen Bubble Plus</string>
-    <string name="title_activity_splash_screen">Frozen Bubble Plus</string>
-    <string-array name="shoot_mode_array">
-        <item>Aim Then Shoot</item>
-        <item>Point To Shoot</item>
-        <item>Rotate Then Shoot</item>
-    </string-array>
-    <string-array name="sound_options_array">
-        <item>Play Sound Effects</item>
-        <item>Play Level Music</item>
-    </string-array>
+  <string name="app_name">Frozen Bubble Plus</string>
+  <string name="install_editor">Redirecting you to the Market to download the Frozen Bubble Level Editor…</string>
+  <string name="market_missing">Cannot find Android Market! Please install Frozen Bubble Level Editor manually.</string>
+  <string name="menu_new_game">Start New Game</string>
+  <string name="menu_colorblind_mode_on">Colorblind Mode On</string>
+  <string name="menu_colorblind_mode_off">Colorblind Mode Off</string>
+  <string name="menu_fullscreen_on">Fullscreen On</string>
+  <string name="menu_fullscreen_off">Fullscreen Off</string>
+  <string name="menu_sound_options">Sound Options</string>
+  <string name="menu_about">About Frozen Bubble Plus</string>
+  <string name="menu_target_mode">Targeting Mode</string>
+  <string name="menu_dont_rush_me">Don\'t Rush Me</string>
+  <string name="menu_rush_me">Rush Me</string>
+  <string name="menu_editor">Level Editor</string>
+  <string name="menu_settings">Settings</string>
+  <string name="cancel">Cancel</string>
+  <string name="ok">OK</string>
+  <string name="title_activity_frozen_bubble">Frozen Bubble Plus</string>
+  <string name="title_activity_splash_screen">Frozen Bubble Plus</string>
+  <string name="scrolling_credits">"Original Development\n"
+    "------------------------\n"
+    "\nGuillaume Cottenceau\n"
+    "\nAlexis Younes\n"
+    "\nAmaury Amblard-Ladurantie\n"
+    "\nMatthias Le Bidan\n"
+    "\nhttp://www.frozen-bubble.org/\n\n"
+    "\nJava Development\n"
+    "------------------------\n"
+    "\nGlenn Sanson\n\n"
+    "\nAndroid Port\n"
+    "------------------------\n"
+    "\nPawel Aleksander Fedorynski\n"
+    "\nEric Fortin\n"
+    "\nhttps://code.google.com/p/frozenbubbleandroid/\n\n"
+    "\nAdditional Code\n"
+    "------------------------\n"
+    "\nPatrick Casey - AndModPlug Library\n"
+    "\nhttp://www.peculiar-games.com/\n\n"
+    "\nMichel Racic - High Score Manager\n"
+    "\nhttp://www.2030.tk/\n\n"
+    "\nMusic Credits\n"
+    "------------------------\n"
+    "\nAfter the Rain\nby\nUnknown Artist\n\n"
+    "\nAmbient Light\nby\nVogue of Triton\n\n"
+    "\nAmbient Power\nby\nVogue of Triton\n\n"
+    "\nAndroid Rupture\nby\nBaroque of Freelance\n\n"
+    "\nArtificial\nby\nMoby\n\n"
+    "\nBlue Stars\nby\nBlackstar\\Timetraveller of Cryptoburners\n\n"
+    "\nChunga-babe!\nby\nYannis Brown\n\n"
+    "\nCrystalhammer\nby\nAlex Metcalf\n\n"
+    "\nDreamscope\nby\nCounterpoint of Westower\n\n"
+    "\nFreefall\nby\nBaroque of Freelance\n\n"
+    "\nGaea\'s Awakening\nby\nDreamsection\n\n"
+    "\nHomesick\nby\nElectric Keet\n\n"
+    "\nIf Crystals…\nby\nTran of Renaissance\n\n"
+    "\nPopcorn\nby\nUnknown Artist\n\n"
+    "\nStardust Memories\nby\nJester of Sanity\n\n"
+    "\nSunshine of the Morning Sun\nby\nArea51 (Dan Nyman)\n\n"
+    "\nTechnostyle III\nby\nXenox of Triad\n\n"
+    "\nWorld of Peace\nby\nZanoma (Marwan Green Critter)\n\n"
+    "\nAll songs downloaded from:\n"
+    "http://modarchive.org/\n\n"
+    "\n\n\nThank You For Playing!"</string>
+  <string-array name="shoot_mode_array">
+    <item>Aim Then Shoot</item>
+    <item>Point To Shoot</item>
+    <item>Rotate Then Shoot</item>
+  </string-array>
+  <string-array name="sound_options_array">
+    <item>Play Sound Effects</item>
+    <item>Play Level Music</item>
+  </string-array>
 </resources>
