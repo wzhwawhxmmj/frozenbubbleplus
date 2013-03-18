@@ -82,7 +82,7 @@ public class ScrollingCredits extends Activity
     //   Configure the credits text presentation.
     credits.setScrollRepeatLimit(0);
     credits.setSpeed(50.0f);
-    credits.setScrollDirection(ScrollingTextView.SCROLL_DOWN);
+    credits.setScrollDirection(ScrollingTextView.SCROLL_UP);
     credits.setTextSize(18.0f);
   }
 
