@@ -59,7 +59,7 @@ import java.io.InputStream;
 
 import android.content.Context;
 
-/**
+/*
  * Convenience class extending PlayerThread, handling all the file
  * operations, accepting Android resource IDs for MOD/XM song files.
  *
@@ -93,7 +93,7 @@ public class MODResourcePlayer extends PlayerThread {
   private byte[] modData = null;
   private int modsize;  // holds the size in bytes of the mod file
 
-  /**
+  /*
    * Allocates a MOD/XM/etc. song Player object that can handle Android
    * resource files (typically the songs are stored in the res/raw
    * project directory and conform to Android build process rules,
@@ -117,7 +117,7 @@ public class MODResourcePlayer extends PlayerThread {
     setVolume(255);
   }
 
-  /**
+  /*
    * Load a MOD/XM/etc. song file from an Android resource.
    * <p>
    * <b>Note about extensions:</b> developers using Eclipse as an IDE
@@ -183,7 +183,7 @@ public class MODResourcePlayer extends PlayerThread {
     return true;
   }
 
-  /**
+  /*
    * Stop playing the song, close down the player and
    * <code>join()</code> the player thread.
    * <p>

@@ -53,6 +53,7 @@
 
 package com.efortin.frozenbubble;
 
+import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.R;
 
 import android.app.Activity;
@@ -62,9 +63,18 @@ import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.peculiargames.andmodplug.MODResourcePlayer;
+import com.peculiargames.andmodplug.PlayerThread;
+
 public class ScrollingCredits extends Activity
 {
   private ScrollingTextView credits;
+  private MODResourcePlayer resplayer = null;
+
+  private static final int DEFAULT_SONG = 0;
+  private final int[] MODlist = {
+    R.raw.worldofpeace
+  };
 
   @Override
   public void onCreate( Bundle savedInstanceState )
@@ -84,6 +94,15 @@ public class ScrollingCredits extends Activity
     credits.setSpeed(50.0f);
     credits.setScrollDirection(ScrollingTextView.SCROLL_UP);
     credits.setTextSize(18.0f);
+    //   Start the credits music.
+    newPlayer();
+  }
+
+  @Override
+  public void onDestroy()
+  {
+    super.onDestroy();
+    cleanUp();
   }
 
   @Override
@@ -108,6 +127,48 @@ public class ScrollingCredits extends Activity
   public boolean onTouchEvent( MotionEvent event )
   {
     return checkCreditsDone();
+  }
+
+  private void newPlayer()
+  {
+    //*****************************************
+    // Start up the MOD player
+    // *****************************************
+    //
+    //   If the MOD player instance is not NULL, destroy it and create
+    //   a new one.
+    //
+    //
+    if (resplayer != null)
+    {
+      resplayer.StopAndClose();
+      resplayer = null;
+    }
+
+    // load the mod file
+    resplayer = new MODResourcePlayer(this);
+    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
+    resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
+    if ( FrozenBubble.getMusicOn() == true )
+    {
+      resplayer.setVolume( 255 );
+    }
+    else
+    {
+      resplayer.setVolume( 0 );
+    }
+    // start up the music
+    resplayer.startPaused(false);
+    resplayer.start();
+  }
+
+  public void cleanUp()
+  {
+    if (resplayer != null)
+    {
+      resplayer.StopAndClose();
+      resplayer = null;
+    }
   }
 
   public boolean checkCreditsDone()

@@ -450,13 +450,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        setState(STATE_PAUSE);
-        if ( mGameListener != null )
+        if (mMode == STATE_RUNNING)
         {
-          mGameListener.onGameEvent( EVENT_GAME_PAUSED );
+          setState(STATE_PAUSE);
+
+          if ( mGameListener != null )
+            mGameListener.onGameEvent( EVENT_GAME_PAUSED );
+
+          mFrozenGame      .pause( );
+          mHighscoreManager.pauseLevel( );
         }
-        mFrozenGame      .pause( );
-        mHighscoreManager.pauseLevel( );
       }
     }
 
@@ -464,8 +467,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        mFrozenGame.resume( );
-        mHighscoreManager.resumeLevel( );
+        if (mMode == STATE_RUNNING)
+        {
+          mFrozenGame      .resume( );
+          mHighscoreManager.resumeLevel( );
+        }
       }
     }
 
@@ -737,14 +743,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         switch ( mMode )
         {
           case STATE_HIGHSCORE:
-            //
-            //   Since doTouchEvent( ) can get called multiple
-            //   times in succession with the game state
-            //   changing between calls, we only want to advance
-            //   to the next level when the high score screen is
-            //   being displayed and we get a screen touch.
-            //
-            //
             if (event.getAction( ) != MotionEvent.ACTION_MOVE)
             {
               setState( STATE_RUNNING );
@@ -810,40 +808,31 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        switch ( mMode )
+        if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
         {
-          case STATE_HIGHSCORE:
-            //
-            //   Since doTouchEvent( ) can get called multiple
-            //   times in succession with the game state
-            //   changing between calls, we only want to advance
-            //   to the next level when the high score screen is
-            //   being displayed and we get a screen touch.
-            //
-            //
-            if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
-            {
+          switch ( mMode )
+          {
+            case STATE_HIGHSCORE:
               setState( STATE_RUNNING );
               if ( mGameListener != null )
               {
                 mGameListener.onGameEvent( EVENT_LEVEL_START );
               }
               return true;
-            }
-          break;
 
-          case STATE_ABOUT:
-            setState( STATE_RUNNING );
-            return true;
+            case STATE_ABOUT:
+              setState( STATE_RUNNING );
+              return true;
 
-          case STATE_LEVELENDED:
-          case STATE_PAUSE:
-            setState( STATE_RUNNING );
-            break;
+            case STATE_LEVELENDED:
+            case STATE_PAUSE:
+              setState( STATE_RUNNING );
+              break;
 
-          case STATE_RUNNING:
-          default:
-            break;
+            case STATE_RUNNING:
+            default:
+              break;
+          }
         }
 
         if ( mMode == STATE_RUNNING )

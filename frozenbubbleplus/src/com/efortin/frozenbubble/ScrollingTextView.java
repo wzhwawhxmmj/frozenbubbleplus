@@ -186,7 +186,7 @@ public class ScrollingTextView extends TextView implements Runnable
 
   public boolean isScrolling()
   {
-    return (scrollCount != 0);
+    return ((scrollCount != 0) || (!scroller.isFinished()));
   }
 
   public void setScrollDirection(boolean scrollDirection)
