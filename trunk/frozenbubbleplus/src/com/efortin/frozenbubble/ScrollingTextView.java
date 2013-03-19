@@ -1,9 +1,9 @@
 /*
  *                 [[ Frozen-Bubble ]]
  *
- * Copyright Â© 2000-2003 Guillaume Cottenceau.
- * Java sourcecode - Copyright Â© 2003 Glenn Sanson.
- * Additional source - Copyright Â© 2013 Eric Fortin.
+ * Copyright © 2000-2003 Guillaume Cottenceau.
+ * Java sourcecode - Copyright © 2003 Glenn Sanson.
+ * Additional source - Copyright © 2013 Eric Fortin.
  *
  * This code is distributed under the GNU General Public License
  *
@@ -45,7 +45,7 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright Â© Google Inc.
+ *    Copyright © Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
