@@ -73,7 +73,7 @@ public class SplashScreen extends Activity
   protected int _splashTime = 3000;
   private Thread splashThread;
 
-  /*
+  /**
    * Called when the activity is first created.
    */
   @Override

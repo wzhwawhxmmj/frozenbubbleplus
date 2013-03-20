@@ -133,7 +133,7 @@ public class ScrollingCredits extends Activity
   {
     //*****************************************
     // Start up the MOD player
-    // *****************************************
+    //*****************************************
     //
     //   If the MOD player instance is not NULL, destroy it and create
     //   a new one.

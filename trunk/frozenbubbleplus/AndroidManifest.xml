@@ -16,7 +16,7 @@
 
   <application
     android:allowBackup="true"
-    android:debuggable="true"
+    android:debuggable="false"
     android:icon="@drawable/app_frozen_bubble"
     android:label="@string/app_name">
 
