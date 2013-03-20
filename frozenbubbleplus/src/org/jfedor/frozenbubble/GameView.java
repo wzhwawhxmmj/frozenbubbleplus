@@ -667,10 +667,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        if ( mMode != STATE_RUNNING )
-        {
-          setState( STATE_RUNNING );
-        }
+        if( updateStateOnEvent( null ) )
+          return true;
 
         if ( mMode == STATE_RUNNING )
         {
@@ -740,37 +738,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        switch ( mMode )
+        if( updateStateOnEvent( event ) )
+          return true;
+
+        if ( mMode == STATE_RUNNING )
         {
-          case STATE_HIGHSCORE:
-            if (event.getAction( ) != MotionEvent.ACTION_MOVE)
-            {
-              setState( STATE_RUNNING );
-              if (mGameListener != null)
-              {
-                mGameListener.onGameEvent( EVENT_LEVEL_START );
-              }
-              return true;
-            }
-            break;
-
-          case STATE_ABOUT:
-            setState( STATE_RUNNING );
-            return true;
-
-          case STATE_LEVELENDED:
-          case STATE_PAUSE:
-            setState( STATE_RUNNING );
-            break;
-
-          case STATE_RUNNING:
-          default:
-            break;
-        }
-
-        if (mMode == STATE_RUNNING)
-        {
-          if (event.getAction( ) == MotionEvent.ACTION_MOVE)
+          if ( event.getAction( ) == MotionEvent.ACTION_MOVE )
           {
             mTrackballDX += event.getX( ) * TRACKBALL_COEFFICIENT;
             return true;
@@ -808,32 +781,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
-        {
-          switch ( mMode )
-          {
-            case STATE_HIGHSCORE:
-              setState( STATE_RUNNING );
-              if ( mGameListener != null )
-              {
-                mGameListener.onGameEvent( EVENT_LEVEL_START );
-              }
-              return true;
-
-            case STATE_ABOUT:
-              setState( STATE_RUNNING );
-              return true;
-
-            case STATE_LEVELENDED:
-            case STATE_PAUSE:
-              setState( STATE_RUNNING );
-              break;
-
-            case STATE_RUNNING:
-            default:
-              break;
-          }
-        }
+        if( updateStateOnEvent( event ) )
+          return true;
 
         if ( mMode == STATE_RUNNING )
         {
@@ -843,7 +792,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
           // Set the values used when Point To Shoot is on.
           if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
           {
-            if (y < TOUCH_FIRE_Y_THRESHOLD)
+            if ( y < TOUCH_FIRE_Y_THRESHOLD )
             {
               mTouchFire = true;
               mTouchX = x;
@@ -872,6 +821,62 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         }
         return false;
       }
+    }
+
+    /**
+     * updateStateOnEvent - a common method to process motion events to
+     * set the game state.  When the motion event has been fully
+     * processed, this function will return true, otherwise if the
+     * calling method should also process the motion event, this
+     * function will return false.
+     *
+     * @param  event  the MotionEvent to process for the purpose of
+     *                updating the game state.  If this parameter is
+     *                null, then the game state is forced to update
+     *                if applicable based on the current game state.
+     *
+     * @return  This function returns true to inform the calling
+     *          function that the game state has been updated and that
+     *          no further processing is necessary, and false to
+     *          indicate that the caller should continue processing the
+     *          motion event.
+     */
+    private boolean updateStateOnEvent( MotionEvent event )
+    {
+      boolean event_action_down = false;
+
+      if ( event == null )
+        event_action_down = true;
+      else if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
+        event_action_down = true;
+
+      if ( event_action_down )
+      {
+        switch ( mMode )
+        {
+          case STATE_HIGHSCORE:
+            setState( STATE_RUNNING );
+            if ( mGameListener != null )
+            {
+              mGameListener.onGameEvent( EVENT_LEVEL_START );
+            }
+            return true;
+
+          case STATE_ABOUT:
+            setState( STATE_RUNNING );
+            return true;
+
+          case STATE_LEVELENDED:
+          case STATE_PAUSE:
+            setState( STATE_RUNNING );
+            break;
+
+          case STATE_RUNNING:
+          default:
+            break;
+        }
+      }
+      return false;
     }
 
     public void setPosition( double value )
