@@ -151,11 +151,13 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private boolean mLeft         = false;
     private boolean mRight        = false;
     private boolean mUp           = false;
+    private boolean mDown         = false;
     private boolean mFire         = false;
     private boolean mWasLeft      = false;
     private boolean mWasRight     = false;
     private boolean mWasFire      = false;
     private boolean mWasUp        = false;
+    private boolean mWasDown      = false;
     private double  mTrackballDX  = 0;
     private boolean mTouchFire    = false;
     private double  mTouchX;
@@ -677,26 +679,32 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
           //Log.i("frozen-bubble", "STATE RUNNING");
           if ( keyCode == KeyEvent.KEYCODE_DPAD_LEFT )
           {
-            mLeft = true;
+            mLeft    = true;
             mWasLeft = true;
             return true;
           }
           else if ( keyCode == KeyEvent.KEYCODE_DPAD_RIGHT )
           {
-            mRight = true;
+            mRight    = true;
             mWasRight = true;
             return true;
           }
           else if ( keyCode == KeyEvent.KEYCODE_DPAD_CENTER )
           {
-            mFire = true;
+            mFire    = true;
             mWasFire = true;
             return true;
           }
           else if ( keyCode == KeyEvent.KEYCODE_DPAD_UP )
           {
-            mUp = true;
+            mUp    = true;
             mWasUp = true;
+            return true;
+          }
+          else if ( keyCode == KeyEvent.KEYCODE_DPAD_DOWN )
+          {
+            mDown    = true;
+            mWasDown = true;
             return true;
           }
         }
@@ -729,6 +737,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
           else if ( keyCode == KeyEvent.KEYCODE_DPAD_UP )
           {
             mUp = false;
+            return true;
+          }
+          else if ( keyCode == KeyEvent.KEYCODE_DPAD_DOWN )
+          {
+            mDown = false;
             return true;
           }
         }
@@ -1035,6 +1048,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       int game_state = mFrozenGame.play( mLeft || mWasLeft,
                                          mRight || mWasRight,
                                          mFire || mUp || mWasFire || mWasUp,
+                                         mDown || mWasDown,
                                          mTrackballDX,
                                          mTouchFire, mTouchX, mTouchY,
                                          mATSTouchFire, mATSTouchDX );
@@ -1060,6 +1074,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       mWasRight     = false;
       mWasFire      = false;
       mWasUp        = false;
+      mWasDown      = false;
       mTrackballDX  = 0;
       mTouchFire    = false;
       mATSTouchFire = false;
