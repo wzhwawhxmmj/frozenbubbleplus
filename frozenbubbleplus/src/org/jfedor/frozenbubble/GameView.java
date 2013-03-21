@@ -100,6 +100,8 @@ import com.efortin.frozenbubble.HighscoreManager;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback
 {
+  private Context    mContext;
+  private GameThread thread;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -879,11 +881,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       return false;
     }
 
-    public void setPosition( double value )
-    {
-      mFrozenGame.setPosition( value );
-    }
-
     private void drawBackground( Canvas c )
     {
       Sprite.drawImage( mBackground, 0, 0, c, mDisplayScale,
@@ -1235,10 +1232,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         mLevelManager = null;
       }
     }
-  }
 
-  private Context mContext;
-  private GameThread thread;
+    public void setPosition( double value )
+    {
+      mFrozenGame.setPosition( value );
+    }
+  }
 
   public GameView( Context context, AttributeSet attrs )
   {

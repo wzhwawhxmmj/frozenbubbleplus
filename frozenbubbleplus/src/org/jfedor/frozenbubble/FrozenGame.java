@@ -215,7 +215,7 @@ public class FrozenGame extends GameScreen {
     }
 
     currentColor = bubbleManager.nextBubbleIndex(random);
-    nextColor = bubbleManager.nextBubbleIndex(random);
+    nextColor    = bubbleManager.nextBubbleIndex(random);
 
     if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
       nextBubble = new ImageSprite(new Rect(302, 440, 302 + 32, 440 + 32),
@@ -657,7 +657,7 @@ public class FrozenGame extends GameScreen {
           this.addSprite(movingBubble);
 
           currentColor = nextColor;
-          nextColor = bubbleManager.nextBubbleIndex(random);
+          nextColor    = bubbleManager.nextBubbleIndex(random);
 
           if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
             nextBubble.changeImage(bubbles[nextColor]);
@@ -847,5 +847,25 @@ public class FrozenGame extends GameScreen {
     }
     launchBubble.changeDirection((int)launchBubblePosition);
     penguin.updateState(PenguinSprite.STATE_VOID);
+  }
+
+  public void swapNextLaunchBubble()
+  {
+    int tempColor = currentColor;
+    currentColor  = nextColor;
+    nextColor     = tempColor;
+
+    launchBubble.changeColor(currentColor);
+
+    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL)
+    {
+      nextBubble.changeImage(bubbles[nextColor]);
+    }
+    else
+    {
+      nextBubble.changeImage(bubblesBlind[nextColor]);
+    }
+
+    soundManager.playSound(FrozenBubble.SOUND_WHIP);
   }
 }
