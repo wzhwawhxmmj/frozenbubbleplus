@@ -140,6 +140,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
 
     private static final double TRACKBALL_COEFFICIENT      = 5;
     private static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
+    private static final double TOUCH_SWAP_X_THRESHOLD     = 10;
     private static final double ATS_TOUCH_COEFFICIENT      = 0.2;
     private static final double ATS_TOUCH_FIRE_Y_THRESHOLD = 350;
 
@@ -160,6 +161,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private boolean mWasDown      = false;
     private double  mTrackballDX  = 0;
     private boolean mTouchFire    = false;
+    private boolean mTouchSwap    = false;
     private double  mTouchX;
     private double  mTouchY;
     private boolean mATSTouchFire = false;
@@ -813,6 +815,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
               mTouchX = x;
               mTouchY = y;
             }
+            else if ( Math.abs( x - 318 ) <= TOUCH_SWAP_X_THRESHOLD )
+              mTouchSwap = true;
           }
 
           // Set the values used when Aim Then Shoot is on.
@@ -1048,7 +1052,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       int game_state = mFrozenGame.play( mLeft || mWasLeft,
                                          mRight || mWasRight,
                                          mFire || mUp || mWasFire || mWasUp,
-                                         mDown || mWasDown,
+                                         mDown || mWasDown || mTouchSwap,
                                          mTrackballDX,
                                          mTouchFire, mTouchX, mTouchY,
                                          mATSTouchFire, mATSTouchDX );
@@ -1077,6 +1081,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       mWasDown      = false;
       mTrackballDX  = 0;
       mTouchFire    = false;
+      mTouchSwap    = false;
       mATSTouchFire = false;
       mATSTouchDX   = 0;
     }
