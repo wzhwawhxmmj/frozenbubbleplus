@@ -691,6 +691,7 @@ public class FrozenBubble extends Activity
       case GameView.EVENT_GAME_WON:
         mod_was = mod_now;
         mod_now++;
+        if (mod_now >= MODlist.length) mod_now = 0;
         break;
 
       case GameView.EVENT_GAME_LOST:
@@ -721,6 +722,7 @@ public class FrozenBubble extends Activity
           //
           mConfig = getSharedPreferences(PLAYER_PREFS_NAME, 0);
           mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
+          if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
           int pattern = mConfig.getInt(PREFS_SONGPATTERN, 0);
           resplayer.LoadMODResource(MODlist[mod_now]);
           resplayer.setCurrentPattern(pattern);
@@ -802,6 +804,7 @@ public class FrozenBubble extends Activity
     {
       mConfig = getSharedPreferences(PLAYER_PREFS_NAME, 0);
       mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
+      if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
     }
     //
     //   If the MOD player instance is not NULL, destroy it and create
