@@ -532,14 +532,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                     {
                       if ( mModeWas != STATE_RUNNING )
                       {
-                        if ( ( mModeWas == STATE_PAUSE ) ||
-                             ( mModeWas == STATE_ABOUT ) )
-                        {
-                          if ( mGameListener != null )
-                          {
-                            mGameListener.onGameEvent( EVENT_GAME_RESUME );
-                          }
-                        }
+	                      if ( mGameListener != null )
+	                      {
+	                        mGameListener.onGameEvent( EVENT_GAME_RESUME );
+	                      }
                         mModeWas = STATE_RUNNING;
                         resumeGame( );
                       }

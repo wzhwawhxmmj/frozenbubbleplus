@@ -163,6 +163,7 @@ public class FrozenBubble extends Activity
   private MODResourcePlayer resplayer    = null;
   private int               mod_now;
   private int               mod_was;
+  private boolean           allowUnpause;
 
   private final int[] MODlist = {
     R.raw.aftertherain,
@@ -275,6 +276,7 @@ public class FrozenBubble extends Activity
   public boolean onPrepareOptionsMenu(Menu menu)
   {
     super.onPrepareOptionsMenu(menu);
+    allowUnpause = false;
     menu.findItem(MENU_SOUND_OPTIONS      ).setVisible(true);
     menu.findItem(MENU_COLORBLIND_MODE_ON ).setVisible(
                   getMode() == GAME_NORMAL);
@@ -329,6 +331,13 @@ public class FrozenBubble extends Activity
       return true;
     }
     return false;
+  }
+
+  @Override
+  public void onOptionsMenuClosed(Menu menu)
+  {
+    super.onOptionsMenuClosed(menu);
+    allowUnpause = true;
   }
 
   /**
@@ -725,8 +734,8 @@ public class FrozenBubble extends Activity
         else
         {
           if ( mod_now != mod_was )
-            playCurrentMOD( );
-          else
+            playCurrentMOD();
+          else if ( allowUnpause )
             resplayer.UnPausePlay();
         }
         break;
@@ -819,7 +828,8 @@ public class FrozenBubble extends Activity
     // start up the music (well, start the thread, at least...)
     resplayer.startPaused(startPausedFlag);
     resplayer.start();
-    mod_was = mod_now;
+    allowUnpause = true;
+    mod_was      = mod_now;
   }
 
   /**
@@ -838,7 +848,8 @@ public class FrozenBubble extends Activity
       // load the current MOD into the player
       resplayer.LoadMODResource(MODlist[mod_now]);
       resplayer.UnPausePlay();
-      mod_was = mod_now;
+      allowUnpause = true;
+      mod_was      = mod_now;
     }
     else
       newPlayer( false );
