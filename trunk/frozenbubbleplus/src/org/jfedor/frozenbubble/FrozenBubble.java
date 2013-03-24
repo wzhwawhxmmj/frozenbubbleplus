@@ -182,8 +182,7 @@ public class FrozenBubble extends Activity
     R.raw.popcorn,
     R.raw.stardustmemories,
     R.raw.sunshineofthemorningsun,
-    R.raw.technostyleiii,
-    R.raw.worldofpeace
+    R.raw.technostyleiii
   };
 
   /**
