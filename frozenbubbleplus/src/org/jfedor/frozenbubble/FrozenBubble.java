@@ -197,14 +197,14 @@ public class FrozenBubble extends Activity
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
-    if (savedInstanceState != null)
-    {
-      //Log.i("frozen-bubble", "FrozenBubble.onCreate(...)");
-    }
-    else
-    {
-      //Log.i("frozen-bubble", "FrozenBubble.onCreate(null)");
-    }
+    //if (savedInstanceState != null)
+    //{
+    //  Log.i(TAG, "FrozenBubble.onCreate(...)");
+    //}
+    //else
+    //{
+    //  Log.i(TAG, "FrozenBubble.onCreate(null)");
+    //}
     super.onCreate(savedInstanceState);
 
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -310,41 +310,41 @@ public class FrozenBubble extends Activity
   public boolean onOptionsItemSelected(MenuItem item)
   {
     switch (item.getItemId()) {
-    case MENU_NEW_GAME:
-      newGameDialog();
-      return true;
-    case MENU_COLORBLIND_MODE_ON:
-      setMode(GAME_COLORBLIND);
-      return true;
-    case MENU_COLORBLIND_MODE_OFF:
-      setMode(GAME_NORMAL);
-      return true;
-    case MENU_FULLSCREEN_ON:
-      fullscreen = true;
-      setFullscreen();
-      return true;
-    case MENU_FULLSCREEN_OFF:
-      fullscreen = false;
-      setFullscreen();
-      return true;
-    case MENU_SOUND_OPTIONS:
-      soundOptionsDialog();
-      return true;
-    case MENU_ABOUT:
-      mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
-      return true;
-    case MENU_TARGET_MODE:
-      targetOptionsDialog();
-      return true;
-    case MENU_DONT_RUSH_ME:
-      setDontRushMe(true);
-      return true;
-    case MENU_RUSH_ME:
-      setDontRushMe(false);
-      return true;
-    case MENU_EDITOR:
-      startEditor();
-      return true;
+      case MENU_NEW_GAME:
+        newGameDialog();
+        return true;
+      case MENU_COLORBLIND_MODE_ON:
+        setMode(GAME_COLORBLIND);
+        return true;
+      case MENU_COLORBLIND_MODE_OFF:
+        setMode(GAME_NORMAL);
+        return true;
+      case MENU_FULLSCREEN_ON:
+        fullscreen = true;
+        setFullscreen();
+        return true;
+      case MENU_FULLSCREEN_OFF:
+        fullscreen = false;
+        setFullscreen();
+        return true;
+      case MENU_SOUND_OPTIONS:
+        soundOptionsDialog();
+        return true;
+      case MENU_ABOUT:
+        mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+        return true;
+      case MENU_TARGET_MODE:
+        targetOptionsDialog();
+        return true;
+      case MENU_DONT_RUSH_ME:
+        setDontRushMe(true);
+        return true;
+      case MENU_RUSH_ME:
+        setDontRushMe(false);
+        return true;
+      case MENU_EDITOR:
+        startEditor();
+        return true;
     }
     return false;
   }
@@ -361,7 +361,7 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onPause() {
-    //Log.i("frozen-bubble", "FrozenBubble.onPause()");
+    //Log.i(TAG, "FrozenBubble.onPause()");
     super.onPause();
     mGameView.getThread().pause();
     // Allow editor functionalities.
@@ -380,10 +380,7 @@ public class FrozenBubble extends Activity
       editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
     }
     editor.commit();
-    //
-    //   Pause the MOD player and preserve song information.
-    //
-    //
+    // Pause the MOD player and preserve song information.
     if (resplayer != null)
       resplayer.PausePlay();
 
@@ -396,7 +393,7 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onDestroy() {
-    //Log.i("frozen-bubble", "FrozenBubble.onDestroy()");
+    //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
     cleanUp();
   }
@@ -409,7 +406,7 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onSaveInstanceState(Bundle outState) {
-    //Log.i("frozen-bubble", "FrozenBubble.onSaveInstanceState()");
+    //Log.i(TAG, "FrozenBubble.onSaveInstanceState()");
     // Just have the View's thread save its state into our Bundle.
     super.onSaveInstanceState(outState);
     mGameThread.saveState(outState);
@@ -438,15 +435,15 @@ public class FrozenBubble extends Activity
 
         mGameView   = null;
         mGameThread = null;
-        mGameView   = new GameView( this,
-                                    intent.getExtras().getByteArray("levels"),
-                                    startingLevel );
+        mGameView   = new GameView(this,
+                                   intent.getExtras().getByteArray("levels"),
+                                   startingLevel);
         setContentView(mGameView);
         mGameThread = mGameView.getThread();
         mGameThread.newGame();
         mGameView.requestFocus();
         setFullscreen();
-        newPlayer( true );
+        newPlayer(true);
       }
     }
   }
@@ -455,10 +452,10 @@ public class FrozenBubble extends Activity
     int rotation = getWindowManager().getDefaultDisplay().getRotation();
     DisplayMetrics dm = new DisplayMetrics();
     getWindowManager().getDefaultDisplay().getMetrics(dm);
-    int width = dm.widthPixels;
+    int width  = dm.widthPixels;
     int height = dm.heightPixels;
     int orientation;
-    // if the device's natural orientation is portrait:
+    // If the device's natural orientation is portrait:
     if ((((rotation == Surface.ROTATION_0  )||
           (rotation == Surface.ROTATION_180)) && (height > width )) ||
         (((rotation == Surface.ROTATION_90 )||
@@ -481,7 +478,7 @@ public class FrozenBubble extends Activity
           break;              
       }
     }
-    // if the device's natural orientation is landscape or if the device
+    // If the device's natural orientation is landscape or if the device
     // is square:
     else {
       switch(rotation) {
