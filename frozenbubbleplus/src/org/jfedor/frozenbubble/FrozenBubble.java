@@ -86,7 +86,6 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.OrientationEventListener;
@@ -200,7 +199,6 @@ public class FrozenBubble extends Activity
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
-    try {
     //if (savedInstanceState != null)
     //{
     //  Log.i(TAG, "FrozenBubble.onCreate(...)");
@@ -210,57 +208,40 @@ public class FrozenBubble extends Activity
     //  Log.i(TAG, "FrozenBubble.onCreate(null)");
     //}
     super.onCreate(savedInstanceState);
-    if (mGameView != null)
-      cleanUp();
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     currentOrientation = getScreenOrientation();
     myOrientationEventListener =
       new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
-      @Override
-      public void onOrientationChanged(int arg0) {
-        currentOrientation = getScreenOrientation();
-      }};
-    if (myOrientationEventListener.canDetectOrientation()) {
+        @Override
+        public void onOrientationChanged(int arg0) {
+          currentOrientation = getScreenOrientation();
+        }
+      };
+    if ( myOrientationEventListener.canDetectOrientation() )
       myOrientationEventListener.enable();
-    }
     // Allow editor functionalities.
-    Intent i = getIntent();
-    if ( ( null == i ) || ( null == i.getExtras() ) ||
-         !i.getExtras().containsKey("levels") )
+    Intent intent = getIntent();
+    if ( ( null == intent ) || ( null == intent.getExtras() ) ||
+         !intent.getExtras().containsKey("levels") )
     {
-      // Default intent.
+      // Default levels.
       activityCustomStarted = false;
       setContentView(R.layout.activity_frozen_bubble);
       mGameView = (GameView)findViewById(R.id.game);
+      mGameView.setGameListener(this);
+      mGameThread = mGameView.getThread();
+      if ( savedInstanceState != null )
+        mGameThread.restoreState(savedInstanceState);
+      mGameView.requestFocus();
+      setFullscreen();
+      newMusicPlayer( true );
     }
     else
     {
-      // Get custom level last played.
-      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                  Context.MODE_PRIVATE);
-      int startingLevel = sp.getInt("levelCustom", 0);
-      int startingLevelIntent = i.getIntExtra("startingLevel", -2);
-      startingLevel =
-        (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
-      activityCustomStarted = true;
-      mGameView = new GameView(this,
-                               i.getExtras().getByteArray("levels"),
-                               startingLevel);
-      setContentView(mGameView);
+      startCustomGame(intent);
     }
-    mGameView.setGameListener(this);
-    mGameThread = mGameView.getThread();
-    if (savedInstanceState != null) {
-      mGameThread.restoreState(savedInstanceState);
-    }
-    mGameView.requestFocus();
-    setFullscreen();
     setTargetMode(targetMode);
-    newPlayer( true );
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onCreate(): " + ex.getMessage());
-    }
   }
 
   @Override
@@ -365,7 +346,6 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onPause() {
-    try {
     //Log.i(TAG, "FrozenBubble.onPause()");
     super.onPause();
     mGameView.getThread().pause();
@@ -390,9 +370,6 @@ public class FrozenBubble extends Activity
       resplayer.PausePlay();
 
     savePlayerState( );
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onPause(): " + ex.getMessage());
-    }
   }
 
   /**
@@ -401,14 +378,10 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onDestroy() {
-    try {
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
     setShowSplashScreen();
     cleanUp();
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onDestroy(): " + ex.getMessage());
-    }
   }
 
   /**
@@ -419,15 +392,11 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onSaveInstanceState(Bundle outState) {
-    try {
     //Log.i(TAG, "FrozenBubble.onSaveInstanceState()");
     // Just have the View's thread save its state into our Bundle.
     super.onSaveInstanceState(outState);
     mGameThread.saveState(outState);
     savePlayerState();
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onSaveInstanceState(): " + ex.getMessage());
-    }
   }
 
   /* (non-Javadoc)
@@ -435,34 +404,44 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onNewIntent(Intent intent) {
-    try {
     if (null != intent && EDITORACTION.equals(intent.getAction())) {
       if (mGameView != null)
         mGameView.cleanUp();
       mGameView   = null;
       mGameThread = null;
-      activityCustomStarted = true;
-      // Get custom level last played.
-      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                  Context.MODE_PRIVATE);
-      int startingLevel = sp.getInt("levelCustom", 0);
-      int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
-      startingLevel =
-        (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
+      startCustomGame(intent);
+    }
+  }
 
-      mGameView = new GameView(this,
-                               intent.getExtras().getByteArray("levels"),
-                               startingLevel);
-      setContentView(mGameView);
-      mGameView.setGameListener(this);
-      mGameThread = mGameView.getThread();
-      mGameView.requestFocus();
-      setFullscreen();
-      newPlayer(true);
-    }
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onNewIntent(): " + ex.getMessage());
-    }
+  /**
+   * Method to start a game using levels from the level editor.
+   * 
+   * <p>If the level isn't specified from the editor, then the player
+   * selected the option to continue playing from the last level
+   * played, so use the last level played instead.
+   * 
+   * @param intent  the intent from the level editor used to start this
+   * activity, which contains the custom level data.
+   */
+  private void startCustomGame(Intent intent)
+  {
+    activityCustomStarted = true;
+    // Get custom level last played.
+    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    int startingLevel       = sp    .getInt     ("levelCustom",    0);
+    int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
+    startingLevel =
+      (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
+    mGameView = new GameView(this,
+                             intent.getExtras().getByteArray("levels"),
+                             startingLevel);
+    setContentView(mGameView);
+    mGameView.setGameListener(this);
+    mGameThread = mGameView.getThread();
+    mGameView.requestFocus();
+    setFullscreen();
+    newMusicPlayer(true);
   }
 
   private int getScreenOrientation() {
@@ -743,7 +722,6 @@ public class FrozenBubble extends Activity
 
   public void cleanUp()
   {
-    try {
     if (AccelerometerManager.isListening())
       AccelerometerManager.stopListening();
 
@@ -764,9 +742,6 @@ public class FrozenBubble extends Activity
       resplayer.StopAndClose();
       resplayer = null;
     }
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in cleanUp(): " + ex.getMessage());
-    }
   }
 
   /**
@@ -775,7 +750,7 @@ public class FrozenBubble extends Activity
   public void newGame()
   {
     mGameThread.newGame();
-    newPlayer( true );
+    newMusicPlayer( true );
   }
 
   public void onAccelerationChanged(float x, float y, float z)
@@ -792,7 +767,6 @@ public class FrozenBubble extends Activity
 
   public void onGameEvent(int type)
   {
-    try {
     switch ( type )
     {
       case GameView.EVENT_GAME_WON:
@@ -887,9 +861,6 @@ public class FrozenBubble extends Activity
       default:
         break;
     }
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in onGameEvent(): " + ex.getMessage());
-    }
   }
 
   /**
@@ -904,9 +875,8 @@ public class FrozenBubble extends Activity
    * startup.  Otherwise if false, the player will start playing
    * immediately.
    */
-  private void newPlayer( boolean startPausedFlag )
+  private void newMusicPlayer( boolean startPausedFlag )
   {
-    try {
     if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
     {
       mod_now = DEFAULT_SONG;
@@ -944,9 +914,6 @@ public class FrozenBubble extends Activity
     resplayer.start();
     allowUnpause = true;
     mod_was      = mod_now;
-    } catch (Exception ex) {
-      Log.i(TAG, "Exception in newPlayer(): " + ex.getMessage());
-    }
   }
 
   /**
@@ -969,7 +936,7 @@ public class FrozenBubble extends Activity
       mod_was      = mod_now;
     }
     else
-      newPlayer( false );
+      newMusicPlayer( false );
   }
 
   private void savePlayerState()
