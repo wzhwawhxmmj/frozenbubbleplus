@@ -86,6 +86,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.OrientationEventListener;
@@ -134,6 +135,7 @@ public class FrozenBubble extends Activity
   public final static int ROTATE_TO_SHOOT          = 2;
 
   public final static String PREFS_NAME = "frozenbubble";
+  public final static String TAG        = "FrozenBubble.java";
 
   private static boolean fullscreen = true;
   private static int     gameMode   = GAME_NORMAL;
@@ -142,8 +144,9 @@ public class FrozenBubble extends Activity
   private static boolean dontRushMe = false;
   private static int     targetMode = POINT_TO_SHOOT;
 
-  private GameThread mGameThread;
-  private GameView   mGameView;
+  private GameThread mGameThread = null;
+  private GameView   mGameView   = null;
+
   private OrientationEventListener myOrientationEventListener = null;
 
   private static final String EDITORACTION = "org.jfedor.frozenbubble.GAME";
@@ -197,6 +200,7 @@ public class FrozenBubble extends Activity
   @Override
   public void onCreate(Bundle savedInstanceState)
   {
+    try {
     //if (savedInstanceState != null)
     //{
     //  Log.i(TAG, "FrozenBubble.onCreate(...)");
@@ -206,13 +210,13 @@ public class FrozenBubble extends Activity
     //  Log.i(TAG, "FrozenBubble.onCreate(null)");
     //}
     super.onCreate(savedInstanceState);
-
+    if (mGameView != null)
+      cleanUp();
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     currentOrientation = getScreenOrientation();
     myOrientationEventListener =
       new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
-
       @Override
       public void onOrientationChanged(int arg0) {
         currentOrientation = getScreenOrientation();
@@ -245,18 +249,18 @@ public class FrozenBubble extends Activity
                                startingLevel);
       setContentView(mGameView);
     }
-
     mGameView.setGameListener(this);
     mGameThread = mGameView.getThread();
-
     if (savedInstanceState != null) {
       mGameThread.restoreState(savedInstanceState);
     }
     mGameView.requestFocus();
-
     setFullscreen();
     setTargetMode(targetMode);
     newPlayer( true );
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onCreate(): " + ex.getMessage());
+    }
   }
 
   @Override
@@ -361,6 +365,7 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onPause() {
+    try {
     //Log.i(TAG, "FrozenBubble.onPause()");
     super.onPause();
     mGameView.getThread().pause();
@@ -385,6 +390,9 @@ public class FrozenBubble extends Activity
       resplayer.PausePlay();
 
     savePlayerState( );
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onPause(): " + ex.getMessage());
+    }
   }
 
   /**
@@ -393,9 +401,14 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onDestroy() {
+    try {
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
+    setShowSplashScreen();
     cleanUp();
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onDestroy(): " + ex.getMessage());
+    }
   }
 
   /**
@@ -406,11 +419,15 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onSaveInstanceState(Bundle outState) {
+    try {
     //Log.i(TAG, "FrozenBubble.onSaveInstanceState()");
     // Just have the View's thread save its state into our Bundle.
     super.onSaveInstanceState(outState);
     mGameThread.saveState(outState);
     savePlayerState();
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onSaveInstanceState(): " + ex.getMessage());
+    }
   }
 
   /* (non-Javadoc)
@@ -418,33 +435,33 @@ public class FrozenBubble extends Activity
    */
   @Override
   protected void onNewIntent(Intent intent) {
+    try {
     if (null != intent && EDITORACTION.equals(intent.getAction())) {
-      if (!activityCustomStarted) {
-        activityCustomStarted = true;
+      if (mGameView != null)
+        mGameView.cleanUp();
+      mGameView   = null;
+      mGameThread = null;
+      activityCustomStarted = true;
+      // Get custom level last played.
+      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                  Context.MODE_PRIVATE);
+      int startingLevel = sp.getInt("levelCustom", 0);
+      int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
+      startingLevel =
+        (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
 
-        // Get custom level last played.
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        int startingLevel = sp.getInt("levelCustom", 0);
-        int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
-        startingLevel =
-          (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
-
-        if (mGameView != null)
-          mGameView.cleanUp( );
-
-        mGameView   = null;
-        mGameThread = null;
-        mGameView   = new GameView(this,
-                                   intent.getExtras().getByteArray("levels"),
-                                   startingLevel);
-        setContentView(mGameView);
-        mGameThread = mGameView.getThread();
-        mGameThread.newGame();
-        mGameView.requestFocus();
-        setFullscreen();
-        newPlayer(true);
-      }
+      mGameView = new GameView(this,
+                               intent.getExtras().getByteArray("levels"),
+                               startingLevel);
+      setContentView(mGameView);
+      mGameView.setGameListener(this);
+      mGameThread = mGameView.getThread();
+      mGameView.requestFocus();
+      setFullscreen();
+      newPlayer(true);
+    }
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onNewIntent(): " + ex.getMessage());
     }
   }
 
@@ -503,25 +520,6 @@ public class FrozenBubble extends Activity
     return orientation;
   }
 
-  private void setFullscreen()
-  {
-    if (fullscreen)
-    {
-      getWindow().addFlags(
-        WindowManager.LayoutParams.FLAG_FULLSCREEN);
-      getWindow().clearFlags(
-        WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-    }
-    else
-    {
-      getWindow().clearFlags(
-        WindowManager.LayoutParams.FLAG_FULLSCREEN);
-      getWindow().addFlags(
-        WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
-    }
-    mGameView.requestLayout();
-  }
-
   private void newGameDialog()
   {
     AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
@@ -546,6 +544,39 @@ public class FrozenBubble extends Activity
     });
     builder.create();
     builder.show();
+  }
+
+  private void setFullscreen()
+  {
+    if (fullscreen)
+    {
+      getWindow().addFlags(
+        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+      getWindow().clearFlags(
+        WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+    }
+    else
+    {
+      getWindow().clearFlags(
+        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+      getWindow().addFlags(
+        WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN);
+    }
+    mGameView.requestLayout();
+  }
+
+  /**
+   * Set the flag to ensure that the application displays the splash
+   * screen the next time it is launched.  This flag is saved to the
+   * shared preferences non-volatile data.
+   */
+  private void setShowSplashScreen()
+  {
+    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sp.edit();
+    editor.putBoolean("showSplashScreen", true);
+    editor.commit();
   }
 
   private void soundOptionsDialog()
@@ -712,24 +743,15 @@ public class FrozenBubble extends Activity
 
   public void cleanUp()
   {
-    //
-    //   Since this activity is being destroyed, set the flag to ensure
-    //   that the application displays the splash screen the next time
-    //   it is launched.  This flag is saved to the shared preferences
-    //   nonvolatile data.
-    //
-    //
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sp.edit();
-    editor.putBoolean("showSplashScreen", true);
-    editor.commit();
-
+    try {
     if (AccelerometerManager.isListening())
       AccelerometerManager.stopListening();
 
-    myOrientationEventListener.disable();
-    myOrientationEventListener = null;
+    if (myOrientationEventListener != null)
+    {
+      myOrientationEventListener.disable();
+      myOrientationEventListener = null;
+    }
 
     if (mGameView != null)
       mGameView.cleanUp( );
@@ -741,6 +763,9 @@ public class FrozenBubble extends Activity
     {
       resplayer.StopAndClose();
       resplayer = null;
+    }
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in cleanUp(): " + ex.getMessage());
     }
   }
 
@@ -767,6 +792,7 @@ public class FrozenBubble extends Activity
 
   public void onGameEvent(int type)
   {
+    try {
     switch ( type )
     {
       case GameView.EVENT_GAME_WON:
@@ -861,6 +887,9 @@ public class FrozenBubble extends Activity
       default:
         break;
     }
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in onGameEvent(): " + ex.getMessage());
+    }
   }
 
   /**
@@ -877,6 +906,7 @@ public class FrozenBubble extends Activity
    */
   private void newPlayer( boolean startPausedFlag )
   {
+    try {
     if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
     {
       mod_now = DEFAULT_SONG;
@@ -914,6 +944,9 @@ public class FrozenBubble extends Activity
     resplayer.start();
     allowUnpause = true;
     mod_was      = mod_now;
+    } catch (Exception ex) {
+      Log.i(TAG, "Exception in newPlayer(): " + ex.getMessage());
+    }
   }
 
   /**
