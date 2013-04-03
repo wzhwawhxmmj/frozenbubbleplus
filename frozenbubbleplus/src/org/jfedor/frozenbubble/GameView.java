@@ -131,8 +131,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     public static final int STATE_RUNNING    = 1;
     public static final int STATE_PAUSE      = 2;
     public static final int STATE_ABOUT      = 4;
-    public static final int STATE_HIGHSCORE  = 8;
-    public static final int STATE_LEVELENDED = 16;
 
     public static final int GAMEFIELD_WIDTH          = 320;
     public static final int GAMEFIELD_HEIGHT         = 480;
@@ -147,7 +145,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private long    mLastTime;
     private int     mMode;
     private int     mModeWas;
-    private boolean mRun = false;
+    
+    private boolean mRun          = false;
+    private boolean mShowScores   = false;
 
     private boolean mLeft         = false;
     private boolean mRight        = false;
@@ -522,19 +522,22 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                   {
                     drawAboutScreen(c);
                   }
-                  else if ( mMode == STATE_HIGHSCORE )
+                  else if (mMode == STATE_PAUSE)
                   {
-                    drawHighscoreScreen(c, mHighscoreManager.getLastLevel( ));
+                    if (mShowScores)
+                      drawHighscoreScreen(c, mHighscoreManager.getLevel( ));
+                    else
+                      doDraw(c);
                   }
                   else
                   {
-                    if ( mMode == STATE_RUNNING )
+                    if (mMode == STATE_RUNNING)
                     {
-                      if ( mModeWas != STATE_RUNNING )
+                      if (mModeWas != STATE_RUNNING) 
                       {
-                        if ( mGameListener != null )
+                        if (mGameListener != null)
                         {
-                          mGameListener.onGameEvent( EVENT_GAME_RESUME );
+                          mGameListener.onGameEvent(EVENT_GAME_RESUME);
                         }
                         mModeWas = STATE_RUNNING;
                         resumeGame( );
@@ -869,20 +872,21 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       {
         switch ( mMode )
         {
-          case STATE_HIGHSCORE:
-            setState( STATE_RUNNING );
-            if ( mGameListener != null )
-            {
-              mGameListener.onGameEvent( EVENT_LEVEL_START );
-            }
-            return true;
-
           case STATE_ABOUT:
             setState( STATE_RUNNING );
             return true;
 
-          case STATE_LEVELENDED:
           case STATE_PAUSE:
+            if ( mShowScores )
+            {
+              mShowScores = false;
+              nextLevel( );
+              if ( mGameListener != null )
+              {
+                mGameListener.onGameEvent( EVENT_LEVEL_START );
+              }
+              return true;
+            }
             setState( STATE_RUNNING );
             break;
 
@@ -1055,12 +1059,13 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       if ( ( game_state == FrozenGame.GAME_NEXT_LOST ) ||
            ( game_state == FrozenGame.GAME_NEXT_WON  ) )
       {
-        nextLevel( );
-
         if ( game_state == FrozenGame.GAME_NEXT_WON )
-          setState( STATE_HIGHSCORE );
+        {
+          mShowScores = true;
+          pause( );
+        }
         else
-          setState( STATE_LEVELENDED );
+          nextLevel( );
 
         if ( mGameListener != null )
         {
