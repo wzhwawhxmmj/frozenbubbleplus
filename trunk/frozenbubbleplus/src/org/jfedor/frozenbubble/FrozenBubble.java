@@ -54,7 +54,7 @@
 // the Lunar Lander game included with Android documentation.  The copyright
 // notice for the Lunar Lander is reproduced below.
 /*
- * Copyright (C) 2007 Google Inc.
+ * Copyright © 2007 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
