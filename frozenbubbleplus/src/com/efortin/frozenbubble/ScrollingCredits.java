@@ -77,6 +77,18 @@ public class ScrollingCredits extends Activity
   };
 
   @Override
+  public void onBackPressed()
+  {
+    //
+    //   Do not call the super class ancestor method.  Finish this
+    //   activity so it is destroyed and we simply return to the game.
+    //
+    //
+    credits.abort();
+    finish();
+  }
+
+  @Override
   public void onCreate( Bundle savedInstanceState )
   {
     super.onCreate( savedInstanceState );
@@ -99,6 +111,22 @@ public class ScrollingCredits extends Activity
   }
 
   @Override
+  public void onPause()
+  {
+    super.onPause();
+    resplayer.PausePlay();
+    credits.setPaused( true );
+  }
+
+  @Override
+  public void onResume()
+  {
+    super.onResume();
+    resplayer.UnPausePlay();
+    credits.setPaused( false );
+  }
+
+  @Override
   public void onDestroy()
   {
     super.onDestroy();
@@ -108,13 +136,13 @@ public class ScrollingCredits extends Activity
   @Override
   public boolean onKeyDown( int keyCode, KeyEvent msg )
   {
-    return checkCreditsDone();
-  }
-
-  @Override
-  public boolean onKeyUp( int keyCode, KeyEvent msg )
-  {
-    return checkCreditsDone();
+    if (keyCode == KeyEvent.KEYCODE_BACK)
+    {
+      credits.abort();
+      finish();
+      return true;
+    }
+    return false;
   }
 
   @Override
@@ -139,16 +167,16 @@ public class ScrollingCredits extends Activity
     //   a new one.
     //
     //
-    if (resplayer != null)
+    if ( resplayer != null )
     {
       resplayer.StopAndClose();
       resplayer = null;
     }
 
     // load the mod file
-    resplayer = new MODResourcePlayer(this);
-    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
-    resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
+    resplayer = new MODResourcePlayer( this );
+    resplayer.setLoopCount( PlayerThread.LOOP_SONG_FOREVER );
+    resplayer.LoadMODResource( MODlist[DEFAULT_SONG] );
     if ( FrozenBubble.getMusicOn() == true )
     {
       resplayer.setVolume( 255 );
@@ -158,13 +186,13 @@ public class ScrollingCredits extends Activity
       resplayer.setVolume( 0 );
     }
     // start up the music
-    resplayer.startPaused(false);
+    resplayer.startPaused( false );
     resplayer.start();
   }
 
   public void cleanUp()
   {
-    if (resplayer != null)
+    if ( resplayer != null )
     {
       resplayer.StopAndClose();
       resplayer = null;
@@ -173,7 +201,7 @@ public class ScrollingCredits extends Activity
 
   public boolean checkCreditsDone()
   {
-    if (!credits.isScrolling())
+    if ( !credits.isScrolling() )
     {
       finish();
       return true;
