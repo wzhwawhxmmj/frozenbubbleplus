@@ -88,7 +88,7 @@ public class ScrollingCredits extends Activity implements Runnable
     //   activity so it is destroyed and we simply return to the game.
     //
     //
-  	end();
+    end();
   }
 
   @Override
@@ -143,7 +143,7 @@ public class ScrollingCredits extends Activity implements Runnable
   {
     if (keyCode == KeyEvent.KEYCODE_BACK)
     {
-    	end();
+      end();
       return true;
     }
     return false;
@@ -216,11 +216,11 @@ public class ScrollingCredits extends Activity implements Runnable
 
   public void end()
   {
-  	credits.abort();
-  	//
+    credits.abort();
+    //
     //   Create an intent to launch the game activity.  Since it was
-  	//   running in the background while this activity was running, it
-  	//   may have been stopped by the system.
+    //   running in the background while this activity was running, it
+    //   may have been stopped by the system.
     //
     //
     Intent intent = new Intent( this, FrozenBubble.class );
@@ -232,11 +232,11 @@ public class ScrollingCredits extends Activity implements Runnable
   public void run()
   {
     if (!credits.isScrolling()   &&
-    		!credits.scrollingPaused &&
-    		!victoryScreenShown)
+        !credits.scrollingPaused &&
+        !victoryScreenShown)
     {
-    	victoryScreenShown = true;
-    	credits.setTextColor(Color.TRANSPARENT);
+      victoryScreenShown = true;
+      credits.setTextColor(Color.TRANSPARENT);
       credits.setBackgroundResource(R.drawable.victory);
     }
     credits.post(this);
