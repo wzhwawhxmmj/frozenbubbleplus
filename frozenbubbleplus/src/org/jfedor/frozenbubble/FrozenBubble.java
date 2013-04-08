@@ -737,11 +737,7 @@ public class FrozenBubble extends Activity
     mGameView   = null;
     mGameThread = null;
 
-    if (resplayer != null)
-    {
-      resplayer.StopAndClose();
-      resplayer = null;
-    }
+    destroyMusicPlayer();
   }
 
   /**
@@ -827,17 +823,12 @@ public class FrozenBubble extends Activity
         if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
         {
           //
-          //   The MOD player does not currently support multiple
-          //   instances.  Since the credit screen creates its own
+          //   Since the credits screen activity creates its own
           //   player, destroy the current player.  It will be re-
           //   created when this activity regains user focus.
           //
           //
-          if (resplayer != null)
-          {
-            resplayer.StopAndClose();
-            resplayer = null;
-          }
+          destroyMusicPlayer();
           //
           //   Set the game state to display the about screen as a
           //   backup just in case anything goes awry with displaying
@@ -860,6 +851,18 @@ public class FrozenBubble extends Activity
 
       default:
         break;
+    }
+  }
+
+  /**
+   * Stop the music player, close the thread, and free the instance.
+   */
+  private void destroyMusicPlayer()
+  {
+    if (resplayer != null)
+    {
+      resplayer.StopAndClose();
+      resplayer = null;
     }
   }
 
@@ -892,11 +895,7 @@ public class FrozenBubble extends Activity
     //   a new one.
     //
     //
-    if (resplayer != null)
-    {
-      resplayer.StopAndClose();
-      resplayer = null;
-    }
+    destroyMusicPlayer();
     // load the mod file
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
