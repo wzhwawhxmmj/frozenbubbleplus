@@ -57,6 +57,8 @@ import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.R;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -66,7 +68,7 @@ import android.view.WindowManager;
 import com.peculiargames.andmodplug.MODResourcePlayer;
 import com.peculiargames.andmodplug.PlayerThread;
 
-public class ScrollingCredits extends Activity
+public class ScrollingCredits extends Activity implements Runnable
 {
   private ScrollingTextView credits;
   private MODResourcePlayer resplayer = null;
@@ -76,6 +78,8 @@ public class ScrollingCredits extends Activity
     R.raw.worldofpeace
   };
 
+  private boolean victoryScreenShown = false;
+
   @Override
   public void onBackPressed()
   {
@@ -84,21 +88,20 @@ public class ScrollingCredits extends Activity
     //   activity so it is destroyed and we simply return to the game.
     //
     //
-    credits.abort();
-    finish();
+  	end();
   }
 
   @Override
-  public void onCreate( Bundle savedInstanceState )
+  public void onCreate(Bundle savedInstanceState)
   {
-    super.onCreate( savedInstanceState );
+    super.onCreate(savedInstanceState);
     //   Remove the title bar.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     //   Remove notification bar.
     this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                               WindowManager.LayoutParams.FLAG_FULLSCREEN);
     //   Load the layout for this activity.
-    setContentView( R.layout.activity_scrolling_credits );
+    setContentView(R.layout.activity_scrolling_credits);
     //   Get the instance of the ScrollingTextView object.
     credits = (ScrollingTextView)findViewById(R.id.scrolling_credits);
     //   Configure the credits text presentation.
@@ -108,6 +111,8 @@ public class ScrollingCredits extends Activity
     credits.setTextSize(18.0f);
     //   Start the credits music.
     newPlayer();
+    //   Post this runnable instance to the scrolling text view.
+    credits.post(this);
   }
 
   @Override
@@ -115,7 +120,7 @@ public class ScrollingCredits extends Activity
   {
     super.onPause();
     resplayer.PausePlay();
-    credits.setPaused( true );
+    credits.setPaused(true);
   }
 
   @Override
@@ -123,7 +128,7 @@ public class ScrollingCredits extends Activity
   {
     super.onResume();
     resplayer.UnPausePlay();
-    credits.setPaused( false );
+    credits.setPaused(false);
   }
 
   @Override
@@ -134,25 +139,24 @@ public class ScrollingCredits extends Activity
   }
 
   @Override
-  public boolean onKeyDown( int keyCode, KeyEvent msg )
+  public boolean onKeyDown(int keyCode, KeyEvent msg)
   {
     if (keyCode == KeyEvent.KEYCODE_BACK)
     {
-      credits.abort();
-      finish();
+    	end();
       return true;
     }
     return false;
   }
 
   @Override
-  public boolean onTrackballEvent( MotionEvent event )
+  public boolean onTrackballEvent(MotionEvent event)
   {
     return checkCreditsDone();
   }
 
   @Override
-  public boolean onTouchEvent( MotionEvent event )
+  public boolean onTouchEvent(MotionEvent event)
   {
     return checkCreditsDone();
   }
@@ -167,32 +171,32 @@ public class ScrollingCredits extends Activity
     //   a new one.
     //
     //
-    if ( resplayer != null )
+    if (resplayer != null)
     {
       resplayer.StopAndClose();
       resplayer = null;
     }
 
     // load the mod file
-    resplayer = new MODResourcePlayer( this );
-    resplayer.setLoopCount( PlayerThread.LOOP_SONG_FOREVER );
-    resplayer.LoadMODResource( MODlist[DEFAULT_SONG] );
-    if ( FrozenBubble.getMusicOn() == true )
+    resplayer = new MODResourcePlayer(this);
+    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
+    resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
+    if (FrozenBubble.getMusicOn() == true)
     {
-      resplayer.setVolume( 255 );
+      resplayer.setVolume(255);
     }
     else
     {
-      resplayer.setVolume( 0 );
+      resplayer.setVolume(0);
     }
     // start up the music
-    resplayer.startPaused( false );
+    resplayer.startPaused(false);
     resplayer.start();
   }
 
   public void cleanUp()
   {
-    if ( resplayer != null )
+    if (resplayer != null)
     {
       resplayer.StopAndClose();
       resplayer = null;
@@ -201,12 +205,40 @@ public class ScrollingCredits extends Activity
 
   public boolean checkCreditsDone()
   {
-    if ( !credits.isScrolling() )
+    if (!credits.isScrolling() && !credits.scrollingPaused)
     {
-      finish();
+      end();
       return true;
     }
     else
     return false;
+  }
+
+  public void end()
+  {
+  	credits.abort();
+  	//
+    //   Create an intent to launch the game activity.  Since it was
+  	//   running in the background while this activity was running, it
+  	//   may have been stopped by the system.
+    //
+    //
+    Intent intent = new Intent( this, FrozenBubble.class );
+    startActivity( intent );
+    finish();
+  }
+
+  @Override
+  public void run()
+  {
+    if (!credits.isScrolling()   &&
+    		!credits.scrollingPaused &&
+    		!victoryScreenShown)
+    {
+    	victoryScreenShown = true;
+    	credits.setTextColor(Color.TRANSPARENT);
+      credits.setBackgroundResource(R.drawable.victory);
+    }
+    credits.post(this);
   }
 }
