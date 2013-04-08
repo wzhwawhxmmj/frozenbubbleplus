@@ -109,7 +109,7 @@ public class ScrollingTextView extends TextView implements Runnable
    */
   private void init()
   {
-  	alpha           = OPAQUE;
+    alpha           = OPAQUE;
     scrollCount     = SCROLL_FOREVER;
     scrollDirection = SCROLL_DOWN;
     scrollingPaused = false;
@@ -119,23 +119,23 @@ public class ScrollingTextView extends TextView implements Runnable
 
   private void refreshScroll(boolean stopAnimation)
   {
-  	if (stopAnimation)
-  	{
-	    /**
-	     * TODO: forceFinished() should be stopping the scroll right
-	     * where it is, but it isn't for some reason.  This should be
-	     * fixed.  On the other hand, when scrolling is resumed, it
-	     * starts where it should, which is absolutely necessary.
-	     */
-	    scroller.forceFinished(true);
-  	}
-  	else
-  	{
-  		y_distance -= scroller.getCurrY() - y_offset;
-	    y_offset = scroller.getCurrY();
+    if (stopAnimation)
+    {
+      /**
+       * TODO: forceFinished() should be stopping the scroll right
+       * where it is, but it isn't for some reason.  This should be
+       * fixed.  On the other hand, when scrolling is resumed, it
+       * starts where it should, which is absolutely necessary.
+       */
+      scroller.forceFinished(true);
+    }
+    else
+    {
+      y_distance -= scroller.getCurrY() - y_offset;
+      y_offset = scroller.getCurrY();
       duration = (int) (Math.abs(y_distance) * speed);
       scroller.startScroll(0, y_offset, 0, y_distance, duration);
-  	}
+    }
   }
 
   private void setup(Context context)
@@ -146,7 +146,7 @@ public class ScrollingTextView extends TextView implements Runnable
 
   private void startScroll()
   {
-  	started           = true;
+    started           = true;
     int viewHeight    = getHeight();
     int visibleHeight = viewHeight - getPaddingBottom() - getPaddingTop();
     int lineHeight    = getLineHeight();
@@ -196,7 +196,7 @@ public class ScrollingTextView extends TextView implements Runnable
      * the previous screen height.
      */
     if (!started)
-    	startScroll();
+      startScroll();
   }
 
   /*
@@ -237,19 +237,19 @@ public class ScrollingTextView extends TextView implements Runnable
 
   public void setPaused(boolean paused)
   {
-  	if (started)
-  	{
-	    if (paused && !scrollingPaused)
-	    {
-	      scrollingPaused = true;
-	      refreshScroll(true);
-	    }
-	    else if (!paused && scrollingPaused)
-	    {
-	      scrollingPaused = false;
-	      refreshScroll(false);
-	    }
-  	}
+    if (started)
+    {
+      if (paused && !scrollingPaused)
+      {
+        scrollingPaused = true;
+        refreshScroll(true);
+      }
+      else if (!paused && scrollingPaused)
+      {
+        scrollingPaused = false;
+        refreshScroll(false);
+      }
+    }
   }
 
   public void setScrollDirection(boolean scrollDirection)
