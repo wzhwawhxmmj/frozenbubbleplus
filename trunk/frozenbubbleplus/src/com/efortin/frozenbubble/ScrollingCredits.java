@@ -110,16 +110,17 @@ public class ScrollingCredits extends Activity implements Runnable
     credits.setScrollDirection(ScrollingTextView.SCROLL_UP);
     credits.setTextSize(18.0f);
     //   Start the credits music.
-    newPlayer();
+    newMusicPlayer();
     //   Post this runnable instance to the scrolling text view.
-    credits.post(this);
+    credits.postDelayed(this, 100);
   }
 
   @Override
   public void onPause()
   {
     super.onPause();
-    resplayer.PausePlay();
+    if (resplayer != null)
+      resplayer.PausePlay();
     credits.setPaused(true);
   }
 
@@ -127,7 +128,8 @@ public class ScrollingCredits extends Activity implements Runnable
   public void onResume()
   {
     super.onResume();
-    resplayer.UnPausePlay();
+    if (resplayer != null)
+      resplayer.UnPausePlay();
     credits.setPaused(false);
   }
 
@@ -161,22 +163,25 @@ public class ScrollingCredits extends Activity implements Runnable
     return checkCreditsDone();
   }
 
-  private void newPlayer()
+  /**
+   * Stop the music player, close the thread, and free the instance.
+   */
+  private void destroyMusicPlayer()
   {
-    //*****************************************
-    // Start up the MOD player
-    //*****************************************
-    //
-    //   If the MOD player instance is not NULL, destroy it and create
-    //   a new one.
-    //
-    //
     if (resplayer != null)
     {
       resplayer.StopAndClose();
       resplayer = null;
     }
+  }
 
+  /**
+   * Start a new MOD player.  If one already exists, it will be
+   * destroyed and a new one will be created.
+   */
+  private void newMusicPlayer()
+  {
+    destroyMusicPlayer();
     // load the mod file
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
@@ -196,27 +201,28 @@ public class ScrollingCredits extends Activity implements Runnable
 
   public void cleanUp()
   {
-    if (resplayer != null)
-    {
-      resplayer.StopAndClose();
-      resplayer = null;
-    }
+    destroyMusicPlayer();
   }
 
   public boolean checkCreditsDone()
   {
-    if (!credits.isScrolling() && !credits.scrollingPaused)
+    if (!credits.isScrolling())
     {
       end();
       return true;
     }
-    else
     return false;
   }
 
   public void end()
   {
     credits.abort();
+    //
+    //   Since the game activity creates its own player, destroy the
+    //   current player.
+    //
+    //
+    destroyMusicPlayer();
     //
     //   Create an intent to launch the game activity.  Since it was
     //   running in the background while this activity was running, it
@@ -231,9 +237,7 @@ public class ScrollingCredits extends Activity implements Runnable
   @Override
   public void run()
   {
-    if (!credits.isScrolling()   &&
-        !credits.scrollingPaused &&
-        !victoryScreenShown)
+    if (!credits.isScrolling() && !victoryScreenShown)
     {
       victoryScreenShown = true;
       credits.setTextColor(Color.TRANSPARENT);
