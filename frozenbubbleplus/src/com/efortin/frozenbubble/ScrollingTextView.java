@@ -54,6 +54,7 @@
 package com.efortin.frozenbubble;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.animation.LinearInterpolator;
 import android.widget.Scroller;
@@ -68,6 +69,7 @@ import android.widget.TextView;
 public class ScrollingTextView extends TextView implements Runnable
 {
   private static final float   DEFAULT_SPEED  = 15.0f;
+  private static final int     OPAQUE         = 256;
   public  static final boolean SCROLL_DOWN    = true;
   public  static final boolean SCROLL_UP      = false;
   public  static final int     SCROLL_FOREVER = -1;
@@ -75,14 +77,15 @@ public class ScrollingTextView extends TextView implements Runnable
   private Scroller scroller;
 
   private int      duration;
+  private int      alpha;
   private int      scrollCount;
   private boolean  scrollDirection;
-  private boolean  scrollingPaused;
   private float    speed;
-  private float    speed_was;
   private boolean  started;
   private int      y_distance;
   private int      y_offset;
+
+  public  boolean  scrollingPaused;
 
   /*
    * Constructors.
@@ -106,6 +109,7 @@ public class ScrollingTextView extends TextView implements Runnable
    */
   private void init()
   {
+  	alpha           = OPAQUE;
     scrollCount     = SCROLL_FOREVER;
     scrollDirection = SCROLL_DOWN;
     scrollingPaused = false;
@@ -117,13 +121,21 @@ public class ScrollingTextView extends TextView implements Runnable
   {
   	if (stopAnimation)
   	{
-  		duration = 0;
-	    y_offset = scroller.getCurrY();
+	    /**
+	     * TODO: forceFinished() should be stopping the scroll right
+	     * where it is, but it isn't for some reason.  This should be
+	     * fixed.  On the other hand, when scrolling is resumed, it
+	     * starts where it should, which is absolutely necessary.
+	     */
+	    scroller.forceFinished(true);
   	}
   	else
+  	{
+  		y_distance -= scroller.getCurrY() - y_offset;
+	    y_offset = scroller.getCurrY();
       duration = (int) (Math.abs(y_distance) * speed);
-
-    scroller.startScroll(0, y_offset, 0, y_distance, duration);
+      scroller.startScroll(0, y_offset, 0, y_distance, duration);
+  	}
   }
 
   private void setup(Context context)
@@ -166,10 +178,23 @@ public class ScrollingTextView extends TextView implements Runnable
    * Protected methods.
    */
   @Override
+  protected void onDraw(Canvas canvas)
+  {
+    canvas.saveLayerAlpha(null, alpha, Canvas.ALL_SAVE_FLAG);
+    super.onDraw(canvas);
+    canvas.restore();
+  }
+
+  @Override
   protected void onLayout(boolean changed,
                           int left, int top, int right, int bottom)
   {
     super.onLayout(changed, left, top, right, bottom);
+    /**
+     * TODO: when the layout is changed, the scrolling offset and
+     * distance should be re-mapped to the new screen height from
+     * the previous screen height.
+     */
     if (!started)
     	startScroll();
   }
@@ -205,21 +230,23 @@ public class ScrollingTextView extends TextView implements Runnable
     return ((scrollCount != 0) || (!scroller.isFinished()));
   }
 
+  public void setAlpha(float alpha)
+  {
+    this.alpha = (int)(alpha * OPAQUE);
+  }
+
   public void setPaused(boolean paused)
   {
   	if (started)
   	{
 	    if (paused && !scrollingPaused)
 	    {
-	      scrollingPaused = paused;
-	      speed_was = speed;
-	      setSpeed(0.0f);
+	      scrollingPaused = true;
 	      refreshScroll(true);
 	    }
 	    else if (!paused && scrollingPaused)
 	    {
-	      scrollingPaused = paused;
-	      setSpeed(speed_was);
+	      scrollingPaused = false;
 	      refreshScroll(false);
 	    }
   	}
