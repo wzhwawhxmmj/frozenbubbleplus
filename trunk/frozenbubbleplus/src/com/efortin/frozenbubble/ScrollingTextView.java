@@ -54,7 +54,6 @@
 package com.efortin.frozenbubble;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.animation.LinearInterpolator;
 import android.widget.Scroller;
@@ -69,7 +68,6 @@ import android.widget.TextView;
 public class ScrollingTextView extends TextView implements Runnable
 {
   private static final float   DEFAULT_SPEED  = 15.0f;
-  private static final int     OPAQUE         = 256;
   public  static final boolean SCROLL_DOWN    = true;
   public  static final boolean SCROLL_UP      = false;
   public  static final int     SCROLL_FOREVER = -1;
@@ -77,7 +75,6 @@ public class ScrollingTextView extends TextView implements Runnable
   private Scroller scroller;
 
   private int      duration;
-  private int      alpha;
   private int      scrollCount;
   private boolean  scrollDirection;
   private float    speed;
@@ -109,7 +106,6 @@ public class ScrollingTextView extends TextView implements Runnable
    */
   private void init()
   {
-    alpha           = OPAQUE;
     scrollCount     = SCROLL_FOREVER;
     scrollDirection = SCROLL_DOWN;
     scrollingPaused = false;
@@ -181,14 +177,6 @@ public class ScrollingTextView extends TextView implements Runnable
    * Protected methods.
    */
   @Override
-  protected void onDraw(Canvas canvas)
-  {
-    canvas.saveLayerAlpha(null, alpha, Canvas.ALL_SAVE_FLAG);
-    super.onDraw(canvas);
-    canvas.restore();
-  }
-
-  @Override
   protected void onLayout(boolean changed,
                           int left, int top, int right, int bottom)
   {
@@ -235,11 +223,6 @@ public class ScrollingTextView extends TextView implements Runnable
   {
     return ((scrollCount != 0) || !scroller.isFinished() ||
              scrollingPaused   || !started);
-  }
-
-  public void setAlpha(float alpha)
-  {
-    this.alpha = (int)(alpha * OPAQUE);
   }
 
   public void setPaused(boolean paused)

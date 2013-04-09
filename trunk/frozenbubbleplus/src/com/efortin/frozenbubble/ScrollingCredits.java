@@ -64,12 +64,16 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.LinearLayout.LayoutParams;
 
 import com.peculiargames.andmodplug.MODResourcePlayer;
 import com.peculiargames.andmodplug.PlayerThread;
 
 public class ScrollingCredits extends Activity implements Runnable
 {
+  private LinearLayout      linearLayout;
   private ScrollingTextView credits;
   private MODResourcePlayer resplayer = null;
 
@@ -100,7 +104,7 @@ public class ScrollingCredits extends Activity implements Runnable
     //   Remove notification bar.
     this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
                               WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    //   Load the layout for this activity.
+    //   Load the default XML layout for this activity.
     setContentView(R.layout.activity_scrolling_credits);
     //   Get the instance of the ScrollingTextView object.
     credits = (ScrollingTextView)findViewById(R.id.scrolling_credits);
@@ -214,12 +218,32 @@ public class ScrollingCredits extends Activity implements Runnable
     return false;
   }
 
+  public void displayImage(int id)
+  {
+    //  Construct a new LinearLayout programmatically. 
+    linearLayout = new LinearLayout(this);
+    linearLayout.setOrientation(LinearLayout.VERTICAL);
+    linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
+                                                  LayoutParams.MATCH_PARENT));
+    //   ImageView setup for the image.
+    ImageView imageView = new ImageView(this);
+    //   Set image resource.
+    imageView.setImageResource(R.drawable.victory);
+    //   Set image position.
+    imageView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
+                                               LayoutParams.MATCH_PARENT));
+    //   Add view to layout.
+    linearLayout.addView(imageView);
+    //   Set the content view to this layout and display the image.
+    setContentView(linearLayout);
+  }
+
   public void end()
   {
     credits.abort();
     //
-    //   Since the game activity creates its own player, destroy the
-    //   current player.
+    //   Since the default game activity creates its own player,
+    //   destroy the current player.
     //
     //
     destroyMusicPlayer();
@@ -237,12 +261,15 @@ public class ScrollingCredits extends Activity implements Runnable
   @Override
   public void run()
   {
+    //    Check if we need to display the end of game victory image.
     if (!credits.isScrolling() && !victoryScreenShown)
     {
       victoryScreenShown = true;
+      //  Make the credits text transparent.
       credits.setTextColor(Color.TRANSPARENT);
-      credits.setBackgroundResource(R.drawable.victory);
+      //  Display the end of game victory image.
+      displayImage(R.drawable.victory);
     }
-    credits.post(this);
+    credits.postDelayed(this, 100);
   }
 }
