@@ -186,7 +186,7 @@ public class ScrollingCredits extends Activity implements Runnable
   private void newMusicPlayer()
   {
     destroyMusicPlayer();
-    // load the mod file
+    //   Load the module music file.
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
@@ -198,7 +198,7 @@ public class ScrollingCredits extends Activity implements Runnable
     {
       resplayer.setVolume(0);
     }
-    // start up the music
+    //   Start up the music.
     resplayer.startPaused(false);
     resplayer.start();
   }
@@ -220,7 +220,7 @@ public class ScrollingCredits extends Activity implements Runnable
 
   public void displayImage(int id)
   {
-    //  Construct a new LinearLayout programmatically. 
+    //   Construct a new LinearLayout programmatically. 
     linearLayout = new LinearLayout(this);
     linearLayout.setOrientation(LinearLayout.VERTICAL);
     linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
@@ -261,13 +261,13 @@ public class ScrollingCredits extends Activity implements Runnable
   @Override
   public void run()
   {
-    //    Check if we need to display the end of game victory image.
+    //   Check if we need to display the end of game victory image.
     if (!credits.isScrolling() && !victoryScreenShown)
     {
       victoryScreenShown = true;
-      //  Make the credits text transparent.
+      //   Make the credits text transparent.
       credits.setTextColor(Color.TRANSPARENT);
-      //  Display the end of game victory image.
+      //   Display the end of game victory image.
       displayImage(R.drawable.victory);
     }
     credits.postDelayed(this, 100);
