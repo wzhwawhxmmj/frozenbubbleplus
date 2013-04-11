@@ -75,9 +75,9 @@ public class ScrollingTextView extends TextView implements Runnable
   private Scroller scroller;
 
   private int      duration;
-  private int      scrollCount;
-  private boolean  scrollDirection;
-  private float    speed;
+  private int      scrollCount     = SCROLL_FOREVER;
+  private boolean  scrollDirection = SCROLL_DOWN;
+  private float    speed           = DEFAULT_SPEED;
   private boolean  started;
   private int      y_distance;
   private int      y_offset;
@@ -104,15 +104,6 @@ public class ScrollingTextView extends TextView implements Runnable
   /*
    * Private methods.
    */
-  private void init()
-  {
-    scrollCount     = SCROLL_FOREVER;
-    scrollDirection = SCROLL_DOWN;
-    scrollingPaused = false;
-    speed           = DEFAULT_SPEED;
-    started         = false;
-  }
-
   private void refreshScroll()
   {
     if (scrollingPaused)
@@ -193,6 +184,12 @@ public class ScrollingTextView extends TextView implements Runnable
   /*
    * Public methods.
    */
+  public void init()
+  {
+    scrollingPaused = false;
+    started         = false;
+  }
+
   @Override
   public void run()
   {
@@ -211,7 +208,9 @@ public class ScrollingTextView extends TextView implements Runnable
 
   public void abort()
   {
-    scroller.forceFinished(true);
+  	scrollCount     = 0;
+  	scrollingPaused = false;
+  	scroller.forceFinished(true);
   }
 
   public float getSpeed()
@@ -227,7 +226,7 @@ public class ScrollingTextView extends TextView implements Runnable
 
   public void setPaused(boolean paused)
   {
-    if (started)
+    if (isScrolling() && started)
     {
       if (paused && !scrollingPaused)
       {

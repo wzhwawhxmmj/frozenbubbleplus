@@ -73,7 +73,6 @@ import com.peculiargames.andmodplug.PlayerThread;
 
 public class ScrollingCredits extends Activity implements Runnable
 {
-  private LinearLayout      linearLayout;
   private ScrollingTextView credits;
   private MODResourcePlayer resplayer = null;
 
@@ -221,7 +220,7 @@ public class ScrollingCredits extends Activity implements Runnable
   public void displayImage(int id)
   {
     //   Construct a new LinearLayout programmatically. 
-    linearLayout = new LinearLayout(this);
+  	LinearLayout linearLayout = new LinearLayout(this);
     linearLayout.setOrientation(LinearLayout.VERTICAL);
     linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
                                                   LayoutParams.MATCH_PARENT));
