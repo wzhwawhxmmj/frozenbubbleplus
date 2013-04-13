@@ -133,14 +133,14 @@ public class FrozenBubble extends Activity
   public final static int POINT_TO_SHOOT           = 1;
   public final static int ROTATE_TO_SHOOT          = 2;
 
-  public final static String PREFS_NAME = "frozenbubble";
-  public final static String TAG        = "FrozenBubble.java";
+  public final static String PREFS_NAME  = "frozenbubble";
+  public final static String TAG         = "FrozenBubble.java";
 
+  private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
   private static int     gameMode   = GAME_NORMAL;
   private static boolean musicOn    = true;
   private static boolean soundOn    = true;
-  private static boolean dontRushMe = false;
   private static int     targetMode = POINT_TO_SHOOT;
 
   private GameThread mGameThread = null;
@@ -234,14 +234,13 @@ public class FrozenBubble extends Activity
       if ( savedInstanceState != null )
         mGameThread.restoreState(savedInstanceState);
       mGameView.requestFocus();
-      setFullscreen();
       newMusicPlayer( true );
     }
     else
     {
       startCustomGame(intent);
     }
-    setTargetMode(targetMode);
+    restoreGamePrefs();
   }
 
   @Override
@@ -294,22 +293,34 @@ public class FrozenBubble extends Activity
   @Override
   public boolean onOptionsItemSelected(MenuItem item)
   {
+  	SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+  			                                        Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = sp.edit();
+
     switch (item.getItemId()) {
       case MENU_NEW_GAME:
         newGameDialog();
         return true;
       case MENU_COLORBLIND_MODE_ON:
         setMode(GAME_COLORBLIND);
+        editor.putInt("gameMode", gameMode);
+        editor.commit();
         return true;
       case MENU_COLORBLIND_MODE_OFF:
         setMode(GAME_NORMAL);
+        editor.putInt("gameMode", gameMode);
+        editor.commit();
         return true;
       case MENU_FULLSCREEN_ON:
         fullscreen = true;
+        editor.putBoolean("fullscreen", fullscreen);
+        editor.commit();
         setFullscreen();
         return true;
       case MENU_FULLSCREEN_OFF:
         fullscreen = false;
+        editor.putBoolean("fullscreen", fullscreen);
+        editor.commit();
         setFullscreen();
         return true;
       case MENU_SOUND_OPTIONS:
@@ -323,14 +334,19 @@ public class FrozenBubble extends Activity
         return true;
       case MENU_DONT_RUSH_ME:
         setDontRushMe(true);
+        editor.putBoolean("dontRushMe", dontRushMe);
+        editor.commit();
         return true;
       case MENU_RUSH_ME:
         setDontRushMe(false);
+        editor.putBoolean("dontRushMe", dontRushMe);
+        editor.commit();
         return true;
       case MENU_EDITOR:
         startEditor();
         return true;
     }
+
     return false;
   }
 
@@ -413,35 +429,18 @@ public class FrozenBubble extends Activity
     }
   }
 
-  /**
-   * Method to start a game using levels from the level editor.
-   * 
-   * <p>If the level isn't specified from the editor, then the player
-   * selected the option to continue playing from the last level
-   * played, so use the last level played instead.
-   * 
-   * @param intent  the intent from the level editor used to start this
-   * activity, which contains the custom level data.
-   */
-  private void startCustomGame(Intent intent)
+  private void restoreGamePrefs()
   {
-    activityCustomStarted = true;
-    // Get custom level last played.
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    int startingLevel       = sp    .getInt     ("levelCustom",    0);
-    int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
-    startingLevel =
-      (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
-    mGameView = new GameView(this,
-                             intent.getExtras().getByteArray("levels"),
-                             startingLevel);
-    setContentView(mGameView);
-    mGameView.setGameListener(this);
-    mGameThread = mGameView.getThread();
-    mGameView.requestFocus();
-    setFullscreen();
-    newMusicPlayer(true);
+  	mConfig    = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+  	dontRushMe = mConfig.getBoolean("dontRushMe", false         );
+  	fullscreen = mConfig.getBoolean("fullscreen", true         );
+  	gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL   );
+  	musicOn    = mConfig.getBoolean("musicOn",    true         );
+  	soundOn    = mConfig.getBoolean("soundOn",    true         );
+  	targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT);
+
+  	setFullscreen();
+  	setTargetMode(targetMode);
   }
 
   private int getScreenOrientation() {
@@ -525,6 +524,36 @@ public class FrozenBubble extends Activity
     builder.show();
   }
 
+  /**
+   * Method to start a game using levels from the level editor.
+   * 
+   * <p>If the level isn't specified from the editor, then the player
+   * selected the option to continue playing from the last level
+   * played, so use the last level played instead.
+   * 
+   * @param intent  the intent from the level editor used to start this
+   * activity, which contains the custom level data.
+   */
+  private void startCustomGame(Intent intent)
+  {
+    activityCustomStarted = true;
+    // Get custom level last played.
+    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    int startingLevel       = sp    .getInt     ("levelCustom",    0);
+    int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
+    startingLevel =
+      (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
+    mGameView = new GameView(this,
+                             intent.getExtras().getByteArray("levels"),
+                             startingLevel);
+    setContentView(mGameView);
+    mGameView.setGameListener(this);
+    mGameThread = mGameView.getThread();
+    mGameView.requestFocus();
+    newMusicPlayer(true);
+  }
+
   private void setFullscreen()
   {
     if (fullscreen)
@@ -606,6 +635,13 @@ public class FrozenBubble extends Activity
             resplayer.setVolume( 0 );
           }
         }
+
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                    Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putBoolean("musicOn", musicOn);
+        editor.putBoolean("soundOn", soundOn);
+        editor.commit();
       }
     });
     builder.create();
@@ -650,6 +686,11 @@ public class FrozenBubble extends Activity
       @Override
       public void onClick(DialogInterface builder, int id) {
         // User clicked OK.
+      	SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                    Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+      	editor.putInt("targetMode", targetMode);
+      	editor.commit();
       }
     });
 
@@ -797,7 +838,8 @@ public class FrozenBubble extends Activity
           //   from there...
           //
           //
-          mConfig = getSharedPreferences(PLAYER_PREFS_NAME, 0);
+          mConfig = getSharedPreferences(PLAYER_PREFS_NAME,
+          		                           Context.MODE_PRIVATE);
           mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
           if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
           int pattern = mConfig.getInt(PREFS_SONGPATTERN, 0);
@@ -886,7 +928,7 @@ public class FrozenBubble extends Activity
     }
     else
     {
-      mConfig = getSharedPreferences(PLAYER_PREFS_NAME, 0);
+      mConfig = getSharedPreferences(PLAYER_PREFS_NAME, Context.MODE_PRIVATE);
       mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
       if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
     }
@@ -946,7 +988,7 @@ public class FrozenBubble extends Activity
     //
     //
     SharedPreferences.Editor prefs =
-      getSharedPreferences(PLAYER_PREFS_NAME, 0).edit();
+      getSharedPreferences(PLAYER_PREFS_NAME, Context.MODE_PRIVATE).edit();
     prefs.putInt(PREFS_SONGNUM, mod_now);
 
     if (resplayer != null)
