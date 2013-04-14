@@ -74,7 +74,8 @@ public class HighscoreDO {
    * 
    *            Used when reading DO from DB
    */
-  public HighscoreDO(int id, int level, String name, int shots, long time) {
+  public HighscoreDO(int id, int level, String name, int shots, long time)
+  {
     super();
     this.shots = shots;
     this.id    = id;
@@ -91,7 +92,8 @@ public class HighscoreDO {
    * 
    *            Used when DO not yet in DB (no ID)
    */
-  public HighscoreDO(int level, String name, int shots, long time) {
+  public HighscoreDO(int level, String name, int shots, long time)
+  {
     super();
     this.shots = shots;
     id         = -1;
@@ -100,43 +102,53 @@ public class HighscoreDO {
     this.time  = time;
   }
 
-  public int getId() {
+  public int getId()
+  {
     return id;
   }
 
-  public void setId(int id) {
+  public void setId(int id)
+  {
     this.id = id;
   }
 
-  public int getLevel() {
+  public int getLevel()
+  {
     return level;
   }
 
-  public void setLevel(int level) {
+  public void setLevel(int level)
+  {
     this.level = level;
   }
 
-  public String getName() {
+  public String getName()
+  {
     return name;
   }
 
-  public void setName(String name) {
+  public void setName(String name)
+  {
     this.name = name;
   }
 
-  public int getShots() {
+  public int getShots()
+  {
     return shots;
   }
 
-  public void setShots(int shots) {
+  public void setShots(int shots)
+  {
     this.shots = shots;
   }
 
-  public long getTime() {
+  public long getTime()
+  {
     return time;
   }
 
-  public void setTime(long time) {
+  public void setTime(long time)
+  {
     this.time = time;
   }
 }

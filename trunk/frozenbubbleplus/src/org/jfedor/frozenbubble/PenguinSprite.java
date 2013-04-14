@@ -113,13 +113,15 @@ public class PenguinSprite extends Sprite
   }
 
   @Override
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
-    if (getSavedId() != -1) {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites)
+  {
+    if (getSavedId() != -1)
+    {
       return;
     }
     super.saveState(map, saved_sprites);
     map.putInt(String.format("%d-currentPenguin", getSavedId()),
-               currentPenguin);
+                             currentPenguin);
     map.putInt(String.format("%d-count", getSavedId()), count);
     map.putInt(String.format("%d-finalState", getSavedId()), finalState);
     map.putInt(String.format("%d-nextPosition", getSavedId()), nextPosition);
@@ -132,52 +134,65 @@ public class PenguinSprite extends Sprite
 
   public void updateState(int state)
   {
-    if (finalState != STATE_VOID) {
+    if (finalState != STATE_VOID)
+    {
       count++;
 
-      if (count % 6 == 0) {
-        if (finalState == STATE_GAME_LOST) {
+      if (count % 6 == 0)
+      {
+        if (finalState == STATE_GAME_LOST)
+        {
           currentPenguin = LOST_SEQUENCE[nextPosition][1];
           nextPosition = LOST_SEQUENCE[nextPosition][0];
-        } else if (finalState == STATE_GAME_WON) {
+        }
+        else if (finalState == STATE_GAME_WON)
+        {
           currentPenguin = WON_SEQUENCE[nextPosition][1];
           nextPosition = WON_SEQUENCE[nextPosition][0];
         }
       }
-    } else {
+    }
+    else
+    {
       count++;
 
-      switch(state) {
-      case STATE_TURN_LEFT :
-        count = 0;
-        currentPenguin = 3;
-        break;
-      case STATE_TURN_RIGHT :
-        count = 0;
-        currentPenguin = 2;
-        break;
-      case STATE_FIRE :
-        count = 0;
-        currentPenguin = 1;
-        break;
-      case STATE_VOID :
-        if (currentPenguin<4 || currentPenguin>7) {
+      switch(state)
+      {
+        case STATE_TURN_LEFT:
+          count = 0;
+          currentPenguin = 3;
+          break;
+        case STATE_TURN_RIGHT:
+          count = 0;
+          currentPenguin = 2;
+          break;
+        case STATE_FIRE:
+          count = 0;
+          currentPenguin = 1;
+          break;
+        case STATE_VOID:
+          if (currentPenguin<4 || currentPenguin>7)
+          {
+            currentPenguin = 0;
+          }
+          break;
+        case STATE_GAME_WON:
+        case STATE_GAME_LOST:
+          count = 0;
+          finalState = state;
           currentPenguin = 0;
-        }
-        break;
-      case STATE_GAME_WON :
-      case STATE_GAME_LOST :
-        count = 0;
-        finalState = state;
-        currentPenguin = 0;
-        return;
+          return;
       }
 
-      if (count>100) {
+      if (count>100)
+      {
         currentPenguin = 7;
-      } else if (count % 15 == 0 && count>25) {
+      }
+      else if (count % 15 == 0 && count>25)
+      {
         currentPenguin = (rand.nextInt() % 3)+4;
-        if (currentPenguin < 4) {
+        if (currentPenguin < 4)
+        {
           currentPenguin = 0;
         }
       }

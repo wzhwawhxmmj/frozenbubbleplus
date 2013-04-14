@@ -88,8 +88,10 @@ public class BubbleSprite extends Sprite
 
   private int fixedAnim;
 
-  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
-    if (getSavedId() != -1) {
+  public void saveState(Bundle map, Vector<Sprite> savedSprites)
+  {
+    if (getSavedId() != -1)
+    {
       return;
     }
     super.saveState(map, savedSprites);
@@ -163,7 +165,6 @@ public class BubbleSprite extends Sprite
     this.bubbleManager = bubbleManager;
     this.soundManager = soundManager;
     this.frozen = frozen;
-
     this.moveX = MAX_BUBBLE_SPEED * -Math.cos(direction * Math.PI / 40.);
     this.moveY = MAX_BUBBLE_SPEED * -Math.sin(direction * Math.PI / 40.);
     this.realX = area.left;
@@ -189,7 +190,6 @@ public class BubbleSprite extends Sprite
     this.bubbleManager = bubbleManager;
     this.soundManager = soundManager;
     this.frozen = frozen;
-
     this.realX = area.left;
     this.realY = area.top;
     this.lastOpenPosition = currentPosition();
@@ -204,15 +204,18 @@ public class BubbleSprite extends Sprite
     int posY = (int)Math.floor((realY-28.-frozen.getMoveDown())/28.);
     int posX = (int)Math.floor((realX-174.)/32. + 0.5*(posY%2));
 
-    if (posX>7) {
+    if (posX>7)
+    {
       posX = 7;
     }
 
-    if (posX<0) {
+    if (posX<0)
+    {
       posX = 0;
     }
 
-    if (posY<0) {
+    if (posY<0)
+    {
       posY = 0;
     }
 
@@ -241,7 +244,8 @@ public class BubbleSprite extends Sprite
 
   public void moveDown()
   {
-    if (fixed) {
+    if (fixed)
+    {
       realY += 28.;
     }
 
@@ -252,18 +256,20 @@ public class BubbleSprite extends Sprite
   {
     realX += moveX;
 
-    if (realX>=414.) {
+    if (realX>=414.)
+    {
       moveX = -moveX;
       realX += (414. - realX);
       soundManager.playSound(FrozenBubble.SOUND_REBOUND);
-    } else if (realX<=190.) {
+    }
+    else if (realX<=190.)
+    {
       moveX = -moveX;
       realX += (190. - realX);
       soundManager.playSound(FrozenBubble.SOUND_REBOUND);
     }
 
     realY += moveY;
-
     Point currentPosition = currentPosition();
     BubbleSprite[][] grid = frozen.getGrid();
 
@@ -272,39 +278,48 @@ public class BubbleSprite extends Sprite
 
     Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
 
-    if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
+    if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown())
+    {
       realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
       realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
-
       fixed = true;
 
       Vector<Sprite> checkJump = new Vector<Sprite>();
       this.checkJump(checkJump, neighbors);
 
-      if (checkJump.size() >= 3) {
+      if (checkJump.size() >= 3)
+      {
         released = true;
 
-        for (int i=0 ; i<checkJump.size() ; i++) {
+        for (int i=0 ; i<checkJump.size() ; i++)
+        {
           BubbleSprite current = (BubbleSprite)checkJump.elementAt(i);
           Point currentPoint = current.currentPosition();
-
           frozen.addJumpingBubble(current);
-          if (i>0) {
+
+          if (i>0)
+          {
             current.removeFromManager();
           }
           grid[currentPoint.x][currentPoint.y] = null;
         }
 
-        for (int i=0 ; i<8 ; i++) {
-          if (grid[i][0] != null) {
+        for (int i=0 ; i<8 ; i++)
+        {
+          if (grid[i][0] != null)
+          {
             grid[i][0].checkFall();
           }
         }
 
-        for (int i=0 ; i<8 ; i++) {
-          for (int j=0 ; j<12 ; j++) {
-            if (grid[i][j] != null) {
-              if (!grid[i][j].checked()) {
+        for (int i=0 ; i<8 ; i++)
+        {
+          for (int j=0 ; j<12 ; j++)
+          {
+            if (grid[i][j] != null)
+            {
+              if (!grid[i][j].checked())
+              {
                 frozen.addFallingBubble(grid[i][j]);
                 grid[i][j].removeFromManager();
                 grid[i][j] = null;
@@ -314,7 +329,9 @@ public class BubbleSprite extends Sprite
         }
 
         soundManager.playSound(FrozenBubble.SOUND_DESTROY);
-      } else {
+      }
+      else
+      {
         bubbleManager.addBubble(bubbleFace);
         grid[lastOpenPosition.x][lastOpenPosition.y] = this;
         moveX = 0.;
@@ -330,58 +347,76 @@ public class BubbleSprite extends Sprite
   Vector<BubbleSprite> getNeighbors(Point p)
   {
     BubbleSprite[][] grid = frozen.getGrid();
-
     Vector<BubbleSprite> list = new Vector<BubbleSprite>();
 
-    if ((p.y % 2) == 0) {
-      if (p.x > 0) {
+    if ((p.y % 2) == 0)
+    {
+      if (p.x > 0)
+      {
         list.addElement(grid[p.x-1][p.y]);
       }
 
-      if (p.x < 7) {
+      if (p.x < 7)
+      {
         list.addElement(grid[p.x+1][p.y]);
 
-        if (p.y > 0) {
+        if (p.y > 0)
+        {
           list.addElement(grid[p.x][p.y-1]);
           list.addElement(grid[p.x+1][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < 12)
+        {
           list.addElement(grid[p.x][p.y+1]);
           list.addElement(grid[p.x+1][p.y+1]);
         }
-      } else {
-        if (p.y > 0) {
+      }
+      else
+      {
+        if (p.y > 0)
+        {
           list.addElement(grid[p.x][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < 12)
+        {
           list.addElement(grid[p.x][p.y+1]);
         }
       }
-    } else {
-      if (p.x < 7) {
+    }
+    else
+    {
+      if (p.x < 7)
+      {
         list.addElement(grid[p.x+1][p.y]);
       }
 
-      if (p.x > 0) {
+      if (p.x > 0)
+      {
         list.addElement(grid[p.x-1][p.y]);
 
-        if (p.y > 0) {
+        if (p.y > 0)
+        {
           list.addElement(grid[p.x][p.y-1]);
           list.addElement(grid[p.x-1][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < 12)
+        {
           list.addElement(grid[p.x][p.y+1]);
           list.addElement(grid[p.x-1][p.y+1]);
         }
-      } else {
-        if (p.y > 0) {
+      }
+      else
+      {
+        if (p.y > 0)
+        {
           list.addElement(grid[p.x][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < 12)
+        {
           list.addElement(grid[p.x][p.y+1]);
         }
       }
@@ -392,12 +427,15 @@ public class BubbleSprite extends Sprite
 
   void checkJump(Vector<Sprite> jump, BmpWrap compare)
   {
-    if (checkJump) {
+    if (checkJump)
+    {
       return;
     }
+
     checkJump = true;
 
-    if (this.bubbleFace == compare) {
+    if (this.bubbleFace == compare)
+    {
       checkJump(jump, this.getNeighbors(this.lastOpenPosition));
     }
   }
@@ -406,10 +444,12 @@ public class BubbleSprite extends Sprite
   {
     jump.addElement(this);
 
-    for (int i=0 ; i<neighbors.size() ; i++) {
+    for (int i=0 ; i<neighbors.size() ; i++)
+    {
       BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
 
-      if (current != null) {
+      if (current != null)
+      {
         current.checkJump(jump, this.bubbleFace);
       }
     }
@@ -417,17 +457,20 @@ public class BubbleSprite extends Sprite
 
   public void checkFall()
   {
-    if (checkFall) {
+    if (checkFall)
+    {
       return;
     }
-    checkFall = true;
 
+    checkFall = true;
     Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
 
-    for (int i=0 ; i<v.size() ; i++) {
+    for (int i=0 ; i<v.size() ; i++)
+    {
       BubbleSprite current = (BubbleSprite)v.elementAt(i);
 
-      if (current != null) {
+      if (current != null)
+      {
         current.checkFall();
       }
     }
@@ -435,11 +478,14 @@ public class BubbleSprite extends Sprite
 
   boolean checkCollision(Vector<BubbleSprite> neighbors)
   {
-    for (int i=0 ; i<neighbors.size() ; i++) {
+    for (int i=0 ; i<neighbors.size() ; i++)
+    {
       BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
 
-      if (current != null) {
-        if (checkCollision(current)) {
+      if (current != null)
+      {
+        if (checkCollision(current))
+        {
           return true;
         }
       }
@@ -461,10 +507,10 @@ public class BubbleSprite extends Sprite
 
   public void jump()
   {
-    if (fixed) {
+    if (fixed)
+    {
       moveX = -6. + frozen.getRandom().nextDouble() * 12.;
-      moveY = -5. - frozen.getRandom().nextDouble() * 10. ;
-
+      moveY = -5. - frozen.getRandom().nextDouble() * 10.;
       fixed = false;
     }
 
@@ -474,25 +520,27 @@ public class BubbleSprite extends Sprite
 
     super.absoluteMove(new Point((int)realX, (int)realY));
 
-    if (realY >= 680.) {
+    if (realY >= 680.)
+    {
       frozen.deleteJumpingBubble(this);
     }
   }
 
   public void fall()
   {
-    if (fixed) {
+    if (fixed)
+    {
       moveY = frozen.getRandom().nextDouble()* 5.;
     }
 
     fixed = false;
-
     moveY += FALL_SPEED;
     realY += moveY;
 
     super.absoluteMove(new Point((int)realX, (int)realY));
 
-    if (realY >= 680.) {
+    if (realY >= 680.)
+    {
       frozen.deleteFallingBubble(this);
     }
   }
@@ -504,8 +552,8 @@ public class BubbleSprite extends Sprite
 
   public void frozenify()
   {
-    changeSpriteArea(new Rect(getSpritePosition().x-1, getSpritePosition().y-1,
-                              34, 42));
+    changeSpriteArea(new Rect(getSpritePosition().x-1,
+                              getSpritePosition().y-1, 34, 42));
     bubbleFace = frozenFace;
   }
 
@@ -513,25 +561,33 @@ public class BubbleSprite extends Sprite
   {
     checkJump = false;
     checkFall = false;
-
     Point p = getSpritePosition();
 
-    if (blink && bubbleFace != frozenFace) {
+    if (blink && bubbleFace != frozenFace)
+    {
       blink = false;
       drawImage(bubbleBlink, p.x, p.y, c, scale, dx, dy);
-    } else {
+    }
+    else
+    {
       if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL ||
-          bubbleFace == frozenFace) {
+          bubbleFace == frozenFace)
+      {
         drawImage(bubbleFace, p.x, p.y, c, scale, dx, dy);
-      } else {
+      }
+      else
+      {
         drawImage(bubbleBlindFace, p.x, p.y, c, scale, dx, dy);
       }
     }
 
-    if (fixedAnim != -1) {
+    if (fixedAnim != -1)
+    {
       drawImage(bubbleFixed[fixedAnim], p.x, p.y, c, scale, dx, dy);
       fixedAnim++;
-      if (fixedAnim == 6) {
+
+      if (fixedAnim == 6)
+      {
         fixedAnim = -1;
       }
     }

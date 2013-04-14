@@ -81,8 +81,10 @@ public class LaunchBubbleSprite extends Sprite
     this.colorblindBubbles = colorblindBubbles;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
-    if (getSavedId() != -1) {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites)
+  {
+    if (getSavedId() != -1)
+    {
       return;
     }
     super.saveState(map, saved_sprites);
@@ -108,9 +110,12 @@ public class LaunchBubbleSprite extends Sprite
 
   public final void paint(Canvas c, double scale, int dx, int dy)
   {
-    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
+    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL)
+    {
       drawImage(bubbles[currentColor], 302, 390, c, scale, dx, dy);
-    } else {
+    }
+    else
+    {
       drawImage(colorblindBubbles[currentColor], 302, 390, c, scale, dx, dy);
     }
 

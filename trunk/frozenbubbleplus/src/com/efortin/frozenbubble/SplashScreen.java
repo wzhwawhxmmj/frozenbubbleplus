@@ -97,8 +97,7 @@ public class SplashScreen extends Activity
       @Override
       public void run()
       {
-        try
-        {
+        try {
           synchronized( this )
           {
             //
@@ -114,9 +113,8 @@ public class SplashScreen extends Activity
             //
             wait( _splashTime );  //wait 3 seconds
           }
-        } catch( InterruptedException e ) {}
-        finally
-        {
+        } catch ( InterruptedException e ) {}
+        finally {
           startFrozenBubble();
         }
       }
