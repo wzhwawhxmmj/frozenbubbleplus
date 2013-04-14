@@ -71,27 +71,28 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
-public class HighscoreDB {
-
-  private static final String DATABASE_NAME = "frozenbubble";
-  private static final int DATABASE_VERSION = 1;
-  private static final String TABLE_NAME = "highscore";
+public class HighscoreDB
+{
+  private static final String DATABASE_NAME    = "frozenbubble";
+  private static final int    DATABASE_VERSION = 1;
+  private static final String TABLE_NAME       = "highscore";
 
   private final Context context;
   private final SQLiteDatabase db;
-
   private final SQLiteStatement insertStmt;
-  private static final String INSERT = "insert into " + TABLE_NAME
-  + "(level, name, shots, time) values (?,?,?,?)";
+  private static final String INSERT = "insert into " + TABLE_NAME +
+    "(level, name, shots, time) values (?,?,?,?)";
 
-  public HighscoreDB(Context context) {
+  public HighscoreDB(Context context)
+  {
     this.context = context;
     OpenHelper openHelper = new OpenHelper(this.context);
     db = openHelper.getWritableDatabase();
     insertStmt = db.compileStatement(INSERT);
   }
 
-  public long insert(HighscoreDO hi) {
+  public long insert(HighscoreDO hi)
+  {
     insertStmt.bindLong(1, hi.getLevel());
     insertStmt.bindString(2, hi.getName());
     insertStmt.bindLong(3, hi.getShots());
@@ -99,62 +100,75 @@ public class HighscoreDB {
     return insertStmt.executeInsert();
   }
 
-  public void deleteAll() {
+  public void deleteAll()
+  {
     db.delete(TABLE_NAME, null, null);
   }
 
-  public void deleteById(int id) {
+  public void deleteById(int id)
+  {
     db.delete(TABLE_NAME, "id=" + id, null);
   }
 
-  public List<HighscoreDO> selectAll() {
+  public List<HighscoreDO> selectAll()
+  {
     List<HighscoreDO> list = new ArrayList<HighscoreDO>();
     Cursor cursor = db.query(TABLE_NAME, null, null, null, null, null,
-    "level asc, shots asc, time asc");
-    if (cursor.moveToFirst()) {
-      do {
+                             "level asc, shots asc, time asc");
+    if (cursor.moveToFirst())
+    {
+      do
+      {
         list.add(new HighscoreDO(cursor.getInt(0), cursor.getInt(1),
                  cursor.getString(2), cursor.getInt(3), cursor.getLong(4)));
       } while (cursor.moveToNext());
     }
-    if ((cursor != null) && !cursor.isClosed()) {
-            cursor.close();
-    }
-    return list;
-  }
-
-  public List<HighscoreDO> selectByLevel(int level, int limit) {
-    List<HighscoreDO> list = new ArrayList<HighscoreDO>();
-    Cursor cursor = db.query(TABLE_NAME, null, "level=" + level, null,
-                    null, null, "shots asc, time asc", "" + limit);
-    if (cursor.moveToFirst()) {
-      do {
-        list.add(new HighscoreDO(cursor.getInt(0), cursor.getInt(1),
-                 cursor.getString(2), cursor.getInt(3), cursor.getLong(4)));
-      } while (cursor.moveToNext());
-    }
-    if ((cursor != null) && !cursor.isClosed()) {
+    if ((cursor != null) && !cursor.isClosed())
+    {
       cursor.close();
     }
     return list;
   }
 
-  private static class OpenHelper extends SQLiteOpenHelper {
+  public List<HighscoreDO> selectByLevel(int level, int limit)
+  {
+    List<HighscoreDO> list = new ArrayList<HighscoreDO>();
+    Cursor cursor = db.query(TABLE_NAME, null, "level=" + level, null,
+                             null, null, "shots asc, time asc", "" + limit);
+    if (cursor.moveToFirst())
+    {
+      do
+      {
+        list.add(new HighscoreDO(cursor.getInt(0), cursor.getInt(1),
+                 cursor.getString(2), cursor.getInt(3), cursor.getLong(4)));
+      } while (cursor.moveToNext());
+    }
+    if ((cursor != null) && !cursor.isClosed())
+    {
+      cursor.close();
+    }
+    return list;
+  }
 
-    OpenHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
+  private static class OpenHelper extends SQLiteOpenHelper
+  {
+    OpenHelper(Context context)
+    {
+      super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(SQLiteDatabase db)
+    {
       db.execSQL("CREATE TABLE " + TABLE_NAME +
                  " (id INTEGER PRIMARY KEY, level INTEGER, name TEXT, shots INTEGER, time LONG)");
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
+    {
       Log.w("Example",
-      "Upgrading database, this will drop tables and recreate.");
+            "Upgrading database, this will drop tables and recreate.");
       db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
       onCreate(db);
     }

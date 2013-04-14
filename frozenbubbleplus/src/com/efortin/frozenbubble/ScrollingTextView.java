@@ -106,24 +106,36 @@ public class ScrollingTextView extends TextView implements Runnable
    */
   private void refreshScroll()
   {
-    if (scrollingPaused)
+    synchronized (this)
     {
+      if (scrollingPaused)
+      {
+        /**
+         * TODO: forceFinished() should be stopping the scroll right
+         * where it is, but it isn't for some reason while the window
+         * is in fullscreen mode.  This should be fixed.  On the other
+         * hand, when scrolling is resumed, it starts where it should,
+         * which is absolutely necessary.
+         */
+        scroller.forceFinished(true);
+      }
+      else
+      {
+        y_distance -= scroller.getCurrY() - y_offset;
+        y_offset = scroller.getCurrY();
+        duration = (int) (Math.abs(y_distance) * speed);
+        /**
+         * Revert any animation currently in progress.
+         */
+        scroller.forceFinished(true);
+        scroller.startScroll(0, y_offset, 0, y_distance, duration);
+        if (scrollCount != 0)
+          post(this);
+      }
       /**
-       * TODO: forceFinished() should be stopping the scroll right
-       * where it is, but it isn't for some reason.  This should be
-       * fixed.  On the other hand, when scrolling is resumed, it
-       * starts where it should, which is absolutely necessary.
+       * Invalidate to request a redraw.
        */
-      scroller.forceFinished(true);
-    }
-    else
-    {
-      y_distance -= scroller.getCurrY() - y_offset;
-      y_offset = scroller.getCurrY();
-      duration = (int) (Math.abs(y_distance) * speed);
-      scroller.startScroll(0, y_offset, 0, y_distance, duration);
-      if (scrollCount != 0)
-        post(this);
+      invalidate();
     }
   }
 
@@ -208,9 +220,9 @@ public class ScrollingTextView extends TextView implements Runnable
 
   public void abort()
   {
-  	scrollCount     = 0;
-  	scrollingPaused = false;
-  	scroller.forceFinished(true);
+    scrollCount     = 0;
+    scrollingPaused = false;
+    scroller.forceFinished(true);
   }
 
   public float getSpeed()

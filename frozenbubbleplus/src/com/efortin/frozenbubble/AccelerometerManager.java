@@ -99,14 +99,12 @@ public class AccelerometerManager
   {
     running = false;
 
-    try
-    {
+    try {
       if (sensorManager != null && sensorEventListener != null)
       {
         sensorManager.unregisterListener(sensorEventListener);
       }
-    }
-    catch (Exception e) {}
+    } catch (Exception e) {}
   }
 
   /**

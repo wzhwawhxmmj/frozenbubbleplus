@@ -78,25 +78,24 @@ public class Compressor {
     steps = map.getInt("compressor-steps");
   }
 
-  public void moveDown() {
+  public void moveDown()
+  {
     steps++;
   }
 
   public void paint(Canvas c, double scale, int dx, int dy)
   {
-    for (int i = 0; i < steps; i++) {
+    for (int i = 0; i < steps; i++)
+    {
       c.drawBitmap(compressor.bmp,
                    (float)(235 * scale + dx),
-                   (float)((28 * i - 4) * scale + dy),
-                   null);
+                   (float)((28 * i - 4) * scale + dy), null);
       c.drawBitmap(compressor.bmp,
                    (float)(391 * scale + dx),
-                   (float)((28 * i - 4) * scale + dy),
-                   null);
+                   (float)((28 * i - 4) * scale + dy), null);
     }
     c.drawBitmap(compressorHead.bmp,
                  (float)(160 * scale + dx),
-                 (float)((-7 + 28 * steps) * scale + dy),
-                 null);
+                 (float)((-7 + 28 * steps) * scale + dy), null);
   }
 };

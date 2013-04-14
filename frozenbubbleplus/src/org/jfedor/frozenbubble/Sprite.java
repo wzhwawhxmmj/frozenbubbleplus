@@ -79,7 +79,8 @@ public abstract class Sprite
 
   public void saveState(Bundle map, Vector<Sprite> saved_sprites)
   {
-    if (saved_id != -1) {
+    if (saved_id != -1)
+    {
       return;
     }
     saved_id = saved_sprites.size();

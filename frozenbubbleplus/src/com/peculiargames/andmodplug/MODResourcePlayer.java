@@ -109,7 +109,8 @@ public class MODResourcePlayer extends PlayerThread {
    * @param  cont application Context
    *
    */
-  public MODResourcePlayer(Context cont) {
+  public MODResourcePlayer(Context cont)
+  {
     // get super class (PlayerThread) with default rate
     super(0);
     mContext = cont;
@@ -131,7 +132,8 @@ public class MODResourcePlayer extends PlayerThread {
    *         format) song file
    *
    */
-  public boolean LoadMODResource(int modresource) {
+  public boolean LoadMODResource(int modresource)
+  {
     int currfilesize = 0;
 
     //
@@ -156,7 +158,8 @@ public class MODResourcePlayer extends PlayerThread {
     // small, we need to get a new one.
     //
     //
-    if (modData == null || modData.length < currfilesize) {
+    if (modData == null || modData.length < currfilesize)
+    {
       //
       // Allocate a new buffer that can hold the current MOD file data.
       //
@@ -190,13 +193,15 @@ public class MODResourcePlayer extends PlayerThread {
    * Typically called in the application's (Activity's)
    * <code>onPause()</code> method 
    */
-  public void StopAndClose() {
+  public void StopAndClose()
+  {
     PausePlay();
     boolean retry = true;
 
     // now close and join() the mod player thread
     StopThread();
-    while (retry) {
+    while (retry)
+    {
       try {
         join();
         retry = false;

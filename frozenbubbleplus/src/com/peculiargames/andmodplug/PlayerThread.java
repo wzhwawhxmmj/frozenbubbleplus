@@ -233,8 +233,10 @@ public class PlayerThread extends Thread {
   //
   private Object mOwner;
 
-  public boolean TakeOwnership(Object newowner) {
-    if (mOwner == null || mOwner == newowner) {
+  public boolean TakeOwnership(Object newowner)
+  {
+    if (mOwner == null || mOwner == newowner)
+    {
       mOwner = newowner;
       return true;
     }
@@ -242,8 +244,10 @@ public class PlayerThread extends Thread {
       return false;
   }
 
-  public boolean GiveUpOwnership(Object currowner) {
-    if (mOwner == null || mOwner == currowner) {
+  public boolean GiveUpOwnership(Object currowner)
+  {
+    if (mOwner == null || mOwner == currowner)
+    {
       mOwner = null;
       return true;
     }
@@ -251,7 +255,8 @@ public class PlayerThread extends Thread {
       return false;
   }
 
-  public Object GetOwner() {
+  public Object GetOwner()
+  {
     return mOwner;
   }
 
@@ -267,13 +272,15 @@ public class PlayerThread extends Thread {
   private static boolean sPlayerStarted;
 
   // listener user set
-  public interface PlayerListener {
+  public interface PlayerListener
+  {
     public abstract void onPlayerEvent(int type);
   }
 
   PlayerListener mPlayerListener;
 
-  public void setPlayerListener(PlayerListener pl) {
+  public void setPlayerListener(PlayerListener pl)
+  {
     mPlayerListener = pl;
   }
 
@@ -404,8 +411,7 @@ public class PlayerThread extends Thread {
       boolean success = false;
       while (!success && (rateindex < NUM_RATES))
       {
-        try
-        {
+        try {
           mMinbuffer = AudioTrack.getMinBufferSize(try_rates[rateindex],
             AudioFormat.CHANNEL_CONFIGURATION_STEREO,
             AudioFormat.ENCODING_PCM_16BIT);
@@ -417,9 +423,7 @@ public class PlayerThread extends Thread {
           // init the Modplug player for this sample rate
           ModPlug_Init(try_rates[rateindex]);
           success = true;
-        }
-        catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
           rateindex++;
         }
       }
@@ -502,13 +506,14 @@ public class PlayerThread extends Thread {
    * @param  modData  a byte[] array containing the MOD file data.
    *
    */
-  public void LoadMODData(byte[] modData) {
-
+  public void LoadMODData(byte[] modData)
+  {
     UnLoadMod();
     mdunused = modData;
     mLoad_ok = ModPlug_JLoad(modData, modData.length);
 
-    if (mLoad_ok) {
+    if (mLoad_ok)
+    {
       mModname     = ModPlug_JGetName();
       mNumChannels = ModPlug_JNumChannels();
       posWas       = 0;
@@ -521,7 +526,8 @@ public class PlayerThread extends Thread {
     // I assume music will actually start playing...
     //
     //
-    synchronized(this) {
+    synchronized(this)
+    {
       sPlayerStarted = false;
     }
   }
@@ -537,9 +543,11 @@ public class PlayerThread extends Thread {
   // Check if the player thread is still valid.
   //
   //
-  public boolean PlayerValid() {
+  public boolean PlayerValid()
+  {
     // return whether this player is valid
-    synchronized(sPVlock) {
+    synchronized(sPVlock)
+    {
       return mPlayerValid;
     }
   }
@@ -549,8 +557,10 @@ public class PlayerThread extends Thread {
   // down the main Activity).
   //
   //
-  public void InvalidatePlayer() {
-    synchronized(sPVlock) {
+  public void InvalidatePlayer()
+  {
+    synchronized(sPVlock)
+    {
       mPlayerValid = false;
     }
   }
@@ -646,17 +656,14 @@ public class PlayerThread extends Thread {
       {
         if (mWaitFlag)
         {
-          try
-          {
+          try {
             wait();
 
             if (mFlushedData)
             {
               sleep(20);
             }
-          }
-          catch (Exception e)
-          {
+          } catch (Exception e) {
             e.getCause().printStackTrace();
           }
         }
@@ -679,7 +686,8 @@ public class PlayerThread extends Thread {
    *
    * @return the name of the song (from the MOD/XM file header)
    */
-  public String getModName() {
+  public String getModName()
+  {
     return mModname;
   }
 
@@ -690,14 +698,16 @@ public class PlayerThread extends Thread {
    *                              
    * @return the number of channels the song uses
    */
-  public int getNumChannels() {
+  public int getNumChannels()
+  {
     return mNumChannels;
   }
 
   /**
    * Set the file size of the MOD/XM song.
    */
-  public static void setModSize(int modsize) {
+  public static void setModSize(int modsize)
+  {
     mModsize = modsize;
   }
 
@@ -706,18 +716,21 @@ public class PlayerThread extends Thread {
    *
    * @return the size of the song file
    */
-  public int getModSize() {
+  public int getModSize()
+  {
     return mModsize;
   }
 
-  public int getRate() {
+  public int getRate()
+  {
     return mRate;
   }
 
   /**
    * Pauses playback of the current song.
    */
-  public void PausePlay() {
+  public void PausePlay()
+  {
     mPlaying = false;
     //
     // This check is usually not needed before stop()ing the audio
@@ -730,7 +743,8 @@ public class PlayerThread extends Thread {
 
     mWaitFlag = true;
 
-    synchronized(this) {
+    synchronized(this)
+    {
       this.notify();
     }
   }
@@ -738,18 +752,22 @@ public class PlayerThread extends Thread {
   /**
    * Resumes playback of the current song.
    */
-  public void UnPausePlay() {
+  public void UnPausePlay()
+  {
     mMytrack.play();
     mPlaying  = true;
     mWaitFlag = false;
 
-    synchronized(this) {
+    synchronized(this)
+    {
       this.notify();
     }
   }
 
-  public void Flush() {
-    if (!mPlaying) {
+  public void Flush()
+  {
+    if (!mPlaying)
+    {
       mMytrack.flush();
       mFlushedData = true;
     }
@@ -761,7 +779,8 @@ public class PlayerThread extends Thread {
    * @param  vol an integer from 0 (sound off) to 255 (full volume)
    *
    */
-  public void setVolume(int vol) {
+  public void setVolume(int vol)
+  {
     vol = vol>>5;
     if (vol>7) vol = 7;
     if (vol<0) vol = 0;
@@ -775,7 +794,8 @@ public class PlayerThread extends Thread {
    *         (full volume)
    *
    */
-  public void setVolume(float vol) {
+  public void setVolume(float vol)
+  {
     if (vol>1.0f) vol = 1.0f;
     if (vol<0) vol = 0;
     mMytrack.setStereoVolume(vol, vol);
@@ -789,7 +809,8 @@ public class PlayerThread extends Thread {
    *               playing.  If this is set to false, then the player
    *               will immediately begin playing when it is started.
    */
-  public void startPaused(boolean flag) {
+  public void startPaused(boolean flag)
+  {
     //
     // Set before calling the thread's start() method.  This will cause
     // it to start in paused mode.
@@ -807,7 +828,8 @@ public class PlayerThread extends Thread {
    *  process, and also call <code>CloseLIBMODPLUG()</code> to close
    *  the native player library and de-allocate all resources it used.
    */
-  public void StopThread() {
+  public void StopThread()
+  {
     // stops the thread playing  (see run() above)
     mPlaying = false;
     mRunning = false;
@@ -823,7 +845,8 @@ public class PlayerThread extends Thread {
     mPlayerValid = false;
     mWaitFlag    = false;
 
-    synchronized(this) {
+    synchronized(this)
+    {
       this.notify();
     }
   }
@@ -832,7 +855,8 @@ public class PlayerThread extends Thread {
    * Close the native internal tracker library (libmodplug) and de-
    * allocate any resources.
    */
-  public static void CloseLIBMODPLUG() {
+  public static void CloseLIBMODPLUG()
+  {
     //ModPlug_JUnload(mdunused, MAXMODSIZE);
     ModPlug_JUnload(mdunused, 0);
     ModPlug_CloseDown();
@@ -844,7 +868,8 @@ public class PlayerThread extends Thread {
    * @param  mt modifier for the song's "native" tempo (positive values
    *   to increase tempo, negative values to decrease tempo)
    */
-  public void modifyTempo(int mt) {
+  public void modifyTempo(int mt)
+  {
     ModPlug_ChangeTempo(mt);
   }
   /**
@@ -853,7 +878,8 @@ public class PlayerThread extends Thread {
    * @param  temp the tempo for the song (overrides song's "native"
    *   tempo)
    */
-  public void setTempo(int temp) {
+  public void setTempo(int temp)
+  {
     ModPlug_SetTempo(temp);
   }
   /**
@@ -861,7 +887,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the tempo
    */
-  public int getSongDefaultTempo() {
+  public int getSongDefaultTempo()
+  {
     return ModPlug_GetNativeTempo();
   }
   /**
@@ -869,7 +896,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the position
    */
-  public int getCurrentPos() {
+  public int getCurrentPos()
+  {
     return ModPlug_GetCurrentPos();
   }
   /**
@@ -877,7 +905,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the maximum position
    */
-  public int getMaxPos() {
+  public int getMaxPos()
+  {
     return ModPlug_GetMaxPos();
   }
   /**
@@ -885,7 +914,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the order
    */
-  public int getCurrentOrder() {
+  public int getCurrentOrder()
+  {
     return ModPlug_GetCurrentOrder();
   }
   /**
@@ -893,7 +923,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the pattern
    */
-  public int getCurrentPattern() {
+  public int getCurrentPattern()
+  {
     return ModPlug_GetCurrentPattern();
   }
   /**
@@ -902,7 +933,8 @@ public class PlayerThread extends Thread {
    *                              
    * @param pattern the new pattern to start playing immediately
    */
-  public void setCurrentPattern(int pattern) {
+  public void setCurrentPattern(int pattern)
+  {
     ModPlug_SetCurrentPattern(pattern);
   }
   /**
@@ -912,7 +944,8 @@ public class PlayerThread extends Thread {
    * @param pattern the new pattern to start playing after the current
    *   pattern finishes playing
    */
-  public void setNextPattern(int pattern) {
+  public void setNextPattern(int pattern)
+  {
     ModPlug_SetNextPattern(pattern);
   }
   /**
@@ -920,7 +953,8 @@ public class PlayerThread extends Thread {
    *                              
    * @return the row
    */
-  public int getCurrentRow() {
+  public int getCurrentRow()
+  {
     return ModPlug_GetCurrentRow();
   }
   /**
@@ -929,7 +963,8 @@ public class PlayerThread extends Thread {
    * @param flag true to start printing debug information to log
    *   output, false to stop
    */
-  public void setLogOutput(boolean flag) {
+  public void setLogOutput(boolean flag)
+  {
     ModPlug_LogOutput(flag);
   }
   /**
@@ -940,7 +975,8 @@ public class PlayerThread extends Thread {
    * @param  newpattern the new song pattern to start playing
    *   (repeating) in PATTERN LOOP mode
    */
-  public void changePattern(int newpattern) {
+  public void changePattern(int newpattern)
+  {
     ModPlug_ChangePattern(newpattern);
   }
   /**
@@ -949,7 +985,8 @@ public class PlayerThread extends Thread {
    * @param  pattern the song pattern to start playing(repeating) in
    *   PATTERN LOOP mode
    */
-  public void repeatPattern(int pattern) {
+  public void repeatPattern(int pattern)
+  {
     ModPlug_RepeatPattern(pattern);
   }
   /**
@@ -960,14 +997,16 @@ public class PlayerThread extends Thread {
    *   PATTERN_CHANGE_AFTER_CURRENT, PATTERN_CHANGE_AFTER_GROUP) to
    *   signal when the new pattern range should take effect
    */
-  public void setPatternLoopRange(int from, int to, int when) {
+  public void setPatternLoopRange(int from, int to, int when)
+  {
     ModPlug_SetPatternLoopRange(from, to, when);
   }
   /**
    * EXPERIMENTAL method to loop song the specified number of times.
    * @param  number of times to loop (-1 = forever)
    */
-  public void setLoopCount(int loopcount) {
+  public void setLoopCount(int loopcount)
+  {
     ModPlug_SetLoopCount(loopcount);
   }
   /**
@@ -977,7 +1016,8 @@ public class PlayerThread extends Thread {
    * @param  flag true to set PATTERN LOOP mode, false to turn off
    *   PATTERN LOOP mode
    */
-  public void setPatternLoopMode(boolean flag) {
+  public void setPatternLoopMode(boolean flag)
+  {
     ModPlug_SetPatternLoopMode(flag);
   }
   /**
@@ -996,7 +1036,8 @@ public class PlayerThread extends Thread {
     // run() above).
     //
     //
-    synchronized(sRDlock) {
+    synchronized(sRDlock)
+    {
       //ModPlug_JUnload(mdunused, MAXMODSIZE);
       ModPlug_JUnload(mdunused, 0);
     }
@@ -1047,8 +1088,7 @@ public class PlayerThread extends Thread {
     try {
       System.loadLibrary("modplug-"+VERS);
       //System.loadLibrary("modplug");
-    }
-    catch (UnsatisfiedLinkError ule) {
+    } catch (UnsatisfiedLinkError ule) {
       Log.e(LOGPREFIX, "WARNING: Could not load libmodplug-"+VERS+".so");
       Log.e(LOGPREFIX, "------ older or differently named libmodplug???");
     }

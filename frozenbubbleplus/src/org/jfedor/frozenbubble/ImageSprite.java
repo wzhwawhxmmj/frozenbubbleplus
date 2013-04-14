@@ -71,8 +71,10 @@ public class ImageSprite extends Sprite
     this.displayedImage = img;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
-    if (getSavedId() != -1) {
+  public void saveState(Bundle map, Vector<Sprite> savedSprites)
+  {
+    if (getSavedId() != -1)
+    {
       return;
     }
     super.saveState(map, savedSprites);

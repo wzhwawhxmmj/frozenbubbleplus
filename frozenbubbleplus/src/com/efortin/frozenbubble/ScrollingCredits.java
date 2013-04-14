@@ -57,7 +57,9 @@ import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.R;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -73,15 +75,11 @@ import com.peculiargames.andmodplug.PlayerThread;
 
 public class ScrollingCredits extends Activity implements Runnable
 {
+  private boolean victoryScreenShown = false;
   private ScrollingTextView credits;
   private MODResourcePlayer resplayer = null;
-
   private static final int DEFAULT_SONG = 0;
-  private final int[] MODlist = {
-    R.raw.worldofpeace
-  };
-
-  private boolean victoryScreenShown = false;
+  private final int[] MODlist = { R.raw.worldofpeace };
 
   @Override
   public void onBackPressed()
@@ -98,13 +96,8 @@ public class ScrollingCredits extends Activity implements Runnable
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    //   Remove the title bar.
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
-    //   Remove notification bar.
-    this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-                              WindowManager.LayoutParams.FLAG_FULLSCREEN);
-    //   Load the default XML layout for this activity.
-    setContentView(R.layout.activity_scrolling_credits);
+    //   Configure the window presentation and layout.
+    setWindowLayout(R.layout.activity_scrolling_credits);
     //   Get the instance of the ScrollingTextView object.
     credits = (ScrollingTextView)findViewById(R.id.scrolling_credits);
     //   Configure the credits text presentation.
@@ -122,18 +115,14 @@ public class ScrollingCredits extends Activity implements Runnable
   public void onPause()
   {
     super.onPause();
-    if (resplayer != null)
-      resplayer.PausePlay();
-    credits.setPaused(true);
+    pauseCredits();
   }
 
   @Override
   public void onResume()
   {
     super.onResume();
-    if (resplayer != null)
-      resplayer.UnPausePlay();
-    credits.setPaused(false);
+    resumeCredits();
   }
 
   @Override
@@ -164,6 +153,17 @@ public class ScrollingCredits extends Activity implements Runnable
   public boolean onTouchEvent(MotionEvent event)
   {
     return checkCreditsDone();
+  }
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus)
+  {
+    super.onWindowFocusChanged(hasFocus);
+
+    if (hasFocus)
+      resumeCredits();
+    else
+      pauseCredits();
   }
 
   /**
@@ -220,7 +220,7 @@ public class ScrollingCredits extends Activity implements Runnable
   public void displayImage(int id)
   {
     //   Construct a new LinearLayout programmatically. 
-  	LinearLayout linearLayout = new LinearLayout(this);
+    LinearLayout linearLayout = new LinearLayout(this);
     linearLayout.setOrientation(LinearLayout.VERTICAL);
     linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
                                                   LayoutParams.MATCH_PARENT));
@@ -257,6 +257,20 @@ public class ScrollingCredits extends Activity implements Runnable
     finish();
   }
 
+  public void pauseCredits()
+  {
+    if (resplayer != null)
+      resplayer.PausePlay();
+    credits.setPaused(true);
+  }
+
+  public void resumeCredits()
+  {
+    if (resplayer != null)
+      resplayer.UnPausePlay();
+    credits.setPaused(false);
+  }
+
   @Override
   public void run()
   {
@@ -270,5 +284,33 @@ public class ScrollingCredits extends Activity implements Runnable
       displayImage(R.drawable.victory);
     }
     credits.postDelayed(this, 100);
+  }
+
+  public void setWindowLayout(int layoutResID)
+  {
+    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
+
+    //   Set full screen mode based on the game preferences.
+    SharedPreferences mConfig =
+      getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
+    boolean fullscreen = mConfig.getBoolean("fullscreen", true );
+
+    //   Remove the title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+    if (fullscreen)
+    {
+      getWindow().addFlags(flagFs);
+      getWindow().clearFlags(flagNoFs);
+    }
+    else
+    {
+      getWindow().clearFlags(flagFs);
+      getWindow().addFlags(flagNoFs);
+    }
+
+   //   Load and apply the specified XML layout.
+   setContentView(layoutResID);
   }
 }

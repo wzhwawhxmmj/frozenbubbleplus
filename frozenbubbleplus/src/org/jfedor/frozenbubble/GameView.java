@@ -220,7 +220,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
 
     public int getCurrentLevelIndex( )
     {
-      synchronized ( mSurfaceHolder ) {
+      synchronized ( mSurfaceHolder )
+      {
         return mLevelManager.getLevelIndex( );
       }
     }
@@ -247,11 +248,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       try {
         Field f = options.getClass( ).getField("inScaled");
         f.set(options, Boolean.FALSE);
-      } catch (Exception ignore) { }
+      } catch (Exception ignore) {}
 
       mBackgroundOrig = BitmapFactory.decodeResource(
         res, R.drawable.background, options);
-      mBubblesOrig    = new Bitmap[8];
+      mBubblesOrig = new Bitmap[8];
       mBubblesOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_1, options);
       mBubblesOrig[1] = BitmapFactory.decodeResource(
@@ -268,7 +269,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         res, R.drawable.bubble_7, options);
       mBubblesOrig[7] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_8, options);
-      mBubblesBlindOrig    = new Bitmap[8];
+      mBubblesBlindOrig = new Bitmap[8];
       mBubblesBlindOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_colourblind_1, options);
       mBubblesBlindOrig[1] = BitmapFactory.decodeResource(
@@ -285,7 +286,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         res, R.drawable.bubble_colourblind_7, options);
       mBubblesBlindOrig[7] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_colourblind_8, options);
-      mFrozenBubblesOrig    = new Bitmap[8];
+      mFrozenBubblesOrig = new Bitmap[8];
       mFrozenBubblesOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.frozen_1, options);
       mFrozenBubblesOrig[1] = BitmapFactory.decodeResource(
@@ -302,7 +303,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         res, R.drawable.frozen_7, options);
       mFrozenBubblesOrig[7] = BitmapFactory.decodeResource(
         res, R.drawable.frozen_8, options);
-      mTargetedBubblesOrig    = new Bitmap[6];
+      mTargetedBubblesOrig = new Bitmap[6];
       mTargetedBubblesOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.fixed_1, options);
       mTargetedBubblesOrig[1] = BitmapFactory.decodeResource(
@@ -315,42 +316,46 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         res, R.drawable.fixed_5, options);
       mTargetedBubblesOrig[5] = BitmapFactory.decodeResource(
         res, R.drawable.fixed_6, options);
-      mBubbleBlinkOrig    = BitmapFactory.decodeResource(
-        res, R.drawable.bubble_blink,    options);
-      mGameWonOrig        = BitmapFactory.decodeResource(
-        res, R.drawable.win_panel,       options);
-      mGameLostOrig       = BitmapFactory.decodeResource(
-        res, R.drawable.lose_panel,      options);
-      mGamePausedOrig     = BitmapFactory.decodeResource(
-        res, R.drawable.paused,          options);
-      mHurryOrig          = BitmapFactory.decodeResource(
-        res, R.drawable.hurry,           options);
-      mPenguinsOrig       = BitmapFactory.decodeResource(
-        res, R.drawable.penguins,        options);
+      mBubbleBlinkOrig = BitmapFactory.decodeResource(
+        res, R.drawable.bubble_blink, options);
+      mGameWonOrig = BitmapFactory.decodeResource(
+        res, R.drawable.win_panel, options);
+      mGameLostOrig = BitmapFactory.decodeResource(
+        res, R.drawable.lose_panel, options);
+      mGamePausedOrig = BitmapFactory.decodeResource(
+        res, R.drawable.paused, options);
+      mHurryOrig = BitmapFactory.decodeResource(
+        res, R.drawable.hurry, options);
+      mPenguinsOrig = BitmapFactory.decodeResource(
+        res, R.drawable.penguins, options);
       mCompressorHeadOrig = BitmapFactory.decodeResource(
-        res, R.drawable.compressor,      options);
-      mCompressorOrig     = BitmapFactory.decodeResource(
+        res, R.drawable.compressor, options);
+      mCompressorOrig = BitmapFactory.decodeResource(
         res, R.drawable.compressor_body, options);
-      mLifeOrig           = BitmapFactory.decodeResource(
-        res, R.drawable.life,            options);
-      mFontImageOrig      = BitmapFactory.decodeResource(
-        res, R.drawable.bubble_font,     options);
+      mLifeOrig = BitmapFactory.decodeResource(
+        res, R.drawable.life, options);
+      mFontImageOrig = BitmapFactory.decodeResource(
+        res, R.drawable.bubble_font, options);
 
-      mImageList  = new Vector<BmpWrap>( );
-      mBubbles    = new BmpWrap[8];
-      for (int i = 0; i < mBubbles.length; i++) {
+      mImageList = new Vector<BmpWrap>( );
+      mBubbles   = new BmpWrap[8];
+      for (int i = 0; i < mBubbles.length; i++)
+      {
         mBubbles[i] = NewBmpWrap( );
       }
       mBubblesBlind = new BmpWrap[8];
-      for (int i = 0; i < mBubblesBlind.length; i++) {
+      for (int i = 0; i < mBubblesBlind.length; i++)
+      {
         mBubblesBlind[i] = NewBmpWrap( );
       }
       mFrozenBubbles = new BmpWrap[8];
-      for (int i = 0; i < mFrozenBubbles.length; i++) {
+      for (int i = 0; i < mFrozenBubbles.length; i++)
+      {
         mFrozenBubbles[i] = NewBmpWrap( );
       }
       mTargetedBubbles = new BmpWrap[6];
-      for (int i = 0; i < mTargetedBubbles.length; i++) {
+      for (int i = 0; i < mTargetedBubbles.length; i++)
+      {
         mTargetedBubbles[i] = NewBmpWrap( );
       }
 
@@ -426,28 +431,32 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       //Log.i("frozen-bubble", "resizeBitmaps( )");
       scaleFrom(mBackground, mBackgroundOrig);
-      for (int i = 0; i < mBubblesOrig.length; i++) {
+      for (int i = 0; i < mBubblesOrig.length; i++)
+      {
         scaleFrom(mBubbles[i], mBubblesOrig[i]);
       }
-      for (int i = 0; i < mBubblesBlind.length; i++) {
+      for (int i = 0; i < mBubblesBlind.length; i++)
+      {
         scaleFrom(mBubblesBlind[i], mBubblesBlindOrig[i]);
       }
-      for (int i = 0; i < mFrozenBubbles.length; i++) {
+      for (int i = 0; i < mFrozenBubbles.length; i++)
+      {
         scaleFrom(mFrozenBubbles[i], mFrozenBubblesOrig[i]);
       }
-      for (int i = 0; i < mTargetedBubbles.length; i++) {
+      for (int i = 0; i < mTargetedBubbles.length; i++)
+      {
         scaleFrom(mTargetedBubbles[i], mTargetedBubblesOrig[i]);
       }
-      scaleFrom(mBubbleBlink,    mBubbleBlinkOrig);
-      scaleFrom(mGameWon,        mGameWonOrig);
-      scaleFrom(mGameLost,       mGameLostOrig);
-      scaleFrom(mGamePaused,     mGamePausedOrig);
-      scaleFrom(mHurry,          mHurryOrig);
-      scaleFrom(mPenguins,       mPenguinsOrig);
+      scaleFrom(mBubbleBlink, mBubbleBlinkOrig);
+      scaleFrom(mGameWon, mGameWonOrig);
+      scaleFrom(mGameLost, mGameLostOrig);
+      scaleFrom(mGamePaused, mGamePausedOrig);
+      scaleFrom(mHurry, mHurryOrig);
+      scaleFrom(mPenguins, mPenguinsOrig);
       scaleFrom(mCompressorHead, mCompressorHeadOrig);
-      scaleFrom(mCompressor,     mCompressorOrig);
-      scaleFrom(mLife,           mLifeOrig);
-      scaleFrom(mFontImage,      mFontImageOrig);
+      scaleFrom(mCompressor, mCompressorOrig);
+      scaleFrom(mLife, mLifeOrig);
+      scaleFrom(mFontImage, mFontImageOrig);
       //Log.i("frozen-bubble", "resizeBitmaps done.");
       mImagesReady = true;
     }
@@ -500,20 +509,24 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void run( )
     {
-      while (mRun) {
+      while (mRun)
+      {
         long now = System.currentTimeMillis( );
         long delay = FRAME_DELAY + mLastTime - now;
-        if (delay > 0) {
-          try{
+        if (delay > 0)
+        {
+          try {
             sleep(delay);
           } catch (InterruptedException e) {}
         }
         mLastTime = now;
         Canvas c = null;
         try {
-          if (surfaceOK( )) {
+          if (surfaceOK( ))
+          {
             c = mSurfaceHolder.lockCanvas(null);
-            if (c != null) {
+            if (c != null)
+            {
               synchronized ( mSurfaceHolder )
               {
                 if (mRun)
@@ -554,7 +567,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
           // do this in a finally so that if an exception is thrown
           // during the above, we don't leave the Surface in an
           // inconsistent state
-          if (c != null) {
+          if (c != null)
+          {
             mSurfaceHolder.unlockCanvasAndPost(c);
           }
         }
@@ -571,7 +585,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     {
       synchronized ( mSurfaceHolder )
       {
-        if (map != null)
+        if ( map != null )
         {
           mFrozenGame      .saveState(map);
           mLevelManager    .saveState(map);
@@ -651,18 +665,17 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         if ( ( width / height ) >= ( GAMEFIELD_WIDTH / GAMEFIELD_HEIGHT ) )
         {
           mDisplayScale = ( 1.0 * height ) / GAMEFIELD_HEIGHT;
-          mDisplayDX    = (int)
-            ( ( width - ( mDisplayScale * EXTENDED_GAMEFIELD_WIDTH ) ) / 2 );
+          mDisplayDX = (int)( ( width - ( mDisplayScale *
+                                          EXTENDED_GAMEFIELD_WIDTH ) ) / 2 );
           mDisplayDY    = 0;
         }
         else
         {
           mDisplayScale = 1.0 * width / GAMEFIELD_WIDTH;
-          mDisplayDX    = (int)
-            ( -mDisplayScale * ( EXTENDED_GAMEFIELD_WIDTH -
-                                 GAMEFIELD_WIDTH ) / 2 );
-          mDisplayDY    = (int)
-            ( ( height - ( mDisplayScale * GAMEFIELD_HEIGHT ) ) / 2 );
+          mDisplayDX = (int)( -mDisplayScale * ( EXTENDED_GAMEFIELD_WIDTH -
+                                                 GAMEFIELD_WIDTH ) / 2 );
+          mDisplayDY = (int)( ( height - ( mDisplayScale *
+                                           GAMEFIELD_HEIGHT ) ) / 2 );
         }
         resizeBitmaps( );
       }
@@ -709,7 +722,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
             return true;
           }
         }
-
         return false;
       }
     }
@@ -1110,7 +1122,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
         mFrozenGame.cleanUp( );
-        mFrozenGame  = null;
+        mFrozenGame = null;
         mImagesReady = false;
 
         boolean imagesScaled = ( mBackgroundOrig == mBackground.bmp );
@@ -1145,24 +1157,24 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         }
         mTargetedBubblesOrig = null;
 
-        mBubbleBlinkOrig   .recycle( );
-        mBubbleBlinkOrig    = null;
-        mGameWonOrig       .recycle( );
-        mGameWonOrig        = null;
-        mGameLostOrig      .recycle( );
-        mGameLostOrig       = null;
-        mGamePausedOrig    .recycle( );
-        mGamePausedOrig     = null;
-        mHurryOrig         .recycle( );
-        mHurryOrig          = null;
-        mPenguinsOrig      .recycle( );
-        mPenguinsOrig       = null;
+        mBubbleBlinkOrig.recycle( );
+        mBubbleBlinkOrig = null;
+        mGameWonOrig.recycle( );
+        mGameWonOrig = null;
+        mGameLostOrig.recycle( );
+        mGameLostOrig = null;
+        mGamePausedOrig.recycle( );
+        mGamePausedOrig = null;
+        mHurryOrig.recycle( );
+        mHurryOrig = null;
+        mPenguinsOrig.recycle( );
+        mPenguinsOrig = null;
         mCompressorHeadOrig.recycle( );
         mCompressorHeadOrig = null;
-        mCompressorOrig    .recycle( );
-        mCompressorOrig     = null;
-        mLifeOrig          .recycle( );
-        mLifeOrig           = null;
+        mCompressorOrig.recycle( );
+        mCompressorOrig = null;
+        mLifeOrig.recycle( );
+        mLifeOrig = null;
 
         if (imagesScaled)
         {
@@ -1187,67 +1199,67 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
             mTargetedBubbles[i].bmp.recycle( );
           }
 
-          mBubbleBlink   .bmp.recycle( );
-          mGameWon       .bmp.recycle( );
-          mGameLost      .bmp.recycle( );
-          mGamePaused    .bmp.recycle( );
-          mHurry         .bmp.recycle( );
-          mPenguins      .bmp.recycle( );
+          mBubbleBlink.bmp.recycle( );
+          mGameWon.bmp.recycle( );
+          mGameLost.bmp.recycle( );
+          mGamePaused.bmp.recycle( );
+          mHurry.bmp.recycle( );
+          mPenguins.bmp.recycle( );
           mCompressorHead.bmp.recycle( );
-          mCompressor    .bmp.recycle( );
-          mLife          .bmp.recycle( );
+          mCompressor.bmp.recycle( );
+          mLife.bmp.recycle( );
         }
         mBackground.bmp = null;
-        mBackground     = null;
+        mBackground = null;
 
         for (int i = 0; i < mBubbles.length; i++)
         {
           mBubbles[i].bmp = null;
-          mBubbles[i]     = null;
+          mBubbles[i] = null;
         }
         mBubbles = null;
 
         for (int i = 0; i < mBubblesBlind.length; i++)
         {
           mBubblesBlind[i].bmp = null;
-          mBubblesBlind[i]     = null;
+          mBubblesBlind[i] = null;
         }
         mBubblesBlind = null;
 
         for (int i = 0; i < mFrozenBubbles.length; i++)
         {
           mFrozenBubbles[i].bmp = null;
-          mFrozenBubbles[i]     = null;
+          mFrozenBubbles[i] = null;
         }
         mFrozenBubbles = null;
 
         for (int i = 0; i < mTargetedBubbles.length; i++)
         {
           mTargetedBubbles[i].bmp = null;
-          mTargetedBubbles[i]     = null;
+          mTargetedBubbles[i] = null;
         }
         mTargetedBubbles = null;
 
-        mBubbleBlink   .bmp = null;
-        mBubbleBlink        = null;
-        mGameWon       .bmp = null;
-        mGameWon            = null;
-        mGameLost      .bmp = null;
-        mGameLost           = null;
-        mGamePaused    .bmp = null;
-        mGamePaused         = null;
-        mHurry         .bmp = null;
-        mHurry              = null;
-        mPenguins      .bmp = null;
-        mPenguins           = null;
+        mBubbleBlink.bmp = null;
+        mBubbleBlink = null;
+        mGameWon.bmp = null;
+        mGameWon = null;
+        mGameLost.bmp = null;
+        mGameLost = null;
+        mGamePaused.bmp = null;
+        mGamePaused = null;
+        mHurry.bmp = null;
+        mHurry = null;
+        mPenguins.bmp = null;
+        mPenguins = null;
         mCompressorHead.bmp = null;
-        mCompressorHead     = null;
-        mCompressor    .bmp = null;
-        mCompressor         = null;
-        mLife          .bmp = null;
-        mLife               = null;
+        mCompressorHead = null;
+        mCompressor.bmp = null;
+        mCompressor = null;
+        mLife.bmp = null;
+        mLife = null;
 
-        mImageList    = null;
+        mImageList = null;
         mSoundManager.cleanUp( );
         mSoundManager = null;
         mLevelManager = null;
