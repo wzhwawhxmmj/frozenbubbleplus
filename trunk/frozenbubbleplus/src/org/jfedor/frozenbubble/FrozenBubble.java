@@ -409,7 +409,8 @@ public class FrozenBubble extends Activity
    * Notification that something is about to happen, to give the Activity a
    * chance to save state.
    *
-   * @param outState a Bundle into which this Activity should save its state
+   * @param  outState
+   *         a Bundle into which this Activity should save its state
    */
   @Override
   protected void onSaveInstanceState(Bundle outState)
@@ -468,9 +469,9 @@ public class FrozenBubble extends Activity
     // rotation into a fully qualified orientation.
     //
     //
-    if ((((rotation == Surface.ROTATION_0  )||
+    if ((((rotation == Surface.ROTATION_0  ) ||
           (rotation == Surface.ROTATION_180)) && (height > width )) ||
-        (((rotation == Surface.ROTATION_90 )||
+        (((rotation == Surface.ROTATION_90 ) ||
           (rotation == Surface.ROTATION_270)) && (width  > height)))
     {
       //
@@ -562,8 +563,9 @@ public class FrozenBubble extends Activity
    * selected the option to continue playing from the last level
    * played, so use the last level played instead.
    * 
-   * @param intent  the intent from the level editor used to start this
-   * activity, which contains the custom level data.
+   * @param  intent
+   *         the intent from the level editor used to start this
+   *         activity, which contains the custom level data
    */
   private void startCustomGame(Intent intent)
   {
@@ -952,9 +954,9 @@ public class FrozenBubble extends Activity
    * index to the first song in the playlist.  Otherwise, load the
    * song index that was last saved in the MOD player preferences.
    *
-   * @param startPausedFlag  if true, the player will be paused on
-   * startup.  Otherwise if false, the player will start playing
-   * immediately.
+   * @param  startPausedFlag
+   *         if true, the player will be paused on startup.  Otherwise
+   *         if false, the player will start playing immediately.
    */
   private void newMusicPlayer( boolean startPausedFlag )
   {
@@ -969,8 +971,8 @@ public class FrozenBubble extends Activity
       if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
     }
     //
-    //   If the MOD player instance is not NULL, destroy it and create
-    //   a new one.
+    // If the MOD player instance is not NULL, destroy it and create
+    // a new one.
     //
     //
     destroyMusicPlayer();
@@ -994,10 +996,10 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   *   Play the current song in our playlist from the beginning of the
-   *   song.
+   * Play the current song in our playlist from the beginning of the
+   * song.
    *
-   *   <p>The current MOD index may have been modified externally.
+   * <p>The current MOD index may have been modified externally.
    *
    */
   private void playCurrentMOD()

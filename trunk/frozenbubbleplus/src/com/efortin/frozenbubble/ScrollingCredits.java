@@ -85,8 +85,8 @@ public class ScrollingCredits extends Activity implements Runnable
   public void onBackPressed()
   {
     //
-    //   Do not call the super class ancestor method.  Finish this
-    //   activity so it is destroyed and we simply return to the game.
+    // Do not call the super class ancestor method.  Finish this
+    // activity so it is destroyed and we simply return to the game.
     //
     //
     end();
@@ -96,18 +96,18 @@ public class ScrollingCredits extends Activity implements Runnable
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
-    //   Configure the window presentation and layout.
+    // Configure the window presentation and layout.
     setWindowLayout(R.layout.activity_scrolling_credits);
-    //   Get the instance of the ScrollingTextView object.
+    // Get the instance of the ScrollingTextView object.
     credits = (ScrollingTextView)findViewById(R.id.scrolling_credits);
-    //   Configure the credits text presentation.
+    // Configure the credits text presentation.
     credits.setScrollRepeatLimit(0);
     credits.setSpeed(50.0f);
     credits.setScrollDirection(ScrollingTextView.SCROLL_UP);
     credits.setTextSize(18.0f);
-    //   Start the credits music.
+    // Start the credits music.
     newMusicPlayer();
-    //   Post this runnable instance to the scrolling text view.
+    // Post this runnable instance to the scrolling text view.
     credits.postDelayed(this, 100);
   }
 
@@ -185,7 +185,7 @@ public class ScrollingCredits extends Activity implements Runnable
   private void newMusicPlayer()
   {
     destroyMusicPlayer();
-    //   Load the module music file.
+    // Load the module music file.
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
@@ -197,7 +197,7 @@ public class ScrollingCredits extends Activity implements Runnable
     {
       resplayer.setVolume(0);
     }
-    //   Start up the music.
+    // Start up the music.
     resplayer.startPaused(false);
     resplayer.start();
   }
@@ -219,21 +219,21 @@ public class ScrollingCredits extends Activity implements Runnable
 
   public void displayImage(int id)
   {
-    //   Construct a new LinearLayout programmatically. 
+    // Construct a new LinearLayout programmatically. 
     LinearLayout linearLayout = new LinearLayout(this);
     linearLayout.setOrientation(LinearLayout.VERTICAL);
     linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
                                                   LayoutParams.MATCH_PARENT));
-    //   ImageView setup for the image.
+    // ImageView setup for the image.
     ImageView imageView = new ImageView(this);
-    //   Set image resource.
+    // Set image resource.
     imageView.setImageResource(R.drawable.victory);
-    //   Set image position.
+    // Set image position and scaling.
     imageView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
                                                LayoutParams.MATCH_PARENT));
-    //   Add view to layout.
+    // Add view to layout.
     linearLayout.addView(imageView);
-    //   Set the content view to this layout and display the image.
+    // Set the content view to this layout and display the image.
     setContentView(linearLayout);
   }
 
@@ -241,15 +241,15 @@ public class ScrollingCredits extends Activity implements Runnable
   {
     credits.abort();
     //
-    //   Since the default game activity creates its own player,
-    //   destroy the current player.
+    // Since the default game activity creates its own player,
+    // destroy the current player.
     //
     //
     destroyMusicPlayer();
     //
-    //   Create an intent to launch the game activity.  Since it was
-    //   running in the background while this activity was running, it
-    //   may have been stopped by the system.
+    // Create an intent to launch the game activity.  Since it was
+    // running in the background while this activity was running, it
+    // may have been stopped by the system.
     //
     //
     Intent intent = new Intent( this, FrozenBubble.class );
@@ -274,13 +274,13 @@ public class ScrollingCredits extends Activity implements Runnable
   @Override
   public void run()
   {
-    //   Check if we need to display the end of game victory image.
+    // Check if we need to display the end of game victory image.
     if (!credits.isScrolling() && !victoryScreenShown)
     {
       victoryScreenShown = true;
-      //   Make the credits text transparent.
+      // Make the credits text transparent.
       credits.setTextColor(Color.TRANSPARENT);
-      //   Display the end of game victory image.
+      // Display the end of game victory image.
       displayImage(R.drawable.victory);
     }
     credits.postDelayed(this, 100);
@@ -291,12 +291,11 @@ public class ScrollingCredits extends Activity implements Runnable
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
-    //   Set full screen mode based on the game preferences.
+    // Set full screen mode based on the game preferences.
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
     boolean fullscreen = mConfig.getBoolean("fullscreen", true );
-
-    //   Remove the title bar.
+    // Remove the title bar.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
 
     if (fullscreen)
@@ -309,8 +308,7 @@ public class ScrollingCredits extends Activity implements Runnable
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
-
-   //   Load and apply the specified XML layout.
-   setContentView(layoutResID);
+    // Load and apply the specified XML layout.
+    setContentView(layoutResID);
   }
 }

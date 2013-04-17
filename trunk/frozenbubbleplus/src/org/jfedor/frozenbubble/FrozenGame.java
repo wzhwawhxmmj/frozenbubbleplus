@@ -57,6 +57,7 @@ import java.util.Random;
 import java.util.Vector;
 
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -347,11 +348,15 @@ public class FrozenGame extends GameScreen {
       boolean checkFall = map.getBoolean(String.format("%d-checkFall", i));
       int fixedAnim = map.getInt(String.format("%d-fixedAnim", i));
       boolean frozen = map.getBoolean(String.format("%d-frozen", i));
+      Point lastOpenPosition =
+        new Point(map.getInt(String.format("%d-lastOpenPosition.x", i)),
+                  map.getInt(String.format("%d-lastOpenPosition.y", i)));
       return new BubbleSprite(new Rect(left, top, right, bottom),
                               color, moveX, moveY, realX, realY,
                               fixed, blink, released, checkJump, checkFall,
                               fixedAnim,
                               (frozen ? frozenBubbles[color] : bubbles[color]),
+                              lastOpenPosition,
                               bubblesBlind[color],
                               frozenBubbles[color],
                               targetedBubbles, bubbleBlink,

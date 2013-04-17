@@ -55,11 +55,10 @@
 package com.efortin.frozenbubble;
 
 /**
- * @author Michel Racic (http://www.2030.tk)
- * 
- *  SQlite DB adapter class based on the code from
- *  http://www.screaming-penguin.com/node/7742
+ * SQlite DB adapter class based on the code from:<br>
+ * http://www.screaming-penguin.com/node/7742
  *
+ * @author Michel Racic (http://www.2030.tk)
  */
 import java.util.ArrayList;
 import java.util.List;

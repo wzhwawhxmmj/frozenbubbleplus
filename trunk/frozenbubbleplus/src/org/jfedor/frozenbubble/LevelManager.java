@@ -75,11 +75,10 @@ public class LevelManager
   public LevelManager(byte[] levels, int startingLevel)
   {
     String allLevels = new String(levels);
-
     currentLevel = startingLevel;
     levelList = new Vector<byte[][]>();
-
     int nextLevel = allLevels.indexOf("\n\n");
+
     if (nextLevel == -1 && allLevels.trim().length() != 0)
     {
       nextLevel = allLevels.length();
@@ -88,9 +87,7 @@ public class LevelManager
     while (nextLevel != -1)
     {
       String currentLevel = allLevels.substring(0, nextLevel).trim();
-
       levelList.addElement(getLevel(currentLevel));
-
       allLevels = allLevels.substring(nextLevel).trim();
 
       if (allLevels.length() == 0)
@@ -154,7 +151,6 @@ public class LevelManager
         tempX = tempY % 2;
       }
     }
-
     return temp;
   }
 
@@ -164,7 +160,6 @@ public class LevelManager
     {
       return (byte[][])levelList.elementAt(currentLevel);
     }
-
     return null;
   }
 

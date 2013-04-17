@@ -67,6 +67,7 @@ public class BubbleSprite extends Sprite
   private static final double MINIMUM_DISTANCE = 400.;
 
   private int           color;
+  private int           fixedAnim;
   private BmpWrap       bubbleFace;
   private BmpWrap       bubbleBlindFace;
   private BmpWrap       frozenFace;
@@ -79,14 +80,11 @@ public class BubbleSprite extends Sprite
   private double        realX, realY;
   private Point         lastOpenPosition;
 
-  private boolean fixed;
   private boolean blink;
-  private boolean released;
-
-  private boolean checkJump;
   private boolean checkFall;
-
-  private int fixedAnim;
+  private boolean checkJump;
+  private boolean fixed;
+  private boolean released;
 
   public void saveState(Bundle map, Vector<Sprite> savedSprites)
   {
@@ -108,6 +106,10 @@ public class BubbleSprite extends Sprite
     map.putInt(String.format("%d-fixedAnim", getSavedId()), fixedAnim);
     map.putBoolean(String.format("%d-frozen", getSavedId()),
                    bubbleFace == frozenFace ? true : false);
+    map.putInt(String.format("%d-lastOpenPosition.x", getSavedId()),
+               lastOpenPosition.x);
+    map.putInt(String.format("%d-lastOpenPosition.y", getSavedId()),
+               lastOpenPosition.y);
   }
 
   public int getTypeId()
@@ -115,10 +117,14 @@ public class BubbleSprite extends Sprite
     return Sprite.TYPE_BUBBLE;
   }
 
+  /**
+   * Class constructor used when restoring the game state from a bundle.
+   */
   public BubbleSprite(Rect area, int color, double moveX, double moveY,
                       double realX, double realY, boolean fixed, boolean blink,
                       boolean released, boolean checkJump, boolean checkFall,
                       int fixedAnim, BmpWrap bubbleFace,
+                      Point lastOpenPosition,
                       BmpWrap bubbleBlindFace, BmpWrap frozenFace,
                       BmpWrap[] bubbleFixed, BmpWrap bubbleBlink,
                       BubbleManager bubbleManager, SoundManager soundManager,
@@ -145,9 +151,12 @@ public class BubbleSprite extends Sprite
     this.bubbleManager = bubbleManager;
     this.soundManager = soundManager;
     this.frozen = frozen;
-    this.lastOpenPosition = currentPosition();
+    this.lastOpenPosition = new Point(lastOpenPosition);
   }
 
+  /**
+   * Class constructor used when creating a launched bubble.
+   */
   public BubbleSprite(Rect area, int direction, int color, BmpWrap bubbleFace,
                       BmpWrap bubbleBlindFace, BmpWrap frozenFace,
                       BmpWrap[] bubbleFixed, BmpWrap bubbleBlink,
@@ -175,6 +184,9 @@ public class BubbleSprite extends Sprite
     fixedAnim = -1;
   }
 
+  /**
+   * Class constructor used when initializing a new level.
+   */
   public BubbleSprite(Rect area, int color, BmpWrap bubbleFace,
                       BmpWrap bubbleBlindFace, BmpWrap frozenFace,
                       BmpWrap bubbleBlink, BubbleManager bubbleManager,

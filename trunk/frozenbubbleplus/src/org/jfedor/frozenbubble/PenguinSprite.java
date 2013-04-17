@@ -74,16 +74,13 @@ public class PenguinSprite extends Sprite
   public final static int[][] WON_SEQUENCE =
       {{1,0}, {2,7}, {3,6}, {4,15}, {5,16}, {6,17}, {7,18}, {4,19}};
 
-  private BmpWrap spritesImage;
-
-  private int currentPenguin;
-
   private int count;
-
-  private Random rand;
-
+  private int currentPenguin;
   private int finalState;
   private int nextPosition;
+
+  private BmpWrap spritesImage;
+  private Random rand;
 
   public PenguinSprite(BmpWrap sprites, Random rand)
   {
@@ -93,9 +90,8 @@ public class PenguinSprite extends Sprite
     this.rand = rand;
 
     currentPenguin = 0;
-
-    finalState = STATE_VOID;
-    nextPosition = 0;
+    finalState     = STATE_VOID;
+    nextPosition   = 0;
   }
 
   public PenguinSprite(BmpWrap sprites, Random rand,
@@ -104,12 +100,12 @@ public class PenguinSprite extends Sprite
   {
     super(new Rect(361, 436, 361 + 55, 436 + 43));
 
-    this.spritesImage = sprites;
-    this.rand = rand;
+    this.spritesImage   = sprites;
+    this.rand           = rand;
     this.currentPenguin = currentPenguin;
-    this.count = count;
-    this.finalState = finalState;
-    this.nextPosition = nextPosition;
+    this.count          = count;
+    this.finalState     = finalState;
+    this.nextPosition   = nextPosition;
   }
 
   @Override
@@ -143,12 +139,12 @@ public class PenguinSprite extends Sprite
         if (finalState == STATE_GAME_LOST)
         {
           currentPenguin = LOST_SEQUENCE[nextPosition][1];
-          nextPosition = LOST_SEQUENCE[nextPosition][0];
+          nextPosition   = LOST_SEQUENCE[nextPosition][0];
         }
         else if (finalState == STATE_GAME_WON)
         {
           currentPenguin = WON_SEQUENCE[nextPosition][1];
-          nextPosition = WON_SEQUENCE[nextPosition][0];
+          nextPosition   = WON_SEQUENCE[nextPosition][0];
         }
       }
     }
@@ -171,7 +167,7 @@ public class PenguinSprite extends Sprite
           currentPenguin = 1;
           break;
         case STATE_VOID:
-          if (currentPenguin<4 || currentPenguin>7)
+          if (currentPenguin < 4 || currentPenguin > 7)
           {
             currentPenguin = 0;
           }
@@ -188,7 +184,7 @@ public class PenguinSprite extends Sprite
       {
         currentPenguin = 7;
       }
-      else if (count % 15 == 0 && count>25)
+      else if (count % 15 == 0 && count > 25)
       {
         currentPenguin = (rand.nextInt() % 3)+4;
         if (currentPenguin < 4)

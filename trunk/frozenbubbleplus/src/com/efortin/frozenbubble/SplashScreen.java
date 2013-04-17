@@ -67,7 +67,7 @@ public class SplashScreen extends Activity
 {
 
   //
-  //   Maximum time until we go to the next activity.
+  // Maximum time until we go to the next activity.
   //
   //
   protected int _splashTime = 3000;
@@ -89,7 +89,7 @@ public class SplashScreen extends Activity
     }
 
     //
-    //   Thread for displaying the SplashScreen.
+    // Thread for displaying the SplashScreen.
     //
     //
     splashThread = new Thread()
@@ -101,14 +101,14 @@ public class SplashScreen extends Activity
           synchronized( this )
           {
             //
-            //   TODO: The splash screen waits before launching the
-            //         game activity.  Change this so that the game
-            //         activity is started immediately, and notifies
-            //         the splash screen activity when it is done
-            //         loading saved state data and preferences, so the
-            //         splash screen functions as a distraction from
-            //         game loading latency.  There is no advantage in
-            //         doing this right now, because there is no lag.
+            // TODO: The splash screen waits before launching the
+            //       game activity.  Change this so that the game
+            //       activity is started immediately, and notifies
+            //       the splash screen activity when it is done
+            //       loading saved state data and preferences, so the
+            //       splash screen functions as a distraction from
+            //       game loading latency.  There is no advantage in
+            //       doing this right now, because there is no lag.
             //
             //
             wait( _splashTime );  //wait 3 seconds
@@ -119,7 +119,6 @@ public class SplashScreen extends Activity
         }
       }
     };
-
     splashThread.start();
   }
 
@@ -151,20 +150,19 @@ public class SplashScreen extends Activity
       editor.putBoolean( "showSplashScreen", false );
       editor.commit();
     }
-
     return showSplashScreen;
   }
 
   private void startFrozenBubble()
   {
     //
-    //   Create an intent to launch the activity to play the game.
+    // Create an intent to launch the activity to play the game.
     //
     //
     Intent intent = new Intent( this, FrozenBubble.class );
     startActivity( intent );
     //
-    //   Terminate the splash screen activity.
+    // Terminate the splash screen activity.
     //
     //
     finish();

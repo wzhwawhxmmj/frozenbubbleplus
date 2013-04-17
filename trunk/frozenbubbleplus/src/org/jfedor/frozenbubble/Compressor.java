@@ -56,7 +56,8 @@ package org.jfedor.frozenbubble;
 import android.graphics.Canvas;
 import android.os.Bundle;
 
-public class Compressor {
+public class Compressor
+{
   private BmpWrap compressorHead;
   private BmpWrap compressor;
   int steps;

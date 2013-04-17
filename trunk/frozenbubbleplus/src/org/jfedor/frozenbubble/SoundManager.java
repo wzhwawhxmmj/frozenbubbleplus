@@ -97,9 +97,9 @@ public class SoundManager
     {
       AudioManager mgr =
         (AudioManager)context.getSystemService( Context.AUDIO_SERVICE );
-      float volume     = mgr.getStreamVolume   ( AudioManager.STREAM_MUSIC );
-      float volumeMax  = mgr.getStreamMaxVolume( AudioManager.STREAM_MUSIC );
-      volume           = volume / volumeMax;
+      float volume    = mgr.getStreamVolume   ( AudioManager.STREAM_MUSIC );
+      float volumeMax = mgr.getStreamMaxVolume( AudioManager.STREAM_MUSIC );
+      volume = volume / volumeMax;
       soundPool.play( sm[ sound ], volume, volume, 1, 0, 1f );
     }
   }

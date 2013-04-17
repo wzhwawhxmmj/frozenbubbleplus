@@ -67,7 +67,6 @@ public class ImageSprite extends Sprite
   public ImageSprite(Rect area, BmpWrap img)
   {
     super(area);
-
     this.displayedImage = img;
   }
 

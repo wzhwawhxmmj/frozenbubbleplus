@@ -124,6 +124,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
   {
     mGameListener = gl;
   }
+
   class GameThread extends Thread
   {
     private static final int FRAME_DELAY = 40;
@@ -142,13 +143,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private static final double ATS_TOUCH_COEFFICIENT      = 0.2;
     private static final double ATS_TOUCH_FIRE_Y_THRESHOLD = 350;
 
-    private long    mLastTime;
-    private int     mMode;
-    private int     mModeWas;
-    
+    private boolean mImagesReady  = false;
     private boolean mRun          = false;
     private boolean mShowScores   = false;
-
+    private boolean mSurfaceOK    = false;
     private boolean mLeft         = false;
     private boolean mRight        = false;
     private boolean mUp           = false;
@@ -168,16 +166,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private double  mATSTouchDX   = 0;
     private double  mATSTouchLastX;
 
-    private SurfaceHolder mSurfaceHolder;
-    private boolean       mSurfaceOK = false;
-
-    private double mDisplayScale;
     private int    mDisplayDX;
     private int    mDisplayDY;
-
-    private FrozenGame mFrozenGame;
-
-    private boolean mImagesReady = false;
+    private double mDisplayScale;
+    private long   mLastTime;
+    private int    mMode;
+    private int    mModeWas;
 
     private Bitmap mBackgroundOrig;
     private Bitmap[] mBubblesOrig;
@@ -209,12 +203,15 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     private BmpWrap mCompressor;
     private BmpWrap mLife;
     private BmpWrap mFontImage;
-    // Launcher has to be a drawable, not a bitmap, because we rotate it.
-    private Drawable mLauncher;
-    private SoundManager mSoundManager;
-    private LevelManager mLevelManager;
+
+    private BubbleFont    mFont;
+    private Drawable      mLauncher;  // drawable because we rotate it
+    private FrozenGame    mFrozenGame;
+    private LevelManager  mLevelManager;
+    private SoundManager  mSoundManager;
+    private SurfaceHolder mSurfaceHolder;
+
     private final HighscoreManager mHighscoreManager;
-    private BubbleFont mFont;
 
     Vector<BmpWrap> mImageList;
 
@@ -338,21 +335,25 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         res, R.drawable.bubble_font, options);
 
       mImageList = new Vector<BmpWrap>( );
+
       mBubbles   = new BmpWrap[8];
       for (int i = 0; i < mBubbles.length; i++)
       {
         mBubbles[i] = NewBmpWrap( );
       }
+
       mBubblesBlind = new BmpWrap[8];
       for (int i = 0; i < mBubblesBlind.length; i++)
       {
         mBubblesBlind[i] = NewBmpWrap( );
       }
+
       mFrozenBubbles = new BmpWrap[8];
       for (int i = 0; i < mFrozenBubbles.length; i++)
       {
         mFrozenBubbles[i] = NewBmpWrap( );
       }
+
       mTargetedBubbles = new BmpWrap[6];
       for (int i = 0; i < mTargetedBubbles.length; i++)
       {
@@ -579,7 +580,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
      *
-     * @return Bundle with this view's state
+     * @return  Bundle with this view's state
      */
     public Bundle saveState(Bundle map)
     {
@@ -600,7 +601,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
      * the Activity is being restored after having been previously
      * destroyed.
      *
-     * @param savedState Bundle containing the game state
+     * @param  savedState
+     *         Bundle containing the game state
      */
     public synchronized void restoreState(Bundle map)
     {
@@ -637,7 +639,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         {
           mModeWas = mMode;
         }
-
         mMode = mode;
       }
     }
@@ -854,16 +855,17 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     /**
-     * updateStateOnEvent - a common method to process motion events to
-     * set the game state.  When the motion event has been fully
+     * updateStateOnEvent() - a common method to process motion events
+     * to set the game state.  When the motion event has been fully
      * processed, this function will return true, otherwise if the
      * calling method should also process the motion event, this
      * function will return false.
      *
-     * @param  event  the MotionEvent to process for the purpose of
-     *                updating the game state.  If this parameter is
-     *                null, then the game state is forced to update
-     *                if applicable based on the current game state.
+     * @param  event
+     *         the MotionEvent to process for the purpose of updating
+     *         the game state.  If this parameter is null, then the
+     *         game state is forced to update if applicable based on
+     *         the current game state.
      *
      * @return  This function returns true to inform the calling
      *          function that the game state has been updated and that
