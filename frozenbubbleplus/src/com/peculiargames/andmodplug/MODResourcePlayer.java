@@ -77,10 +77,9 @@ import android.content.Context;
  * <br>  mrp.UnPausePlay();
  * <br>  // repeat...</code>
  *
- * @author    P.A. Casey (crow) Peculiar-Games.com
- *
  * @version   1.0
  *
+ * @author    P.A. Casey (crow) Peculiar-Games.com
  */
 public class MODResourcePlayer extends PlayerThread {
   //
@@ -98,39 +97,41 @@ public class MODResourcePlayer extends PlayerThread {
    * resource files (typically the songs are stored in the res/raw
    * project directory and conform to Android build process rules,
    * lower-case names, etc.)
-   * <p>
-   * <b>Note about extensions:</b> developers using Eclipse as an IDE
-   * should note that it allows the .xm file extension but may be fussy
-   * about other tracker format extensions.
    *
-   * The cont argument is the application context which allows
-   * MODResourcePlayer to load resources directly.
+   * <p>   <b>Note about extensions:</b>
+   * <br>  Developers using Eclipse as an IDE should note that it allows
+   *       the .xm file extension but may be fussy about other tracker
+   *       format extensions.
    *
-   * @param  cont application Context
+   * <p>   The <code>context</code> argument is the application context
+   *       which allows MODResourcePlayer to load resources directly.
    *
+   * @param  context
+   *         application context that is creating this instance
    */
-  public MODResourcePlayer(Context cont)
+  public MODResourcePlayer(Context context)
   {
     // get super class (PlayerThread) with default rate
     super(0);
-    mContext = cont;
-    // full volume
+    mContext = context;
+    // set full volume
     setVolume(255);
   }
 
   /**
    * Load a MOD/XM/etc. song file from an Android resource.
-   * <p>
-   * <b>Note about extensions:</b> developers using Eclipse as an IDE
-   * should note that it allows the .xm file extension but may be fussy
-   * about other tracker format extensions.
+   * 
+   * <p>   <b>Note about extensions:</b>
+   * <br>  Developers using Eclipse as an IDE should note that it allows
+   *       the .xm file extension but may be fussy about other tracker
+   *       format extensions.
    *
-   * The modresource argument is the resource id for the MOD/XM song
-   * file, e.g. R.raw.coolsong
+   * <p>   The <code>modresource</code> argument is the resource id for
+   *       the MOD/XM song file, e.g. R.raw.coolsong
    *
-   * @param  modresource Android resource id for a MOD/XM/etc. (tracker
-   *         format) song file
-   *
+   * @param  modresource
+   *         Android resource id for a MOD/XM/etc. (tracker format)
+   *         song file
    */
   public boolean LoadMODResource(int modresource)
   {
@@ -189,9 +190,9 @@ public class MODResourcePlayer extends PlayerThread {
   /**
    * Stop playing the song, close down the player and
    * <code>join()</code> the player thread.
-   * <p>
-   * Typically called in the application's (Activity's)
-   * <code>onPause()</code> method 
+   * 
+   * <p>   Typically called in the application's (Activity's)
+   *       <code>onPause()</code> method.
    */
   public void StopAndClose()
   {

@@ -64,7 +64,8 @@ public class LaunchBubbleSprite extends Sprite
 {
   private int currentColor;
   private int currentDirection;
-  private Drawable launcher;
+
+  private Drawable  launcher;
   private BmpWrap[] bubbles;
   private BmpWrap[] colorblindBubbles;
 
@@ -74,10 +75,10 @@ public class LaunchBubbleSprite extends Sprite
   {
     super(new Rect(276, 362, 276 + 86, 362 + 76));
 
-    currentColor = initialColor;
-    currentDirection = initialDirection;
-    this.launcher = launcher;
-    this.bubbles = bubbles;
+    currentColor           = initialColor;
+    currentDirection       = initialDirection;
+    this.launcher          = launcher;
+    this.bubbles           = bubbles;
     this.colorblindBubbles = colorblindBubbles;
   }
 

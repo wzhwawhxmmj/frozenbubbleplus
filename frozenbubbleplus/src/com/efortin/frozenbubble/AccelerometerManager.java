@@ -62,8 +62,11 @@ import android.hardware.SensorManager;
 
 /**
  * Android Accelerometer Sensor Manager Archetype
- * @author antoine vianey
- * under GPL v3 : http://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * <p>   Licensed under GPL v3:
+ * <br>  http://www.gnu.org/licenses/gpl-3.0.html
+ *
+ * @author Antoine Vianey
  */
 public class AccelerometerManager
 {
@@ -93,7 +96,7 @@ public class AccelerometerManager
   }
 
   /**
-   * Unregisters listeners
+   * Unregisters listeners.
    */
   public static void stopListening()
   {
@@ -108,7 +111,7 @@ public class AccelerometerManager
   }
 
   /**
-   * Returns true if at least one Accelerometer sensor is available
+   * Returns true if at least one Accelerometer sensor is available.
    */
   public static boolean isSupported(Context context)
   {
@@ -120,14 +123,14 @@ public class AccelerometerManager
         sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
       supported = Boolean.valueOf(sensors.size() > 0);
     }
-
     return supported;
   }
 
   /**
-   * Registers a listener and start listening
-   * @param accelerometerListener
-   *             callback for accelerometer events
+   * Registers a listener and starts listening.
+   *
+   * @param  accelerometerListener
+   *         callback for accelerometer events
    */
   public static void startListening(Context context,
     AccelerometerListener accelerometerListener)
@@ -140,14 +143,15 @@ public class AccelerometerManager
     if (sensors.size() > 0)
     {
       sensor   = sensors.get(0);
-      running  = sensorManager.registerListener(sensorEventListener, sensor,
-        SensorManager.SENSOR_DELAY_FASTEST);
+      running  =
+        sensorManager.registerListener(sensorEventListener, sensor,
+                                       SensorManager.SENSOR_DELAY_FASTEST);
       listener = accelerometerListener;
     }
   }
 
   /**
-   * The listener that listen to events from the accelerometer listener
+   * The listener that listens to events from the accelerometer listener.
    */
   private static SensorEventListener sensorEventListener = 
     new SensorEventListener()
@@ -164,6 +168,7 @@ public class AccelerometerManager
       avgX = event.values[0] * filter + (avgX * (1.0f-filter));
       avgY = event.values[1] * filter + (avgY * (1.0f-filter));
       avgZ = event.values[2] * filter + (avgZ * (1.0f-filter));
+
       listener.onAccelerationChanged(avgX, avgY, avgZ);
     }
   };

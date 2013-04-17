@@ -61,8 +61,8 @@ import android.content.Context;
 import android.os.Bundle;
 
 /**
- * @author Michel Racic (http://www.2030.tk) A class to manage the highscore
- *         table for each level
+ * @author Michel Racic (http://www.2030.tk)
+ * <br>  A class to manage the highscore table for each level.
  */
 public class HighscoreManager {
 
@@ -81,7 +81,8 @@ public class HighscoreManager {
   }
 
   /**
-   * @param nbBubbles
+   * @param  nbBubbles
+   *         the number of bubbles launched by the player
    */
   public void endLevel(int nbBubbles)
   {
@@ -90,26 +91,39 @@ public class HighscoreManager {
 
     if ( duration < 0 )
       duration = 0;
-    /**
-     * if (name == null) { SharedPreferences sp = ctx.getSharedPreferences(
-     * FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE); name =
-     * sp.getString("highscorename", "anon"); } // ask for actual name
-     * (predefined text is last entered and save it in // preferences {
-     * AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
-     * alert.setTitle("Highscore name"); alert.setMessage("Set your name:");
-     * final EditText input = new EditText(ctx); input.setText(name);
-     * alert.setView(input); alert.setPositiveButton("Ok", new
-     * DialogInterface.OnClickListener() { public void
-     * onClick(DialogInterface dialog, int whichButton) { SharedPreferences
-     * sp = ctx.getSharedPreferences( FrozenBubble.PREFS_NAME,
-     * Context.MODE_PRIVATE); SharedPreferences.Editor editor = sp.edit();
-     * editor.putString("highscorename", input.getText() .toString());
-     * editor.commit(); } }); alert.show();
-     * 
-     * } SharedPreferences sp = ctx.getSharedPreferences(
-     * FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE); name =
-     * sp.getString("highscorename", "anon");
-     */
+    /*
+    if (name == null)
+    {
+      SharedPreferences sp = ctx.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                      Context.MODE_PRIVATE);
+      name = sp.getString("highscorename", "anon");
+    }
+    //
+    // Prompt the player to enter their name to enter into the high
+    // scores table.
+    //
+    //
+    AlertDialog.Builder alert = new AlertDialog.Builder(ctx);
+    alert.setTitle("Highscore name"); alert.setMessage("Set your name:");
+    final EditText input = new EditText(ctx); input.setText(name);
+    alert.setView(input);
+    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener()
+    {
+      public void onClick(DialogInterface dialog, int whichButton)
+      {
+        SharedPreferences sp =
+          ctx.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                   Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString("highscorename", input.getText() .toString());
+        editor.commit();
+      }
+    });
+    alert.show();
+    SharedPreferences sp = ctx.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                    Context.MODE_PRIVATE);
+    name = sp.getString("highscorename", "anon");
+    */
     lastScoreId = db.insert(new HighscoreDO(currentLevel, "anon",
                             nbBubbles, duration));
     //Log.i("FrozenBubble-highscore", "endLevel() " + (duration / 1000F) +
