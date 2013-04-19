@@ -62,8 +62,8 @@ import android.widget.TextView;
 /**
  * This is an implementation of a vertically scrolling TextView.
  * 
- * The scroll direction is configurable, as is the number of times to
- * scroll the text.
+ * <p>The scroll direction is configurable, as is the scrolling speed
+ * and the the number of times to scroll the text.
  */
 public class ScrollingTextView extends TextView implements Runnable
 {
@@ -131,7 +131,7 @@ public class ScrollingTextView extends TextView implements Runnable
         post(this);
     }
     /**
-     * Invalidate to request a redraw.
+     * Invalidate the view to request a redraw.
      */
     invalidate();
   }
@@ -261,8 +261,9 @@ public class ScrollingTextView extends TextView implements Runnable
    * This method sets the additional number of times to scroll the
    * text.  The text will always scroll at least once.
    *
-   * If the scroll count is set to -1, then the text will scroll
+   * <p>If the scroll count is set to -1, then the text will scroll
    * indefinitely.
+   * 
    * @param  scrollCount
    *         the additional number of times to scroll the text.  If
    *         this parameter is zero, the text will still scroll once.
