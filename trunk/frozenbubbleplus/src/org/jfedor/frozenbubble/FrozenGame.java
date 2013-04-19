@@ -90,7 +90,6 @@ public class FrozenGame extends GameScreen {
   public final static int KEY_M = 77;
   // Toggle sound on/off
   public final static int KEY_S = 83;
-
   boolean modeKeyPressed, soundKeyPressed;
 
   BmpWrap background;
@@ -120,12 +119,7 @@ public class FrozenGame extends GameScreen {
 
   BubbleSprite[][] bubblePlay;
 
-  int fixedBubbles;
-  double moveDown;
-
   BmpWrap gameWon, gameLost, gamePaused;
-
-  int nbBubbles;
 
   BmpWrap bubbleBlink;
   int blinkDelay;
@@ -137,11 +131,13 @@ public class FrozenGame extends GameScreen {
 
   SoundManager soundManager;
 
-  boolean readyToFire;
-  boolean swapPressed;
   boolean endOfGame;
   boolean frozenify;
+  boolean swapPressed;
+  int fixedBubbles;
   int frozenifyX, frozenifyY;
+  int nbBubbles;
+  double moveDown;
 
   Drawable launcher;
   BmpWrap penguins;
@@ -314,7 +310,6 @@ public class FrozenGame extends GameScreen {
     hurrySprite.saveState(map, savedSprites);
     map.putInt("hurryId", hurrySprite.getSavedId());
     map.putInt("hurryTime", hurryTime);
-    map.putBoolean("readyToFire", readyToFire);
     map.putBoolean("endOfGame", endOfGame);
     map.putBoolean("frozenify", frozenify);
     map.putInt("frozenifyX", frozenifyX);
@@ -471,7 +466,6 @@ public class FrozenGame extends GameScreen {
     int hurryId = map.getInt("hurryId");
     hurrySprite = (ImageSprite)savedSprites.elementAt(hurryId);
     hurryTime = map.getInt("hurryTime");
-    readyToFire = map.getBoolean("readyToFire");
     endOfGame = map.getBoolean("endOfGame");
     frozenify = map.getBoolean("frozenify");
     frozenifyX = map.getInt("frozenifyX");
@@ -681,11 +675,6 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    if (move[FIRE] == 0 || (!ats && touch_fire))
-    {
-      readyToFire = true;
-    }
-
     if (FrozenBubble.getDontRushMe())
     {
       hurryTime = 1;
@@ -693,7 +682,7 @@ public class FrozenGame extends GameScreen {
 
     if (endOfGame)
     {
-      if (move[FIRE] == KEY_UP && readyToFire)
+      if (move[FIRE] == KEY_UP)
       {
         //
         //   If endOfGame is set, then the play result absolutely
@@ -736,7 +725,7 @@ public class FrozenGame extends GameScreen {
     {
       if (move[FIRE] == KEY_UP || hurryTime > 480)
       {
-        if (movingBubble == null && readyToFire)
+        if (movingBubble == null)
         {
           nbBubbles++;
 
@@ -764,7 +753,6 @@ public class FrozenGame extends GameScreen {
           launchBubble.changeColor(currentColor);
           penguin.updateState(PenguinSprite.STATE_FIRE);
           soundManager.playSound(FrozenBubble.SOUND_LAUNCH);
-          readyToFire = false;
           hurryTime = 0;
           removeSprite(hurrySprite);
         }
