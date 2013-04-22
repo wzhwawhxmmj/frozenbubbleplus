@@ -62,6 +62,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.MotionEvent;
+import android.view.WindowManager;
 
 public class SplashScreen extends Activity
 {
@@ -80,7 +81,8 @@ public class SplashScreen extends Activity
   public void onCreate( Bundle savedInstanceState )
   {
     super.onCreate( savedInstanceState );
-    setContentView( R.layout.activity_splash_screen );
+    // Configure the window presentation and layout.
+    setWindowLayout(R.layout.activity_splash_screen);
 
     if ( ! displaySplashScreen() )
     {
@@ -151,6 +153,30 @@ public class SplashScreen extends Activity
       editor.commit();
     }
     return showSplashScreen;
+  }
+
+  private void setWindowLayout(int layoutResID)
+  {
+    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
+
+    // Set full screen mode based on the game preferences.
+    SharedPreferences mConfig =
+      getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
+    boolean fullscreen = mConfig.getBoolean("fullscreen", true );
+
+    if (fullscreen)
+    {
+      getWindow().addFlags(flagFs);
+      getWindow().clearFlags(flagNoFs);
+    }
+    else
+    {
+      getWindow().clearFlags(flagFs);
+      getWindow().addFlags(flagNoFs);
+    }
+    // Load and apply the specified XML layout.
+    setContentView(layoutResID);
   }
 
   private void startFrozenBubble()
