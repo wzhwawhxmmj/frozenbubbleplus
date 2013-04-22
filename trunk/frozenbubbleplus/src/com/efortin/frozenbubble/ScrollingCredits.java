@@ -82,17 +82,6 @@ public class ScrollingCredits extends Activity implements Runnable
   private final int[] MODlist = { R.raw.worldofpeace };
 
   @Override
-  public void onBackPressed()
-  {
-    //
-    // Do not call the super class ancestor method.  Finish this
-    // activity so it is destroyed and we simply return to the game.
-    //
-    //
-    end();
-  }
-
-  @Override
   public void onCreate(Bundle savedInstanceState)
   {
     super.onCreate(savedInstanceState);
@@ -202,9 +191,50 @@ public class ScrollingCredits extends Activity implements Runnable
     resplayer.start();
   }
 
-  public void cleanUp()
+  private void displayImage(int id)
   {
-    destroyMusicPlayer();
+    // Construct a new LinearLayout programmatically. 
+    LinearLayout linearLayout = new LinearLayout(this);
+    linearLayout.setOrientation(LinearLayout.VERTICAL);
+    linearLayout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
+                                                  LayoutParams.FILL_PARENT));
+    // ImageView setup for the image.
+    ImageView imageView = new ImageView(this);
+    // Set image resource.
+    imageView.setImageResource(R.drawable.victory);
+    // Set image position and scaling.
+    imageView.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
+                                               LayoutParams.FILL_PARENT));
+    // Add view to layout.
+    linearLayout.addView(imageView);
+    // Set the content view to this layout and display the image.
+    setContentView(linearLayout);
+  }
+
+  private void setWindowLayout(int layoutResID)
+  {
+    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
+
+    // Set full screen mode based on the game preferences.
+    SharedPreferences mConfig =
+      getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
+    boolean fullscreen = mConfig.getBoolean("fullscreen", true );
+    // Remove the title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+    if (fullscreen)
+    {
+      getWindow().addFlags(flagFs);
+      getWindow().clearFlags(flagNoFs);
+    }
+    else
+    {
+      getWindow().clearFlags(flagFs);
+      getWindow().addFlags(flagNoFs);
+    }
+    // Load and apply the specified XML layout.
+    setContentView(layoutResID);
   }
 
   public boolean checkCreditsDone()
@@ -217,24 +247,9 @@ public class ScrollingCredits extends Activity implements Runnable
     return false;
   }
 
-  public void displayImage(int id)
+  public void cleanUp()
   {
-    // Construct a new LinearLayout programmatically. 
-    LinearLayout linearLayout = new LinearLayout(this);
-    linearLayout.setOrientation(LinearLayout.VERTICAL);
-    linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
-                                                  LayoutParams.MATCH_PARENT));
-    // ImageView setup for the image.
-    ImageView imageView = new ImageView(this);
-    // Set image resource.
-    imageView.setImageResource(R.drawable.victory);
-    // Set image position and scaling.
-    imageView.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT,
-                                               LayoutParams.MATCH_PARENT));
-    // Add view to layout.
-    linearLayout.addView(imageView);
-    // Set the content view to this layout and display the image.
-    setContentView(linearLayout);
+    destroyMusicPlayer();
   }
 
   public void end()
@@ -284,31 +299,5 @@ public class ScrollingCredits extends Activity implements Runnable
       displayImage(R.drawable.victory);
     }
     credits.postDelayed(this, 100);
-  }
-
-  public void setWindowLayout(int layoutResID)
-  {
-    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
-    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
-
-    // Set full screen mode based on the game preferences.
-    SharedPreferences mConfig =
-      getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
-    boolean fullscreen = mConfig.getBoolean("fullscreen", true );
-    // Remove the title bar.
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-    if (fullscreen)
-    {
-      getWindow().addFlags(flagFs);
-      getWindow().clearFlags(flagNoFs);
-    }
-    else
-    {
-      getWindow().clearFlags(flagFs);
-      getWindow().addFlags(flagNoFs);
-    }
-    // Load and apply the specified XML layout.
-    setContentView(layoutResID);
   }
 }
