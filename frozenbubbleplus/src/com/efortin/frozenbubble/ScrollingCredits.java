@@ -219,7 +219,7 @@ public class ScrollingCredits extends Activity implements Runnable
     // Set full screen mode based on the game preferences.
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
-    boolean fullscreen = mConfig.getBoolean("fullscreen", true );
+    boolean fullscreen = mConfig.getBoolean("fullscreen", true);
     // Remove the title bar.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
 
