@@ -107,6 +107,8 @@ public class FrozenBubble extends Activity
   // ActivityInfo in API level 9.
   //
   //
+  public static final int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
+  public static final int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
   public static final int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
   public static final int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
@@ -793,8 +795,17 @@ public class FrozenBubble extends Activity
         AccelerometerManager.isSupported(getApplicationContext()))
     {
       AccelerometerManager.startListening(getApplicationContext(),this);
-      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR |
-                              ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+      //
+      // In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT was added
+      // to ActivityInfo.  This mode was actually supported by earlier
+      // APIs, but a definition was not yet explicity defined.
+      //
+      // This mode allows the device to display the screen in either
+      // normal or reverse portrait mode based on the device
+      // orientation reported by the accelerometer hardware.
+      //
+      //
+      setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
     }
 
     if ((targetMode != ROTATE_TO_SHOOT) && AccelerometerManager.isListening())
