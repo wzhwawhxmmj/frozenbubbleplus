@@ -82,7 +82,7 @@ public class HighscoreManager {
 
   /**
    * @param  nbBubbles
-   *         the number of bubbles launched by the player
+   *         - The number of bubbles launched by the player.
    */
   public void endLevel(int nbBubbles)
   {

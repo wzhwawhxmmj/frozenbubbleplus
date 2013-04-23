@@ -130,7 +130,7 @@ public class AccelerometerManager
    * Registers a listener and starts listening.
    *
    * @param  accelerometerListener
-   *         callback for accelerometer events
+   *         - Callback for accelerometer events.
    */
   public static void startListening(Context context,
     AccelerometerListener accelerometerListener)

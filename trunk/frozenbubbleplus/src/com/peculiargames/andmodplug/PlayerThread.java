@@ -303,11 +303,11 @@ public class PlayerThread extends Thread {
    * overridden if the OS doesn't allow that rate. 
    *
    * @param  modData
-   *         a byte[] array containing the MOD file data.
+   *         - A byte[] array containing the MOD file data.
    *
    * @param  desiredrate
-   *         rate of playback (e.g. 44100Hz, or 0 for default rate) for
-   *         system audio data playback
+   *         - Rate of playback (e.g. 44100Hz, or 0 for default rate)
+   *         for system audio data playback.
    */
   public PlayerThread(byte[] modData, int desiredrate)
   {
@@ -344,9 +344,10 @@ public class PlayerThread extends Thread {
    * <br><code>pthr = new PlayerThread(0);
    * <br>pthr.LoadMODData(modData);
    * <br>pthr.start();</code>
+   
    * @param  desiredrate
-   *         rate of playback (e.g. 44100Hz, or 0 for default rate) for
-   *         system audio data playback
+   *         - Rate of playback (e.g. 44100Hz, or 0 for default rate)
+   *         for system audio data playback.
    */
   public PlayerThread(int desiredrate)
   {
@@ -464,7 +465,7 @@ public class PlayerThread extends Thread {
   }
 
   /**
-   * Loads MOD/XM,etc. song data for playback.  Call PausePlay( ) if a
+   * Loads MOD/XM,etc. song data for playback.  Call PausePlay() if a
    * song is currently playing prior to invoking this method.
    * 
    * <p>The modData argument is a byte[] array with the MOD containing
@@ -480,7 +481,7 @@ public class PlayerThread extends Thread {
    * <br>}</code>
    *
    * @param  modData
-   *         a byte[] array containing the MOD file data
+   *         - A byte[] array containing the MOD file data.
    */
   public void LoadMODData(byte[] modData)
   {
@@ -751,7 +752,7 @@ public class PlayerThread extends Thread {
    * Sets playback volume for the MOD/XM player.
    *
    * @param  vol
-   *         an integer from 0 (sound off) to 255 (full volume)
+   *         - An integer from 0 (sound off) to 255 (full volume).
    */
   public void setVolume(int vol)
   {
@@ -765,8 +766,8 @@ public class PlayerThread extends Thread {
    * Sets playback volume for the MOD/XM player.
    *
    * @param  vol
-   *         a floating point number from 0.0f (sound off) to 1.0f
-   *         (full volume)
+   *         - A floating point number from 0.0f (sound off) to 1.0f
+   *         (full volume).
    */
   public void setVolume(float vol)
   {
@@ -779,7 +780,7 @@ public class PlayerThread extends Thread {
    * This method sets the player startup mode.
    *
    * @param  flag
-   *         if this is set to true, then the player will start up
+   *         - If this is set to true, then the player will start up
    *         paused and will have to be unpaused to start playing.  If
    *         this is set to false, then the player will immediately
    *         begin playing when it is started.
@@ -842,8 +843,8 @@ public class PlayerThread extends Thread {
    * <code>mt</code>.
    * 
    * @param  mt
-   *         modifier for the song's "native" tempo (positive values to
-   *         increase tempo, negative values to decrease tempo)
+   *         - Modifier for the song's "native" tempo (positive values
+   *         to increase tempo, negative values to decrease tempo).
    */
   public void modifyTempo(int mt)
   {
@@ -851,10 +852,10 @@ public class PlayerThread extends Thread {
   }
   /**
    * EXPERIMENTAL method for setting the song's tempo to
-   * <code>temp</code>.
+   * <code>tempo</code>.
    * 
-   * @param  temp
-   *         the tempo for the song (overrides song's "native" tempo)
+   * @param  tempo
+   *         - The tempo for the song (overrides song's "native" tempo).
    */
   public void setTempo(int tempo)
   {
@@ -910,7 +911,7 @@ public class PlayerThread extends Thread {
    * plays from current row in pattern).
    *                              
    * @param  pattern
-   *         the new pattern to start playing immediately
+   *         - The new pattern to start playing immediately.
    */
   public void setCurrentPattern(int pattern)
   {
@@ -921,8 +922,8 @@ public class PlayerThread extends Thread {
    * finishes.
    *                              
    * @param  pattern
-   *         the new pattern to start playing after the current pattern
-   *         finishes playing
+   *         - The new pattern to start playing after the current
+   *         pattern finishes playing.
    */
   public void setNextPattern(int pattern)
   {
@@ -941,8 +942,8 @@ public class PlayerThread extends Thread {
    * EXPERIMENTAL: Set log printing flag
    *                              
    * @param  flag
-   *         true to start printing debug information to log output,
-   *         false to stop
+   *         - True to start printing debug information to log output,
+   *         false to stop.
    */
   public void setLogOutput(boolean flag)
   {
@@ -954,8 +955,8 @@ public class PlayerThread extends Thread {
    * finish.
    * 
    * @param  newpattern
-   *         the new song pattern to start playing (repeating) in
-   *         PATTERN LOOP mode
+   *         - The new song pattern to start playing (repeating) in
+   *         PATTERN LOOP mode.
    */
   public void changePattern(int newpattern)
   {
@@ -965,8 +966,8 @@ public class PlayerThread extends Thread {
    * EXPERIMENTAL method to change song to PATTERN LOOP mode, repeating
    * <code>pattern</code>
    * @param  pattern
-   *         the song pattern to start playing(repeating) in PATTERN
-   *         LOOP mode
+   *         - The song pattern to start playing(repeating) in PATTERN
+   *         LOOP mode.
    */
   public void repeatPattern(int pattern)
   {
@@ -976,13 +977,13 @@ public class PlayerThread extends Thread {
    * EXPERIMENTAL method to loop song in a group of patterns.
    * 
    * @param  from
-   *         start of pattern range to play in loop
+   *         - Start of pattern range to play in loop.
    * @param  to
-   *         end of pattern range to play in loop
+   *         - End of pattern range to play in loop.
    * @param  when
-   *         is a constant flag (PATTERN_CHANGE_IMMEDIATE,
+   *         - A constant flag (PATTERN_CHANGE_IMMEDIATE,
    *         PATTERN_CHANGE_AFTER_CURRENT, PATTERN_CHANGE_AFTER_GROUP)
-   *         to signal when the new pattern range should take effect
+   *         to signal when the new pattern range should take effect.
    */
   public void setPatternLoopRange(int from, int to, int when)
   {
@@ -992,7 +993,7 @@ public class PlayerThread extends Thread {
    * EXPERIMENTAL method to loop song the specified number of times.
    * 
    * @param  number
-   *         the number of times to loop (-1 = forever)
+   *         - The number of times to loop (-1 = forever).
    */
   public void setLoopCount(int loopcount)
   {
@@ -1004,8 +1005,8 @@ public class PlayerThread extends Thread {
    * <code>changePattern()</code>.
    * 
    * @param  flag
-   *         true to set PATTERN LOOP mode, false to turn off PATTERN
-   *         LOOP mode
+   *         - True to set PATTERN LOOP mode, false to turn off PATTERN
+   *         LOOP mode.
    */
   public void setPatternLoopMode(boolean flag)
   {

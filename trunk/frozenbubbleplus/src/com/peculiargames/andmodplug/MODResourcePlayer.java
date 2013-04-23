@@ -107,7 +107,7 @@ public class MODResourcePlayer extends PlayerThread {
    *       which allows MODResourcePlayer to load resources directly.
    *
    * @param  context
-   *         application context that is creating this instance
+   *         - Application context that is creating this instance.
    */
   public MODResourcePlayer(Context context)
   {
@@ -130,8 +130,8 @@ public class MODResourcePlayer extends PlayerThread {
    *       the MOD/XM song file, e.g. R.raw.coolsong
    *
    * @param  modresource
-   *         Android resource id for a MOD/XM/etc. (tracker format)
-   *         song file
+   *         - Android resource id for a MOD/XM/etc. (tracker format)
+   *         song file.
    */
   public boolean LoadMODResource(int modresource)
   {

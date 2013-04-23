@@ -387,16 +387,16 @@ public class FrozenGame extends GameScreen {
     }
   }
 
-  public void pause( )
+  public void pause()
   {
     resume();
     pausedSprite = new ImageSprite(new Rect(152, 190, 337, 116), gamePaused );
-    this.addSprite( pausedSprite );
+    this.addSprite(pausedSprite);
   }
 
-  public void resume( )
+  public void resume()
   {
-    this.removeSprite( pausedSprite );
+    this.removeSprite(pausedSprite);
   }
 
   public void restoreState(Bundle map, Vector<BmpWrap> imageList)
@@ -698,10 +698,10 @@ public class FrozenGame extends GameScreen {
         //         as the root cause remains unknown.
         //
         //
-        if ( play_result == GAME_PLAYING )
+        if (play_result == GAME_PLAYING)
           play_result = game_result;
 
-        if ( play_result == GAME_WON )
+        if (play_result == GAME_WON)
         {
           levelManager.goToNextLevel();
           play_result = GAME_NEXT_WON;
