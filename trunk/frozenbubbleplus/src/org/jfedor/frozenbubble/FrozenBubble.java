@@ -225,6 +225,7 @@ public class FrozenBubble extends Activity
     super.onCreate(savedInstanceState);
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
+
     currentOrientation = getScreenOrientation();
     myOrientationEventListener =
       new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL)
@@ -237,19 +238,23 @@ public class FrozenBubble extends Activity
       };
     if (myOrientationEventListener.canDetectOrientation())
       myOrientationEventListener.enable();
+
     // Allow editor functionalities.
     Intent intent = getIntent();
-    if ((null == intent) || (null == intent.getExtras()) ||
+    if ((null == intent) ||
+    		(null == intent.getExtras()) ||
          !intent.getExtras().containsKey("levels"))
     {
       // Default levels.
       activityCustomStarted = false;
       setContentView(R.layout.activity_frozen_bubble);
+
       mGameView = (GameView)findViewById(R.id.game);
       mGameView.setGameListener(this);
       mGameThread = mGameView.getThread();
       if (savedInstanceState != null)
         mGameThread.restoreState(savedInstanceState);
+
       mGameView.requestFocus();
       newMusicPlayer(true);
     }
@@ -924,7 +929,7 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_LEVEL_START:
-        if (mGameView.getThread().getCurrentLevelIndex() == 1)
+        if (mGameView.getThread().getCurrentLevelIndex() == 0)
         {
           //
           // Since the credits screen activity creates its own player,
@@ -987,7 +992,7 @@ public class FrozenBubble extends Activity
    */
   private void newMusicPlayer(boolean startPausedFlag)
   {
-    if (mGameView.getThread().getCurrentLevelIndex() == 1)
+    if (mGameView.getThread().getCurrentLevelIndex() == 0)
     {
       mod_now = DEFAULT_SONG;
     }
