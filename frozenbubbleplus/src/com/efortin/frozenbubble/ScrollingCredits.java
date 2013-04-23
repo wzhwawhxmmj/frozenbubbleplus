@@ -267,8 +267,8 @@ public class ScrollingCredits extends Activity implements Runnable
     // may have been stopped by the system.
     //
     //
-    Intent intent = new Intent( this, FrozenBubble.class );
-    startActivity( intent );
+    Intent intent = new Intent(this, FrozenBubble.class);
+    startActivity(intent);
     finish();
   }
 

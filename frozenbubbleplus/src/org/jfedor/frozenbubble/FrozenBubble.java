@@ -127,8 +127,8 @@ public class FrozenBubble extends Activity
   public final static int GAME_NORMAL              = 0;
   public final static int GAME_COLORBLIND          = 1;
 
-  public final static int MENU_COLORBLIND_MODE_ON  = 1;
-  public final static int MENU_COLORBLIND_MODE_OFF = 2;
+  public final static int MENU_COLORBLIND_ON  = 1;
+  public final static int MENU_COLORBLIND_OFF = 2;
   public final static int MENU_FULLSCREEN_ON       = 3;
   public final static int MENU_FULLSCREEN_OFF      = 4;
   public final static int MENU_SOUND_OPTIONS       = 5;
@@ -163,13 +163,13 @@ public class FrozenBubble extends Activity
   private int     currentOrientation; 
   /*************************************************************************/
   //
-  //   MOD Player parameters.
+  // MOD Player parameters.
   //
   //
   /*************************************************************************/
   //
-  //   Save song number and position in song at onPause() time
-  //   (to Preferences).
+  // Save song number and position in song at onPause() time
+  // (to Preferences).
   //
   //
   public static final String PLAYER_PREFS_NAME = "ModPlayerPrefs";
@@ -203,8 +203,13 @@ public class FrozenBubble extends Activity
     R.raw.technostyleiii
   };
 
-  /**
-   * Called when the activity is first created.
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onCreate(android.os.Bundle)
+   * 
+   * This method is called when the activity is started.  The activity
+   * may have been reconfigured or the system may have killed the
+   * process, after which it regained focus to invoke this method.
    */
   @Override
   public void onCreate(Bundle savedInstanceState)
@@ -230,12 +235,12 @@ public class FrozenBubble extends Activity
           currentOrientation = getScreenOrientation();
         }
       };
-    if ( myOrientationEventListener.canDetectOrientation() )
+    if (myOrientationEventListener.canDetectOrientation())
       myOrientationEventListener.enable();
     // Allow editor functionalities.
     Intent intent = getIntent();
-    if ( ( null == intent ) || ( null == intent.getExtras() ) ||
-         !intent.getExtras().containsKey("levels") )
+    if ((null == intent) || (null == intent.getExtras()) ||
+         !intent.getExtras().containsKey("levels"))
     {
       // Default levels.
       activityCustomStarted = false;
@@ -243,10 +248,10 @@ public class FrozenBubble extends Activity
       mGameView = (GameView)findViewById(R.id.game);
       mGameView.setGameListener(this);
       mGameThread = mGameView.getThread();
-      if ( savedInstanceState != null )
+      if (savedInstanceState != null)
         mGameThread.restoreState(savedInstanceState);
       mGameView.requestFocus();
-      newMusicPlayer( true );
+      newMusicPlayer(true);
     }
     else
     {
@@ -259,28 +264,17 @@ public class FrozenBubble extends Activity
   public boolean onCreateOptionsMenu(Menu menu)
   {
     super.onCreateOptionsMenu(menu);
-    menu.add(0, MENU_COLORBLIND_MODE_ON,  0,
-             R.string.menu_colorblind_mode_on);
-    menu.add(0, MENU_COLORBLIND_MODE_OFF, 0,
-             R.string.menu_colorblind_mode_off);
-    menu.add(0, MENU_FULLSCREEN_ON,       0,
-             R.string.menu_fullscreen_on);
-    menu.add(0, MENU_FULLSCREEN_OFF,      0,
-             R.string.menu_fullscreen_off);
-    menu.add(0, MENU_SOUND_OPTIONS,       0,
-             R.string.menu_sound_options);
-    menu.add(0, MENU_TARGET_MODE,         0,
-             R.string.menu_target_mode);
-    menu.add(0, MENU_DONT_RUSH_ME,        0,
-             R.string.menu_dont_rush_me);
-    menu.add(0, MENU_RUSH_ME,             0,
-             R.string.menu_rush_me);
-    menu.add(0, MENU_ABOUT,               0,
-             R.string.menu_about);
-    menu.add(0, MENU_NEW_GAME,            0,
-             R.string.menu_new_game);
-    menu.add(0, MENU_EDITOR,              0,
-             R.string.menu_editor);
+    menu.add(0, MENU_COLORBLIND_ON,  0, R.string.menu_colorblind_on);
+    menu.add(0, MENU_COLORBLIND_OFF, 0, R.string.menu_colorblind_off);
+    menu.add(0, MENU_FULLSCREEN_ON,  0, R.string.menu_fullscreen_on);
+    menu.add(0, MENU_FULLSCREEN_OFF, 0, R.string.menu_fullscreen_off);
+    menu.add(0, MENU_SOUND_OPTIONS,  0, R.string.menu_sound_options);
+    menu.add(0, MENU_TARGET_MODE,    0, R.string.menu_target_mode);
+    menu.add(0, MENU_DONT_RUSH_ME,   0, R.string.menu_dont_rush_me);
+    menu.add(0, MENU_RUSH_ME,        0, R.string.menu_rush_me);
+    menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
+    menu.add(0, MENU_NEW_GAME,       0, R.string.menu_new_game);
+    menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
     return true;
   }
 
@@ -289,16 +283,14 @@ public class FrozenBubble extends Activity
   {
     super.onPrepareOptionsMenu(menu);
     allowUnpause = false;
-    menu.findItem(MENU_SOUND_OPTIONS      ).setVisible(true);
-    menu.findItem(MENU_COLORBLIND_MODE_ON ).setVisible(
-                  getMode() == GAME_NORMAL);
-    menu.findItem(MENU_COLORBLIND_MODE_OFF).setVisible(
-                  getMode() != GAME_NORMAL);
-    menu.findItem(MENU_FULLSCREEN_ON      ).setVisible(!fullscreen);
-    menu.findItem(MENU_FULLSCREEN_OFF     ).setVisible(fullscreen);
-    menu.findItem(MENU_TARGET_MODE        ).setVisible(true);
-    menu.findItem(MENU_DONT_RUSH_ME       ).setVisible(!getDontRushMe());
-    menu.findItem(MENU_RUSH_ME            ).setVisible(getDontRushMe());
+    menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
+    menu.findItem(MENU_COLORBLIND_ON ).setVisible(getMode() == GAME_NORMAL);
+    menu.findItem(MENU_COLORBLIND_OFF).setVisible(getMode() != GAME_NORMAL);
+    menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
+    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
+    menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
+    menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
+    menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
     return true;
   }
 
@@ -314,12 +306,12 @@ public class FrozenBubble extends Activity
       case MENU_NEW_GAME:
         newGameDialog();
         return true;
-      case MENU_COLORBLIND_MODE_ON:
+      case MENU_COLORBLIND_ON:
         setMode(GAME_COLORBLIND);
         editor.putInt("gameMode", gameMode);
         editor.commit();
         return true;
-      case MENU_COLORBLIND_MODE_OFF:
+      case MENU_COLORBLIND_OFF:
         setMode(GAME_NORMAL);
         editor.putInt("gameMode", gameMode);
         editor.commit();
@@ -385,7 +377,7 @@ public class FrozenBubble extends Activity
     SharedPreferences.Editor editor = sp.edit();
     // If I didn't run game from editor, save last played level.
     Intent i = getIntent();
-    if ( ( null == i ) || !activityCustomStarted )
+    if ((null == i) || !activityCustomStarted)
     {
       editor.putInt("level", mGameThread.getCurrentLevelIndex());
     }
@@ -399,7 +391,7 @@ public class FrozenBubble extends Activity
     if (resplayer != null)
       resplayer.PausePlay();
 
-    savePlayerState( );
+    savePlayerState();
   }
 
   /**
@@ -416,11 +408,11 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   * Notification that something is about to happen, to give the Activity a
-   * chance to save state.
+   * Notification that something is about to happen, to give the
+   * Activity a chance to save state.
    *
    * @param  outState
-   *         a Bundle into which this Activity should save its state
+   *         - A Bundle into which this Activity should save its state.
    */
   @Override
   protected void onSaveInstanceState(Bundle outState)
@@ -448,14 +440,21 @@ public class FrozenBubble extends Activity
     }
   }
 
+  @Override
+  public void onWindowFocusChanged (boolean hasFocus)
+  {
+    super.onWindowFocusChanged(hasFocus);
+    allowUnpause = hasFocus;
+  }
+
   private void restoreGamePrefs()
   {
     mConfig    = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     dontRushMe = mConfig.getBoolean("dontRushMe", false         );
-    fullscreen = mConfig.getBoolean("fullscreen", true         );
+    fullscreen = mConfig.getBoolean("fullscreen", true          );
     gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL   );
-    musicOn    = mConfig.getBoolean("musicOn",    true         );
-    soundOn    = mConfig.getBoolean("soundOn",    true         );
+    musicOn    = mConfig.getBoolean("musicOn",    true          );
+    soundOn    = mConfig.getBoolean("soundOn",    true          );
     targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT);
 
     setFullscreen();
@@ -486,7 +485,7 @@ public class FrozenBubble extends Activity
     //
     //
     if ((((rotation == Surface.ROTATION_0  ) ||
-          (rotation == Surface.ROTATION_180)) && (height > width )) ||
+          (rotation == Surface.ROTATION_180)) && (height > width)) ||
         (((rotation == Surface.ROTATION_90 ) ||
           (rotation == Surface.ROTATION_270)) && (width  > height)))
     {
@@ -580,8 +579,8 @@ public class FrozenBubble extends Activity
    * played, so use the last level played instead.
    * 
    * @param  intent
-   *         the intent from the level editor used to start this
-   *         activity, which contains the custom level data
+   *         - The intent from the level editor used to start this
+   *         activity, which contains the custom level data.
    */
   private void startCustomGame(Intent intent)
   {
@@ -657,13 +656,13 @@ public class FrozenBubble extends Activity
       @Override
       public void onClick(DialogInterface dialog, int which, boolean isChecked)
       {
-        switch ( which )
+        switch (which)
         {
           case 0:
-            setSoundOn( isChecked );
+            setSoundOn(isChecked);
             break;
           case 1:
-            setMusicOn( isChecked );
+            setMusicOn(isChecked);
             break;
         }
       }
@@ -675,15 +674,15 @@ public class FrozenBubble extends Activity
       public void onClick(DialogInterface dialog, int id)
       {
         // User clicked OK.
-        if ( resplayer != null )
+        if (resplayer != null)
         {
-          if ( getMusicOn() == true )
+          if (getMusicOn() == true)
           {
-            resplayer.setVolume( 255 );
+            resplayer.setVolume(255);
           }
           else
           {
-            resplayer.setVolume( 0 );
+            resplayer.setVolume(0);
           }
         }
 
@@ -719,16 +718,16 @@ public class FrozenBubble extends Activity
       @Override
       public void onClick(DialogInterface builder, int which)
       {
-        switch ( which )
+        switch (which)
         {
           case 0:
-            setTargetMode( AIM_TO_SHOOT );
+            setTargetMode(AIM_TO_SHOOT);
             break;
           case 1:
-            setTargetMode( POINT_TO_SHOOT );
+            setTargetMode(POINT_TO_SHOOT);
             break;
           case 2:
-            setTargetMode( ROTATE_TO_SHOOT );
+            setTargetMode(ROTATE_TO_SHOOT);
             break;
         }
       }
@@ -837,7 +836,7 @@ public class FrozenBubble extends Activity
     }
 
     if (mGameView != null)
-      mGameView.cleanUp( );
+      mGameView.cleanUp();
 
     mGameView   = null;
     mGameThread = null;
@@ -851,14 +850,14 @@ public class FrozenBubble extends Activity
   public void newGame()
   {
     mGameThread.newGame();
-    newMusicPlayer( true );
+    newMusicPlayer(true);
   }
 
   public void onAccelerationChanged(float x, float y, float z)
   {
-    if ( mGameThread != null )
+    if (mGameThread != null)
     {
-      if ( currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT )
+      if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x = -x;
 
       mGameThread.setPosition(20f+x*2f);
@@ -867,7 +866,7 @@ public class FrozenBubble extends Activity
 
   public void onGameEvent(int type)
   {
-    switch ( type )
+    switch (type)
     {
       case GameView.EVENT_GAME_WON:
         mod_was = mod_now;
@@ -885,20 +884,20 @@ public class FrozenBubble extends Activity
 
       case GameView.EVENT_GAME_RESUME:
         //
-        //   If the MOD resource player exists, then simply unpause
-        //   the current MOD.  Otherwise, create it.
+        // If the MOD resource player exists, then simply unpause
+        // the current MOD.  Otherwise, create it.
         //
         //
         if (resplayer == null)
         {
           //
-          //   Get a new player thread with this mod file data.
+          // Get a new player thread with this mod file data.
           //
           //
           resplayer = new MODResourcePlayer(this);
           //
-          //   Restore song number and current pattern so we can resume
-          //   from there...
+          // Restore song number and current pattern so we can resume
+          // from there...
           //
           //
           mConfig = getSharedPreferences(PLAYER_PREFS_NAME,
@@ -917,41 +916,44 @@ public class FrozenBubble extends Activity
         }
         else
         {
-          if ( mod_now != mod_was )
+          if (mod_now != mod_was)
             playCurrentMOD();
-          else if ( allowUnpause )
+          else if (allowUnpause)
             resplayer.UnPausePlay();
         }
         break;
 
       case GameView.EVENT_LEVEL_START:
-        if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
+        if (mGameView.getThread().getCurrentLevelIndex() == 1)
         {
           //
-          //   Since the credits screen activity creates its own
-          //   player, destroy the current player.  It will be re-
-          //   created when this activity regains user focus.
+          // Since the credits screen activity creates its own player,
+          // destroy the current player.  It will be re-created when
+          // this activity regains user focus.
           //
           //
           destroyMusicPlayer();
           //
-          //   Set the game state to display the about screen as a
-          //   backup just in case anything goes awry with displaying
-          //   the end-of-game credits.  It will be displayed after the
-          //   user touches the screen when the credits are finished.
+          // Clear the game screen and suspend input processing for
+          // three seconds.
+          //
+          // Afterwards,  the "About" screen will be displayed as a
+          // backup just in case anything goes awry with displaying
+          // the end-of-game credits.  It will be displayed after the
+          // user touches the screen when the credits are finished.
           //
           //
-          mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+          mGameView.clearGameScreen(true, 3000);
           //
-          //   Create an intent to launch the activity to display the
-          //   credits screen, then start the activity.
+          // Create an intent to launch the activity to display the
+          // credits screen.
           //
           //
-          Intent intent = new Intent( this, ScrollingCredits.class );
-          startActivity( intent );
+          Intent intent = new Intent(this, ScrollingCredits.class);
+          startActivity(intent);
         }
         else
-          playCurrentMOD( );
+          playCurrentMOD();
         break;
 
       default:
@@ -980,12 +982,12 @@ public class FrozenBubble extends Activity
    * song index that was last saved in the MOD player preferences.
    *
    * @param  startPausedFlag
-   *         if true, the player will be paused on startup.  Otherwise
+   *         - If true, the player will be paused on startup.  Otherwise
    *         if false, the player will start playing immediately.
    */
-  private void newMusicPlayer( boolean startPausedFlag )
+  private void newMusicPlayer(boolean startPausedFlag)
   {
-    if ( mGameView.getThread().getCurrentLevelIndex() == 0 )
+    if (mGameView.getThread().getCurrentLevelIndex() == 1)
     {
       mod_now = DEFAULT_SONG;
     }
@@ -1005,13 +1007,13 @@ public class FrozenBubble extends Activity
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[mod_now]);
-    if ( getMusicOn() == true )
+    if (getMusicOn() == true)
     {
-      resplayer.setVolume( 255 );
+      resplayer.setVolume(255);
     }
     else
     {
-      resplayer.setVolume( 0 );
+      resplayer.setVolume(0);
     }
     // start up the music (well, start the thread, at least...)
     resplayer.startPaused(startPausedFlag);
@@ -1040,14 +1042,14 @@ public class FrozenBubble extends Activity
       mod_was      = mod_now;
     }
     else
-      newMusicPlayer( false );
+      newMusicPlayer(false);
   }
 
   private void savePlayerState()
   {
     //
-    //   Save song number and current pattern so we can resume from
-    //   there...
+    // Save song number and current pattern so we can resume from
+    // there...
     //
     //
     SharedPreferences.Editor prefs =

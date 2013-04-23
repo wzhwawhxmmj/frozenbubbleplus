@@ -79,6 +79,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 
 import android.content.Context;
@@ -100,6 +102,7 @@ import com.efortin.frozenbubble.HighscoreManager;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback
 {
+  private boolean    mBlankScreen = false;
   private Context    mContext;
   private GameThread thread;
   //**********************************************************
@@ -215,17 +218,17 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
 
     Vector<BmpWrap> mImageList;
 
-    public int getCurrentLevelIndex( )
+    public int getCurrentLevelIndex()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        return mLevelManager.getLevelIndex( );
+        return mLevelManager.getLevelIndex();
       }
     }
 
-    private BmpWrap NewBmpWrap( )
+    private BmpWrap NewBmpWrap()
     {
-      int new_img_id = mImageList.size( );
+      int new_img_id = mImageList.size();
       BmpWrap new_img = new BmpWrap(new_img_id);
       mImageList.addElement(new_img);
       return new_img;
@@ -234,16 +237,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
                       int startingLevel)
     {
-      //Log.i("frozen-bubble", "GameThread( )");
+      //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
-      Resources res = mContext.getResources( );
+      Resources res = mContext.getResources();
       setState(STATE_PAUSE);
 
-      BitmapFactory.Options options = new BitmapFactory.Options( );
+      BitmapFactory.Options options = new BitmapFactory.Options();
 
       // The Options.inScaled field is only available starting at API 4.
       try {
-        Field f = options.getClass( ).getField("inScaled");
+        Field f = options.getClass().getField("inScaled");
         f.set(options, Boolean.FALSE);
       } catch (Exception ignore) {}
 
@@ -334,57 +337,57 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       mFontImageOrig = BitmapFactory.decodeResource(
         res, R.drawable.bubble_font, options);
 
-      mImageList = new Vector<BmpWrap>( );
+      mImageList = new Vector<BmpWrap>();
 
       mBubbles   = new BmpWrap[8];
       for (int i = 0; i < mBubbles.length; i++)
       {
-        mBubbles[i] = NewBmpWrap( );
+        mBubbles[i] = NewBmpWrap();
       }
 
       mBubblesBlind = new BmpWrap[8];
       for (int i = 0; i < mBubblesBlind.length; i++)
       {
-        mBubblesBlind[i] = NewBmpWrap( );
+        mBubblesBlind[i] = NewBmpWrap();
       }
 
       mFrozenBubbles = new BmpWrap[8];
       for (int i = 0; i < mFrozenBubbles.length; i++)
       {
-        mFrozenBubbles[i] = NewBmpWrap( );
+        mFrozenBubbles[i] = NewBmpWrap();
       }
 
       mTargetedBubbles = new BmpWrap[6];
       for (int i = 0; i < mTargetedBubbles.length; i++)
       {
-        mTargetedBubbles[i] = NewBmpWrap( );
+        mTargetedBubbles[i] = NewBmpWrap();
       }
 
-      mBackground     = NewBmpWrap( );
-      mBubbleBlink    = NewBmpWrap( );
-      mGameWon        = NewBmpWrap( );
-      mGameLost       = NewBmpWrap( );
-      mGamePaused     = NewBmpWrap( );
-      mHurry          = NewBmpWrap( );
-      mPenguins       = NewBmpWrap( );
-      mCompressorHead = NewBmpWrap( );
-      mCompressor     = NewBmpWrap( );
-      mLife           = NewBmpWrap( );
-      mFontImage      = NewBmpWrap( );
+      mBackground     = NewBmpWrap();
+      mBubbleBlink    = NewBmpWrap();
+      mGameWon        = NewBmpWrap();
+      mGameLost       = NewBmpWrap();
+      mGamePaused     = NewBmpWrap();
+      mHurry          = NewBmpWrap();
+      mPenguins       = NewBmpWrap();
+      mCompressorHead = NewBmpWrap();
+      mCompressor     = NewBmpWrap();
+      mLife           = NewBmpWrap();
+      mFontImage      = NewBmpWrap();
 
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
       mSoundManager     = new SoundManager(mContext);
-      mHighscoreManager = new HighscoreManager(getContext( ));
+      mHighscoreManager = new HighscoreManager(getContext());
 
-      if ( null == customLevels )
+      if (null == customLevels)
       {
         try {
-          InputStream is     = mContext.getAssets( ).open("levels.txt");
-          int         size   = is.available( );
+          InputStream is     = mContext.getAssets().open("levels.txt");
+          int         size   = is.available();
           byte[]      levels = new byte[size];
           is.read(levels);
-          is.close( );
+          is.close();
           SharedPreferences sp = mContext.getSharedPreferences(
             FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
           startingLevel = sp.getInt("level", 0);
@@ -407,30 +410,30 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                                    mCompressorHead, mCompressor, mLauncher,
                                    mSoundManager, mLevelManager,
                                    mHighscoreManager);
-      mHighscoreManager.startLevel(mLevelManager.getLevelIndex( ));
+      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
-    private void scaleFrom( BmpWrap image, Bitmap bmp )
+    private void scaleFrom(BmpWrap image, Bitmap bmp)
     {
-      if ( ( image.bmp != null ) && ( image.bmp != bmp ) )
+      if ((image.bmp != null) && (image.bmp != bmp))
       {
-        image.bmp.recycle( );
+        image.bmp.recycle();
       }
 
-      if ( ( mDisplayScale > 0.99999 ) && ( mDisplayScale < 1.00001) )
+      if ((mDisplayScale > 0.99999) && (mDisplayScale < 1.00001))
       {
         image.bmp = bmp;
         return;
       }
 
-      int dstWidth  = (int)(bmp.getWidth( )  * mDisplayScale);
-      int dstHeight = (int)(bmp.getHeight( ) * mDisplayScale);
+      int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
+      int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
       image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
     }
 
-    private void resizeBitmaps( )
+    private void resizeBitmaps()
     {
-      //Log.i("frozen-bubble", "resizeBitmaps( )");
+      //Log.i("frozen-bubble", "resizeBitmaps()");
       scaleFrom(mBackground, mBackgroundOrig);
       for (int i = 0; i < mBubblesOrig.length; i++)
       {
@@ -462,40 +465,40 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       mImagesReady = true;
     }
 
-    public void pause( )
+    public void pause()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         if (mMode == STATE_RUNNING)
         {
           setState(STATE_PAUSE);
 
-          if ( mGameListener != null )
-            mGameListener.onGameEvent( EVENT_GAME_PAUSED );
+          if (mGameListener != null)
+            mGameListener.onGameEvent(EVENT_GAME_PAUSED);
 
-          mFrozenGame      .pause( );
-          mHighscoreManager.pauseLevel( );
+          mFrozenGame      .pause();
+          mHighscoreManager.pauseLevel();
         }
       }
     }
 
-    public void resumeGame( )
+    public void resumeGame()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         if (mMode == STATE_RUNNING)
         {
-          mFrozenGame      .resume( );
-          mHighscoreManager.resumeLevel( );
+          mFrozenGame      .resume();
+          mHighscoreManager.resumeLevel();
         }
       }
     }
 
-    public void newGame( )
+    public void newGame()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        mLevelManager.goToFirstLevel( );
+        mLevelManager.goToFirstLevel();
         mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                      mFrozenBubbles, mTargetedBubbles,
                                      mBubbleBlink, mGameWon, mGameLost,
@@ -503,16 +506,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                                      mCompressorHead, mCompressor, mLauncher,
                                      mSoundManager, mLevelManager,
                                      mHighscoreManager);
-        mHighscoreManager.startLevel(mLevelManager.getLevelIndex( ));
+        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
 
     @Override
-    public void run( )
+    public void run()
     {
       while (mRun)
       {
-        long now = System.currentTimeMillis( );
+        long now = System.currentTimeMillis();
         long delay = FRAME_DELAY + mLastTime - now;
         if (delay > 0)
         {
@@ -523,12 +526,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         mLastTime = now;
         Canvas c = null;
         try {
-          if (surfaceOK( ))
+          if (surfaceOK())
           {
             c = mSurfaceHolder.lockCanvas(null);
             if (c != null)
             {
-              synchronized ( mSurfaceHolder )
+              synchronized (mSurfaceHolder)
               {
                 if (mRun)
                 {
@@ -539,7 +542,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                   else if (mMode == STATE_PAUSE)
                   {
                     if (mShowScores)
-                      drawHighscoreScreen(c, mHighscoreManager.getLevel( ));
+                      drawHighscoreScreen(c, mHighscoreManager.getLevel());
                     else
                       doDraw(c);
                   }
@@ -550,13 +553,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
                       if (mModeWas != STATE_RUNNING) 
                       {
                         if (mGameListener != null)
-                        {
                           mGameListener.onGameEvent(EVENT_GAME_RESUME);
-                        }
+
                         mModeWas = STATE_RUNNING;
-                        resumeGame( );
+                        resumeGame();
                       }
-                      updateGameState( );
+                      updateGameState();
                     }
                     doDraw(c);
                   }
@@ -569,9 +571,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
           // during the above, we don't leave the Surface in an
           // inconsistent state
           if (c != null)
-          {
             mSurfaceHolder.unlockCanvasAndPost(c);
-          }
         }
       }
     }
@@ -584,9 +584,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
      */
     public Bundle saveState(Bundle map)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if ( map != null )
+        if (map != null)
         {
           mFrozenGame      .saveState(map);
           mLevelManager    .saveState(map);
@@ -602,11 +602,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
      * destroyed.
      *
      * @param  savedState
-     *         Bundle containing the game state
+     *         - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         setState(STATE_PAUSE);
         mFrozenGame      .restoreState(map, mImageList);
@@ -622,7 +622,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
 
     public void setState(int mode)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         //
         //   Only update the previous mode storage if the new mode is
@@ -635,25 +635,24 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         //   this method.
         //
         //
-        if ( mode != mMode )
-        {
+        if (mode != mMode)
           mModeWas = mMode;
-        }
+
         mMode = mode;
       }
     }
 
     public void setSurfaceOK(boolean ok)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         mSurfaceOK = ok;
       }
     }
 
-    public boolean surfaceOK( )
+    public boolean surfaceOK()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         return mSurfaceOK;
       }
@@ -661,62 +660,62 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
 
     public void setSurfaceSize(int width, int height)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if ( ( width / height ) >= ( GAMEFIELD_WIDTH / GAMEFIELD_HEIGHT ) )
+        if ((width / height) >= (GAMEFIELD_WIDTH / GAMEFIELD_HEIGHT))
         {
-          mDisplayScale = ( 1.0 * height ) / GAMEFIELD_HEIGHT;
-          mDisplayDX = (int)( ( width - ( mDisplayScale *
-                                          EXTENDED_GAMEFIELD_WIDTH ) ) / 2 );
+          mDisplayScale = (1.0 * height) / GAMEFIELD_HEIGHT;
+          mDisplayDX = (int)((width - (mDisplayScale *
+                                       EXTENDED_GAMEFIELD_WIDTH)) / 2);
           mDisplayDY    = 0;
         }
         else
         {
           mDisplayScale = 1.0 * width / GAMEFIELD_WIDTH;
-          mDisplayDX = (int)( -mDisplayScale * ( EXTENDED_GAMEFIELD_WIDTH -
-                                                 GAMEFIELD_WIDTH ) / 2 );
-          mDisplayDY = (int)( ( height - ( mDisplayScale *
-                                           GAMEFIELD_HEIGHT ) ) / 2 );
+          mDisplayDX = (int)(-mDisplayScale * (EXTENDED_GAMEFIELD_WIDTH -
+                                               GAMEFIELD_WIDTH) / 2);
+          mDisplayDY = (int)((height - (mDisplayScale *
+                                        GAMEFIELD_HEIGHT)) / 2);
         }
-        resizeBitmaps( );
+        resizeBitmaps();
       }
     }
 
-    boolean doKeyDown( int keyCode, KeyEvent msg )
+    boolean doKeyDown(int keyCode, KeyEvent msg)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if( updateStateOnEvent( null ) )
+        if(updateStateOnEvent(null))
           return true;
 
-        if ( mMode == STATE_RUNNING )
+        if (mMode == STATE_RUNNING)
         {
           //Log.i("frozen-bubble", "STATE RUNNING");
-          if ( keyCode == KeyEvent.KEYCODE_DPAD_LEFT )
+          if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
           {
             mLeft    = true;
             mWasLeft = true;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_RIGHT )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT)
           {
             mRight    = true;
             mWasRight = true;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_CENTER )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
           {
             mFire    = true;
             mWasFire = true;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_UP )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_UP)
           {
             mUp    = true;
             mWasUp = true;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_DOWN )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
           {
             mDown    = true;
             mWasDown = true;
@@ -727,33 +726,33 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       }
     }
 
-    boolean doKeyUp( int keyCode, KeyEvent msg )
+    boolean doKeyUp(int keyCode, KeyEvent msg)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if ( mMode == STATE_RUNNING )
+        if (mMode == STATE_RUNNING)
         {
-          if ( keyCode == KeyEvent.KEYCODE_DPAD_LEFT )
+          if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT)
           {
             mLeft = false;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_RIGHT )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT)
           {
             mRight = false;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_CENTER )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER)
           {
             mFire = false;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_UP )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_UP)
           {
             mUp = false;
             return true;
           }
-          else if ( keyCode == KeyEvent.KEYCODE_DPAD_DOWN )
+          else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)
           {
             mDown = false;
             return true;
@@ -763,18 +762,18 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       }
     }
 
-    boolean doTrackballEvent( MotionEvent event )
+    boolean doTrackballEvent(MotionEvent event)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if( updateStateOnEvent( event ) )
+        if(updateStateOnEvent(event))
           return true;
 
-        if ( mMode == STATE_RUNNING )
+        if (mMode == STATE_RUNNING)
         {
-          if ( event.getAction( ) == MotionEvent.ACTION_MOVE )
+          if (event.getAction() == MotionEvent.ACTION_MOVE)
           {
-            mTrackballDX += event.getX( ) * TRACKBALL_COEFFICIENT;
+            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
             return true;
           }
         }
@@ -782,18 +781,18 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       }
     }
 
-    private double xFromScr( float x )
+    private double xFromScr(float x)
     {
-      return ( x - mDisplayDX ) / mDisplayScale;
+      return (x - mDisplayDX) / mDisplayScale;
     }
 
-    private double yFromScr( float y )
+    private double yFromScr(float y)
     {
-      return ( y - mDisplayDY ) / mDisplayScale;
+      return (y - mDisplayDY) / mDisplayScale;
     }
 
     //
-    //   doTouchEvent( ) - Implement this method to handle touch screen
+    //   doTouchEvent() - Implement this method to handle touch screen
     //                     motion events.
     //
     //   This method will be called three times in succession for each
@@ -806,45 +805,45 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
     //      True if the event was handled, false otherwise.
     //
     //
-    boolean doTouchEvent( MotionEvent event )
+    boolean doTouchEvent(MotionEvent event)
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
-        if( updateStateOnEvent( event ) )
+        if(updateStateOnEvent(event))
           return true;
 
-        if ( mMode == STATE_RUNNING )
+        if (mMode == STATE_RUNNING)
         {
-          double x = xFromScr( event.getX( ) );
-          double y = yFromScr( event.getY( ) );
+          double x = xFromScr(event.getX());
+          double y = yFromScr(event.getY());
 
           // Set the values used when Point To Shoot is on.
-          if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
+          if (event.getAction() == MotionEvent.ACTION_DOWN)
           {
-            if ( y < TOUCH_FIRE_Y_THRESHOLD )
+            if (y < TOUCH_FIRE_Y_THRESHOLD)
             {
               mTouchFire = true;
               mTouchX = x;
               mTouchY = y;
             }
-            else if ( Math.abs( x - 318 ) <= TOUCH_SWAP_X_THRESHOLD )
+            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
               mTouchSwap = true;
           }
 
           // Set the values used when Aim Then Shoot is on.
-          if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
+          if (event.getAction() == MotionEvent.ACTION_DOWN)
           {
-            if ( y < ATS_TOUCH_FIRE_Y_THRESHOLD )
+            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD)
             {
               mATSTouchFire = true;
             }
             mATSTouchLastX = x;
           }
-          else if ( event.getAction( ) == MotionEvent.ACTION_MOVE )
+          else if (event.getAction() == MotionEvent.ACTION_MOVE)
           {
-            if ( y >= ATS_TOUCH_FIRE_Y_THRESHOLD )
+            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD)
             {
-              mATSTouchDX = ( x - mATSTouchLastX ) * ATS_TOUCH_COEFFICIENT;
+              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
             }
             mATSTouchLastX = x;
           }
@@ -862,46 +861,50 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
      * function will return false.
      *
      * @param  event
-     *         the MotionEvent to process for the purpose of updating
+     *         - The MotionEvent to process for the purpose of updating
      *         the game state.  If this parameter is null, then the
      *         game state is forced to update if applicable based on
      *         the current game state.
      *
      * @return  This function returns true to inform the calling
-     *          function that the game state has been updated and that
+     *          - Function that the game state has been updated and that
      *          no further processing is necessary, and false to
      *          indicate that the caller should continue processing the
      *          motion event.
      */
-    private boolean updateStateOnEvent( MotionEvent event )
+    private boolean updateStateOnEvent(MotionEvent event)
     {
       boolean event_action_down = false;
 
-      if ( event == null )
+      if (event == null)
         event_action_down = true;
-      else if ( event.getAction( ) == MotionEvent.ACTION_DOWN )
+      else if (event.getAction() == MotionEvent.ACTION_DOWN)
         event_action_down = true;
 
-      if ( event_action_down )
+      if (event_action_down)
       {
-        switch ( mMode )
+        switch (mMode)
         {
           case STATE_ABOUT:
-            setState( STATE_RUNNING );
-            return true;
+            if (!mBlankScreen)
+            {
+              setState(STATE_RUNNING);
+              return true;
+            }
+            break;
 
           case STATE_PAUSE:
-            if ( mShowScores )
+            if (mShowScores)
             {
               mShowScores = false;
-              nextLevel( );
-              if ( mGameListener != null )
+              nextLevel();
+              if (mGameListener != null)
               {
-                mGameListener.onGameEvent( EVENT_LEVEL_START );
+                mGameListener.onGameEvent(EVENT_LEVEL_START);
               }
               return true;
             }
-            setState( STATE_RUNNING );
+            setState(STATE_RUNNING);
             break;
 
           case STATE_RUNNING:
@@ -912,24 +915,24 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       return false;
     }
 
-    private void drawBackground( Canvas c )
+    private void drawBackground(Canvas c)
     {
-      Sprite.drawImage( mBackground, 0, 0, c, mDisplayScale,
-                        mDisplayDX, mDisplayDY );
+      Sprite.drawImage(mBackground, 0, 0, c, mDisplayScale,
+                       mDisplayDX, mDisplayDY);
     }
 
-    private void drawLevelNumber( Canvas canvas )
+    private void drawLevelNumber(Canvas canvas)
     {
       int y = 433;
       int x;
-      int level = mLevelManager.getLevelIndex( ) + 1;
-      if ( level < 10 )
+      int level = mLevelManager.getLevelIndex() + 1;
+      if (level < 10)
       {
         x = 185;
         mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
                         mDisplayScale, mDisplayDX, mDisplayDY);
       }
-      else if ( level < 100 )
+      else if (level < 100)
       {
         x = 178;
         x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
@@ -950,143 +953,146 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       }
     }
 
-    private void drawAboutScreen( Canvas canvas )
+    private void drawAboutScreen(Canvas canvas)
     {
       canvas.drawRGB(0, 0, 0);
-      int x = 180;// 168; // Nexus display size fix for about screen
-      int y = 20;
-      int ysp = 26;
-      int indent = 10;
-      mFont.print("original frozen bubble:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("guillaume cottenceau", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("alexis younes", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("matthias le bidan", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      y += ysp;
-      mFont.print("java version:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("glenn sanson", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      y += ysp;
-      mFont.print("android port:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("aleksander fedorynski", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("eric fortin", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += 2 * ysp;
-      mFont.print("android port source code", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("is available at:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("http://code.google.com", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("/p/frozenbubbleplus", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
+      if (!mBlankScreen)
+      {
+        int x = 180;// 168; // Nexus display size fix for about screen
+        int y = 20;
+        int ysp = 26;
+        int indent = 10;
+        mFont.print("original frozen bubble:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("guillaume cottenceau", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("alexis younes", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("matthias le bidan", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        y += ysp;
+        mFont.print("java version:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("glenn sanson", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        y += ysp;
+        mFont.print("android port:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("aleksander fedorynski", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("eric fortin", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += 2 * ysp;
+        mFont.print("android port source code", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("is available at:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("http://code.google.com", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("/p/frozenbubbleplus", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+      }
     }
 
-    private void drawHighscoreScreen( Canvas canvas, int level )
+    private void drawHighscoreScreen(Canvas canvas, int level)
     {
-      canvas.drawRGB( 0, 0, 0 );
+      canvas.drawRGB(0, 0, 0);
       int x = 180;// 168; // Nexus display size fix for score screen
       int y = 20;
       int ysp = 26;
       int indent = 10;
 
-      mFont.print("highscore for level " + ( level + 1 ), x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY );
+      mFont.print("highscore for level " + (level + 1), x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
       y += 2 * ysp;
 
-      List<HighscoreDO> hlist = mHighscoreManager.getHighscore( level, 15 );
-      long lastScoreId = mHighscoreManager.getLastScoreId( );
+      List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
+      long lastScoreId = mHighscoreManager.getLastScoreId();
       int i = 1;
-      for ( HighscoreDO hdo : hlist )
+      for (HighscoreDO hdo : hlist)
       {
         String you = "";
-        if ( lastScoreId == hdo.getId( ) )
+        if (lastScoreId == hdo.getId())
         {
           you = "|";
         }
         // TODO: Add player name support.
-        // mFont.print(you + i++ + " - " + hdo.getName( ).toLowerCase( )
+        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
         // + " - "
-        // + hdo.getShots( )
-        // + " - " + (hdo.getTime( ) / 1000)
+        // + hdo.getShots()
+        // + " - " + (hdo.getTime() / 1000)
         // + " sec", x + indent,
         // y, canvas,
         // mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.print( you + i++ + " - "
-          + hdo.getShots( )
+        mFont.print(you + i++ + " - "
+          + hdo.getShots()
           + " shots - "
-          + (hdo.getTime( ) / 1000)
+          + (hdo.getTime() / 1000)
           + " sec", x + indent,
           y, canvas,
-          mDisplayScale, mDisplayDX, mDisplayDY );
+          mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
     }
 
-    private void doDraw( Canvas canvas )
+    private void doDraw(Canvas canvas)
     {
-      //Log.i("frozen-bubble", "doDraw( )");
-      if ( ! mImagesReady )
+      //Log.i("frozen-bubble", "doDraw()");
+      if (! mImagesReady)
       {
         //Log.i("frozen-bubble", "!mImagesReady, returning");
         return;
       }
-      if ( ( mDisplayDX > 0 ) || ( mDisplayDY > 0 ) )
+      if ((mDisplayDX > 0) || (mDisplayDY > 0))
       {
         //Log.i("frozen-bubble", "Drawing black background.");
-        canvas.drawRGB( 0, 0, 0 );
+        canvas.drawRGB(0, 0, 0);
       }
-      drawBackground( canvas );
-      drawLevelNumber( canvas );
-      mFrozenGame.paint( canvas, mDisplayScale, mDisplayDX, mDisplayDY );
+      drawBackground(canvas);
+      drawLevelNumber(canvas);
+      mFrozenGame.paint(canvas, mDisplayScale, mDisplayDX, mDisplayDY);
     }
 
-    private void updateGameState( )
+    private void updateGameState()
     {
-      int game_state = mFrozenGame.play( mLeft || mWasLeft,
-                                         mRight || mWasRight,
-                                         mFire || mUp || mWasFire || mWasUp,
-                                         mDown || mWasDown || mTouchSwap,
-                                         mTrackballDX,
-                                         mTouchFire, mTouchX, mTouchY,
-                                         mATSTouchFire, mATSTouchDX );
-      if ( ( game_state == FrozenGame.GAME_NEXT_LOST ) ||
-           ( game_state == FrozenGame.GAME_NEXT_WON  ) )
+      int game_state = mFrozenGame.play(mLeft || mWasLeft,
+                                        mRight || mWasRight,
+                                        mFire || mUp || mWasFire || mWasUp,
+                                        mDown || mWasDown || mTouchSwap,
+                                        mTrackballDX,
+                                        mTouchFire, mTouchX, mTouchY,
+                                        mATSTouchFire, mATSTouchDX);
+      if ((game_state == FrozenGame.GAME_NEXT_LOST) ||
+          (game_state == FrozenGame.GAME_NEXT_WON ))
       {
-        if ( game_state == FrozenGame.GAME_NEXT_WON )
+        if (game_state == FrozenGame.GAME_NEXT_WON)
         {
           mShowScores = true;
-          pause( );
+          pause();
         }
         else
-          nextLevel( );
+          nextLevel();
 
-        if ( mGameListener != null )
+        if (mGameListener != null)
         {
-          if ( game_state == FrozenGame.GAME_NEXT_WON )
-            mGameListener.onGameEvent( EVENT_GAME_WON );
+          if (game_state == FrozenGame.GAME_NEXT_WON)
+            mGameListener.onGameEvent(EVENT_GAME_WON);
           else
-            mGameListener.onGameEvent( EVENT_GAME_LOST );
+            mGameListener.onGameEvent(EVENT_GAME_LOST);
         }
       }
       mWasLeft      = false;
@@ -1101,115 +1107,115 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
       mATSTouchDX   = 0;
     }
 
-    private void nextLevel( )
+    private void nextLevel()
     {
-      mFrozenGame = new FrozenGame( mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighscoreManager);
-      mHighscoreManager.startLevel( mLevelManager.getLevelIndex( ) );
+      mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                   mFrozenBubbles, mTargetedBubbles,
+                                   mBubbleBlink, mGameWon, mGameLost,
+                                   mGamePaused, mHurry, mPenguins,
+                                   mCompressorHead, mCompressor, mLauncher,
+                                   mSoundManager, mLevelManager,
+                                   mHighscoreManager);
+      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
-    public void cleanUp( )
+    public void cleanUp()
     {
-      synchronized ( mSurfaceHolder )
+      synchronized (mSurfaceHolder)
       {
         // I don't really understand why all this is necessary.
         // I used to get a crash (an out-of-memory error) once every six or
         // seven times I started the game.  I googled the error and someone
-        // said you have to call recycle( ) on all the bitmaps and set
+        // said you have to call recycle() on all the bitmaps and set
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
-        mFrozenGame.cleanUp( );
+        mFrozenGame.cleanUp();
         mFrozenGame = null;
         mImagesReady = false;
 
-        boolean imagesScaled = ( mBackgroundOrig == mBackground.bmp );
-        mBackgroundOrig.recycle( );
+        boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
+        mBackgroundOrig.recycle();
         mBackgroundOrig = null;
 
         for (int i = 0; i < mBubblesOrig.length; i++)
         {
-          mBubblesOrig[i].recycle( );
+          mBubblesOrig[i].recycle();
           mBubblesOrig[i] = null;
         }
         mBubblesOrig = null;
 
         for (int i = 0; i < mBubblesBlindOrig.length; i++)
         {
-          mBubblesBlindOrig[i].recycle( );
+          mBubblesBlindOrig[i].recycle();
           mBubblesBlindOrig[i] = null;
         }
         mBubblesBlindOrig = null;
 
         for (int i = 0; i < mFrozenBubblesOrig.length; i++)
         {
-          mFrozenBubblesOrig[i].recycle( );
+          mFrozenBubblesOrig[i].recycle();
           mFrozenBubblesOrig[i] = null;
         }
         mFrozenBubblesOrig = null;
 
         for (int i = 0; i < mTargetedBubblesOrig.length; i++)
         {
-          mTargetedBubblesOrig[i].recycle( );
+          mTargetedBubblesOrig[i].recycle();
           mTargetedBubblesOrig[i] = null;
         }
         mTargetedBubblesOrig = null;
 
-        mBubbleBlinkOrig.recycle( );
+        mBubbleBlinkOrig.recycle();
         mBubbleBlinkOrig = null;
-        mGameWonOrig.recycle( );
+        mGameWonOrig.recycle();
         mGameWonOrig = null;
-        mGameLostOrig.recycle( );
+        mGameLostOrig.recycle();
         mGameLostOrig = null;
-        mGamePausedOrig.recycle( );
+        mGamePausedOrig.recycle();
         mGamePausedOrig = null;
-        mHurryOrig.recycle( );
+        mHurryOrig.recycle();
         mHurryOrig = null;
-        mPenguinsOrig.recycle( );
+        mPenguinsOrig.recycle();
         mPenguinsOrig = null;
-        mCompressorHeadOrig.recycle( );
+        mCompressorHeadOrig.recycle();
         mCompressorHeadOrig = null;
-        mCompressorOrig.recycle( );
+        mCompressorOrig.recycle();
         mCompressorOrig = null;
-        mLifeOrig.recycle( );
+        mLifeOrig.recycle();
         mLifeOrig = null;
 
         if (imagesScaled)
         {
-          mBackground.bmp.recycle( );
+          mBackground.bmp.recycle();
           for (int i = 0; i < mBubbles.length; i++)
           {
-            mBubbles[i].bmp.recycle( );
+            mBubbles[i].bmp.recycle();
           }
 
           for (int i = 0; i < mBubblesBlind.length; i++)
           {
-            mBubblesBlind[i].bmp.recycle( );
+            mBubblesBlind[i].bmp.recycle();
           }
 
           for (int i = 0; i < mFrozenBubbles.length; i++)
           {
-            mFrozenBubbles[i].bmp.recycle( );
+            mFrozenBubbles[i].bmp.recycle();
           }
 
           for (int i = 0; i < mTargetedBubbles.length; i++)
           {
-            mTargetedBubbles[i].bmp.recycle( );
+            mTargetedBubbles[i].bmp.recycle();
           }
 
-          mBubbleBlink.bmp.recycle( );
-          mGameWon.bmp.recycle( );
-          mGameLost.bmp.recycle( );
-          mGamePaused.bmp.recycle( );
-          mHurry.bmp.recycle( );
-          mPenguins.bmp.recycle( );
-          mCompressorHead.bmp.recycle( );
-          mCompressor.bmp.recycle( );
-          mLife.bmp.recycle( );
+          mBubbleBlink.bmp.recycle();
+          mGameWon.bmp.recycle();
+          mGameLost.bmp.recycle();
+          mGamePaused.bmp.recycle();
+          mHurry.bmp.recycle();
+          mPenguins.bmp.recycle();
+          mCompressorHead.bmp.recycle();
+          mCompressor.bmp.recycle();
+          mLife.bmp.recycle();
         }
         mBackground.bmp = null;
         mBackground = null;
@@ -1262,118 +1268,164 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback
         mLife = null;
 
         mImageList = null;
-        mSoundManager.cleanUp( );
+        mSoundManager.cleanUp();
         mSoundManager = null;
         mLevelManager = null;
       }
     }
 
-    public void setPosition( double value )
+    public void setPosition(double value)
     {
-      mFrozenGame.setPosition( value );
+      mFrozenGame.setPosition(value);
     }
   }
 
-  public GameView( Context context, AttributeSet attrs )
+  public GameView(Context context, AttributeSet attrs)
   {
-    super( context, attrs );
+    super(context, attrs);
     //Log.i("frozen-bubble", "GameView constructor");
 
     mContext = context;
-    SurfaceHolder holder = getHolder( );
-    holder.addCallback( this );
+    SurfaceHolder holder = getHolder();
+    holder.addCallback(this);
     
-    thread = new GameThread( holder, null, 0 );
-    setFocusable( true );
-    setFocusableInTouchMode( true );
+    thread = new GameThread(holder, null, 0);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
 
-    thread.setRunning( true );
-    thread.start( );
+    thread.setRunning(true);
+    thread.start();
   }
 
-  public GameView( Context context, byte[] levels, int startingLevel )
+  public GameView(Context context, byte[] levels, int startingLevel)
   {
-    super( context );
+    super(context);
     //Log.i("frozen-bubble", "GameView constructor");
 
     mContext = context;
-    SurfaceHolder holder = getHolder( );
-    holder.addCallback( this );
+    SurfaceHolder holder = getHolder();
+    holder.addCallback(this);
     
-    thread = new GameThread( holder, levels, startingLevel );
-    setFocusable( true );
-    setFocusableInTouchMode( true );
+    thread = new GameThread(holder, levels, startingLevel);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
 
-    thread.setRunning( true );
-    thread.start( );
+    thread.setRunning(true);
+    thread.start();
   }
   
-  public GameThread getThread( )
+  public GameThread getThread()
   {
     return thread;
   }
 
   @Override
-  public boolean onKeyDown( int keyCode, KeyEvent msg )
+  public boolean onKeyDown(int keyCode, KeyEvent msg)
   {
-    //Log.i("frozen-bubble", "GameView.onKeyDown( )");
-    return thread.doKeyDown( keyCode, msg );
+    //Log.i("frozen-bubble", "GameView.onKeyDown()");
+    return thread.doKeyDown(keyCode, msg);
   }
 
   @Override
-  public boolean onKeyUp( int keyCode, KeyEvent msg )
+  public boolean onKeyUp(int keyCode, KeyEvent msg)
   {
-    //Log.i("frozen-bubble", "GameView.onKeyUp( )");
-    return thread.doKeyUp( keyCode, msg );
+    //Log.i("frozen-bubble", "GameView.onKeyUp()");
+    return thread.doKeyUp(keyCode, msg);
   }
 
   @Override
-  public boolean onTrackballEvent( MotionEvent event )
+  public boolean onTrackballEvent(MotionEvent event)
   {
-    //Log.i("frozen-bubble", "event.getX( ): " + event.getX( ));
-    //Log.i("frozen-bubble", "event.getY( ): " + event.getY( ));
-    return thread.doTrackballEvent( event );
+    //Log.i("frozen-bubble", "event.getX(): " + event.getX());
+    //Log.i("frozen-bubble", "event.getY(): " + event.getY());
+    return thread.doTrackballEvent(event);
   }
 
   @Override
-  public boolean onTouchEvent( MotionEvent event )
+  public boolean onTouchEvent(MotionEvent event)
   {
-    return thread.doTouchEvent( event );
+    return thread.doTouchEvent(event);
   }
 
   @Override
-  public void onWindowFocusChanged( boolean hasWindowFocus )
+  public void onWindowFocusChanged(boolean hasWindowFocus)
   {
-    //Log.i("frozen-bubble", "GameView.onWindowFocusChanged( )");
-    if ( ! hasWindowFocus )
+    //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
+    if (! hasWindowFocus)
     {
-      thread.pause( );
+      thread.pause();
     }
   }
 
-  public void surfaceChanged( SurfaceHolder holder, int format, int width,
-                              int height )
+  public void surfaceChanged(SurfaceHolder holder, int format, int width,
+                              int height)
   {
     //Log.i("frozen-bubble", "GameView.surfaceChanged");
-    thread.setSurfaceSize( width, height );
+    thread.setSurfaceSize(width, height);
   }
 
-  public void surfaceCreated( SurfaceHolder holder )
+  public void surfaceCreated(SurfaceHolder holder)
   {
-    //Log.i("frozen-bubble", "GameView.surfaceCreated( )");
-    thread.setSurfaceOK( true );
+    //Log.i("frozen-bubble", "GameView.surfaceCreated()");
+    thread.setSurfaceOK(true);
   }
 
-  public void surfaceDestroyed( SurfaceHolder holder )
+  public void surfaceDestroyed(SurfaceHolder holder)
   {
-    //Log.i("frozen-bubble", "GameView.surfaceDestroyed( )");
-    thread.setSurfaceOK( false );
+    //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
+    thread.setSurfaceOK(false);
   }
 
-  public void cleanUp( )
+  public void cleanUp()
   {
-    //Log.i("frozen-bubble", "GameView.cleanUp( )");
-    thread.cleanUp( );
+    //Log.i("frozen-bubble", "GameView.cleanUp()");
+    thread.cleanUp();
     mContext = null;
+  }
+
+  /**
+   * This is a class that extends TimerTask to resume displaying the
+   * game screen as normal after it has been shown as a blank screen.
+   * 
+   * @author efortin
+   */
+  class resumeGameScreenTask extends TimerTask
+  {
+    @Override
+    public void run()
+    {
+      clearGameScreen(false, 0);
+      cancel();
+    }
+  };
+
+  /**
+   * Display a blank screen (black background) for the specified wait
+   * interval.
+   * 
+   * @param  clearScreen
+   *         - If true, show a blank screen for the specified wait
+   *         interval.  If false, show the normal screen.
+   *
+   * @param  wait
+   *         - The amount of time to display the blank screen.
+   */
+  public void clearGameScreen(boolean clearScreen, int wait)
+  {
+    mBlankScreen = clearScreen;
+    try {
+      if (clearScreen)
+      {
+        thread.setState(GameThread.STATE_ABOUT);
+        Timer timer = new Timer();
+        timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
+      }
+    } catch (IllegalArgumentException illArgEx) {
+      illArgEx.printStackTrace();
+      mBlankScreen = false;
+    } catch (IllegalStateException illStateEx) {
+      illStateEx.printStackTrace();
+      mBlankScreen = false;
+    }
   }
 }

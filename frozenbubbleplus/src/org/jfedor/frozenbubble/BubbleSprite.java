@@ -285,7 +285,7 @@ public class BubbleSprite extends Sprite
     Point currentPosition = currentPosition();
     BubbleSprite[][] grid = frozen.getGrid();
 
-    if ( grid[currentPosition.x][currentPosition.y] == null )
+    if (grid[currentPosition.x][currentPosition.y] == null)
       lastOpenPosition = currentPosition;
 
     Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
