@@ -73,8 +73,7 @@ public class HighscoreManager {
   private final Context     ctx;
   String name = null;
 
-  public HighscoreManager(Context context)
-  {
+  public HighscoreManager(Context context) {
     ctx = context;
     db = new HighscoreDB(ctx);
   }
@@ -83,16 +82,14 @@ public class HighscoreManager {
    * @param  nbBubbles
    *         - The number of bubbles launched by the player.
    */
-  public void endLevel(int nbBubbles)
-  {
+  public void endLevel(int nbBubbles) {
     long endTime  = System.currentTimeMillis();
     long duration = (endTime - startTime) + pausedTime;
 
     if ( duration < 0 )
       duration = 0;
     /*
-    if (name == null)
-    {
+    if (name == null) {
       SharedPreferences sp = ctx.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                       Context.MODE_PRIVATE);
       name = sp.getString("highscorename", "anon");
@@ -106,10 +103,8 @@ public class HighscoreManager {
     alert.setTitle("Highscore name"); alert.setMessage("Set your name:");
     final EditText input = new EditText(ctx); input.setText(name);
     alert.setView(input);
-    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener()
-    {
-      public void onClick(DialogInterface dialog, int whichButton)
-      {
+    alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+      public void onClick(DialogInterface dialog, int whichButton) {
         SharedPreferences sp =
           ctx.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                    Context.MODE_PRIVATE);
@@ -129,35 +124,30 @@ public class HighscoreManager {
     //  " seconds and " + nbBubbles + " shots used for level " + currentLevel);
   }
 
-  public void lostLevel()
-  {
+  public void lostLevel() {
     lastScoreId = -1;
   }
 
-  public void startLevel(int level)
-  {
+  public void startLevel(int level) {
     startTime    = System.currentTimeMillis();
     currentLevel = level;
     pausedTime   = 0;
     //Log.i("FrozenBubble-highscore", "startLevel(" + level + ")");
   }
 
-  public void pauseLevel()
-  {
+  public void pauseLevel() {
     pausedTime += System.currentTimeMillis() - startTime;
     //Log.i("FrozenBubble-highscore", "pauseLevel() " + (pausedTime / 1000F) +
     //  " seconds used");
   }
 
-  public void resumeLevel()
-  {
+  public void resumeLevel() {
     startTime = System.currentTimeMillis();
     //Log.i("FrozenBubble-highscore", "resumeLevel() " + (pausedTime / 1000F) +
     //  " seconds used");
   }
 
-  public void saveState(Bundle map)
-  {
+  public void saveState(Bundle map) {
     pauseLevel();
     map.putInt("HighscoreManager-currentLevel", currentLevel);
     map.putLong("HighscoreManager-pausedTime", pausedTime);
@@ -165,8 +155,7 @@ public class HighscoreManager {
     //  " seconds used in level " + currentLevel);
   }
 
-  public void restoreState(Bundle map)
-  {
+  public void restoreState(Bundle map) {
     currentLevel = map.getInt("LevelManager-currentLevel");
     pausedTime = map.getLong("HighscoreManager-pausedTime");
     resumeLevel();
@@ -174,18 +163,15 @@ public class HighscoreManager {
     //  " seconds used in level " + currentLevel);
   }
 
-  public List<HighscoreDO> getHighscore(int level, int limit)
-  {
+  public List<HighscoreDO> getHighscore(int level, int limit) {
     return db.selectByLevel(level, limit);
   }
 
-  public int getLevel()
-  {
+  public int getLevel() {
     return currentLevel;
   }
 
-  public long getLastScoreId()
-  {
+  public long getLastScoreId() {
     return lastScoreId;
   }
 }

@@ -72,8 +72,7 @@ import android.widget.LinearLayout.LayoutParams;
 import com.peculiargames.andmodplug.MODResourcePlayer;
 import com.peculiargames.andmodplug.PlayerThread;
 
-public class ScrollingCredits extends Activity implements Runnable
-{
+public class ScrollingCredits extends Activity implements Runnable {
   private boolean victoryScreenShown = false;
   private ScrollingTextView credits;
   private MODResourcePlayer resplayer = null;
@@ -81,8 +80,7 @@ public class ScrollingCredits extends Activity implements Runnable
   private final int[] MODlist = { R.raw.worldofpeace };
 
   @Override
-  public void onCreate(Bundle savedInstanceState)
-  {
+  public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     // Configure the window presentation and layout.
     setWindowLayout(R.layout.activity_scrolling_credits);
@@ -100,31 +98,26 @@ public class ScrollingCredits extends Activity implements Runnable
   }
 
   @Override
-  public void onPause()
-  {
+  public void onPause() {
     super.onPause();
     pauseCredits();
   }
 
   @Override
-  public void onResume()
-  {
+  public void onResume() {
     super.onResume();
     resumeCredits();
   }
 
   @Override
-  public void onDestroy()
-  {
+  public void onDestroy() {
     super.onDestroy();
     cleanUp();
   }
 
   @Override
-  public boolean onKeyDown(int keyCode, KeyEvent msg)
-  {
-    if (keyCode == KeyEvent.KEYCODE_BACK)
-    {
+  public boolean onKeyDown(int keyCode, KeyEvent msg) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
       end();
       return true;
     }
@@ -132,20 +125,17 @@ public class ScrollingCredits extends Activity implements Runnable
   }
 
   @Override
-  public boolean onTrackballEvent(MotionEvent event)
-  {
+  public boolean onTrackballEvent(MotionEvent event) {
     return checkCreditsDone();
   }
 
   @Override
-  public boolean onTouchEvent(MotionEvent event)
-  {
+  public boolean onTouchEvent(MotionEvent event) {
     return checkCreditsDone();
   }
 
   @Override
-  public void onWindowFocusChanged(boolean hasFocus)
-  {
+  public void onWindowFocusChanged(boolean hasFocus) {
     super.onWindowFocusChanged(hasFocus);
 
     if (hasFocus)
@@ -157,10 +147,8 @@ public class ScrollingCredits extends Activity implements Runnable
   /**
    * Stop the music player, close the thread, and free the instance.
    */
-  private void destroyMusicPlayer()
-  {
-    if (resplayer != null)
-    {
+  private void destroyMusicPlayer() {
+    if (resplayer != null) {
       resplayer.StopAndClose();
       resplayer = null;
     }
@@ -170,19 +158,16 @@ public class ScrollingCredits extends Activity implements Runnable
    * Start a new MOD player.  If one already exists, it will be
    * destroyed and a new one will be created.
    */
-  private void newMusicPlayer()
-  {
+  private void newMusicPlayer() {
     destroyMusicPlayer();
     // Load the module music file.
     resplayer = new MODResourcePlayer(this);
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
-    if (FrozenBubble.getMusicOn() == true)
-    {
+    if (FrozenBubble.getMusicOn() == true) {
       resplayer.setVolume(255);
     }
-    else
-    {
+    else {
       resplayer.setVolume(0);
     }
     // Start up the music.
@@ -190,8 +175,7 @@ public class ScrollingCredits extends Activity implements Runnable
     resplayer.start();
   }
 
-  private void displayImage(int id)
-  {
+  private void displayImage(int id) {
     // Construct a new LinearLayout programmatically. 
     LinearLayout linearLayout = new LinearLayout(this);
     linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -210,8 +194,7 @@ public class ScrollingCredits extends Activity implements Runnable
     setContentView(linearLayout);
   }
 
-  private void setWindowLayout(int layoutResID)
-  {
+  private void setWindowLayout(int layoutResID) {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
@@ -222,13 +205,11 @@ public class ScrollingCredits extends Activity implements Runnable
     // Remove the title bar.
     requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-    if (fullscreen)
-    {
+    if (fullscreen) {
       getWindow().addFlags(flagFs);
       getWindow().clearFlags(flagNoFs);
     }
-    else
-    {
+    else {
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
@@ -236,23 +217,19 @@ public class ScrollingCredits extends Activity implements Runnable
     setContentView(layoutResID);
   }
 
-  public boolean checkCreditsDone()
-  {
-    if (!credits.isScrolling())
-    {
+  public boolean checkCreditsDone() {
+    if (!credits.isScrolling()) {
       end();
       return true;
     }
     return false;
   }
 
-  public void cleanUp()
-  {
+  public void cleanUp() {
     destroyMusicPlayer();
   }
 
-  public void end()
-  {
+  public void end() {
     credits.abort();
     //
     // Since the default game activity creates its own player,
@@ -271,26 +248,22 @@ public class ScrollingCredits extends Activity implements Runnable
     finish();
   }
 
-  public void pauseCredits()
-  {
+  public void pauseCredits() {
     if (resplayer != null)
       resplayer.PausePlay();
     credits.setPaused(true);
   }
 
-  public void resumeCredits()
-  {
+  public void resumeCredits() {
     if (resplayer != null)
       resplayer.UnPausePlay();
     credits.setPaused(false);
   }
 
   @Override
-  public void run()
-  {
+  public void run() {
     // Check if we need to display the end of game victory image.
-    if (!credits.isScrolling() && !victoryScreenShown)
-    {
+    if (!credits.isScrolling() && !victoryScreenShown) {
       victoryScreenShown = true;
       // Make the credits text transparent.
       credits.setTextColor(Color.TRANSPARENT);

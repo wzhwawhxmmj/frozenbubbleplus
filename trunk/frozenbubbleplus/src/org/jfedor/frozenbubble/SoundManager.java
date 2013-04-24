@@ -56,14 +56,12 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
 
-public class SoundManager
-{
+public class SoundManager {
   private SoundPool soundPool;
   private int[] sm;
   Context context;
 
-  public SoundManager(Context context)
-  {
+  public SoundManager(Context context) {
     this.context = context;
     soundPool    = new SoundPool(4, AudioManager.STREAM_MUSIC, 0);
     sm           = new int[ FrozenBubble.NUM_SOUNDS ];
@@ -83,10 +81,8 @@ public class SoundManager
     sm[ FrozenBubble.SOUND_WHIP ] = soundPool.load(context, R.raw.whip, 1);
   }
 
-  public final void playSound(int sound)
-  {
-    if (FrozenBubble.getSoundOn())
-    {
+  public final void playSound(int sound) {
+    if (FrozenBubble.getSoundOn()) {
       AudioManager mgr =
         (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
       float volume    = mgr.getStreamVolume   (AudioManager.STREAM_MUSIC);
@@ -96,8 +92,7 @@ public class SoundManager
     }
   }
 
-  public final void cleanUp()
-  {
+  public final void cleanUp() {
     sm        = null;
     context   = null;
     soundPool.release();

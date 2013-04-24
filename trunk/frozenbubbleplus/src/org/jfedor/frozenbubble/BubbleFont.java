@@ -79,33 +79,27 @@ public class BubbleFont {
   private BmpWrap fontMap;
   private Rect clipRect;
 
-  public BubbleFont(BmpWrap fontMap)
-  {
+  public BubbleFont(BmpWrap fontMap) {
     this.fontMap = fontMap;
     clipRect     = new Rect();
   }
 
   public final void print(String s, int x, int y, Canvas canvas,
-                         double scale, int dx, int dy)
-  {
+                         double scale, int dx, int dy) {
     int len = s.length();
-    for (int i = 0; i < len; i++)
-    {
+    for (int i = 0; i < len; i++) {
       char c = s.charAt(i);
       x += paintChar(c, x, y, canvas, scale, dx, dy);
     }
   }
 
   public final int paintChar(char c, int x, int y, Canvas canvas,
-                             double scale, int dx, int dy)
-  {
-    if (c == ' ')
-    {
+                             double scale, int dx, int dy) {
+    if (c == ' ') {
       return SPACE_CHAR_WIDTH + SEPARATOR_WIDTH;
     }
     int index = getCharIndex(c);
-    if (index == -1)
-    {
+    if (index == -1) {
       return 0;
     }
     int imageWidth = position[index+1]-position[index];
@@ -120,12 +114,9 @@ public class BubbleFont {
     return imageWidth + SEPARATOR_WIDTH;
   }
 
-  private final int getCharIndex(char c)
-  {
-    for (int i=0 ; i<characters.length ; i++)
-    {
-      if (characters[i] == c)
-      {
+  private final int getCharIndex(char c) {
+    for (int i=0 ; i<characters.length ; i++) {
+      if (characters[i] == c) {
         return i;
       }
     }

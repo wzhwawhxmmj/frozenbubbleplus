@@ -55,38 +55,31 @@ package org.jfedor.frozenbubble;
 import android.graphics.Canvas;
 import android.os.Bundle;
 
-public class Compressor
-{
+public class Compressor {
   private BmpWrap compressorHead;
   private BmpWrap compressor;
   int steps;
 
-  public Compressor(BmpWrap compressorHead, BmpWrap compressor)
-  {
+  public Compressor(BmpWrap compressorHead, BmpWrap compressor) {
     this.compressorHead = compressorHead;
     this.compressor = compressor;
     this.steps = 0;
   }
 
-  public void saveState(Bundle map)
-  {
+  public void saveState(Bundle map) {
     map.putInt("compressor-steps", steps);
   }
 
-  public void restoreState(Bundle map)
-  {
+  public void restoreState(Bundle map) {
     steps = map.getInt("compressor-steps");
   }
 
-  public void moveDown()
-  {
+  public void moveDown() {
     steps++;
   }
 
-  public void paint(Canvas c, double scale, int dx, int dy)
-  {
-    for (int i = 0; i < steps; i++)
-    {
+  public void paint(Canvas c, double scale, int dx, int dy) {
+    for (int i = 0; i < steps; i++) {
       c.drawBitmap(compressor.bmp,
                    (float)(235 * scale + dx),
                    (float)((28 * i - 4) * scale + dy), null);

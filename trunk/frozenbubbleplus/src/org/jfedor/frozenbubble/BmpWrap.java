@@ -61,8 +61,7 @@ import android.graphics.Bitmap;
 // overwrite an Android Bitmap in place (or at least I haven't found how to
 // do it.)
 class BmpWrap {
-  BmpWrap(int id)
-  {
+  BmpWrap(int id) {
     this.id = id;
   }
 
