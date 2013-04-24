@@ -59,8 +59,7 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
 
-public class PenguinSprite extends Sprite
-{
+public class PenguinSprite extends Sprite {
   public final static int STATE_TURN_LEFT = 0;
   public final static int STATE_TURN_RIGHT = 1;
   public final static int STATE_FIRE = 2;
@@ -69,9 +68,9 @@ public class PenguinSprite extends Sprite
   public final static int STATE_GAME_LOST = 5;
 
   public final static int[][] LOST_SEQUENCE =
-      {{1,0}, {2,8}, {3,9}, {4,10}, {5,11}, {6,12}, {7,13}, {5,14}};
+    {{1,0}, {2,8}, {3,9}, {4,10}, {5,11}, {6,12}, {7,13}, {5,14}};
   public final static int[][] WON_SEQUENCE =
-      {{1,0}, {2,7}, {3,6}, {4,15}, {5,16}, {6,17}, {7,18}, {4,19}};
+    {{1,0}, {2,7}, {3,6}, {4,15}, {5,16}, {6,17}, {7,18}, {4,19}};
 
   private int count;
   private int currentPenguin;
@@ -81,8 +80,7 @@ public class PenguinSprite extends Sprite
   private BmpWrap spritesImage;
   private Random rand;
 
-  public PenguinSprite(BmpWrap sprites, Random rand)
-  {
+  public PenguinSprite(BmpWrap sprites, Random rand) {
     super(new Rect(361, 436, 361 + 55, 436 + 43));
 
     this.spritesImage = sprites;
@@ -95,8 +93,7 @@ public class PenguinSprite extends Sprite
 
   public PenguinSprite(BmpWrap sprites, Random rand,
                        int currentPenguin, int count,
-                       int finalState, int nextPosition)
-  {
+                       int finalState, int nextPosition) {
     super(new Rect(361, 436, 361 + 55, 436 + 43));
 
     this.spritesImage   = sprites;
@@ -108,10 +105,8 @@ public class PenguinSprite extends Sprite
   }
 
   @Override
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites)
-  {
-    if (getSavedId() != -1)
-    {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
+    if (getSavedId() != -1) {
       return;
     }
     super.saveState(map, saved_sprites);
@@ -122,37 +117,29 @@ public class PenguinSprite extends Sprite
     map.putInt(String.format("%d-nextPosition", getSavedId()), nextPosition);
   }
 
-  public int getTypeId()
-  {
+  public int getTypeId() {
     return Sprite.TYPE_PENGUIN;
   }
 
-  public void updateState(int state)
-  {
-    if (finalState != STATE_VOID)
-    {
+  public void updateState(int state) {
+    if (finalState != STATE_VOID) {
       count++;
 
-      if (count % 6 == 0)
-      {
-        if (finalState == STATE_GAME_LOST)
-        {
+      if (count % 6 == 0) {
+        if (finalState == STATE_GAME_LOST) {
           currentPenguin = LOST_SEQUENCE[nextPosition][1];
           nextPosition   = LOST_SEQUENCE[nextPosition][0];
         }
-        else if (finalState == STATE_GAME_WON)
-        {
+        else if (finalState == STATE_GAME_WON) {
           currentPenguin = WON_SEQUENCE[nextPosition][1];
           nextPosition   = WON_SEQUENCE[nextPosition][0];
         }
       }
     }
-    else
-    {
+    else {
       count++;
 
-      switch(state)
-      {
+      switch(state) {
         case STATE_TURN_LEFT:
           count = 0;
           currentPenguin = 3;
@@ -166,8 +153,7 @@ public class PenguinSprite extends Sprite
           currentPenguin = 1;
           break;
         case STATE_VOID:
-          if (currentPenguin < 4 || currentPenguin > 7)
-          {
+          if (currentPenguin < 4 || currentPenguin > 7) {
             currentPenguin = 0;
           }
           break;
@@ -179,23 +165,19 @@ public class PenguinSprite extends Sprite
           return;
       }
 
-      if (count>100)
-      {
+      if (count>100) {
         currentPenguin = 7;
       }
-      else if (count % 15 == 0 && count > 25)
-      {
+      else if (count % 15 == 0 && count > 25) {
         currentPenguin = (rand.nextInt() % 3)+4;
-        if (currentPenguin < 4)
-        {
+        if (currentPenguin < 4) {
           currentPenguin = 0;
         }
       }
     }
   }
 
-  public void paint(Canvas c, double scale, int dx, int dy)
-  {
+  public void paint(Canvas c, double scale, int dx, int dy) {
     Rect r = this.getSpriteArea();
     drawImageClipped(spritesImage,
                      360 - (currentPenguin % 4) * 57,

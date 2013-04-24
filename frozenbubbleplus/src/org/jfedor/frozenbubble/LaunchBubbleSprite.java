@@ -59,8 +59,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 
-public class LaunchBubbleSprite extends Sprite
-{
+public class LaunchBubbleSprite extends Sprite {
   private int currentColor;
   private int currentDirection;
 
@@ -70,8 +69,7 @@ public class LaunchBubbleSprite extends Sprite
 
   public LaunchBubbleSprite(int initialColor, int initialDirection,
                             Drawable launcher,
-                            BmpWrap[] bubbles, BmpWrap[] colorblindBubbles)
-  {
+                            BmpWrap[] bubbles, BmpWrap[] colorblindBubbles) {
     super(new Rect(276, 362, 276 + 86, 362 + 76));
 
     currentColor           = initialColor;
@@ -81,10 +79,8 @@ public class LaunchBubbleSprite extends Sprite
     this.colorblindBubbles = colorblindBubbles;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites)
-  {
-    if (getSavedId() != -1)
-    {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
+    if (getSavedId() != -1) {
       return;
     }
     super.saveState(map, saved_sprites);
@@ -93,29 +89,23 @@ public class LaunchBubbleSprite extends Sprite
                currentDirection);
   }
 
-  public int getTypeId()
-  {
+  public int getTypeId() {
     return Sprite.TYPE_LAUNCH_BUBBLE;
   }
 
-  public void changeColor(int newColor)
-  {
+  public void changeColor(int newColor) {
     currentColor = newColor;
   }
 
-  public void changeDirection(int newDirection)
-  {
+  public void changeDirection(int newDirection) {
     currentDirection = newDirection;
   }
 
-  public final void paint(Canvas c, double scale, int dx, int dy)
-  {
-    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL)
-    {
+  public final void paint(Canvas c, double scale, int dx, int dy) {
+    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
       drawImage(bubbles[currentColor], 302, 390, c, scale, dx, dy);
     }
-    else
-    {
+    else {
       drawImage(colorblindBubbles[currentColor], 302, 390, c, scale, dx, dy);
     }
 

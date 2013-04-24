@@ -64,8 +64,7 @@ import android.widget.TextView;
  * <p>The scroll direction is configurable, as is the scrolling speed
  * and the the number of times to scroll the text.
  */
-public class ScrollingTextView extends TextView implements Runnable
-{
+public class ScrollingTextView extends TextView implements Runnable {
   private static final float   DEFAULT_SPEED  = 15.0f;
   public  static final boolean SCROLL_DOWN    = true;
   public  static final boolean SCROLL_UP      = false;
@@ -86,15 +85,13 @@ public class ScrollingTextView extends TextView implements Runnable
   /*
    * Constructors.
    */
-  public ScrollingTextView(Context context)
-  {
+  public ScrollingTextView(Context context) {
     super(context);
     setup(context);
     init();
   }
 
-  public ScrollingTextView(Context context, AttributeSet attributes)
-  {
+  public ScrollingTextView(Context context, AttributeSet attributes) {
     super(context, attributes);
     setup(context);
     init();
@@ -103,10 +100,8 @@ public class ScrollingTextView extends TextView implements Runnable
   /*
    * Private methods.
    */
-  private void refreshScroll()
-  {
-    if (scrollingPaused)
-    {
+  private void refreshScroll() {
+    if (scrollingPaused) {
       /**
        * TODO: forceFinished() should be stopping the scroll right
        * where it is, but it isn't for some reason while the window
@@ -116,8 +111,7 @@ public class ScrollingTextView extends TextView implements Runnable
        */
       scroller.forceFinished(true);
     }
-    else
-    {
+    else {
       y_distance -= scroller.getCurrY() - y_offset;
       y_offset = scroller.getCurrY();
       duration = (int) (Math.abs(y_distance) * speed);
@@ -135,25 +129,21 @@ public class ScrollingTextView extends TextView implements Runnable
     invalidate();
   }
 
-  private void setup(Context context)
-  {
+  private void setup(Context context) {
     scroller = new Scroller(context, new LinearInterpolator());
     setScroller(scroller);
   }
 
-  private void startScroll()
-  {
+  private void startScroll() {
     int viewHeight    = getHeight();
     int visibleHeight = viewHeight - getPaddingBottom() - getPaddingTop();
     int lineHeight    = getLineHeight();
 
-    if (scrollDirection == SCROLL_UP)
-    {
+    if (scrollDirection == SCROLL_UP) {
       y_offset   = -visibleHeight;
       y_distance = visibleHeight + (getLineCount() * lineHeight);
     }
-    else
-    {
+    else {
       y_offset   = getLineCount() * lineHeight;
       y_distance = -(visibleHeight + ((getLineCount() + 1) * lineHeight));
     }
@@ -161,8 +151,7 @@ public class ScrollingTextView extends TextView implements Runnable
     duration = (int) (Math.abs(y_distance) * speed);
     scroller.startScroll(0, y_offset, 0, y_distance, duration);
 
-    if (scrollCount != 0)
-    {
+    if (scrollCount != 0) {
       if(scrollCount > 0)
         scrollCount--;
 
@@ -176,8 +165,7 @@ public class ScrollingTextView extends TextView implements Runnable
    */
   @Override
   protected void onLayout(boolean changed,
-                          int left, int top, int right, int bottom)
-  {
+                          int left, int top, int right, int bottom) {
     super.onLayout(changed, left, top, right, bottom);
     /**
      * TODO: when the layout is changed, the scrolling offset and
@@ -191,59 +179,46 @@ public class ScrollingTextView extends TextView implements Runnable
   /*
    * Public methods.
    */
-  public void init()
-  {
+  public void init() {
     scrollingPaused = false;
     started         = false;
   }
 
   @Override
-  public void run()
-  {
-    if (!scrollingPaused)
-    {
-      if (scroller.isFinished())
-      {
+  public void run() {
+    if (!scrollingPaused) {
+      if (scroller.isFinished()) {
         startScroll();
       }
-      else
-      {
+      else {
         post(this);
       }
     }
   }
 
-  public void abort()
-  {
+  public void abort() {
     scrollCount     = 0;
     scrollingPaused = false;
     scroller.forceFinished(true);
   }
 
-  public float getSpeed()
-  {
+  public float getSpeed() {
     return speed;
   }
 
-  public boolean isScrolling()
-  {
+  public boolean isScrolling() {
     return ((scrollCount != 0) || !scroller.isFinished() ||
              scrollingPaused   || !started);
   }
 
-  public void setPaused(boolean paused)
-  {
-    synchronized (this)
-    {
-      if (isScrolling() && started)
-      {
-        if (paused && !scrollingPaused)
-        {
+  public void setPaused(boolean paused) {
+    synchronized (this) {
+      if (isScrolling() && started) {
+        if (paused && !scrollingPaused) {
           scrollingPaused = true;
           refreshScroll();
         }
-        else if (!paused && scrollingPaused)
-        {
+        else if (!paused && scrollingPaused) {
           scrollingPaused = false;
           refreshScroll();
         }
@@ -251,8 +226,7 @@ public class ScrollingTextView extends TextView implements Runnable
     }
   }
 
-  public void setScrollDirection(boolean scrollDirection)
-  {
+  public void setScrollDirection(boolean scrollDirection) {
     this.scrollDirection = scrollDirection;
   }
 
@@ -267,13 +241,11 @@ public class ScrollingTextView extends TextView implements Runnable
    *         - The additional number of times to scroll the text.  If
    *         this parameter is zero, the text will still scroll once.
    */
-  public void setScrollRepeatLimit(int scrollCount)
-  {
+  public void setScrollRepeatLimit(int scrollCount) {
     this.scrollCount = scrollCount;
   }
 
-  public void setSpeed(float speed)
-  {
+  public void setSpeed(float speed) {
     this.speed = speed;
   }
 }

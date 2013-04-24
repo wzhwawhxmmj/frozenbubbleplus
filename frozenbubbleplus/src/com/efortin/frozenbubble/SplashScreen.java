@@ -63,8 +63,7 @@ import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.WindowManager;
 
-public class SplashScreen extends Activity
-{
+public class SplashScreen extends Activity {
 
   //
   // Maximum time until we go to the next activity.
@@ -77,14 +76,12 @@ public class SplashScreen extends Activity
    * Called when the activity is first created.
    */
   @Override
-  public void onCreate(Bundle savedInstanceState)
-  {
+  public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     // Configure the window presentation and layout.
     setWindowLayout(R.layout.activity_splash_screen);
 
-    if (!displaySplashScreen())
-    {
+    if (!displaySplashScreen()) {
       startFrozenBubble();
       return;
     }
@@ -93,14 +90,11 @@ public class SplashScreen extends Activity
     // Thread for displaying the SplashScreen.
     //
     //
-    splashThread = new Thread()
-    {
+    splashThread = new Thread() {
       @Override
-      public void run()
-      {
+      public void run() {
         try {
-          synchronized(this)
-          {
+          synchronized(this) {
             //
             // TODO: The splash screen waits before launching the
             //       game activity.  Change this so that the game
@@ -127,26 +121,21 @@ public class SplashScreen extends Activity
    * Invoked when the screen is touched.
    */
   @Override
-  public boolean onTouchEvent(MotionEvent event)
-  {
-    if (event.getAction() == MotionEvent.ACTION_DOWN)
-    {
-      synchronized(splashThread)
-      {
+  public boolean onTouchEvent(MotionEvent event) {
+    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+      synchronized(splashThread) {
         splashThread.notifyAll();
       }
     }
     return true;
   }
 
-  private boolean displaySplashScreen()
-  {
+  private boolean displaySplashScreen() {
     SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                  Context.MODE_PRIVATE);
     boolean showSplashScreen = sp.getBoolean("showSplashScreen", true);
 
-    if (showSplashScreen)
-    {
+    if (showSplashScreen) {
       SharedPreferences.Editor editor = sp.edit();
       editor.putBoolean("showSplashScreen", false);
       editor.commit();
@@ -154,8 +143,7 @@ public class SplashScreen extends Activity
     return showSplashScreen;
   }
 
-  private void setWindowLayout(int layoutResID)
-  {
+  private void setWindowLayout(int layoutResID) {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
@@ -164,13 +152,11 @@ public class SplashScreen extends Activity
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
     boolean fullscreen = mConfig.getBoolean("fullscreen", true);
 
-    if (fullscreen)
-    {
+    if (fullscreen) {
       getWindow().addFlags(flagFs);
       getWindow().clearFlags(flagNoFs);
     }
-    else
-    {
+    else {
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
@@ -178,8 +164,7 @@ public class SplashScreen extends Activity
     setContentView(layoutResID);
   }
 
-  private void startFrozenBubble()
-  {
+  private void startFrozenBubble() {
     //
     // Create an intent to launch the activity to play the game.
     //

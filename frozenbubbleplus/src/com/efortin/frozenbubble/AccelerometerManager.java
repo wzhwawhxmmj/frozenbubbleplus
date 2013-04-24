@@ -67,8 +67,7 @@ import android.hardware.SensorManager;
  *
  * @author Antoine Vianey
  */
-public class AccelerometerManager
-{
+public class AccelerometerManager {
   private static Sensor sensor;
   private static SensorManager sensorManager;
 
@@ -77,8 +76,7 @@ public class AccelerometerManager
   /** indicates whether or not Accelerometer Sensor is running */
   private static boolean running = false;
 
-  public interface AccelerometerListener
-  {
+  public interface AccelerometerListener {
     public void onAccelerationChanged(float x, float y, float z);
   }
 
@@ -89,21 +87,18 @@ public class AccelerometerManager
   /**
    * Returns true if the manager is listening to orientation changes
    */
-  public static boolean isListening()
-  {
+  public static boolean isListening() {
     return running;
   }
 
   /**
    * Unregisters listeners.
    */
-  public static void stopListening()
-  {
+  public static void stopListening() {
     running = false;
 
     try {
-      if (sensorManager != null && sensorEventListener != null)
-      {
+      if (sensorManager != null && sensorEventListener != null) {
         sensorManager.unregisterListener(sensorEventListener);
       }
     } catch (Exception e) {}
@@ -112,10 +107,8 @@ public class AccelerometerManager
   /**
    * Returns true if at least one Accelerometer sensor is available.
    */
-  public static boolean isSupported(Context context)
-  {
-    if (supported == null)
-    {
+  public static boolean isSupported(Context context) {
+    if (supported == null) {
       sensorManager =
         (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
       List<Sensor> sensors =
@@ -132,15 +125,13 @@ public class AccelerometerManager
    *         - Callback for accelerometer events.
    */
   public static void startListening(Context context,
-    AccelerometerListener accelerometerListener)
-  {
+    AccelerometerListener accelerometerListener) {
     sensorManager =
       (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
     List<Sensor> sensors =
       sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
 
-    if (sensors.size() > 0)
-    {
+    if (sensors.size() > 0) {
       sensor   = sensors.get(0);
       running  =
         sensorManager.registerListener(sensorEventListener, sensor,
@@ -153,8 +144,7 @@ public class AccelerometerManager
    * The listener that listens to events from the accelerometer listener.
    */
   private static SensorEventListener sensorEventListener = 
-    new SensorEventListener()
-  {
+    new SensorEventListener() {
     private float filter = 0.1f;
     private float avgX   = 0.0f;
     private float avgY   = 0.0f;
@@ -162,8 +152,7 @@ public class AccelerometerManager
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
-    public void onSensorChanged(SensorEvent event)
-    {
+    public void onSensorChanged(SensorEvent event) {
       avgX = event.values[0] * filter + (avgX * (1.0f-filter));
       avgY = event.values[1] * filter + (avgY * (1.0f-filter));
       avgZ = event.values[2] * filter + (avgZ * (1.0f-filter));

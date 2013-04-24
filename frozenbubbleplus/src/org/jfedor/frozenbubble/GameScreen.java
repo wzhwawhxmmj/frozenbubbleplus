@@ -57,14 +57,11 @@ import java.util.Vector;
 import android.graphics.Canvas;
 import android.os.Bundle;
 
-public abstract class GameScreen
-{
+public abstract class GameScreen {
   private Vector<Sprite> sprites;
 
-  public final void saveSprites(Bundle map, Vector<Sprite> savedSprites)
-  {
-    for (int i = 0; i < sprites.size(); i++)
-    {
+  public final void saveSprites(Bundle map, Vector<Sprite> savedSprites) {
+    for (int i = 0; i < sprites.size(); i++) {
       ((Sprite)sprites.elementAt(i)).saveState(map, savedSprites);
       map.putInt(String.format("game-%d", i),
                  ((Sprite)sprites.elementAt(i)).getSavedId());
@@ -72,49 +69,40 @@ public abstract class GameScreen
     map.putInt("numGameSprites", sprites.size());
   }
 
-  public final void restoreSprites(Bundle map, Vector<Sprite> savedSprites)
-  {
+  public final void restoreSprites(Bundle map, Vector<Sprite> savedSprites) {
     sprites = new Vector<Sprite>();
     int numSprites = map.getInt("numGameSprites");
-    for (int i = 0; i < numSprites; i++)
-    {
+    for (int i = 0; i < numSprites; i++) {
       int spriteIdx = map.getInt(String.format("game-%d", i));
       sprites.addElement(savedSprites.elementAt(spriteIdx));
     }
   }
 
-  public GameScreen()
-  {
+  public GameScreen() {
     sprites = new Vector<Sprite>();
   }
 
-  public final void addSprite(Sprite sprite)
-  {
+  public final void addSprite(Sprite sprite) {
     sprites.removeElement(sprite);
     sprites.addElement(sprite);
   }
 
-  public final void removeSprite(Sprite sprite)
-  {
+  public final void removeSprite(Sprite sprite) {
     sprites.removeElement(sprite);
   }
 
-  public final void spriteToBack(Sprite sprite)
-  {
+  public final void spriteToBack(Sprite sprite) {
     sprites.removeElement(sprite);
     sprites.insertElementAt(sprite,0);
   }
 
-  public final void spriteToFront(Sprite sprite)
-  {
+  public final void spriteToFront(Sprite sprite) {
     sprites.removeElement(sprite);
     sprites.addElement(sprite);
   }
 
-  public void paint(Canvas c, double scale, int dx, int dy)
-  {
-    for (int i = 0; i < sprites.size(); i++)
-    {
+  public void paint(Canvas c, double scale, int dx, int dy) {
+    for (int i = 0; i < sprites.size(); i++) {
       ((Sprite)sprites.elementAt(i)).paint(c, scale, dx, dy);
     }
   }
