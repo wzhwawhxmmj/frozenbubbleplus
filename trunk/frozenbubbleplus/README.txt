@@ -1,5 +1,5 @@
 The Android port of the Frozen Bubble game.  Developed with SDK v21.1.0,
-using API level 10 (Gingerbread).
+using API level 4 (version 1.6 - Donut).
 
 The code is based on the Java version of Frozen Bubble created by Glenn
 Sanson.  The original Frozen Bubble was created by Guillaume Cottenceau
@@ -12,8 +12,8 @@ additional development provided by Eric Fortin.
 This code is distributed under the GNU General Public License.
 
 This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU General Public License version 2, as published by the
-Free Software Foundation.
+the terms of the GNU General Public License version 2 or later, as published
+by the Free Software Foundation.
 
 This program is distributed in the hope that it will be useful, but WITHOUT
 ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
