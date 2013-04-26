@@ -9,7 +9,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 2 or later, as published by the Free Software Foundation.
+ * version 2 or 3, as published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -49,9 +49,13 @@
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
  */
-// This file is derived from the LunarLander.java file which is part of
-// the Lunar Lander game included with Android documentation.  The copyright
-// notice for the Lunar Lander is reproduced below.
+
+/*
+ *  This file is derived from the LunarLander.java file which is part of
+ *  the Lunar Lander game included with Android documentation.  The
+ *  copyright notice for the Lunar Lander game is reproduced below.
+ */
+
 /*
  * Copyright © 2007 Google Inc.
  *

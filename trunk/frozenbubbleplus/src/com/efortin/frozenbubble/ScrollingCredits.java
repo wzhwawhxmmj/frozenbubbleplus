@@ -9,7 +9,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 2 or later, as published by the Free Software Foundation.
+ * version 2 or 3, as published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -194,16 +194,32 @@ public class ScrollingCredits extends Activity implements Runnable {
     setContentView(linearLayout);
   }
 
+  /**
+   * Set the window layout according to the settings in the specified
+   * layout XML file.  Then apply the full screen option according to
+   * the player preference setting.
+   * 
+   * <p>Note that the title bar is not desired for the scrolling
+   * credits, and requesting that the title bar be removed <b>must</b>
+   * be applied before setting the view content by applying the XML
+   * layout or it will generate an exception.
+   * 
+   * @param  layoutResID
+   *         - The resource ID of the XML layout to use for the window
+   *         layout settings.
+   */
   private void setWindowLayout(int layoutResID) {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
+    // Remove the title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+    // Load and apply the specified XML layout.
+    setContentView(layoutResID);
     // Set full screen mode based on the game preferences.
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
     boolean fullscreen = mConfig.getBoolean("fullscreen", true);
-    // Remove the title bar.
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
 
     if (fullscreen) {
       getWindow().addFlags(flagFs);
@@ -213,8 +229,6 @@ public class ScrollingCredits extends Activity implements Runnable {
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
-    // Load and apply the specified XML layout.
-    setContentView(layoutResID);
   }
 
   public boolean checkCreditsDone() {

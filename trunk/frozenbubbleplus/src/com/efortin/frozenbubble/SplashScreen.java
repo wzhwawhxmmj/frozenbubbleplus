@@ -9,7 +9,7 @@
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
- * version 2 or later, as published by the Free Software Foundation.
+ * version 2 or 3, as published by the Free Software Foundation.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,10 +69,13 @@ public class SplashScreen extends Activity {
   // Maximum time until we go to the next activity.
   //
   //
-  protected int _splashTime = 3000;
+  protected int  splashTime = 3000;
   private Thread splashThread;
 
-  /**
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onCreate(android.os.Bundle)
+   * 
    * Called when the activity is first created.
    */
   @Override
@@ -106,7 +109,7 @@ public class SplashScreen extends Activity {
             //       doing this right now, because there is no lag.
             //
             //
-            wait(_splashTime);  //wait 3 seconds
+            wait(splashTime);  //wait 3 seconds
           }
         } catch (InterruptedException e) {
         } finally {
@@ -117,7 +120,10 @@ public class SplashScreen extends Activity {
     splashThread.start();
   }
 
-  /**
+  /*
+   * (non-Javadoc)
+   * @see android.app.Activity#onTouchEvent(android.view.MotionEvent)
+   * 
    * Invoked when the screen is touched.
    */
   @Override
@@ -143,10 +149,28 @@ public class SplashScreen extends Activity {
     return showSplashScreen;
   }
 
+  /**
+   * Set the window layout according to the settings in the specified
+   * layout XML file.  Then apply the full screen option according to
+   * the player preference setting.
+   * 
+   * <p>Note that the title bar is desired for the splash screen, so
+   * do not request that it be removed.
+   *
+   * <p>Requesting that the title bar be removed <b>must</b> be
+   * performed before setting the view content by applying the XML
+   * layout, or it will generate an exception.
+   * 
+   * @param  layoutResID
+   *         - The resource ID of the XML layout to use for the window
+   *         layout settings.
+   */
   private void setWindowLayout(int layoutResID) {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
+    // Load and apply the specified XML layout.
+    setContentView(layoutResID);
     // Set full screen mode based on the game preferences.
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
@@ -160,8 +184,6 @@ public class SplashScreen extends Activity {
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
-    // Load and apply the specified XML layout.
-    setContentView(layoutResID);
   }
 
   private void startFrozenBubble() {
