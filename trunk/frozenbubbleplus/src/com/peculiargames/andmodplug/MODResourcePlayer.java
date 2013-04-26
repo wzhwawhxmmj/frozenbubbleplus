@@ -87,9 +87,6 @@ public class MODResourcePlayer extends PlayerThread {
   //
   //
   private Context mContext;
-  private InputStream mModfileInStream;
-  private byte[] modData = null;
-  private int modsize;  // holds the size in bytes of the mod file
 
   /**
    * Allocates a MOD/XM/etc. song Player object that can handle Android
@@ -132,7 +129,10 @@ public class MODResourcePlayer extends PlayerThread {
    *         song file.
    */
   public boolean LoadMODResource(int modresource) {
+    byte[] modData = null;
     int currfilesize = 0;
+    int modsize;  // holds the size in bytes of the mod file
+    InputStream mModfileInStream;
 
     //
     // Unload any mod file we have currently loaded.
@@ -152,17 +152,10 @@ public class MODResourcePlayer extends PlayerThread {
     }
 
     //
-    // If the mod file data buffer has yet to be allocated or is too
-    // small, we need to get a new one.
+    // Allocate a buffer that can hold the current MOD file data.
     //
     //
-    if (modData == null || modData.length < currfilesize) {
-      //
-      // Allocate a new buffer that can hold the current MOD file data.
-      //
-      //
-      modData = new byte[currfilesize];
-    }
+    modData = new byte[currfilesize];
 
     try {
       modsize = mModfileInStream.read(modData,0, currfilesize);

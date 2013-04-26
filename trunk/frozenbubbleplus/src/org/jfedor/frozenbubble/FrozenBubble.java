@@ -902,9 +902,11 @@ public class FrozenBubble extends Activity
    * Stop the music player, close the thread, and free the instance.
    */
   private void destroyMusicPlayer() {
-    if (resplayer != null) {
-      resplayer.StopAndClose();
-      resplayer = null;
+    synchronized(this) {
+      if (resplayer != null) {
+        resplayer.StopAndClose();
+        resplayer = null;
+      }
     }
   }
 

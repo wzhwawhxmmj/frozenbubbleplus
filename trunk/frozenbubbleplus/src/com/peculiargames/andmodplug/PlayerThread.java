@@ -195,9 +195,7 @@ public class PlayerThread extends Thread {
   private int mMinbuffer;
   private static int mModsize;  // holds the size in bytes of the mod file
   private final static int BUFFERSIZE = 20000;  // the sample buffer size
-
-  // buffer for audio data
-  private static short[] mBuffer;  
+  
   private AudioTrack mMytrack;
   private boolean mLoad_ok;
 
@@ -207,10 +205,6 @@ public class PlayerThread extends Thread {
   private int     mRate;
   private int     posWas;
   private boolean songFinished;
-
-  // could probably get rid of this, unneeded when using libmodplug as
-  // single-entrant library?!?
-  private static byte[] mdunused;
 
   // start the player in a paused state?
   private boolean mStart_paused;
@@ -349,16 +343,6 @@ public class PlayerThread extends Thread {
     if (!GetAndroidAudioTrack(desiredrate))
       return;
 
-    //
-    // Set up our audio sample buffer(libmodplug processes the mod file
-    // and fills this with sample data).
-    //
-    // For proper error checking, this should check that BUFFERSIZE is
-    // greater than the minbuffer size the audio system reports in the
-    // contructors...
-    //
-    //
-    mBuffer      = new short[BUFFERSIZE];
     mPlayerValid = true;
   }
 
@@ -466,7 +450,6 @@ public class PlayerThread extends Thread {
    */
   public void LoadMODData(byte[] modData) {
     UnLoadMod();
-    mdunused = modData;
     mLoad_ok = ModPlug_JLoad(modData, modData.length);
 
     if (mLoad_ok) {
@@ -524,6 +507,16 @@ public class PlayerThread extends Thread {
    */
   public void run() {
     boolean pattern_change = false;
+    //
+    // Set up our audio sample buffer(libmodplug processes the mod file
+    // and fills this with sample data).
+    //
+    // For proper error checking, this should check that BUFFERSIZE is
+    // greater than the minbuffer size the audio system reports in the
+    // contructors...
+    //
+    //
+    short[] mBuffer = new short[BUFFERSIZE];
 
     if (mStart_paused)
       mPlaying = false;
@@ -690,6 +683,9 @@ public class PlayerThread extends Thread {
     }
   }
 
+  /**
+   * Flush the audio data still left in mMytrack.
+   */
   public void Flush() {
     if (!mPlaying) {
       mMytrack.flush();
@@ -763,6 +759,9 @@ public class PlayerThread extends Thread {
     if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED)
       mMytrack.stop();
 
+    Flush();
+    mMytrack.release();
+
     mPlayerValid = false;
     mWaitFlag    = false;
 
@@ -776,8 +775,7 @@ public class PlayerThread extends Thread {
    * allocate any resources.
    */
   public static void CloseLIBMODPLUG() {
-    //ModPlug_JUnload(mdunused, MAXMODSIZE);
-    ModPlug_JUnload(mdunused, 0);
+    ModPlug_JUnload();
     ModPlug_CloseDown();
   }
 
@@ -955,8 +953,7 @@ public class PlayerThread extends Thread {
     //
     //
     synchronized(sRDlock) {
-      //ModPlug_JUnload(mdunused, MAXMODSIZE);
-      ModPlug_JUnload(mdunused, 0);
+      ModPlug_JUnload();
     }
   }
 
@@ -969,7 +966,7 @@ public class PlayerThread extends Thread {
   public native String ModPlug_JGetName();
   public native int ModPlug_JNumChannels();
   public native int ModPlug_JGetSoundData(short[] sndbuffer, int datasize);
-  public static native boolean ModPlug_JUnload(byte[] buffer, int size);
+  public static native boolean ModPlug_JUnload();
   public static native boolean ModPlug_CloseDown();
 
   // HACKS ;-)
