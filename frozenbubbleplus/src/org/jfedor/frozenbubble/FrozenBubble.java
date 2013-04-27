@@ -799,7 +799,7 @@ public class FrozenBubble extends Activity
 
       case GameView.EVENT_GAME_RESUME:
         if (resplayer == null)
-          playMusic(allowUnpause);
+          playMusic(true);
         else if (allowUnpause)
           resplayer.UnPausePlay();
         break;
