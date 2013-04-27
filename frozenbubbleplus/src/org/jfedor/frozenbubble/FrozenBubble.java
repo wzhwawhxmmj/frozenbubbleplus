@@ -110,44 +110,41 @@ public class FrozenBubble extends Activity
   // ActivityInfo in API level 9.
   //
   //
-  public static final int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
-  public static final int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
-  public static final int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
-  public static final int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
+  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
+  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
+  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
+  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
-  public final static int SOUND_WON                = 0;
-  public final static int SOUND_LOST               = 1;
-  public final static int SOUND_LAUNCH             = 2;
-  public final static int SOUND_DESTROY            = 3;
-  public final static int SOUND_REBOUND            = 4;
-  public final static int SOUND_STICK              = 5;
-  public final static int SOUND_HURRY              = 6;
-  public final static int SOUND_NEWROOT            = 7;
-  public final static int SOUND_NOH                = 8;
-  public final static int SOUND_WHIP               = 9;
-  public final static int NUM_SOUNDS               = 10;
+  public final static int SOUND_WON     = 0;
+  public final static int SOUND_LOST    = 1;
+  public final static int SOUND_LAUNCH  = 2;
+  public final static int SOUND_DESTROY = 3;
+  public final static int SOUND_REBOUND = 4;
+  public final static int SOUND_STICK   = 5;
+  public final static int SOUND_HURRY   = 6;
+  public final static int SOUND_NEWROOT = 7;
+  public final static int SOUND_NOH     = 8;
+  public final static int SOUND_WHIP    = 9;
+  public final static int NUM_SOUNDS    = 10;
 
-  public final static int GAME_NORMAL              = 0;
-  public final static int GAME_COLORBLIND          = 1;
+  public final static int GAME_NORMAL     = 0;
+  public final static int GAME_COLORBLIND = 1;
 
   public final static int MENU_COLORBLIND_ON  = 1;
   public final static int MENU_COLORBLIND_OFF = 2;
-  public final static int MENU_FULLSCREEN_ON       = 3;
-  public final static int MENU_FULLSCREEN_OFF      = 4;
-  public final static int MENU_SOUND_OPTIONS       = 5;
-  public final static int MENU_DONT_RUSH_ME        = 6;
-  public final static int MENU_RUSH_ME             = 7;
-  public final static int MENU_NEW_GAME            = 8;
-  public final static int MENU_ABOUT               = 9;
-  public final static int MENU_EDITOR              = 10;
-  public final static int MENU_TARGET_MODE         = 11;
+  public final static int MENU_FULLSCREEN_ON  = 3;
+  public final static int MENU_FULLSCREEN_OFF = 4;
+  public final static int MENU_SOUND_OPTIONS  = 5;
+  public final static int MENU_DONT_RUSH_ME   = 6;
+  public final static int MENU_RUSH_ME        = 7;
+  public final static int MENU_NEW_GAME       = 8;
+  public final static int MENU_ABOUT          = 9;
+  public final static int MENU_EDITOR         = 10;
+  public final static int MENU_TARGET_MODE    = 11;
 
-  public final static int AIM_TO_SHOOT             = 0;
-  public final static int POINT_TO_SHOOT           = 1;
-  public final static int ROTATE_TO_SHOOT          = 2;
-
-  public final static String PREFS_NAME  = "frozenbubble";
-  public final static String TAG         = "FrozenBubble.java";
+  public final static int AIM_TO_SHOOT    = 0;
+  public final static int POINT_TO_SHOOT  = 1;
+  public final static int ROTATE_TO_SHOOT = 2;
 
   private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
@@ -156,35 +153,19 @@ public class FrozenBubble extends Activity
   private static boolean soundOn    = true;
   private static int     targetMode = POINT_TO_SHOOT;
 
-  private GameThread mGameThread = null;
-  private GameView   mGameView   = null;
+  public final static String PREFS_NAME   = "frozenbubble";
+  public final static String TAG          = "FrozenBubble.java";
+  public final static String EDITORACTION = "org.jfedor.frozenbubble.GAME";
 
-  private OrientationEventListener myOrientationEventListener = null;
-
-  private static final String EDITORACTION = "org.jfedor.frozenbubble.GAME";
   private boolean activityCustomStarted = false;
-  private int     currentOrientation; 
-  /*************************************************************************/
-  //
-  // MOD Player parameters.
-  //
-  //
-  /*************************************************************************/
-  //
-  // Save song number and position in song at onPause() time
-  // (to Preferences).
-  //
-  //
-  public static final String SONG_PREFS_NAME   = "ModPlayerPrefs";
-  public static final String PREFS_SONGNUM     = "SongNum";
-  public static final String PREFS_SONGPATTERN = "SongPattern";
+  private boolean allowUnpause;
+  private int     currentOrientation;
 
+  private GameThread mGameThread = null;
+  private GameView mGameView = null;
+  private OrientationEventListener myOrientationEventListener = null;
+  private MODResourcePlayer resplayer = null;
   private SharedPreferences mConfig;
-  public static final int   DEFAULT_SONG = 0;
-  private MODResourcePlayer resplayer    = null;
-  private int               mod_now;
-  private int               mod_was;
-  private boolean           allowUnpause;
 
   private final int[] MODlist = {
     R.raw.ambientpower,
@@ -255,7 +236,7 @@ public class FrozenBubble extends Activity
         mGameThread.restoreState(savedInstanceState);
 
       mGameView.requestFocus();
-      playMusic(true, savedInstanceState != null, false);
+      playMusic(false);
     }
     else {
       startCustomGame(intent);
@@ -385,8 +366,6 @@ public class FrozenBubble extends Activity
     // Pause the MOD player and preserve song information.
     if (resplayer != null)
       resplayer.PausePlay();
-
-    savePlayerState();
   }
 
   /**
@@ -414,7 +393,6 @@ public class FrozenBubble extends Activity
     // Just have the View's thread save its state into our Bundle.
     super.onSaveInstanceState(outState);
     mGameThread.saveState(outState);
-    savePlayerState();
   }
 
   /* (non-Javadoc)
@@ -577,7 +555,7 @@ public class FrozenBubble extends Activity
     mGameView.setGameListener(this);
     mGameThread = mGameView.getThread();
     mGameView.requestFocus();
-    playMusic(true, false, false);
+    playMusic(false);
   }
 
   private void setFullscreen() {
@@ -794,7 +772,7 @@ public class FrozenBubble extends Activity
    */
   public void newGame() {
     mGameThread.newGame();
-    playMusic(true, false, false);
+    playMusic(false);
   }
 
   public void onAccelerationChanged(float x, float y, float z) {
@@ -809,9 +787,6 @@ public class FrozenBubble extends Activity
   public void onGameEvent(int type) {
     switch (type) {
       case GameView.EVENT_GAME_WON:
-        mod_was = mod_now;
-        mod_now++;
-        if (mod_now >= MODlist.length) mod_now = 0;
         break;
 
       case GameView.EVENT_GAME_LOST:
@@ -823,21 +798,10 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_GAME_RESUME:
-        //
-        // If the MOD resource player exists, then simply unpause
-        // the current MOD.  Otherwise, create it.
-        //
-        //
-        if (resplayer == null) {
-          playMusic(true, true, true);
-        }
-        else {
-          if (mod_now != mod_was)
-            loadCurrentMOD();
-
-          if (allowUnpause)
-            resplayer.UnPausePlay();
-        }
+        if (resplayer == null)
+          playMusic(allowUnpause);
+        else if (allowUnpause)
+          resplayer.UnPausePlay();
         break;
 
       case GameView.EVENT_LEVEL_START:
@@ -868,7 +832,7 @@ public class FrozenBubble extends Activity
           startActivity(intent);
         }
         else
-          playMusic(false, false, true);
+          playMusic(true);
         break;
 
       default:
@@ -894,70 +858,10 @@ public class FrozenBubble extends Activity
   private void newMusicPlayer() {
     // Create a new music player.
     resplayer = new MODResourcePlayer(this);
+    // Ascertain which song to play.
+    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
     // Load the mod file.
-    resplayer.LoadMODResource(MODlist[mod_now]);
-    // Start the music thread.
-    resplayer.startPaused(true);
-    resplayer.start();
-  }
-
-  /**
-   * Load the current song in our playlist.
-   */
-  private void loadCurrentMOD() {
-    resplayer.PausePlay();
-    if (mod_now >= MODlist.length) mod_now = 0;
-    // Load the current MOD into the player.
-    resplayer.LoadMODResource(MODlist[mod_now]);
-  }
-
-  /**
-   * The function performs multiple important checks and functions in
-   * order to play music.  It determines what song to play by using the
-   * current song index of the song index that was saved to the game
-   * preferences.  It determines if a player needs to be created.  The
-   * song to play is then loaded to the player, and the music volume is
-   * set according to the game preferences.  Finally, if desired, the
-   * song immediately starts playing or it is left paused.
-   *
-   * @param  loadSongIndex
-   *         - If true, the song index is loaded from the game
-   *         preferences.  If false, the current song index is used.
-   *
-   * @param  loadPatternIndex
-   *         - If true, the song start pattern is loaded from the game
-   *         preferences.  If false, the beginning of the song is used.
-   *
-   * @param  startPlaying
-   *         - If true, the song starts playing immediately.  Otherwise
-   *         it is paused and must be unpaused to start playing.
-   */
-  private void playMusic(boolean loadSongIndex, boolean loadPatternIndex,
-                         boolean startPlaying)
-  {
-    if (loadSongIndex)
-    {
-      // Ascertain which song to play.
-      if (mGameView.getThread().getCurrentLevelIndex() == 0) {
-        mod_now = DEFAULT_SONG;
-      }
-      else {
-        mConfig = getSharedPreferences(SONG_PREFS_NAME, Context.MODE_PRIVATE);
-        mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
-        if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
-      }
-    }
-    // Determine whether to create a music player or load the song.
-    if (resplayer == null)
-      newMusicPlayer();
-    else
-      loadCurrentMOD();
-    // Set the pattern position if applicable.
-    if (loadPatternIndex)
-    {
-      int pattern = mConfig.getInt(PREFS_SONGPATTERN, 0);
-      resplayer.setCurrentPattern(pattern);
-    }
+    resplayer.LoadMODResource(MODlist[modNow]);
     // Loop the song forever.
     resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     // Set the volume per the game preferences.
@@ -967,29 +871,44 @@ public class FrozenBubble extends Activity
     else {
       resplayer.setVolume(0);
     }
-    // If desired, start the song immediately.
-    if ( startPlaying )
-      resplayer.UnPausePlay();
-    allowUnpause = true;
-    mod_was      = mod_now;
+    // Start the music thread.
+    resplayer.startPaused(true);
+    resplayer.start();
   }
 
-  private void savePlayerState() {
-    //
-    // Save song number and current pattern so we can resume from
-    // there...
-    //
-    //
-    SharedPreferences.Editor prefs =
-      getSharedPreferences(SONG_PREFS_NAME, Context.MODE_PRIVATE).edit();
-    prefs.putInt(PREFS_SONGNUM, mod_now);
+  /**
+   * Load the current song in our playlist.
+   */
+  private void loadCurrentMOD() {
+    // Pause the current song.
+    resplayer.PausePlay();
+    // Ascertain which song to play.
+    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
+    // Load the current MOD into the player.
+    resplayer.LoadMODResource(MODlist[modNow]);
+  }
 
-    if (resplayer != null)
-      prefs.putInt(PREFS_SONGPATTERN, resplayer.getCurrentPattern());
+  /**
+   * This function determines whether a music player instance needs to
+   * be created or if one already exists.  Then, based on the current
+   * level, the song to play is calculated and loaded.  Finally, if
+   * desired, the song immediately starts playing or it is left paused.
+   *
+   * @param  startPlaying
+   *         - If true, the song starts playing immediately.  Otherwise
+   *         it is paused and must be unpaused to start playing.
+   */
+  private void playMusic(boolean startPlaying)
+  {
+    // Determine whether to create a music player or load the song.
+    if (resplayer == null)
+      newMusicPlayer();
     else
-      prefs.putInt(PREFS_SONGPATTERN, 0);
-
-    prefs.commit();
+      loadCurrentMOD();
+    // If desired, start the song immediately.
+    if (startPlaying)
+      resplayer.UnPausePlay();
+    allowUnpause = true;
   }
 
   /**
