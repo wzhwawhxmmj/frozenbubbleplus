@@ -92,7 +92,7 @@ public class ScrollingCredits extends Activity implements Runnable {
     credits.setScrollDirection(ScrollingTextView.SCROLL_UP);
     credits.setTextSize(18.0f);
     // Start the credits music.
-    newMusicPlayer();
+    playMusic();
     // Post this runnable instance to the scrolling text view.
     credits.postDelayed(this, 100);
   }
@@ -155,15 +155,21 @@ public class ScrollingCredits extends Activity implements Runnable {
   }
 
   /**
-   * Start a new MOD player.  If one already exists, it will be
-   * destroyed and a new one will be created.
+   * Create a new music player if necessary, load the song, and start
+   * playing it.
    */
-  private void newMusicPlayer() {
-    destroyMusicPlayer();
+  private void playMusic() {
+    boolean threadStarted = resplayer != null;
+    // If the MOD player instance is NULL, create a new music player.
+    if (resplayer == null)
+      resplayer = new MODResourcePlayer(this);
+    else
+      resplayer.PausePlay();
     // Load the module music file.
-    resplayer = new MODResourcePlayer(this);
-    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     resplayer.LoadMODResource(MODlist[DEFAULT_SONG]);
+    // Loop the song forever.
+    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
+    // Set the volume per the game preferences.
     if (FrozenBubble.getMusicOn() == true) {
       resplayer.setVolume(255);
     }
@@ -171,8 +177,13 @@ public class ScrollingCredits extends Activity implements Runnable {
       resplayer.setVolume(0);
     }
     // Start up the music.
-    resplayer.startPaused(false);
-    resplayer.start();
+    if (!threadStarted)
+    {
+      resplayer.startPaused(false);
+      resplayer.start();
+    }
+    else
+      resplayer.UnPausePlay();
   }
 
   private void displayImage(int id) {

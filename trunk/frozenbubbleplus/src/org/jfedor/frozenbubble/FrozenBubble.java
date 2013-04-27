@@ -175,7 +175,7 @@ public class FrozenBubble extends Activity
   // (to Preferences).
   //
   //
-  public static final String PLAYER_PREFS_NAME = "ModPlayerPrefs";
+  public static final String SONG_PREFS_NAME   = "ModPlayerPrefs";
   public static final String PREFS_SONGNUM     = "SongNum";
   public static final String PREFS_SONGPATTERN = "SongPattern";
 
@@ -255,7 +255,7 @@ public class FrozenBubble extends Activity
         mGameThread.restoreState(savedInstanceState);
 
       mGameView.requestFocus();
-      newMusicPlayer(true);
+      playMusic(true, savedInstanceState != null, false);
     }
     else {
       startCustomGame(intent);
@@ -577,7 +577,7 @@ public class FrozenBubble extends Activity
     mGameView.setGameListener(this);
     mGameThread = mGameView.getThread();
     mGameView.requestFocus();
-    newMusicPlayer(true);
+    playMusic(true, false, false);
   }
 
   private void setFullscreen() {
@@ -794,7 +794,7 @@ public class FrozenBubble extends Activity
    */
   public void newGame() {
     mGameThread.newGame();
-    newMusicPlayer(true);
+    playMusic(true, false, false);
   }
 
   public void onAccelerationChanged(float x, float y, float z) {
@@ -829,34 +829,13 @@ public class FrozenBubble extends Activity
         //
         //
         if (resplayer == null) {
-          //
-          // Get a new player thread with this mod file data.
-          //
-          //
-          resplayer = new MODResourcePlayer(this);
-          //
-          // Restore song number and current pattern so we can resume
-          // from there...
-          //
-          //
-          mConfig = getSharedPreferences(PLAYER_PREFS_NAME,
-                                         Context.MODE_PRIVATE);
-          mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
-          if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
-          int pattern = mConfig.getInt(PREFS_SONGPATTERN, 0);
-          resplayer.LoadMODResource(MODlist[mod_now]);
-          resplayer.setCurrentPattern(pattern);
-          //
-          // Start up the music.
-          //
-          //
-          resplayer.start();
-          mod_was = mod_now;
+          playMusic(true, true, true);
         }
         else {
           if (mod_now != mod_was)
-            playCurrentMOD();
-          else if (allowUnpause)
+            loadCurrentMOD();
+
+          if (allowUnpause)
             resplayer.UnPausePlay();
         }
         break;
@@ -864,9 +843,8 @@ public class FrozenBubble extends Activity
       case GameView.EVENT_LEVEL_START:
         if (mGameView.getThread().getCurrentLevelIndex() == 0) {
           //
-          // Since the credits screen activity creates its own player,
-          // destroy the current player.  It will be re-created when
-          // this activity regains user focus.
+          // Destroy the current music player, which will free audio
+          // stream resources and allow the system to use them.
           //
           //
           destroyMusicPlayer();
@@ -890,7 +868,7 @@ public class FrozenBubble extends Activity
           startActivity(intent);
         }
         else
-          playCurrentMOD();
+          playMusic(false, false, true);
         break;
 
       default:
@@ -911,68 +889,89 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   * Start up the MOD player
-   *
-   * <p>Get the MOD playlist song index.  If the game is going to be
-   * played starting at the first game level, set the current MOD
-   * index to the first song in the playlist.  Otherwise, load the
-   * song index that was last saved in the MOD player preferences.
-   *
-   * @param  startPausedFlag
-   *         - If true, the player will be paused on startup.  Otherwise
-   *         if false, the player will start playing immediately.
+   * Create a new music player.
    */
-  private void newMusicPlayer(boolean startPausedFlag) {
-    if (mGameView.getThread().getCurrentLevelIndex() == 0) {
-      mod_now = DEFAULT_SONG;
-    }
-    else {
-      mConfig = getSharedPreferences(PLAYER_PREFS_NAME, Context.MODE_PRIVATE);
-      mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
-      if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
-    }
-    //
-    // If the MOD player instance is not NULL, destroy it and create
-    // a new one.
-    //
-    //
-    destroyMusicPlayer();
-    // load the mod file
+  private void newMusicPlayer() {
+    // Create a new music player.
     resplayer = new MODResourcePlayer(this);
-    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
+    // Load the mod file.
     resplayer.LoadMODResource(MODlist[mod_now]);
+    // Start the music thread.
+    resplayer.startPaused(true);
+    resplayer.start();
+  }
+
+  /**
+   * Load the current song in our playlist.
+   */
+  private void loadCurrentMOD() {
+    resplayer.PausePlay();
+    if (mod_now >= MODlist.length) mod_now = 0;
+    // Load the current MOD into the player.
+    resplayer.LoadMODResource(MODlist[mod_now]);
+  }
+
+  /**
+   * The function performs multiple important checks and functions in
+   * order to play music.  It determines what song to play by using the
+   * current song index of the song index that was saved to the game
+   * preferences.  It determines if a player needs to be created.  The
+   * song to play is then loaded to the player, and the music volume is
+   * set according to the game preferences.  Finally, if desired, the
+   * song immediately starts playing or it is left paused.
+   *
+   * @param  loadSongIndex
+   *         - If true, the song index is loaded from the game
+   *         preferences.  If false, the current song index is used.
+   *
+   * @param  loadPatternIndex
+   *         - If true, the song start pattern is loaded from the game
+   *         preferences.  If false, the beginning of the song is used.
+   *
+   * @param  startPlaying
+   *         - If true, the song starts playing immediately.  Otherwise
+   *         it is paused and must be unpaused to start playing.
+   */
+  private void playMusic(boolean loadSongIndex, boolean loadPatternIndex,
+                         boolean startPlaying)
+  {
+    if (loadSongIndex)
+    {
+      // Ascertain which song to play.
+      if (mGameView.getThread().getCurrentLevelIndex() == 0) {
+        mod_now = DEFAULT_SONG;
+      }
+      else {
+        mConfig = getSharedPreferences(SONG_PREFS_NAME, Context.MODE_PRIVATE);
+        mod_now = mConfig.getInt(PREFS_SONGNUM, DEFAULT_SONG);
+        if (mod_now >= MODlist.length) mod_now = DEFAULT_SONG;
+      }
+    }
+    // Determine whether to create a music player or load the song.
+    if (resplayer == null)
+      newMusicPlayer();
+    else
+      loadCurrentMOD();
+    // Set the pattern position if applicable.
+    if (loadPatternIndex)
+    {
+      int pattern = mConfig.getInt(PREFS_SONGPATTERN, 0);
+      resplayer.setCurrentPattern(pattern);
+    }
+    // Loop the song forever.
+    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
+    // Set the volume per the game preferences.
     if (getMusicOn() == true) {
       resplayer.setVolume(255);
     }
     else {
       resplayer.setVolume(0);
     }
-    // start up the music (well, start the thread, at least...)
-    resplayer.startPaused(startPausedFlag);
-    resplayer.start();
+    // If desired, start the song immediately.
+    if ( startPlaying )
+      resplayer.UnPausePlay();
     allowUnpause = true;
     mod_was      = mod_now;
-  }
-
-  /**
-   * Play the current song in our playlist from the beginning of the
-   * song.
-   *
-   * <p>The current MOD index may have been modified externally.
-   *
-   */
-  private void playCurrentMOD() {
-    if (resplayer != null) {
-      resplayer.PausePlay();
-      if (mod_now >= MODlist.length) mod_now = 0;
-      // load the current MOD into the player
-      resplayer.LoadMODResource(MODlist[mod_now]);
-      resplayer.UnPausePlay();
-      allowUnpause = true;
-      mod_was      = mod_now;
-    }
-    else
-      newMusicPlayer(false);
   }
 
   private void savePlayerState() {
@@ -982,7 +981,7 @@ public class FrozenBubble extends Activity
     //
     //
     SharedPreferences.Editor prefs =
-      getSharedPreferences(PLAYER_PREFS_NAME, Context.MODE_PRIVATE).edit();
+      getSharedPreferences(SONG_PREFS_NAME, Context.MODE_PRIVATE).edit();
     prefs.putInt(PREFS_SONGNUM, mod_now);
 
     if (resplayer != null)
