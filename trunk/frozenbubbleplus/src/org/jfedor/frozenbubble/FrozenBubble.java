@@ -891,8 +891,8 @@ public class FrozenBubble extends Activity
   /**
    * This function determines whether a music player instance needs to
    * be created or if one already exists.  Then, based on the current
-   * level, the song to play is calculated and loaded.  Finally, if
-   * desired, the song immediately starts playing or it is left paused.
+   * level, the song to play is calculated and loaded.  If desired, the
+   * song will start playing immediately, or it can remain paused.
    *
    * @param  startPlaying
    *         - If true, the song starts playing immediately.  Otherwise
