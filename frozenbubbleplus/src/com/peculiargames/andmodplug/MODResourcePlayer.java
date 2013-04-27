@@ -106,10 +106,10 @@ public class MODResourcePlayer extends PlayerThread {
    *         - Application context that is creating this instance.
    */
   public MODResourcePlayer(Context context) {
-    // get super class (PlayerThread) with default rate
+    // Get super class (PlayerThread) with default rate.
     super(0);
     mContext = context;
-    // set full volume
+    // Set full volume.
     setVolume(255);
   }
 
@@ -131,7 +131,6 @@ public class MODResourcePlayer extends PlayerThread {
   public boolean LoadMODResource(int modresource) {
     byte[] modData = null;
     int currfilesize = 0;
-    int modsize;  // holds the size in bytes of the mod file
     InputStream mModfileInStream;
 
     //
@@ -158,13 +157,9 @@ public class MODResourcePlayer extends PlayerThread {
     modData = new byte[currfilesize];
 
     try {
-      modsize = mModfileInStream.read(modData,0, currfilesize);
-      PlayerThread.setModSize(modsize);
+      PlayerThread.setModSize(mModfileInStream.read(modData,0, currfilesize));
     } catch (IOException e) {
-      //
       // Auto-generated catch block.
-      //
-      //
       e.printStackTrace();
     }
 
@@ -187,14 +182,14 @@ public class MODResourcePlayer extends PlayerThread {
     PausePlay();
     boolean retry = true;
 
-    // now close and join() the mod player thread
+    // Now close and join() the MOD player thread.
     StopThread();
     while (retry) {
       try {
         join();
         retry = false;
       } catch (InterruptedException e) {
-        // keep trying to close the player thread
+        // Keep trying to close the player thread.
       }
     }
 

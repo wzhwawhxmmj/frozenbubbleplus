@@ -335,6 +335,7 @@ public class PlayerThread extends Thread {
    */
   public PlayerThread(int desiredrate) {
     // no Activity owns this player yet
+    mMytrack       = null;
     mOwner         = null;
     mStart_paused  = false;
     sPlayerStarted = false;
@@ -524,7 +525,10 @@ public class PlayerThread extends Thread {
       mPlaying = true;
 
     // main play loop
-    mMytrack.play();
+    if (mMytrack != null)
+      mMytrack.play();
+    else
+      mRunning = false;
 
     while (mRunning) {
       while (mPlaying) {
@@ -602,7 +606,11 @@ public class PlayerThread extends Thread {
     //**********************
     // experimental
     //**********************
-    mMytrack.release();
+    if (mMytrack != null)
+    {
+      mMytrack.release();
+      mMytrack = null;
+    }
   }
 
   //
@@ -654,19 +662,21 @@ public class PlayerThread extends Thread {
    */
   public void PausePlay() {
     mPlaying = false;
-    //
-    // This check is usually not needed before stop()ing the audio
-    // track, but seem to get an uninitialized audio track here
-    // occasionally, generating an IllegalStateException.
-    //
-    //
-    if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED)
-      mMytrack.stop();
+    if (mMytrack != null)
+    {
+      //
+      // This check is usually not needed before stop()ing the audio
+      // track, but seem to get an uninitialized audio track here
+      // occasionally, generating an IllegalStateException.
+      //
+      //
+      if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED)
+        mMytrack.stop();
+      mWaitFlag = true;
 
-    mWaitFlag = true;
-
-    synchronized(this) {
-      this.notify();
+      synchronized(this) {
+        this.notify();
+      }
     }
   }
 
@@ -674,12 +684,15 @@ public class PlayerThread extends Thread {
    * Resumes playback of the current song.
    */
   public void UnPausePlay() {
-    mMytrack.play();
-    mPlaying  = true;
-    mWaitFlag = false;
+    if (mMytrack != null)
+    {
+      mMytrack.play();
+      mPlaying  = true;
+      mWaitFlag = false;
 
-    synchronized(this) {
-      this.notify();
+      synchronized(this) {
+        this.notify();
+      }
     }
   }
 
