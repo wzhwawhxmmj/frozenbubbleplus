@@ -196,7 +196,7 @@ public class PlayerThread extends Thread {
   private static int mModsize;  // holds the size in bytes of the mod file
   private final static int BUFFERSIZE = 20000;  // the sample buffer size
   
-  private AudioTrack mMytrack;
+  private static AudioTrack mMytrack;
   private boolean mLoad_ok;
 
   // for storing info about the MOD file currently loaded
@@ -759,9 +759,6 @@ public class PlayerThread extends Thread {
     if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED)
       mMytrack.stop();
 
-    Flush();
-    mMytrack.release();
-
     mPlayerValid = false;
     mWaitFlag    = false;
 
@@ -777,6 +774,11 @@ public class PlayerThread extends Thread {
   public static void CloseLIBMODPLUG() {
     ModPlug_JUnload();
     ModPlug_CloseDown();
+    if (mMytrack != null)
+    {
+      mMytrack.release();
+      mMytrack = null;
+    }
   }
 
   /**
