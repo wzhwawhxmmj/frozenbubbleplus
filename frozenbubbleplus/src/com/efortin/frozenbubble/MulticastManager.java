@@ -84,13 +84,16 @@ public class MulticastManager {
     mMulticastListener = sl;
   }
 
-  private boolean requestTX = false;
-  private boolean mPaused   = false;
-  private boolean mStopped  = false;
-  private byte[]  mRXBuffer = null;
-  private byte[]  mTXBuffer = null;
-  private int     mPort     = 5500;
-  private Context mContext  = null;
+  private boolean mBroadcast = false;
+  private boolean mPaused    = false;
+  private boolean mStopped   = false;
+  private boolean requestTX  = false;
+  private byte[]  mRXBuffer  = null;
+  private byte[]  mTXBuffer  = null;
+  private int     mPort      = 5500;
+  private int     mTimeout   = 10;
+  private String  mHostName  = "192.168.0.1";
+  private Context mContext   = null;
   private InetAddress mInetAddress = null;
   private MulticastSocket mMulticastSocket = null;
   private WifiManager.MulticastLock multicastLock;
@@ -99,24 +102,30 @@ public class MulticastManager {
   /**
    * Multicast manager class constructor.
    * 
+   * <p>When created, this class constructs and starts a thread to send
+   * and receive WiFi multicast messages.
+   * 
+   * <p>In order for the multicast manager to actually send and receive
+   * WiFi multicast messages, <code>configureMulticast()</code> must be
+   * called to configure the multicast socket settings.
+   * 
    * @param context
    *        - the application context for the purpose of obtaining WiFi
    *        service access.
    */
   public MulticastManager(Context context) {
-    requestTX          = false;
+    mBroadcast         = false;
     mPaused            = false;
     mStopped           = false;
+    requestTX          = false;
     mMulticastListener = null;
-    mContext           = context;
     mRXBuffer          = new byte[256];
     mTXBuffer          = null;
     mPort              = 5500;
-    try {
-      mInetAddress = InetAddress.getByName("192.168.0.1");
-    } catch (UnknownHostException uhe) {
-      uhe.printStackTrace();
-    }
+    mTimeout           = 10;
+    mHostName          = "192.168.0.1";
+    mContext           = context;
+    mInetAddress       = null;
     WifiManager wm = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
     multicastLock = wm.createMulticastLock("myMulticastLock");
     mMulticastSocket = null;
@@ -124,14 +133,36 @@ public class MulticastManager {
     mMulticastThread.start();
   }
 
-  public void configureMulticast(String hostAddress, int port, boolean broadcast) {
+  /**
+   * Configure the multicast socket settings.
+   * 
+   * @param hostAddress
+   *        - the host string name given by either the machine name or
+   *        IP dotted string address.
+   * 
+   * @param port
+   *        - the port on the host to bind the multicast socket to.
+   * 
+   * @param broadcast
+   *        - if true, then transmitted messages are sent to every peer
+   *        on the network, instead of just to the multicast group.
+   */
+  public void configureMulticast(String hostAddress,
+                                 int port,
+                                 int timeout,
+                                 boolean broadcast) {
+    pauseMulticast();
+    mBroadcast = broadcast;
+    mHostName  = hostAddress;
+    mPort      = port;
+    mTimeout   = timeout;
+
     try {
-      mInetAddress = InetAddress.getByName(hostAddress);
+      mInetAddress = InetAddress.getByName(mHostName);
     } catch (UnknownHostException uhe) {
       uhe.printStackTrace();
       mInetAddress = null;
     }
-    mPort = port;
 
     if (mMulticastSocket == null)
     {
@@ -145,8 +176,8 @@ public class MulticastManager {
     if (mMulticastSocket != null)
     {
       try {
-        mMulticastSocket.setSoTimeout(10);
-        mMulticastSocket.setBroadcast(broadcast);
+        mMulticastSocket.setSoTimeout(mTimeout);
+        mMulticastSocket.setBroadcast(mBroadcast);
         mMulticastSocket.joinGroup(mInetAddress);
       } catch (UnknownHostException uhe) {
         uhe.printStackTrace();
@@ -158,6 +189,7 @@ public class MulticastManager {
         ioe.printStackTrace();
       }
     }
+    resumeMulticast();
   }
 
   class MulticastThread extends Thread {
@@ -198,23 +230,6 @@ public class MulticastManager {
           }
         }
 
-        if ((mMulticastSocket == null) && !mPaused)
-        {
-          try {
-            mMulticastSocket = new MulticastSocket(mPort);
-            mMulticastSocket.setSoTimeout(10);
-            mMulticastSocket.joinGroup(mInetAddress);
-          } catch (UnknownHostException uhe) {
-            uhe.printStackTrace();
-          } catch (NullPointerException npe) {
-            npe.printStackTrace();
-          } catch (SocketException se) {
-            se.printStackTrace();
-          } catch (IOException ioe) {
-            ioe.printStackTrace();
-          }
-        }
-    
         if ((mMulticastSocket != null) && !mPaused) {
           multicastLock.acquire();
           try {
@@ -237,7 +252,7 @@ public class MulticastManager {
               mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
             }
           }
-    
+
           try {
             DatagramPacket dpRX = new DatagramPacket(mRXBuffer,
                                                      mRXBuffer.length,
