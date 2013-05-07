@@ -62,6 +62,7 @@ import java.net.UnknownHostException;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
+import android.util.Log;
  
 public class MulticastManager {
   /*
@@ -92,7 +93,7 @@ public class MulticastManager {
   private byte[]  mTXBuffer  = null;
   private int     mPort      = 5500;
   private int     mTimeout   = 10;
-  private String  mHostName  = "192.168.0.1";
+  private String  mHostName  = "239.168.0.1";
   private Context mContext   = null;
   private InetAddress mInetAddress = null;
   private MulticastSocket mMulticastSocket = null;
@@ -109,6 +110,10 @@ public class MulticastManager {
    * WiFi multicast messages, <code>configureMulticast()</code> must be
    * called to configure the multicast socket settings.
    * 
+   * <p>Furthermore, multicast host addresses must be in the IPv4 class
+   * D address range, with the leftmost octect being within the 224 to
+   * 239 range.
+   * 
    * @param context
    *        - the application context for the purpose of obtaining WiFi
    *        service access.
@@ -123,7 +128,7 @@ public class MulticastManager {
     mTXBuffer          = null;
     mPort              = 5500;
     mTimeout           = 10;
-    mHostName          = "192.168.0.1";
+    mHostName          = "239.168.0.1";
     mContext           = context;
     mInetAddress       = null;
     WifiManager wm = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
@@ -138,7 +143,9 @@ public class MulticastManager {
    * 
    * @param hostAddress
    *        - the host string name given by either the machine name or
-   *        IP dotted string address.
+   *        IP dotted string address.  Multicast addresses must be in
+   *        the IPv4 class D address range, with the leftmost octect
+   *        being within the 224 to 239 range.
    * 
    * @param port
    *        - the port on the host to bind the multicast socket to.
@@ -238,6 +245,7 @@ public class MulticastManager {
                                                        mTXBuffer.length,
                                                        mInetAddress, mPort);
               mMulticastSocket.send(dpTX);
+              Log.i("com.efortin.frozenbubble", "after mMulticastSocket.send()");
               mTXBuffer = null;
               requestTX = false;
             }
@@ -258,6 +266,7 @@ public class MulticastManager {
                                                      mRXBuffer.length,
                                                      mInetAddress, mPort);
             mMulticastSocket.receive(dpRX);
+            Log.i("com.efortin.frozenbubble", "after mMulticastSocket.receive()");
             String str = new String(dpRX.getData(),0,dpRX.getLength());
             
             if ((str != null) && (mMulticastListener != null)) {
