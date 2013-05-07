@@ -85,15 +85,12 @@ public class MulticastManager {
     mMulticastListener = sl;
   }
 
-  private boolean mBroadcast = false;
   private boolean mPaused    = false;
   private boolean mStopped   = false;
   private boolean requestTX  = false;
   private byte[]  mRXBuffer  = null;
   private byte[]  mTXBuffer  = null;
-  private int     mPort      = 5500;
-  private int     mTimeout   = 10;
-  private String  mHostName  = "239.168.0.1";
+  private int     mPort      = 0;
   private Context mContext   = null;
   private InetAddress mInetAddress = null;
   private MulticastSocket mMulticastSocket = null;
@@ -102,46 +99,55 @@ public class MulticastManager {
 
   /**
    * Multicast manager class constructor.
-   * 
-   * <p>When created, this class constructs and starts a thread to send
+   * <p>
+   * When created, this class constructs and starts a thread to send
    * and receive WiFi multicast messages.
-   * 
-   * <p>In order for the multicast manager to actually send and receive
+   * <p>
+   * In order for the multicast manager to actually send and receive
    * WiFi multicast messages, <code>configureMulticast()</code> must be
    * called to configure the multicast socket settings.
-   * 
-   * <p>Furthermore, multicast host addresses must be in the IPv4 class
+   * <p>
+   * Furthermore, multicast host addresses must be in the IPv4 class
    * D address range, with the leftmost octect being within the 224 to
    * 239 range.
+   * <p>
+   * A typical implementation looks like this:<br>
+   * <code>
+   * MulticastManager session = <br>
+   * new MulticastManager(this.getContext());<br>
+   * session.setMulticastListener(this);<br>
+   * session.configureMulticast("239.168.0.1", 5500, 10, false, true);
+   * <br>session.start();
+   * </code>
    * 
    * @param context
-   *        - the application context for the purpose of obtaining WiFi
-   *        service access.
+   *        - the application or view context for the purpose of
+   *        obtaining WiFi service access.
    */
   public MulticastManager(Context context) {
-    mBroadcast         = false;
     mPaused            = false;
     mStopped           = false;
     requestTX          = false;
     mMulticastListener = null;
     mRXBuffer          = new byte[256];
     mTXBuffer          = null;
-    mPort              = 5500;
-    mTimeout           = 10;
-    mHostName          = "239.168.0.1";
+    mPort              = 0;
     mContext           = context;
     mInetAddress       = null;
-    WifiManager wm = (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
-    multicastLock = wm.createMulticastLock("myMulticastLock");
+    WifiManager wm =
+      (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
+    multicastLock    = wm.createMulticastLock("myMulticastLock");
     mMulticastSocket = null;
     mMulticastThread = new MulticastThread();
-    mMulticastThread.start();
   }
 
   /**
    * Configure the multicast socket settings.
    * 
-   * @param hostAddress
+   * <p>
+   * This must be called before <code>start()</code>ing the thread.
+   * 
+   * @param hostName
    *        - the host string name given by either the machine name or
    *        IP dotted string address.  Multicast addresses must be in
    *        the IPv4 class D address range, with the leftmost octect
@@ -150,22 +156,28 @@ public class MulticastManager {
    * @param port
    *        - the port on the host to bind the multicast socket to.
    * 
+   * @param timeout
+   *        - the receive blocking timeout.  If zero, receive() blocks
+   *        the rest of the thread from executing forever (or until a
+   *        datagram is received).
+   * 
    * @param broadcast
    *        - if true, then transmitted messages are sent to every peer
    *        on the network, instead of just to the multicast group.
+   * 
+   * @param loopbackDisable
+   *        - if false, locally transmitted messages will be received on
+   *        the local socket.
    */
-  public void configureMulticast(String hostAddress,
+  public void configureMulticast(String hostName,
                                  int port,
                                  int timeout,
-                                 boolean broadcast) {
-    pauseMulticast();
-    mBroadcast = broadcast;
-    mHostName  = hostAddress;
-    mPort      = port;
-    mTimeout   = timeout;
+                                 boolean broadcast,
+                                 boolean loopbackDisable) {
+    mPort = port;
 
     try {
-      mInetAddress = InetAddress.getByName(mHostName);
+      mInetAddress = InetAddress.getByName(hostName);
     } catch (UnknownHostException uhe) {
       uhe.printStackTrace();
       mInetAddress = null;
@@ -174,7 +186,7 @@ public class MulticastManager {
     if (mMulticastSocket == null)
     {
       try {
-        mMulticastSocket = new MulticastSocket(mPort);
+        mMulticastSocket = new MulticastSocket(port);
       } catch (IOException ioe) {
         ioe.printStackTrace();
       }
@@ -183,8 +195,9 @@ public class MulticastManager {
     if (mMulticastSocket != null)
     {
       try {
-        mMulticastSocket.setSoTimeout(mTimeout);
-        mMulticastSocket.setBroadcast(mBroadcast);
+        mMulticastSocket.setSoTimeout(timeout);
+        mMulticastSocket.setBroadcast(broadcast);
+        mMulticastSocket.setLoopbackMode(loopbackDisable);
         mMulticastSocket.joinGroup(mInetAddress);
       } catch (UnknownHostException uhe) {
         uhe.printStackTrace();
@@ -196,23 +209,31 @@ public class MulticastManager {
         ioe.printStackTrace();
       }
     }
-    resumeMulticast();
+  }
+
+  /**
+   * Start the thread.  This must only be called once per instance.
+   */
+  public void start() {
+    if (mMulticastThread != null) {
+      mMulticastThread.start();
+    }
   }
 
   class MulticastThread extends Thread {
     /**
      * This is the thread's <code>run()</code> call.
-     * 
-     * <p>Send multicast broadcast messages, and read multicast packets
-     * from other clients.
-     * 
-     * <p>To support being able to send and receive packets in the same
-     * thread, a socket read timeout must be set, because
+     * <p>
+     * Send multicast UDP messages, and read multicast datagrams from
+     * other clients.
+     * <p>
+     * To support being able to send and receive packets in the same
+     * thread, a nonzero socket read timeout must be set, because
      * <code>MulticastSocket.receive()</code> blocks until a packet is
      * received or it times out.  Thus, the timeout is set to 10
      * milliseconds to allow sending of data in a timely manner.
-     * 
-     * <p>Thus the maximum time between sends is a maximum 10 mSec.  The
+     * <p>
+     * Thus the maximum time between sends is a maximum 10 mSec.  The
      * more messages are getting received, the faster the TX throughput.
      */
     @Override
@@ -297,8 +318,8 @@ public class MulticastManager {
 
     /**
      * This pauses the multicast thread.
-     * 
-     * <p>The thread must have been initially started with
+     * <p>
+     * The thread must have been initially started with
      * <code>Thread.start()</code>.
      */
     public void pauseThread() {
@@ -310,8 +331,8 @@ public class MulticastManager {
 
     /**
      * This resumes the multicast thread after it has been paused.
-     * 
-     * <p>The thread must have been initially started with
+     * <p>
+     * The thread must have been initially started with
      * <code>Thread.start()</code>.
      */
     public void resumeThread() {
