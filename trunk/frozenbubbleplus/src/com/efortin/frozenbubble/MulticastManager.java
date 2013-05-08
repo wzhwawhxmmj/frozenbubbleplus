@@ -116,7 +116,7 @@ public class MulticastManager {
    * MulticastManager session = <br>
    * new MulticastManager(this.getContext());<br>
    * session.setMulticastListener(this);<br>
-   * session.configureMulticast("239.168.0.1", 5500, 10, false, true);
+   * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
    * <br>session.start();
    * </code>
    * 
@@ -139,6 +139,28 @@ public class MulticastManager {
     multicastLock    = wm.createMulticastLock("myMulticastLock");
     mMulticastSocket = null;
     mMulticastThread = new MulticastThread();
+  }
+
+  /**
+   * Clean up the multicast manager by closing the multicast socket.
+   */
+  private void cleanUp() {
+    synchronized(this) {
+      try {
+        if (mMulticastSocket != null) {
+          mMulticastSocket.leaveGroup(mInetAddress);
+          mMulticastSocket.close();
+          mMulticastSocket = null;
+        }
+        mStopped = true;
+      } catch (NullPointerException npe) {
+        npe.printStackTrace();
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+      }
+    }
+    mMulticastListener = null;
+    mMulticastThread = null;
   }
 
   /**
@@ -211,16 +233,64 @@ public class MulticastManager {
     }
   }
 
-  /**
-   * Start the thread.  This must only be called once per instance.
-   */
-  public void start() {
-    if (mMulticastThread != null) {
-      mMulticastThread.start();
-    }
-  }
-
   class MulticastThread extends Thread {
+    /**
+     * This pauses the multicast thread.
+     * <p>
+     * The thread must have been initially started with
+     * <code>Thread.start()</code>.
+     */
+    public void pauseThread() {
+      // Pauses the thread (see run() above).
+      synchronized(this) {
+        mPaused = true;
+      }
+    }
+
+    private void receiveDatagram() {
+      try {
+        DatagramPacket dpRX = new DatagramPacket(mRXBuffer,
+                                                 mRXBuffer.length,
+                                                 mInetAddress, mPort);
+        mMulticastSocket.receive(dpRX);
+        Log.i("com.efortin.frozenbubble", "after mMulticastSocket.receive()");
+        String str = new String(dpRX.getData(),0,dpRX.getLength());
+        
+        if ((str != null) && (mMulticastListener != null)) {
+          mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, str);
+        }
+      } catch (InterruptedIOException iioe) {
+        // Receive timeout.  This is expected behavior.
+        //Log.i("com.efortin.frozenbubble", iioe.getMessage());
+      } catch (NullPointerException npe) {
+        npe.printStackTrace();
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
+        }
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
+        }
+      }
+    }
+
+    /**
+     * This resumes the multicast thread after it has been paused.
+     * <p>
+     * The thread must have been initially started with
+     * <code>Thread.start()</code>.
+     */
+    public void resumeThread() {
+      // Starts the thread (see run() above).
+      synchronized(this) {
+        if (mPaused) {
+          mPaused = false;
+          this.notify();
+        }
+      }
+    }
+
     /**
      * This is the thread's <code>run()</code> call.
      * <p>
@@ -260,53 +330,8 @@ public class MulticastManager {
 
         if ((mMulticastSocket != null) && !mPaused) {
           multicastLock.acquire();
-          try {
-            if (requestTX) {
-              DatagramPacket dpTX = new DatagramPacket(mTXBuffer,
-                                                       mTXBuffer.length,
-                                                       mInetAddress, mPort);
-              mMulticastSocket.send(dpTX);
-              Log.i("com.efortin.frozenbubble", "after mMulticastSocket.send()");
-              mTXBuffer = null;
-              requestTX = false;
-            }
-          } catch (NullPointerException npe) {
-            npe.printStackTrace();
-            if (mMulticastListener != null) {
-              mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
-            }
-          } catch (IOException ioe) {
-            ioe.printStackTrace();
-            if (mMulticastListener != null) {
-              mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
-            }
-          }
-
-          try {
-            DatagramPacket dpRX = new DatagramPacket(mRXBuffer,
-                                                     mRXBuffer.length,
-                                                     mInetAddress, mPort);
-            mMulticastSocket.receive(dpRX);
-            Log.i("com.efortin.frozenbubble", "after mMulticastSocket.receive()");
-            String str = new String(dpRX.getData(),0,dpRX.getLength());
-            
-            if ((str != null) && (mMulticastListener != null)) {
-              mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, str);
-            }
-          } catch (InterruptedIOException iioe) {
-            // Receive timeout.  This is expected behavior.
-            //Log.i("com.efortin.frozenbubble", iioe.getMessage());
-          } catch (NullPointerException npe) {
-            npe.printStackTrace();
-            if (mMulticastListener != null) {
-              mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
-            }
-          } catch (IOException ioe) {
-            ioe.printStackTrace();
-            if (mMulticastListener != null) {
-              mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
-            }
-          }
+          sendDatagram();
+          receiveDatagram();
           multicastLock.release();
         }
       }
@@ -316,31 +341,27 @@ public class MulticastManager {
       }
     }
 
-    /**
-     * This pauses the multicast thread.
-     * <p>
-     * The thread must have been initially started with
-     * <code>Thread.start()</code>.
-     */
-    public void pauseThread() {
-      // Pauses the thread (see run() above).
-      synchronized(this) {
-        mPaused = true;
-      }
-    }
-
-    /**
-     * This resumes the multicast thread after it has been paused.
-     * <p>
-     * The thread must have been initially started with
-     * <code>Thread.start()</code>.
-     */
-    public void resumeThread() {
-      // Starts the thread (see run() above).
-      synchronized(this) {
-        if (mPaused) {
-          mPaused = false;
-          this.notify();
+    private void sendDatagram() {
+      if (requestTX)
+      {
+        try {
+          DatagramPacket dpTX = new DatagramPacket(mTXBuffer,
+                                                   mTXBuffer.length,
+                                                   mInetAddress, mPort);
+          mMulticastSocket.send(dpTX);
+          Log.i("com.efortin.frozenbubble", "after mMulticastSocket.send()");
+          mTXBuffer = null;
+          requestTX = false;
+        } catch (NullPointerException npe) {
+          npe.printStackTrace();
+          if (mMulticastListener != null) {
+            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
+          }
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
+          if (mMulticastListener != null) {
+            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
+          }
         }
       }
     }
@@ -354,39 +375,6 @@ public class MulticastManager {
       // Notify the thread to wake it up if paused.
       synchronized(this) {
         this.notify();
-      }
-    }
-  }
-
-  private void cleanUp() {
-    synchronized(this) {
-      try {
-        if (mMulticastSocket != null) {
-          mMulticastSocket.leaveGroup(mInetAddress);
-          mMulticastSocket.close();
-          mMulticastSocket = null;
-        }
-        mStopped = true;
-      } catch (NullPointerException npe) {
-        npe.printStackTrace();
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
-    }
-    mMulticastListener = null;
-    mMulticastThread = null;
-  }
-
-  public void sendBroadcast(String string) {
-    synchronized(this) {
-      if (mTXBuffer == null) {
-        mTXBuffer = string.getBytes();
-        requestTX = true;
-      }
-      else {
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
-        }
       }
     }
   }
@@ -406,6 +394,15 @@ public class MulticastManager {
   }
 
   /**
+   * Start the thread.  This must only be called once per instance.
+   */
+  public void start() {
+    if (mMulticastThread != null) {
+      mMulticastThread.start();
+    }
+  }
+
+  /**
    * Stop and <code>join()</code> the multicast thread.
    */
   public void stopMulticast() {
@@ -421,5 +418,25 @@ public class MulticastManager {
       }
     }
     cleanUp();
+  }
+
+  /**
+   * Send the desired string as a multicast datagram packet.
+   * 
+   * @param string
+   *        - the string to transmit.
+   */
+  public void transmit(String string) {
+    synchronized(this) {
+      if (mTXBuffer == null) {
+        mTXBuffer = string.getBytes();
+        requestTX = true;
+      }
+      else {
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
+        }
+      }
+    }
   }
 }
