@@ -62,19 +62,57 @@ import java.net.UnknownHostException;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
-import android.util.Log;
- 
+
+/**
+ * Multicast manager class.
+ * <p>
+ * This class instantiates a thread to send and receive WiFi multicast
+ * datagrams via UDP.
+ * <p>
+ * In order for the multicast manager to actually send and receive
+ * WiFi multicast messages, <code>configureMulticast()</code> must be
+ * called to configure the multicast socket settings prior to
+ * <code>start()</code>ing the thread.
+ * <p>
+ * Furthermore, multicast host addresses must be in the IPv4 class
+ * D address range, with the leftmost octect being within the 224 to
+ * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
+ * multicast host address.
+ * <p>
+ * A typical implementation looks like this:<br>
+ * <code>
+ * MulticastManager session = <br>
+ * new MulticastManager(this.getContext());<br>
+ * session.setMulticastListener(this);<br>
+ * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
+ * <br>session.start();
+ * </code>
+ * <p>
+ * The context will have to be provided when instantiating a
+ * MulticastManager object based on the desired context - either via the
+ * view context for the current activity with <code>getContext()</code>,
+ * or via the application context to ensure the multicast manager
+ * lifecycle is tied to the entire application lifecycle with
+ * <code>getApplicationContext()</code>, or via
+ * <code>getBaseContext()</code> if operating within a nested context.
+ *
+ * @author Eric Fortin, Wednesday, May 8, 2013
+ * 
+ */
 public class MulticastManager {
   /*
    * Listener interface for various multicast management events.
+   *
+   * This interface defines the abstract listener method that needs
+   * to be instantiated by the registrar, as well as the various
+   * events supported by the interface.
    */
-  // Event types.
   public static final int EVENT_PACKET_RX      = 1;
   public static final int EVENT_RX_FAIL        = 2;
   public static final int EVENT_TX_FAIL        = 3;
   public static final int EVENT_TX_FLOOD       = 4;
   public static final int EVENT_THREAD_STOPPED = 5;
-  // Listener user set.
+
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, String string);
   }
@@ -84,7 +122,9 @@ public class MulticastManager {
   public void setMulticastListener(MulticastListener sl) {
     mMulticastListener = sl;
   }
-
+  /*
+   * MulticastManager class member variables.
+   */
   private boolean mPaused    = false;
   private boolean mStopped   = false;
   private boolean requestTX  = false;
@@ -100,16 +140,18 @@ public class MulticastManager {
   /**
    * Multicast manager class constructor.
    * <p>
-   * When created, this class constructs and starts a thread to send
-   * and receive WiFi multicast messages.
+   * When created, this class instantiates a thread to send and receive
+   * WiFi multicast messages.
    * <p>
    * In order for the multicast manager to actually send and receive
    * WiFi multicast messages, <code>configureMulticast()</code> must be
-   * called to configure the multicast socket settings.
+   * called to configure the multicast socket settings prior to
+   * <code>start()</code>ing the thread.
    * <p>
    * Furthermore, multicast host addresses must be in the IPv4 class
    * D address range, with the leftmost octect being within the 224 to
-   * 239 range.
+   * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
+   * multicast host address.
    * <p>
    * A typical implementation looks like this:<br>
    * <code>
@@ -119,10 +161,17 @@ public class MulticastManager {
    * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
    * <br>session.start();
    * </code>
+   * <p>
+   * The context will have to be provided based on the desired context -
+   * either the view context for the current activity only via
+   * <code>getContext()</code>, the application context to ensure the
+   * multicast manager lifecycle is tied to the entire application
+   * lifecycle via <code>getApplicationContext()</code>, or via
+   * <code>getBaseContext()</code> if operating within a nested context.
    * 
    * @param context
-   *        - the application or view context for the purpose of
-   *        obtaining WiFi service access.
+   *        - the context defining the lifecycle of the multicast
+   *        manager for the purpose of obtaining WiFi service access.
    */
   public MulticastManager(Context context) {
     mPaused            = false;
@@ -233,15 +282,31 @@ public class MulticastManager {
     }
   }
 
+  /**
+   * This is the multicast thread declaration.
+   * <p>
+   * To support being able to send and receive packets in the same
+   * thread, a nonzero socket read timeout must be set, because
+   * <code>MulticastSocket.receive()</code> blocks until a packet is
+   * received or the socket times out.  Thus, if a timeout of zero is
+   * set (which is the default, and denotes that the socket will never
+   * time out), a datagram will never be sent unless one has just been
+   * received.
+   * 
+   * @author Eric Fortin, Wednesday, May 8, 2013
+   * 
+   * @see <code>MulticastManager.configureMulticast()</code>
+   */
   class MulticastThread extends Thread {
     /**
      * This pauses the multicast thread.
      * <p>
      * The thread must have been initially started with
      * <code>Thread.start()</code>.
+     * 
+     * @see <code>MulticastThread.run()</code>
      */
     public void pauseThread() {
-      // Pauses the thread (see run() above).
       synchronized(this) {
         mPaused = true;
       }
@@ -253,15 +318,13 @@ public class MulticastManager {
                                                  mRXBuffer.length,
                                                  mInetAddress, mPort);
         mMulticastSocket.receive(dpRX);
-        Log.i("com.efortin.frozenbubble", "after mMulticastSocket.receive()");
         String str = new String(dpRX.getData(),0,dpRX.getLength());
-        
+
         if ((str != null) && (mMulticastListener != null)) {
           mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, str);
         }
       } catch (InterruptedIOException iioe) {
         // Receive timeout.  This is expected behavior.
-        //Log.i("com.efortin.frozenbubble", iioe.getMessage());
       } catch (NullPointerException npe) {
         npe.printStackTrace();
         if (mMulticastListener != null) {
@@ -280,9 +343,10 @@ public class MulticastManager {
      * <p>
      * The thread must have been initially started with
      * <code>Thread.start()</code>.
+     * 
+     * @see <code>MulticastThread.run()</code>
      */
     public void resumeThread() {
-      // Starts the thread (see run() above).
       synchronized(this) {
         if (mPaused) {
           mPaused = false;
@@ -300,11 +364,14 @@ public class MulticastManager {
      * To support being able to send and receive packets in the same
      * thread, a nonzero socket read timeout must be set, because
      * <code>MulticastSocket.receive()</code> blocks until a packet is
-     * received or it times out.  Thus, the timeout is set to 10
-     * milliseconds to allow sending of data in a timely manner.
+     * received or the socket times out.  Thus, if a timeout of zero is
+     * set (which is the default, and denotes that the socket will never
+     * time out), a datagram will never be sent unless one has just been
+     * received.
      * <p>
-     * Thus the maximum time between sends is a maximum 10 mSec.  The
-     * more messages are getting received, the faster the TX throughput.
+     * Thus the maximum time between datagram transmissions is the
+     * socket timeout if no datagrams are being recieved.  If messages
+     * are being received, available TX throughput will be increased.
      */
     @Override
     public void run() {
@@ -321,7 +388,6 @@ public class MulticastManager {
             imse.printStackTrace();
           } catch (InterruptedException ie) {
             // wait() was interrupted.  This is expected behavior.
-            //Log.i("com.efortin.frozenbubble", ie.getMessage());
           } catch (NullPointerException npe) {
             // Notify was called from within this thread.
             npe.printStackTrace();
@@ -349,7 +415,6 @@ public class MulticastManager {
                                                    mTXBuffer.length,
                                                    mInetAddress, mPort);
           mMulticastSocket.send(dpTX);
-          Log.i("com.efortin.frozenbubble", "after mMulticastSocket.send()");
           mTXBuffer = null;
           requestTX = false;
         } catch (NullPointerException npe) {
@@ -368,9 +433,10 @@ public class MulticastManager {
 
     /**
      * This stops the thread.
+     * 
+     * @see <code>MulticastThread.run()</code>
      */
     public void stopThread() {
-      // Stops the thread (see run() above).
       mStopped = true;
       // Notify the thread to wake it up if paused.
       synchronized(this) {
