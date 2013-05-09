@@ -67,7 +67,9 @@ import android.net.wifi.WifiManager;
  * Multicast manager class.
  * <p>
  * This class instantiates a thread to send and receive WiFi multicast
- * datagrams via UDP.
+ * datagrams via UDP.  UDP multicasting requires a WiFi access point -
+ * i.e., a router, so multicasting does not perform like WiFi P2P
+ * direct, where no access point is required.
  * <p>
  * In order for the multicast manager to actually send and receive
  * WiFi multicast messages, <code>configureMulticast()</code> must be
@@ -111,7 +113,8 @@ public class MulticastManager {
   public static final int EVENT_RX_FAIL        = 2;
   public static final int EVENT_TX_FAIL        = 3;
   public static final int EVENT_TX_FLOOD       = 4;
-  public static final int EVENT_THREAD_STOPPED = 5;
+  public static final int EVENT_SOCKET_FAIL    = 5;
+  public static final int EVENT_THREAD_STOPPED = 6;
 
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, String string);
@@ -134,8 +137,9 @@ public class MulticastManager {
   private Context mContext   = null;
   private InetAddress mInetAddress = null;
   private MulticastSocket mMulticastSocket = null;
-  private WifiManager.MulticastLock multicastLock;
   private MulticastThread mMulticastThread = null;
+  private Object mTXLock;
+  private WifiManager.MulticastLock multicastLock;
 
   /**
    * Multicast manager class constructor.
@@ -188,28 +192,53 @@ public class MulticastManager {
     multicastLock    = wm.createMulticastLock("myMulticastLock");
     mMulticastSocket = null;
     mMulticastThread = new MulticastThread();
+    mTXLock          = new Object();
   }
 
   /**
-   * Clean up the multicast manager by closing the multicast socket.
+   * Cancel any pending transmissions.
+   */
+  public void cancelSend() {
+    synchronized(mTXLock) {
+      mTXBuffer = null;
+      requestTX = false;
+    }
+  }
+
+  /**
+   * Clean up the multicast manager by closing the multicast socket and
+   * freeing resources.
    */
   private void cleanUp() {
+    closeSocket();
+    mMulticastListener = null;
+    mMulticastThread = null;
+  }
+
+  /**
+   * Remove this socket from the multicast group and close the socket.
+   * This is particularly useful if there was a socket failure and it is
+   * desirable to create a new socket.
+   * <p>
+   * Call <code>configureMulticast()</code> to create a new multicast
+   * socket.
+   * 
+   * @see <code>configureMulticast()</code>
+   */
+  public void closeSocket() {
     synchronized(this) {
       try {
         if (mMulticastSocket != null) {
           mMulticastSocket.leaveGroup(mInetAddress);
           mMulticastSocket.close();
-          mMulticastSocket = null;
         }
-        mStopped = true;
       } catch (NullPointerException npe) {
         npe.printStackTrace();
       } catch (IOException ioe) {
         ioe.printStackTrace();
       }
     }
-    mMulticastListener = null;
-    mMulticastThread = null;
+    mMulticastSocket = null;
   }
 
   /**
@@ -258,6 +287,11 @@ public class MulticastManager {
     {
       try {
         mMulticastSocket = new MulticastSocket(port);
+      } catch (SocketException se) {
+        se.printStackTrace();
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+        }
       } catch (IOException ioe) {
         ioe.printStackTrace();
       }
@@ -276,6 +310,9 @@ public class MulticastManager {
         npe.printStackTrace();
       } catch (SocketException se) {
         se.printStackTrace();
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+        }
       } catch (IOException ioe) {
         ioe.printStackTrace();
       }
@@ -322,6 +359,11 @@ public class MulticastManager {
 
         if ((str != null) && (mMulticastListener != null)) {
           mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, str);
+        }
+      } catch (SocketException se) {
+        se.printStackTrace();
+        if (mMulticastListener != null) {
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
         }
       } catch (InterruptedIOException iioe) {
         // Receive timeout.  This is expected behavior.
@@ -407,16 +449,30 @@ public class MulticastManager {
       }
     }
 
+    /**
+     * Send a multicast datagram.
+     * <p>
+     * If the transmission fails, calling this method again will attempt
+     * to resend the same datagram.  Calling this method when the
+     * <code>requestTX</code> flag is false does nothing.
+     */
     private void sendDatagram() {
       if (requestTX)
       {
         try {
-          DatagramPacket dpTX = new DatagramPacket(mTXBuffer,
-                                                   mTXBuffer.length,
-                                                   mInetAddress, mPort);
-          mMulticastSocket.send(dpTX);
-          mTXBuffer = null;
-          requestTX = false;
+          synchronized(mTXLock) {
+            DatagramPacket dpTX = new DatagramPacket(mTXBuffer,
+                                                     mTXBuffer.length,
+                                                     mInetAddress, mPort);
+            mMulticastSocket.send(dpTX);
+            mTXBuffer = null;
+            requestTX = false;
+          }
+        } catch (SocketException se) {
+          se.printStackTrace();
+          if (mMulticastListener != null) {
+            mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+          }
         } catch (NullPointerException npe) {
           npe.printStackTrace();
           if (mMulticastListener != null) {
@@ -488,21 +544,24 @@ public class MulticastManager {
 
   /**
    * Send the desired string as a multicast datagram packet.
+   * <p>
+   * If a transmission is already pending when this method is called,
+   * the prior message will be superceded by the current message.  An
+   * EVENT_TX_FLOOD event is posted if this occurs.
    * 
    * @param string
    *        - the string to transmit.
    */
   public void transmit(String string) {
-    synchronized(this) {
-      if (mTXBuffer == null) {
-        mTXBuffer = string.getBytes();
-        requestTX = true;
+    if ((mTXBuffer != null) || (requestTX)) {
+      if (mMulticastListener != null) {
+        mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
       }
-      else {
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
-        }
-      }
+    }
+
+    synchronized(mTXLock) {
+      mTXBuffer = string.getBytes();
+      requestTX = true;
     }
   }
 }
