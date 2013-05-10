@@ -320,6 +320,20 @@ public class MulticastManager {
   }
 
   /**
+   * Determine whether the multicast socket manager is functioning
+   * correctly.  If not, creating a new instance is required.
+   * 
+   * @return true if this instance has the necessary objects to run
+   *         correctly, false if it is not operational.
+   */
+  public boolean isMulticastValid() {
+    if ((mMulticastSocket != null) && (mMulticastThread != null) && !mStopped)
+      return true;
+    else
+      return false;
+  }
+
+  /**
    * This is the multicast thread declaration.
    * <p>
    * To support being able to send and receive packets in the same
@@ -349,6 +363,14 @@ public class MulticastManager {
       }
     }
 
+    /**
+     * Receive a multicast datagram.
+     * <p>
+     * Given a nonzero socket timeout, it is expected behavior for this
+     * method to catch an <code>InterruptedIOException</code>.  This
+     * method posts an <code>EVENT_PACKET_RX</code> event to the
+     * registered listener upon datagram receipt.
+     */
     private void receiveDatagram() {
       try {
         DatagramPacket dpRX = new DatagramPacket(mRXBuffer,
@@ -505,38 +527,42 @@ public class MulticastManager {
    * This pauses the multicast manager.
    */
   public void pauseMulticast() {
-    mMulticastThread.pauseThread();
+    if (mMulticastThread != null)
+      mMulticastThread.pauseThread();
   }
 
   /**
    * This resumes the multicast manager after it has been paused.
    */
   public void resumeMulticast() {
-    mMulticastThread.resumeThread();
+    if (mMulticastThread != null)
+      mMulticastThread.resumeThread();
   }
 
   /**
    * Start the thread.  This must only be called once per instance.
    */
   public void start() {
-    if (mMulticastThread != null) {
+    if (mMulticastThread != null)
       mMulticastThread.start();
-    }
   }
 
   /**
    * Stop and <code>join()</code> the multicast thread.
    */
   public void stopMulticast() {
-    boolean retry = true;
-    // Close and join() the multicast thread.
-    mMulticastThread.stopThread();
-    while (retry) {
-      try {
-        mMulticastThread.join();
-        retry = false;
-      } catch (InterruptedException e) {
-        // Keep trying to close the multicast thread.
+    if (mMulticastThread != null)
+    {
+      boolean retry = true;
+      // Close and join() the multicast thread.
+      mMulticastThread.stopThread();
+      while (retry) {
+        try {
+          mMulticastThread.join();
+          retry = false;
+        } catch (InterruptedException e) {
+          // Keep trying to close the multicast thread.
+        }
       }
     }
     cleanUp();
