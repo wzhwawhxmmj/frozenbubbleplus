@@ -28,6 +28,7 @@ Once you have extracted the NDK, launch Eclipse - it is located in the Eclipse f
 http://imgur.com/fzNmvqa?.jpg
 
 Next, you will have to get the source code for Frozen Bubble.  I recommend using Tortoise SVN (again, I hope you are using Windows) as it is by far the easiest source control tool to work with.
+
 http://tortoisesvn.net/downloads.html
 
 After you install Tortoise SVN, simply right-click over a folder, then select "Tortoise SVN → Repo-browser", and then enter the following URL:
