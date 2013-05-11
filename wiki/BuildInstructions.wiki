@@ -15,7 +15,7 @@ Click the button on the side that says "Download the SDK ADT Bundle for Windows"
 
 After you extract the SDK, you need to run the SDK manager, which is a program that is placed in the root of the extracted SDK folder.  After you launch the SDK manager, you should see something like this:
 
-http://imgur.com/peufLFg?.jpg
+http://imgur.com/peufLFg.jpg
 
 At a minimum, you must select to install the Android 1.6 (API 4) SDK Platform.  This is the API level for Frozen Bubble, which means that an Android device must have version 1.6 or later of Android to play the game.
 
@@ -25,7 +25,7 @@ http://developer.android.com/tools/sdk/ndk/index.html
 
 Once you have extracted the NDK, launch Eclipse - it is located in the Eclipse folder of the extracted SDK folder.  You will have to add the path to the NDK to the environment, by selecting "Window → Preferences" in Eclipse.  Select "NDK" under "Android" in the list on the left:
 
-http://imgur.com/fzNmvqa?fzNmvqa.jpg
+http://imgur.com/fzNmvqa.jpg
 
 Next, you will have to get the source code for Frozen Bubble.  I recommend using Tortoise SVN (again, I hope you are using Windows) as it is by far the easiest source control tool to work with.
 
@@ -37,12 +37,12 @@ http://frozenbubbleandroid.googlecode.com/svn
 
 Right-click the topmost level in the dropdown list on the left, then select "Export".  Export everything into an empty folder on your computer:
 
-http://imgur.com/9qW7ZI8?9qW7Zl8.jpg
+http://imgur.com/9qW7ZI8.jpg
 
 After the files are copied to your computer, you can import the project into Eclipse.  Open Eclipse, then select "File → Import".  Then select "Existing Projects into Workspace" under "General", and click "Next".
 
 Browse to the folder you placed the source files in with Tortoise SVN, and check "Copy Project into Workspace":
 
-http://imgur.com/hi7Ic3o?hi7lc3o.jpg
+http://imgur.com/hi7Ic3o.jpg
 
 Now, you should be able to build the project in Eclipse.
