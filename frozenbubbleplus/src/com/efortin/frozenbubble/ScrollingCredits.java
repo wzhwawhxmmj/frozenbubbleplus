@@ -195,7 +195,7 @@ public class ScrollingCredits extends Activity implements Runnable {
     // ImageView setup for the image.
     ImageView imageView = new ImageView(this);
     // Set image resource.
-    imageView.setImageResource(R.drawable.victory);
+    imageView.setImageResource(id);
     // Set image position and scaling.
     imageView.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
                                                LayoutParams.FILL_PARENT));
