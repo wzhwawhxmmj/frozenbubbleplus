@@ -259,7 +259,7 @@ public class PlayerThread extends Thread {
     public abstract void onPlayerEvent(int type);
   }
 
-  PlayerListener mPlayerListener;
+  private PlayerListener mPlayerListener = null;
 
   public void setPlayerListener(PlayerListener pl) {
     mPlayerListener = pl;
@@ -586,7 +586,9 @@ public class PlayerThread extends Thread {
         }
       }
 
-      // ******************* WAIT CODE ***********************
+      /*
+       * Wait until notify() is called.
+       */
       synchronized (this) {
         if (mWaitFlag) {
           try {
@@ -600,12 +602,10 @@ public class PlayerThread extends Thread {
           }
         }
       }
-      // clear flushed flag
+      // Clear flushed flag.
       mFlushedData = false;
     }
-    //**********************
-    // experimental
-    //**********************
+    // Release the audio track resources.
     if (mMytrack != null)
     {
       mMytrack.release();
@@ -742,11 +742,10 @@ public class PlayerThread extends Thread {
    *         begin playing when it is started.
    */
   public void startPaused(boolean flag) {
-    //
-    // Set before calling the thread's start() method.  This will cause
-    // it to start in paused mode.
-    //
-    //
+    /*
+     * Set before calling the thread's start() method.  This will cause
+     * it to start in paused mode.
+     */
     mStart_paused = flag;
   }
 
@@ -760,20 +759,19 @@ public class PlayerThread extends Thread {
    * the native player library and de-allocate all resources it used.
    */
   public void StopThread() {
-    // stops the thread playing  (see run() above)
+    // Stops the music player thread (see run() above).
     mPlaying = false;
     mRunning = false;
-    //
-    // This check is usually not needed before stop()ing the audio
-    // track, but seem to get an uninitialized audio track here
-    // occasionally, generating an IllegalStateException.
-    //
-    //
+    /*
+     * This check is usually not needed before stop()ing the audio
+     * track, but seem to get an uninitialized audio track here
+     * occasionally, generating an IllegalStateException.
+     */
     if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED)
       mMytrack.stop();
 
     mPlayerValid = false;
-    mWaitFlag    = false;
+    mWaitFlag = false;
 
     synchronized(this) {
       this.notify();
@@ -787,6 +785,7 @@ public class PlayerThread extends Thread {
   public static void CloseLIBMODPLUG() {
     ModPlug_JUnload();
     ModPlug_CloseDown();
+    // Release the audio track resources.
     if (mMytrack != null)
     {
       mMytrack.release();
