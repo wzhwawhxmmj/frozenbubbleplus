@@ -122,8 +122,8 @@ public class MulticastManager {
 
   private MulticastListener mMulticastListener = null;
 
-  public void setMulticastListener(MulticastListener sl) {
-    mMulticastListener = sl;
+  public void setMulticastListener(MulticastListener ml) {
+    mMulticastListener = ml;
   }
   /*
    * MulticastManager class member variables.
