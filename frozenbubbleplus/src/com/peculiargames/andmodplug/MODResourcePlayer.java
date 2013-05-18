@@ -157,7 +157,7 @@ public class MODResourcePlayer extends PlayerThread {
     modData = new byte[currfilesize];
 
     try {
-      PlayerThread.setModSize(mModfileInStream.read(modData,0, currfilesize));
+      setModSize(mModfileInStream.read(modData,0, currfilesize));
     } catch (IOException e) {
       // Auto-generated catch block.
       e.printStackTrace();
@@ -191,7 +191,7 @@ public class MODResourcePlayer extends PlayerThread {
         // Keep trying to close the player thread.
       }
     }
-    PlayerThread.CloseLIBMODPLUG();
+    CloseLIBMODPLUG();
     InvalidatePlayer();
   }
 }
