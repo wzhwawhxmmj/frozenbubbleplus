@@ -1184,7 +1184,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
-    
+
     thread = new GameThread(holder, null, 0);
     setFocusable(true);
     setFocusableInTouchMode(true);
@@ -1200,7 +1200,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
-    
+
     thread = new GameThread(holder, levels, startingLevel);
     setFocusable(true);
     setFocusableInTouchMode(true);
@@ -1208,7 +1208,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     thread.setRunning(true);
     thread.start();
   }
-  
+
   public GameThread getThread() {
     return thread;
   }
