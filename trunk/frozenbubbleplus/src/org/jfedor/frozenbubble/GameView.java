@@ -622,6 +622,20 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
+    /**
+     * Process key presses.
+     * 
+     * @param keyCode
+     *        - the static KeyEvent key identifier.
+     * 
+     * @param msg
+     *        - the key action message.
+     * 
+     * @return
+     *        - true if the key action is processed, false if not.
+     * 
+     * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
+     */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
         if(updateStateOnEvent(null))
@@ -659,29 +673,41 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
+    /**
+     * Process key releases.  This must be allowed to run regardless of
+     * the game state in order to properly clear keypresses.
+     * 
+     * @param keyCode
+     *        - the static KeyEvent key identifier.
+     * 
+     * @param msg
+     *        - the key action message.
+     * 
+     * @return true if the key action is processed, false if not.
+     * 
+     * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
+     */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
-          if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-            mLeft = false;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-            mRight = false;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-            mFire = false;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            mUp = false;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-            mDown = false;
-            return true;
-          }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+          mLeft = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+          mRight = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+          mFire = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+          mUp = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+          mDown = false;
+          return true;
         }
         return false;
       }
