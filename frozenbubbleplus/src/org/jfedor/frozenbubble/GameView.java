@@ -623,7 +623,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     /**
-     * Process key presses.
+     * Process key presses.  This must be allowed to run regardless of
+     * the game state to correctly handle initial game conditions.
      * 
      * @param keyCode
      *        - the static KeyEvent key identifier.
@@ -638,36 +639,32 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
-        if(updateStateOnEvent(null))
-          return true;
+        updateStateOnEvent(null);
 
-        if (mMode == STATE_RUNNING) {
-          //Log.i("frozen-bubble", "STATE RUNNING");
-          if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-            mLeft    = true;
-            mWasLeft = true;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-            mRight    = true;
-            mWasRight = true;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-            mFire    = true;
-            mWasFire = true;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-            mUp    = true;
-            mWasUp = true;
-            return true;
-          }
-          else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-            mDown    = true;
-            mWasDown = true;
-            return true;
-          }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+          mLeft    = true;
+          mWasLeft = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+          mRight    = true;
+          mWasRight = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+          mFire    = true;
+          mWasFire = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+          mUp    = true;
+          mWasUp = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+          mDown    = true;
+          mWasDown = true;
+          return true;
         }
         return false;
       }
@@ -675,7 +672,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
      * Process key releases.  This must be allowed to run regardless of
-     * the game state in order to properly clear keypresses.
+     * the game state in order to properly clear key presses.
      * 
      * @param keyCode
      *        - the static KeyEvent key identifier.
@@ -832,11 +829,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
               if (mGameListener != null) {
                 mGameListener.onGameEvent(EVENT_LEVEL_START);
               }
-              setState(STATE_RUNNING);
-              return true;
             }
             setState(STATE_RUNNING);
-            break;
+            return true;
 
           case STATE_RUNNING:
           default:
