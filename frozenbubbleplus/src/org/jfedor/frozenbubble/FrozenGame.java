@@ -174,6 +174,7 @@ public class FrozenGame extends GameScreen {
     highscoreManager     = highscoreManager_arg;
     playResult           = GAME_PLAYING;
     launchBubblePosition = 20;
+    readyToFire          = false;
     swapPressed          = false;
 
     penguin = new PenguinSprite(penguins_arg, random);
