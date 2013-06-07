@@ -604,19 +604,21 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void setSurfaceSize(int width, int height) {
+      float newHeight    = height;
+      float newWidth     = width;
+      float gameHeight   = GAMEFIELD_HEIGHT;
+      float gameWidth    = GAMEFIELD_WIDTH;
+      float extGameWidth = EXTENDED_GAMEFIELD_WIDTH;
       synchronized (mSurfaceHolder) {
-        if ((width / height) >= (GAMEFIELD_WIDTH / GAMEFIELD_HEIGHT)) {
-          mDisplayScale = (1.0 * height) / GAMEFIELD_HEIGHT;
-          mDisplayDX = (int)((width - (mDisplayScale *
-                                       EXTENDED_GAMEFIELD_WIDTH)) / 2);
+        if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
+          mDisplayScale = (1.0 * newHeight) / gameHeight;
+          mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
           mDisplayDY = 0;
         }
         else {
-          mDisplayScale = 1.0 * width / GAMEFIELD_WIDTH;
-          mDisplayDX = (int)(-mDisplayScale * (EXTENDED_GAMEFIELD_WIDTH -
-                                               GAMEFIELD_WIDTH) / 2);
-          mDisplayDY = (int)((height - (mDisplayScale *
-                                        GAMEFIELD_HEIGHT)) / 2);
+          mDisplayScale = (1.0 * newWidth) / gameWidth;
+          mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
+          mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
         resizeBitmaps();
       }
@@ -902,7 +904,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private void drawAboutScreen(Canvas canvas) {
       canvas.drawRGB(0, 0, 0);
       if (!mBlankScreen) {
-        int x = 180;// 168; // Nexus display size fix for about screen
+        int x = 168;
         int y = 20;
         int ysp = 26;
         int indent = 10;
@@ -954,7 +956,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private void drawHighscoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
-      int x = 180;// 168; // Nexus display size fix for score screen
+      int x = 168;
       int y = 20;
       int ysp = 26;
       int indent = 10;
@@ -1291,12 +1293,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
    * This is a class that extends TimerTask to resume displaying the
    * game screen as normal after it has been shown as a blank screen.
    * 
-   * @author efortin
+   * @author Eric Fortin
    */
   class resumeGameScreenTask extends TimerTask {
     @Override
     public void run() {
-      clearGameScreen(false, 0);
+      mBlankScreen = false;
       cancel();
     }
   };
