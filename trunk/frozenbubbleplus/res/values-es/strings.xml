@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <string name="app_name">Frozen Bubble Plus</string>
+  <string name="app_name">Frozen Bubble</string>
   <string name="install_editor">Redireccionando a Google Play para descargar el editor de niveles...</string>
   <string name="market_missing">No se puede encontrar la aplicación de Google Play. Por favor, instala el editor de niveles manualmente.</string>
   <string name="menu_new_game">Nuevo juego</string>
@@ -9,7 +9,7 @@
   <string name="menu_fullscreen_on">Pantalla completa</string>
   <string name="menu_fullscreen_off">Quitar pantalla completa</string>
   <string name="menu_sound_options">Opciones de sonido</string>
-  <string name="menu_about">Sobre Frozen Bubble Plus</string>
+  <string name="menu_about">Sobre Frozen Bubble</string>
   <string name="menu_target_mode">Modo de orientación</string>
   <string name="menu_dont_rush_me">Sin prisas</string>
   <string name="menu_rush_me">Con prisas</string>
@@ -17,8 +17,8 @@
   <string name="menu_settings">Parámetros</string>
   <string name="cancel">Cancelar</string>
   <string name="ok">OK</string>
-  <string name="title_activity_frozen_bubble">Frozen Bubble Plus</string>
-  <string name="title_activity_splash_screen">Frozen Bubble Plus</string>
+  <string name="title_activity_frozen_bubble">Frozen Bubble</string>
+  <string name="title_activity_splash_screen">Frozen Bubble</string>
   <string name="scrolling_credits">"Original Development\n"
     "------------------------\n"
     "\nGuillaume Cottenceau - Design and Programming\n"
