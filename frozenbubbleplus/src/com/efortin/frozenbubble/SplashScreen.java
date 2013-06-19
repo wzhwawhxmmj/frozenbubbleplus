@@ -60,6 +60,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -76,6 +77,10 @@ public class SplashScreen extends Activity {
    * Provide unique IDs for the views associated with the relative
    * layout.  These are used to define relative view layout positions
    * with respect to other views in the layout.
+   * 
+   * These IDs are generated automatically if using an XML layout, but
+   * this object implements a RelativeLayout that is constructed purely
+   * programmatically.
    */
   private final static int BTN1_ID   = 101;
   private final static int BTN2_ID   = 102;
@@ -100,6 +105,7 @@ public class SplashScreen extends Activity {
       }
     });
     start2pGameButton.setText("Start 2p Game");
+    start2pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
     start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() *
                                       start2pGameButton.getText().length()));
     start2pGameButton.setHorizontalFadingEdgeEnabled(true);
@@ -122,6 +128,7 @@ public class SplashScreen extends Activity {
       }
     });
     start1pGameButton.setText("Start 1p Game");
+    start1pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
     start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() *
                                       start1pGameButton.getText().length()));
     start1pGameButton.setHorizontalFadingEdgeEnabled(true);
