@@ -1,9 +1,9 @@
 /*
  *                 [[ Frozen-Bubble ]]
  *
- * Copyright © 2000-2003 Guillaume Cottenceau.
- * Java sourcecode - Copyright © 2003 Glenn Sanson.
- * Additional source - Copyright © 2013 Eric Fortin.
+ * Copyright (c) 2000-2003 Guillaume Cottenceau.
+ * Java sourcecode - Copyright (c) 2003 Glenn Sanson.
+ * Additional source - Copyright (c) 2013 Eric Fortin.
  *
  * This code is distributed under the GNU General Public License
  *
@@ -44,7 +44,7 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright © Google Inc.
+ *    Copyright (c) Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
@@ -60,17 +60,113 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
+import android.widget.Toast;
 
 public class SplashScreen extends Activity {
+  /*
+   * Provide unique IDs for the views associated with the relative
+   * layout.  These are used to define relative view layout positions
+   * with respect to other views in the layout.
+   */
+  private final static int BTN1_ID   = 101;
+  private final static int BTN2_ID   = 102;
+  private final static int SCREEN_ID = 100;
 
-  //
-  // Maximum time until we go to the next activity.
-  //
-  //
-  protected int  splashTime = 3000;
-  private Thread splashThread;
+  private Boolean homeShown = false;
+  private Boolean musicOn = true;
+  private ImageView myImageView = null;
+  private RelativeLayout myLayout = null;
+  private ModPlayer myModPlayer = null;
+  private Thread splashThread = null;
+
+  private void addHomeButtons() {
+    // Construct the 2 player game button.
+    Button start2pGameButton = new Button(this);
+    start2pGameButton.setOnClickListener(new Button.OnClickListener(){
+
+      public void onClick(View v){
+        // process the button tap
+        Toast.makeText(getApplicationContext(),
+                       "Still working on it...", Toast.LENGTH_SHORT).show();
+      }
+    });
+    start2pGameButton.setText("Start 2p Game");
+    start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() *
+                                      start2pGameButton.getText().length()));
+    start2pGameButton.setHorizontalFadingEdgeEnabled(true);
+    start2pGameButton.setFadingEdgeLength(5);
+    start2pGameButton.setShadowLayer(5, 5, 5, R.color.black);
+    start2pGameButton.setId(BTN2_ID);
+    LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                             LayoutParams.WRAP_CONTENT);
+    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    // Add view to layout.
+    myLayout.addView(start2pGameButton, myParams1);
+    // Construct the 1 player game button.
+    Button start1pGameButton = new Button(this);
+    start1pGameButton.setOnClickListener(new Button.OnClickListener(){
+
+      public void onClick(View v){
+        // process the button tap
+        startFrozenBubble();
+      }
+    });
+    start1pGameButton.setText("Start 1p Game");
+    start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() *
+                                      start1pGameButton.getText().length()));
+    start1pGameButton.setHorizontalFadingEdgeEnabled(true);
+    start1pGameButton.setFadingEdgeLength(5);
+    start1pGameButton.setShadowLayer(5, 5, 5, R.color.black);
+    start1pGameButton.setId(BTN1_ID);
+    LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                             LayoutParams.WRAP_CONTENT);
+    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.ABOVE, start2pGameButton.getId());
+    // Add view to layout.
+    myLayout.addView(start1pGameButton, myParams2);
+  }
+
+  private void cleanUp() {
+    if (myModPlayer != null) {
+      myModPlayer.destroyMusicPlayer();
+      myModPlayer = null;
+    }
+  }
+
+  private boolean displaySplashScreen() {
+    SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    boolean showSplashScreen = sp.getBoolean("showSplashScreen", true);
+    if (showSplashScreen) {
+      SharedPreferences.Editor editor = sp.edit();
+      editor.putBoolean("showSplashScreen", false);
+      editor.commit();
+    }
+    return showSplashScreen;
+  }
+
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent msg) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      cleanUp();
+      //
+      // Terminate the splash screen activity.
+      //
+      //
+      finish();
+    }
+    return false;
+  }
 
   /*
    * (non-Javadoc)
@@ -81,43 +177,54 @@ public class SplashScreen extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    restoreGamePrefs();
     // Configure the window presentation and layout.
-    setWindowLayout(R.layout.activity_splash_screen);
+    setWindowLayout();
+    myLayout = new RelativeLayout(this);
+    myLayout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
+                                              LayoutParams.FILL_PARENT));
+    myImageView = new ImageView(this);
 
     if (!displaySplashScreen()) {
-      startFrozenBubble();
-      return;
+      startHomeScreen();
     }
-
-    //
-    // Thread for displaying the SplashScreen.
-    //
-    //
-    splashThread = new Thread() {
-      @Override
-      public void run() {
-        try {
-          synchronized(this) {
-            //
-            // TODO: The splash screen waits before launching the
-            //       game activity.  Change this so that the game
-            //       activity is started immediately, and notifies
-            //       the splash screen activity when it is done
-            //       loading saved state data and preferences, so the
-            //       splash screen functions as a distraction from
-            //       game loading latency.  There is no advantage in
-            //       doing this right now, because there is no lag.
-            //
-            //
-            wait(splashTime);  //wait 3 seconds
+    else {
+      setBackgroundImage(R.drawable.splash);
+      setContentView(myLayout);
+      //
+      // Thread for managing the splash screen.
+      //
+      //
+      splashThread = new Thread() {
+        @Override
+        public void run() {
+          try {
+            synchronized(this) {
+              //
+              // TODO: The splash screen waits before launching the
+              //       game activity.  Change this so that the game
+              //       activity is started immediately, and notifies
+              //       the splash screen activity when it is done
+              //       loading saved state data and preferences, so the
+              //       splash screen functions as a distraction from
+              //       game loading latency.  There is no advantage in
+              //       doing this right now, because there is no lag.
+              //
+              //
+              wait(3000);  // wait 3 seconds
+            }
+          } catch (InterruptedException e) {
+          } finally {
+            runOnUiThread(new Runnable() {
+              public void run() {
+                startHomeScreen();
+              }
+            });
           }
-        } catch (InterruptedException e) {
-        } finally {
-          startFrozenBubble();
         }
-      }
-    };
-    splashThread.start();
+      };
+      splashThread.start();
+    }
   }
 
   /*
@@ -136,17 +243,32 @@ public class SplashScreen extends Activity {
     return true;
   }
 
-  private boolean displaySplashScreen() {
-    SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                                 Context.MODE_PRIVATE);
-    boolean showSplashScreen = sp.getBoolean("showSplashScreen", true);
+  private void restoreGamePrefs() {
+    SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                     Context.MODE_PRIVATE);
+    musicOn = mConfig.getBoolean("musicOn", true );
+  }
 
-    if (showSplashScreen) {
-      SharedPreferences.Editor editor = sp.edit();
-      editor.putBoolean("showSplashScreen", false);
-      editor.commit();
+  private void setBackgroundImage(int resId) {
+    if (myImageView.getParent() != null)
+      myLayout.removeView(myImageView);
+
+    myImageView.setBackgroundColor(getResources().getColor(R.color.black));
+    myImageView.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
+                                                 LayoutParams.FILL_PARENT));
+    myImageView.setImageResource(resId);
+    myImageView.setId(SCREEN_ID);
+    myLayout.addView(myImageView);
+  }
+
+  private void startHomeScreen() {
+    if (!homeShown) {
+      homeShown = true;
+      setBackgroundImage(R.drawable.home_screen);
+      addHomeButtons();
+      setContentView(myLayout);
+      myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
     }
-    return showSplashScreen;
   }
 
   /**
@@ -165,12 +287,11 @@ public class SplashScreen extends Activity {
    *         - The resource ID of the XML layout to use for the window
    *         layout settings.
    */
-  private void setWindowLayout(int layoutResID) {
+  private void setWindowLayout() {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
-
-    // Load and apply the specified XML layout.
-    setContentView(layoutResID);
+    // Remove the title bar.
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
     // Set full screen mode based on the game preferences.
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
@@ -187,6 +308,12 @@ public class SplashScreen extends Activity {
   }
 
   private void startFrozenBubble() {
+    //
+    // Since the default game activity creates its own player,
+    // destroy the current player.
+    //
+    //
+    cleanUp();
     //
     // Create an intent to launch the activity to play the game.
     //
