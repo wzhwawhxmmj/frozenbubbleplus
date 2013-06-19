@@ -949,7 +949,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         mFont.print("http://code.google.com", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
-        mFont.print("/p/frozenbubbleplus", x, y, canvas,
+        mFont.print("/p/frozenbubbleandroid", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
       }
     }
