@@ -1,9 +1,9 @@
 /*
  *                 [[ Frozen-Bubble ]]
  *
- * Copyright © 2000-2003 Guillaume Cottenceau.
- * Java sourcecode - Copyright © 2003 Glenn Sanson.
- * Additional source - Copyright © 2013 Eric Fortin.
+ * Copyright (c) 2000-2003 Guillaume Cottenceau.
+ * Java sourcecode - Copyright (c) 2003 Glenn Sanson.
+ * Additional source - Copyright (c) 2013 Eric Fortin.
  *
  * This code is distributed under the GNU General Public License
  *
@@ -44,7 +44,7 @@
  * Android port:
  *    Pawel Aleksander Fedorynski <pfedor@fuw.edu.pl>
  *    Eric Fortin <videogameboy76 at yahoo.com>
- *    Copyright © Google Inc.
+ *    Copyright (c) Google Inc.
  *
  *          [[ http://glenn.sanson.free.fr/fb/ ]]
  *          [[ http://www.frozen-bubble.org/   ]]
@@ -57,7 +57,7 @@
  */
 
 /*
- * Copyright © 2007 Google Inc.
+ * Copyright (c) 2007 Google Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -165,7 +165,6 @@ public class FrozenBubble extends Activity
   private GameView mGameView = null;
   private OrientationEventListener myOrientationEventListener = null;
   private MODResourcePlayer resplayer = null;
-  private SharedPreferences mConfig;
 
   private final int[] MODlist = {
     R.raw.ambientpower,
@@ -417,7 +416,8 @@ public class FrozenBubble extends Activity
   }
 
   private void restoreGamePrefs() {
-    mConfig    = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
+                                                     Context.MODE_PRIVATE);
     dontRushMe = mConfig.getBoolean("dontRushMe", false         );
     fullscreen = mConfig.getBoolean("fullscreen", true          );
     gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL   );
