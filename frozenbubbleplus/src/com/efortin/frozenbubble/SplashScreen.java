@@ -82,9 +82,9 @@ public class SplashScreen extends Activity {
    * this object implements a RelativeLayout that is constructed purely
    * programmatically.
    */
+  private final static int SCREEN_ID = 100;
   private final static int BTN1_ID   = 101;
   private final static int BTN2_ID   = 102;
-  private final static int SCREEN_ID = 100;
 
   private Boolean homeShown = false;
   private Boolean musicOn = true;
@@ -93,6 +93,16 @@ public class SplashScreen extends Activity {
   private ModPlayer myModPlayer = null;
   private Thread splashThread = null;
 
+  /**
+   * Given that we are using a relative layout for the home screen in
+   * order to display the background image and various buttons, this
+   * function adds the buttons to the layout to provide game options to
+   * the player.
+   * <p>
+   * The buttons are defined in relation to one another so that when
+   * using keys to navigate the buttons, the appropriate button will be
+   * highlighted.
+   */
   private void addHomeButtons() {
     // Construct the 2 player game button.
     Button start2pGameButton = new Button(this);
@@ -234,6 +244,22 @@ public class SplashScreen extends Activity {
     }
   }
 
+  @Override
+  public void onPause() {
+    super.onPause();
+    if (myModPlayer != null) {
+      myModPlayer.pausePlay();
+    }
+  }
+
+  @Override
+  public void onResume() {
+    super.onPause();
+    if (myModPlayer != null) {
+      myModPlayer.unPausePlay();
+    }
+  }
+
   /*
    * (non-Javadoc)
    * @see android.app.Activity#onTouchEvent(android.view.MotionEvent)
@@ -243,8 +269,10 @@ public class SplashScreen extends Activity {
   @Override
   public boolean onTouchEvent(MotionEvent event) {
     if (event.getAction() == MotionEvent.ACTION_DOWN) {
-      synchronized(splashThread) {
-        splashThread.notifyAll();
+      if (splashThread != null) {
+        synchronized(splashThread) {
+          splashThread.notifyAll();
+        }
       }
     }
     return true;
@@ -279,20 +307,11 @@ public class SplashScreen extends Activity {
   }
 
   /**
-   * Set the window layout according to the settings in the specified
-   * layout XML file.  Then apply the full screen option according to
-   * the player preference setting.
-   * 
-   * <p>Note that the title bar is desired for the splash screen, so
-   * do not request that it be removed.
+   * Set the window layout according to the game preferences.
    *
    * <p>Requesting that the title bar be removed <b>must</b> be
    * performed before setting the view content by applying the XML
    * layout, or it will generate an exception.
-   * 
-   * @param  layoutResID
-   *         - The resource ID of the XML layout to use for the window
-   *         layout settings.
    */
   private void setWindowLayout() {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
