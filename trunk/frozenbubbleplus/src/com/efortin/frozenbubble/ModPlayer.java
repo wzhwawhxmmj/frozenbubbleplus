@@ -80,6 +80,27 @@ public class ModPlayer {
   }
 
   /**
+   * Load a new song.
+   * 
+   * @param  songId
+   *         - The song resource ID.
+   * 
+   * @param  startPlaying
+   *         - If true, the song starts playing immediately.  Otherwise
+   *         it is paused and must be unpaused to start playing.
+   */
+  public void loadNewSong(int songId, boolean startPlaying) {
+    if (resplayer != null) {
+      // Pause the current song.
+      resplayer.PausePlay();
+      // Load the current MOD into the player.
+      resplayer.LoadMODResource(songId);
+      if (startPlaying)
+        resplayer.UnPausePlay();
+    }
+  }
+
+  /**
    * Create a new music player.
    * 
    * @param  context
