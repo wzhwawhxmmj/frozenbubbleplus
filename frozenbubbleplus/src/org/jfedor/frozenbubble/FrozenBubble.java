@@ -98,9 +98,8 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
+import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.ScrollingCredits;
-import com.peculiargames.andmodplug.MODResourcePlayer;
-import com.peculiargames.andmodplug.PlayerThread;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
@@ -164,7 +163,7 @@ public class FrozenBubble extends Activity
   private GameThread mGameThread = null;
   private GameView mGameView = null;
   private OrientationEventListener myOrientationEventListener = null;
-  private MODResourcePlayer resplayer = null;
+  private ModPlayer myModPlayer = null;
 
   private final int[] MODlist = {
     R.raw.ambientpower,
@@ -364,8 +363,8 @@ public class FrozenBubble extends Activity
     }
     editor.commit();
     // Pause the MOD player and preserve song information.
-    if (resplayer != null)
-      resplayer.PausePlay();
+    if (myModPlayer != null)
+      myModPlayer.pausePlay();
   }
 
   /**
@@ -618,13 +617,8 @@ public class FrozenBubble extends Activity
             break;
           case 1:
             setMusicOn(isChecked);
-            if (resplayer != null) {
-              if (getMusicOn() == true) {
-                resplayer.setVolume(255);
-              }
-              else {
-                resplayer.setVolume(0);
-              }
+            if (myModPlayer != null) {
+              myModPlayer.setMusicOn(isChecked);
             }
             editor.putBoolean("musicOn", musicOn);
             editor.commit();
@@ -766,7 +760,8 @@ public class FrozenBubble extends Activity
     mGameView   = null;
     mGameThread = null;
 
-    destroyMusicPlayer();
+    if (myModPlayer != null)
+      myModPlayer.destroyMusicPlayer();
   }
 
   /**
@@ -795,15 +790,15 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_GAME_PAUSED:
-        if (resplayer != null)
-          resplayer.PausePlay();
+        if (myModPlayer != null)
+          myModPlayer.pausePlay();
         break;
 
       case GameView.EVENT_GAME_RESUME:
-        if (resplayer == null)
+        if (myModPlayer == null)
           playMusic(true);
         else if (allowUnpause)
-          resplayer.UnPausePlay();
+          myModPlayer.unPausePlay();
         break;
 
       case GameView.EVENT_LEVEL_START:
@@ -813,7 +808,8 @@ public class FrozenBubble extends Activity
           // stream resources and allow the system to use them.
           //
           //
-          destroyMusicPlayer();
+          if (myModPlayer != null)
+            myModPlayer.destroyMusicPlayer();
           //
           // Clear the game screen and suspend input processing for
           // three seconds.
@@ -843,64 +839,6 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   * Stop the music player, close the thread, and free the instance.
-   */
-  private void destroyMusicPlayer() {
-    synchronized(this) {
-      if (resplayer != null) {
-        resplayer.StopAndClose();
-        resplayer = null;
-      }
-    }
-  }
-
-  /**
-   * Create a new music player.
-   * 
-   * @param  startPaused
-   *         - If false, the song starts playing immediately.  Otherwise
-   *         it is paused and must be unpaused to start playing.
-   */
-  private void newMusicPlayer(boolean startPaused) {
-    // Create a new music player.
-    resplayer = new MODResourcePlayer(this);
-    // Ascertain which song to play.
-    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
-    // Load the mod file.
-    resplayer.LoadMODResource(MODlist[modNow]);
-    // Loop the song forever.
-    resplayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
-    // Set the volume per the game preferences.
-    if (getMusicOn() == true) {
-      resplayer.setVolume(255);
-    }
-    else {
-      resplayer.setVolume(0);
-    }
-    // Start the music thread.
-    resplayer.startPaused(startPaused);
-    resplayer.start();
-  }
-
-  /**
-   * Load the current song in our playlist.
-   * 
-   * @param  startPlaying
-   *         - If true, the song starts playing immediately.  Otherwise
-   *         it is paused and must be unpaused to start playing.
-   */
-  private void loadCurrentMOD(boolean startPlaying) {
-    // Pause the current song.
-    resplayer.PausePlay();
-    // Ascertain which song to play.
-    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
-    // Load the current MOD into the player.
-    resplayer.LoadMODResource(MODlist[modNow]);
-    if (startPlaying)
-      resplayer.UnPausePlay();
-  }
-
-  /**
    * This function determines whether a music player instance needs to
    * be created or if one already exists.  Then, based on the current
    * level, the song to play is calculated and loaded.  If desired, the
@@ -912,11 +850,14 @@ public class FrozenBubble extends Activity
    */
   private void playMusic(boolean startPlaying)
   {
+    // Ascertain which song to play.
+    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
     // Determine whether to create a music player or load the song.
-    if (resplayer == null)
-      newMusicPlayer(!startPlaying);
+    if (myModPlayer == null)
+      myModPlayer = new ModPlayer(this, MODlist[modNow],
+                                  getMusicOn(), !startPlaying);
     else
-      loadCurrentMOD(startPlaying);
+      myModPlayer.loadNewSong(MODlist[modNow], startPlaying);
     allowUnpause = true;
   }
 
