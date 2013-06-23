@@ -74,7 +74,10 @@
 
 package org.jfedor.frozenbubble;
 
+import java.util.Random;
+
 import org.jfedor.frozenbubble.GameView.GameThread;
+import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -103,6 +106,7 @@ import com.efortin.frozenbubble.ScrollingCredits;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
+             MultiplayerGameView.GameListener,
              AccelerometerManager.AccelerometerListener {
   //
   // The following screen orientation definitions were added to
@@ -163,7 +167,9 @@ public class FrozenBubble extends Activity
   private int     currentOrientation;
 
   private GameThread mGameThread = null;
+  private MultiplayerGameThread mMultiplayerGameThread = null;
   private GameView mGameView = null;
+  private MultiplayerGameView mMultiplayerGameView = null;
   private OrientationEventListener myOrientationEventListener = null;
   private ModPlayer myModPlayer = null;
 
@@ -232,19 +238,22 @@ public class FrozenBubble extends Activity
       // Check if this is a single or multiplayer game.
       if (intent.hasExtra("numPlayers")) {
         int numPlayers = intent.getIntExtra("numPlayers", 1);
-        mGameView = new GameView(this, numPlayers);
-        setContentView(mGameView);
+        mMultiplayerGameView = new MultiplayerGameView(this, numPlayers);
+        setContentView(mMultiplayerGameView);
+        mMultiplayerGameView.setGameListener(this);
+        mMultiplayerGameThread = mMultiplayerGameView.getThread();
+        mMultiplayerGameView.requestFocus();
       }
       else {
         setContentView(R.layout.activity_frozen_bubble);
         mGameView = (GameView)findViewById(R.id.game);
-      }
-      mGameView.setGameListener(this);
-      mGameThread = mGameView.getThread();
-      if (savedInstanceState != null)
-        mGameThread.restoreState(savedInstanceState);
+        mGameView.setGameListener(this);
+        mGameThread = mGameView.getThread();
+        if (savedInstanceState != null)
+          mGameThread.restoreState(savedInstanceState);
 
-      mGameView.requestFocus();
+        mGameView.requestFocus();
+      }
       setFullscreen();
       playMusic(false);
     }
@@ -321,7 +330,11 @@ public class FrozenBubble extends Activity
         soundOptionsDialog();
         return true;
       case MENU_ABOUT:
-        mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+        if (mGameView != null)
+          mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+
+        if (mMultiplayerGameView != null)
+          mMultiplayerGameView.getThread().setState(MultiplayerGameView.MultiplayerGameThread.STATE_ABOUT);
         return true;
       case MENU_TARGET_MODE:
         targetOptionsDialog();
@@ -357,21 +370,27 @@ public class FrozenBubble extends Activity
   protected void onPause() {
     //Log.i(TAG, "FrozenBubble.onPause()");
     super.onPause();
-    mGameView.getThread().pause();
-    // Allow editor functionalities.
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sp.edit();
-    // If I didn't run game from editor, save last played level.
-    Intent i = getIntent();
-    if ((null == i) || !activityCustomStarted) {
-      editor.putInt("level", mGameThread.getCurrentLevelIndex());
+    if (mGameView != null) {
+      mGameView.getThread().pause();
+      // Allow editor functionalities.
+      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                  Context.MODE_PRIVATE);
+      SharedPreferences.Editor editor = sp.edit();
+      // If I didn't run game from editor, save last played level.
+      Intent i = getIntent();
+      if ((null == i) || !activityCustomStarted) {
+        editor.putInt("level", mGameThread.getCurrentLevelIndex());
+      }
+      else {
+        // Editor's intent is running.
+        editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
+      }
+      editor.commit();
     }
-    else {
-      // Editor's intent is running.
-      editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
-    }
-    editor.commit();
+
+    if (mMultiplayerGameView != null)
+      mMultiplayerGameView.getThread().pause();
+
     // Pause the MOD player and preserve song information.
     if (myModPlayer != null)
       myModPlayer.pausePlay();
@@ -401,7 +420,8 @@ public class FrozenBubble extends Activity
     //Log.i(TAG, "FrozenBubble.onSaveInstanceState()");
     // Just have the View's thread save its state into our Bundle.
     super.onSaveInstanceState(outState);
-    mGameThread.saveState(outState);
+    if (mGameThread != null)
+      mGameThread.saveState(outState);
   }
 
   /* (non-Javadoc)
@@ -414,6 +434,12 @@ public class FrozenBubble extends Activity
         mGameView.cleanUp();
       mGameView   = null;
       mGameThread = null;
+
+      if (mMultiplayerGameView != null)
+        mMultiplayerGameView.cleanUp();
+      mMultiplayerGameView   = null;
+      mMultiplayerGameThread = null;
+
       startCustomGame(intent);
     }
   }
@@ -580,7 +606,12 @@ public class FrozenBubble extends Activity
       getWindow().clearFlags(flagFs);
       getWindow().addFlags(flagNoFs);
     }
-    mGameView.requestLayout();
+
+    if (mGameView != null)
+      mGameView.requestLayout();
+
+    if (mMultiplayerGameView != null)
+      mMultiplayerGameView.requestLayout();
   }
 
   private void soundOptionsDialog() {
@@ -753,9 +784,13 @@ public class FrozenBubble extends Activity
 
     if (mGameView != null)
       mGameView.cleanUp();
-
     mGameView   = null;
     mGameThread = null;
+
+    if (mMultiplayerGameView != null)
+      mMultiplayerGameView.cleanUp();
+    mMultiplayerGameView   = null;
+    mMultiplayerGameThread = null;
 
     if (myModPlayer != null)
       myModPlayer.destroyMusicPlayer();
@@ -765,7 +800,12 @@ public class FrozenBubble extends Activity
    * Start a new game and music player.
    */
   public void newGame() {
-    mGameThread.newGame();
+    if (mGameThread != null)
+      mGameThread.newGame();
+
+    if (mMultiplayerGameThread != null)
+      mMultiplayerGameThread.newGame();
+
     playMusic(false);
   }
 
@@ -775,6 +815,13 @@ public class FrozenBubble extends Activity
         x = -x;
 
       mGameThread.setPosition(20f+x*2f);
+    }
+
+    if (mMultiplayerGameThread != null) {
+      if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+        x = -x;
+
+      mMultiplayerGameThread.setPosition(20f+x*2f);
     }
   }
 
@@ -799,7 +846,7 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_LEVEL_START:
-        if (mGameView.getThread().getCurrentLevelIndex() == 1) {
+        if (mGameView.getThread().getCurrentLevelIndex() == 0) {
           //
           // Destroy the current music player, which will free audio
           // stream resources and allow the system to use them.
@@ -847,8 +894,15 @@ public class FrozenBubble extends Activity
    */
   private void playMusic(boolean startPlaying)
   {
+    int modNow;
     // Ascertain which song to play.
-    int modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
+    if (mGameView != null)
+      modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
+    else
+    {
+      Random rand = new Random();
+      modNow = rand.nextInt(MODlist.length - 1);
+    }
     // Determine whether to create a music player or load the song.
     if (myModPlayer == null)
       myModPlayer = new ModPlayer(this, MODlist[modNow],
