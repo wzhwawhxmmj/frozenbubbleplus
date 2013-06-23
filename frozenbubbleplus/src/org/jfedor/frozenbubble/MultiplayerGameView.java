@@ -78,8 +78,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
 
 import android.content.Context;
@@ -90,7 +88,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -99,10 +96,9 @@ import android.view.SurfaceView;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 
-class GameView extends SurfaceView implements SurfaceHolder.Callback {
-  private boolean    mBlankScreen = false;
-  private Context    mContext;
-  private GameThread thread;
+class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback {
+  private Context               mContext;
+  private MultiplayerGameThread thread;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -124,7 +120,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mGameListener = gl;
   }
 
-  class GameThread extends Thread {
+  class MultiplayerGameThread extends Thread {
     private static final int FRAME_DELAY = 40;
 
     public static final int STATE_RUNNING = 1;
@@ -226,8 +222,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       return new_img;
     }
 
-    public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
-                      int startingLevel) {
+    public MultiplayerGameThread(SurfaceHolder surfaceHolder, int startingLevel) {
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
@@ -242,7 +237,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       } catch (Exception ignore) {}
 
       mBackgroundOrig = BitmapFactory.decodeResource(
-        res, R.drawable.background, options);
+        res, R.drawable.background2, options);
       mBubblesOrig = new Bitmap[8];
       mBubblesOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_1, options);
@@ -367,25 +362,19 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       mSoundManager     = new SoundManager(mContext);
       mHighscoreManager = new HighscoreManager(getContext());
 
-      if (null == customLevels) {
-        try {
-          InputStream is     = mContext.getAssets().open("levels.txt");
-          int         size   = is.available();
-          byte[]      levels = new byte[size];
-          is.read(levels);
-          is.close();
-          SharedPreferences sp = mContext.getSharedPreferences(
-            FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
-          startingLevel = sp.getInt("level", 0);
-          mLevelManager = new LevelManager(levels, startingLevel);
-        } catch (IOException e) {
-          // Should never happen.
-          throw new RuntimeException(e);
-        }
-      }
-      else {
-        // We were launched by the level editor.
-        mLevelManager = new LevelManager(customLevels, startingLevel);
+      try {
+        InputStream is     = mContext.getAssets().open("levels.txt");
+        int         size   = is.available();
+        byte[]      levels = new byte[size];
+        is.read(levels);
+        is.close();
+        SharedPreferences sp = mContext.getSharedPreferences(
+          FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
+        startingLevel = sp.getInt("level", 0);
+        mLevelManager = new LevelManager(levels, startingLevel);
+      } catch (IOException e) {
+        // Should never happen.
+        throw new RuntimeException(e);
       }
 
       mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
@@ -840,20 +829,15 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       if (event_action_down) {
         switch (mMode) {
           case STATE_ABOUT:
-            if (!mBlankScreen) {
-              setState(STATE_RUNNING);
-              return true;
-            }
-            break;
+            setState(STATE_RUNNING);
+            return true;
 
           case STATE_PAUSE:
             if (mShowScores) {
               mShowScores = false;
-              nextLevel();
-              if (getCurrentLevelIndex() != 0)
-                setState(STATE_RUNNING);
+              setState(STATE_RUNNING);
               if (mGameListener != null) {
-                mGameListener.onGameEvent(EVENT_LEVEL_START);
+                mGameListener.onGameEvent(EVENT_GAME_RESUME);
               }
               return true;
             }
@@ -903,55 +887,53 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     private void drawAboutScreen(Canvas canvas) {
       canvas.drawRGB(0, 0, 0);
-      if (!mBlankScreen) {
-        int x = 168;
-        int y = 20;
-        int ysp = 26;
-        int indent = 10;
-        mFont.print("original frozen bubble:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("guillaume cottenceau", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("alexis younes", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("matthias le bidan", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        y += ysp;
-        mFont.print("java version:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("glenn sanson", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        y += ysp;
-        mFont.print("android port:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("aleksander fedorynski", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("eric fortin", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += 2 * ysp;
-        mFont.print("android port source code", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("is available at:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("http://code.google.com", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("/p/frozenbubbleandroid", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-      }
+      int x = 168;
+      int y = 20;
+      int ysp = 26;
+      int indent = 10;
+      mFont.print("original frozen bubble:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("guillaume cottenceau", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("alexis younes", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("matthias le bidan", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      y += ysp;
+      mFont.print("java version:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("glenn sanson", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      y += ysp;
+      mFont.print("android port:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("aleksander fedorynski", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("eric fortin", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += 2 * ysp;
+      mFont.print("android port source code", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("is available at:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("http://code.google.com", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("/p/frozenbubbleandroid", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
     }
 
     private void drawHighscoreScreen(Canvas canvas, int level) {
@@ -1199,23 +1181,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  public GameView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-    //Log.i("frozen-bubble", "GameView constructor");
-
-    mContext = context;
-    SurfaceHolder holder = getHolder();
-    holder.addCallback(this);
-
-    thread = new GameThread(holder, null, 0);
-    setFocusable(true);
-    setFocusableInTouchMode(true);
-
-    thread.setRunning(true);
-    thread.start();
-  }
-
-  public GameView(Context context, byte[] levels, int startingLevel) {
+  public MultiplayerGameView(Context context, int numPlayers) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
 
@@ -1223,7 +1189,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new GameThread(holder, levels, startingLevel);
+    thread = new MultiplayerGameThread(holder, 0);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -1231,7 +1197,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     thread.start();
   }
 
-  public GameThread getThread() {
+  public MultiplayerGameThread getThread() {
     return thread;
   }
 
@@ -1287,47 +1253,5 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
     thread.cleanUp();
     mContext = null;
-  }
-
-  /**
-   * This is a class that extends TimerTask to resume displaying the
-   * game screen as normal after it has been shown as a blank screen.
-   * 
-   * @author Eric Fortin
-   */
-  class resumeGameScreenTask extends TimerTask {
-    @Override
-    public void run() {
-      mBlankScreen = false;
-      cancel();
-    }
-  };
-
-  /**
-   * Display a blank screen (black background) for the specified wait
-   * interval.
-   * 
-   * @param  clearScreen
-   *         - If true, show a blank screen for the specified wait
-   *         interval.  If false, show the normal screen.
-   *
-   * @param  wait
-   *         - The amount of time to display the blank screen.
-   */
-  public void clearGameScreen(boolean clearScreen, int wait) {
-    mBlankScreen = clearScreen;
-    try {
-      if (clearScreen) {
-        thread.setState(GameThread.STATE_ABOUT);
-        Timer timer = new Timer();
-        timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
-      }
-    } catch (IllegalArgumentException illArgEx) {
-      illArgEx.printStackTrace();
-      mBlankScreen = false;
-    } catch (IllegalStateException illStateEx) {
-      illStateEx.printStackTrace();
-      mBlankScreen = false;
-    }
   }
 }
