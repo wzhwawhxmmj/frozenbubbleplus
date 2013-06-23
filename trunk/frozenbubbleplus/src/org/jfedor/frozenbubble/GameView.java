@@ -227,7 +227,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
-                      int startingLevel) {
+                      int startingLevel, int numPlayers) {
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
@@ -241,8 +241,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         f.set(options, Boolean.FALSE);
       } catch (Exception ignore) {}
 
-      mBackgroundOrig = BitmapFactory.decodeResource(
-        res, R.drawable.background, options);
+      if (numPlayers == 2)
+        mBackgroundOrig = BitmapFactory.decodeResource(
+            res, R.drawable.background2, options);
+      else
+        mBackgroundOrig = BitmapFactory.decodeResource(
+          res, R.drawable.background, options);
       mBubblesOrig = new Bitmap[8];
       mBubblesOrig[0] = BitmapFactory.decodeResource(
         res, R.drawable.bubble_1, options);
@@ -1199,6 +1203,22 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
+  public GameView(Context context, int numPlayers) {
+    super(context);
+    //Log.i("frozen-bubble", "GameView constructor");
+
+    mContext = context;
+    SurfaceHolder holder = getHolder();
+    holder.addCallback(this);
+
+    thread = new GameThread(holder, null, 0, numPlayers);
+    setFocusable(true);
+    setFocusableInTouchMode(true);
+
+    thread.setRunning(true);
+    thread.start();
+  }
+
   public GameView(Context context, AttributeSet attrs) {
     super(context, attrs);
     //Log.i("frozen-bubble", "GameView constructor");
@@ -1207,7 +1227,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new GameThread(holder, null, 0);
+    thread = new GameThread(holder, null, 0, 1);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
@@ -1223,7 +1243,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new GameThread(holder, levels, startingLevel);
+    thread = new GameThread(holder, levels, startingLevel, 1);
     setFocusable(true);
     setFocusableInTouchMode(true);
 

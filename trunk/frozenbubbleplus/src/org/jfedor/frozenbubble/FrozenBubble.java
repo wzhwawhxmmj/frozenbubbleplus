@@ -145,6 +145,8 @@ public class FrozenBubble extends Activity
   public final static int POINT_TO_SHOOT  = 1;
   public final static int ROTATE_TO_SHOOT = 2;
 
+  public static boolean isRunning = false;
+
   private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
   private static int     gameMode   = GAME_NORMAL;
@@ -204,6 +206,7 @@ public class FrozenBubble extends Activity
     //  Log.i(TAG, "FrozenBubble.onCreate(null)");
     //}
     super.onCreate(savedInstanceState);
+    isRunning = true;
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     restoreGamePrefs();
@@ -226,9 +229,16 @@ public class FrozenBubble extends Activity
          !intent.getExtras().containsKey("levels")) {
       // Default levels.
       activityCustomStarted = false;
-      setContentView(R.layout.activity_frozen_bubble);
-
-      mGameView = (GameView)findViewById(R.id.game);
+      // Check if this is a single or multiplayer game.
+      if (intent.hasExtra("numPlayers")) {
+        int numPlayers = intent.getIntExtra("numPlayers", 1);
+        mGameView = new GameView(this, numPlayers);
+        setContentView(mGameView);
+      }
+      else {
+        setContentView(R.layout.activity_frozen_bubble);
+        mGameView = (GameView)findViewById(R.id.game);
+      }
       mGameView.setGameListener(this);
       mGameThread = mGameView.getThread();
       if (savedInstanceState != null)
@@ -375,7 +385,7 @@ public class FrozenBubble extends Activity
   protected void onDestroy() {
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
-    setShowSplashScreen();
+    isRunning = false;
     cleanUp();
   }
 
@@ -571,19 +581,6 @@ public class FrozenBubble extends Activity
       getWindow().addFlags(flagNoFs);
     }
     mGameView.requestLayout();
-  }
-
-  /**
-   * Set the flag to ensure that the application displays the splash
-   * screen the next time it is launched.  This flag is saved to the
-   * shared preferences non-volatile data.
-   */
-  private void setShowSplashScreen() {
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sp.edit();
-    editor.putBoolean("showSplashScreen", true);
-    editor.commit();
   }
 
   private void soundOptionsDialog() {
@@ -802,7 +799,7 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_LEVEL_START:
-        if (mGameView.getThread().getCurrentLevelIndex() == 0) {
+        if (mGameView.getThread().getCurrentLevelIndex() == 1) {
           //
           // Destroy the current music player, which will free audio
           // stream resources and allow the system to use them.

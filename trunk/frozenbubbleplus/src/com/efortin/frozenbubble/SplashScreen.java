@@ -70,7 +70,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
-import android.widget.Toast;
 
 public class SplashScreen extends Activity {
   /*
@@ -109,9 +108,8 @@ public class SplashScreen extends Activity {
     start2pGameButton.setOnClickListener(new Button.OnClickListener(){
 
       public void onClick(View v){
-        // process the button tap
-        Toast.makeText(getApplicationContext(),
-                       "Still working on it...", Toast.LENGTH_SHORT).show();
+        // Process the button tap and start a 2 player game.
+        startFrozenBubble(2);
       }
     });
     start2pGameButton.setText("Start 2p Game");
@@ -133,8 +131,8 @@ public class SplashScreen extends Activity {
     start1pGameButton.setOnClickListener(new Button.OnClickListener(){
 
       public void onClick(View v){
-        // process the button tap
-        startFrozenBubble();
+        // Process the button tap and start/resume a 1 player game.
+        startFrozenBubble(1);
       }
     });
     start1pGameButton.setText("Start 1p Game");
@@ -158,18 +156,6 @@ public class SplashScreen extends Activity {
       myModPlayer.destroyMusicPlayer();
       myModPlayer = null;
     }
-  }
-
-  private boolean displaySplashScreen() {
-    SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    boolean showSplashScreen = sp.getBoolean("showSplashScreen", true);
-    if (showSplashScreen) {
-      SharedPreferences.Editor editor = sp.edit();
-      editor.putBoolean("showSplashScreen", false);
-      editor.commit();
-    }
-    return showSplashScreen;
   }
 
   @Override
@@ -202,9 +188,8 @@ public class SplashScreen extends Activity {
                                               LayoutParams.FILL_PARENT));
     myImageView = new ImageView(this);
 
-    if (!displaySplashScreen()) {
-      startHomeScreen();
-    }
+    if (FrozenBubble.isRunning)
+      startFrozenBubble(0);
     else {
       setBackgroundImage(R.drawable.splash);
       setContentView(myLayout);
@@ -296,16 +281,6 @@ public class SplashScreen extends Activity {
     myLayout.addView(myImageView);
   }
 
-  private void startHomeScreen() {
-    if (!homeShown) {
-      homeShown = true;
-      setBackgroundImage(R.drawable.home_screen);
-      addHomeButtons();
-      setContentView(myLayout);
-      myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
-    }
-  }
-
   /**
    * Set the window layout according to the game preferences.
    *
@@ -333,7 +308,7 @@ public class SplashScreen extends Activity {
     }
   }
 
-  private void startFrozenBubble() {
+  private void startFrozenBubble(int numPlayers) {
     //
     // Since the default game activity creates its own player,
     // destroy the current player.
@@ -345,11 +320,23 @@ public class SplashScreen extends Activity {
     //
     //
     Intent intent = new Intent(this, FrozenBubble.class);
+    if (numPlayers > 1)
+      intent.putExtra("numPlayers", (int)numPlayers);
     startActivity(intent);
     //
     // Terminate the splash screen activity.
     //
     //
     finish();
+  }
+
+  private void startHomeScreen() {
+    if (!homeShown) {
+      homeShown = true;
+      setBackgroundImage(R.drawable.home_screen);
+      addHomeButtons();
+      setContentView(myLayout);
+      myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
+    }
   }
 }
