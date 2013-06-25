@@ -166,6 +166,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     private long   mLastTime;
     private int    mMode;
     private int    mModeWas;
+    private int    mPlayer1DX;
+    private int    mPlayer2DX;
 
     private Bitmap mBackgroundOrig;
     private Bitmap[] mBubblesOrig;
@@ -200,7 +202,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     private BubbleFont    mFont;
     private Drawable      mLauncher;  // drawable because we rotate it
-    private FrozenGame    mFrozenGame;
+    private FrozenGame    mFrozenGame1;
+    private FrozenGame    mFrozenGame2;
     private LevelManager  mLevelManager;
     private SoundManager  mSoundManager;
     private SurfaceHolder mSurfaceHolder;
@@ -377,13 +380,20 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         throw new RuntimeException(e);
       }
 
-      mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                   mFrozenBubbles, mTargetedBubbles,
-                                   mBubbleBlink, mGameWon, mGameLost,
-                                   mGamePaused, mHurry, mPenguins,
-                                   mCompressorHead, mCompressor, mLauncher,
-                                   mSoundManager, mLevelManager,
-                                   mHighscoreManager);
+      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                    mFrozenBubbles, mTargetedBubbles,
+                                    mBubbleBlink, mGameWon, mGameLost,
+                                    mGamePaused, mHurry, mPenguins,
+                                    mCompressorHead, mCompressor, mLauncher,
+                                    mSoundManager, mLevelManager,
+                                    mHighscoreManager);
+      mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                    mFrozenBubbles, mTargetedBubbles,
+                                    mBubbleBlink, mGameWon, mGameLost,
+                                    mGamePaused, mHurry, mPenguins,
+                                    mCompressorHead, mCompressor, mLauncher,
+                                    mSoundManager, mLevelManager,
+                                    mHighscoreManager);
       mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
@@ -439,7 +449,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           if (mGameListener != null)
             mGameListener.onGameEvent(EVENT_GAME_PAUSED);
 
-          mFrozenGame      .pause();
+          mFrozenGame1     .pause();
+          mFrozenGame2     .pause();
           mHighscoreManager.pauseLevel();
         }
       }
@@ -448,7 +459,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public void resumeGame() {
       synchronized (mSurfaceHolder) {
         if (mMode == STATE_RUNNING) {
-          mFrozenGame      .resume();
+          mFrozenGame1     .resume();
+          mFrozenGame2     .resume();
           mHighscoreManager.resumeLevel();
         }
       }
@@ -457,13 +469,20 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public void newGame() {
       synchronized (mSurfaceHolder) {
         mLevelManager.goToFirstLevel();
-        mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                     mFrozenBubbles, mTargetedBubbles,
-                                     mBubbleBlink, mGameWon, mGameLost,
-                                     mGamePaused, mHurry, mPenguins,
-                                     mCompressorHead, mCompressor, mLauncher,
-                                     mSoundManager, mLevelManager,
-                                     mHighscoreManager);
+        mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                      mFrozenBubbles, mTargetedBubbles,
+                                      mBubbleBlink, mGameWon, mGameLost,
+                                      mGamePaused, mHurry, mPenguins,
+                                      mCompressorHead, mCompressor, mLauncher,
+                                      mSoundManager, mLevelManager,
+                                      mHighscoreManager);
+        mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                      mFrozenBubbles, mTargetedBubbles,
+                                      mBubbleBlink, mGameWon, mGameLost,
+                                      mGamePaused, mHurry, mPenguins,
+                                      mCompressorHead, mCompressor, mLauncher,
+                                      mSoundManager, mLevelManager,
+                                      mHighscoreManager);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
@@ -531,7 +550,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public Bundle saveState(Bundle map) {
       synchronized (mSurfaceHolder) {
         if (map != null) {
-          mFrozenGame      .saveState(map);
+          mFrozenGame1     .saveState(map);
+          mFrozenGame2     .saveState(map);
           mLevelManager    .saveState(map);
           mHighscoreManager.saveState(map);
         }
@@ -550,7 +570,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
         setState(STATE_PAUSE);
-        mFrozenGame      .restoreState(map, mImageList);
+        mFrozenGame1     .restoreState(map, mImageList);
+        mFrozenGame2     .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
         mHighscoreManager.restoreState(map);
       }
@@ -609,6 +630,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
           mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
+        mPlayer1DX = (int) (mDisplayDX - (mDisplayScale * ( gameWidth / 2 )));
+        mPlayer2DX = (int) (mDisplayDX + (mDisplayScale * ( gameWidth / 2 )));
         resizeBitmaps();
       }
     }
@@ -738,8 +761,17 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       }
     }
 
+    /**
+     * Use the player 1 offset to calculate the horizontal offset to
+     * apply a raw horizontal position to the playfield.
+     * 
+     * @param  x
+     *         - the raw horizontal position.
+     * 
+     * @return - the adjusted horizontal position.
+     */
     private double xFromScr(float x) {
-      return (x - mDisplayDX) / mDisplayScale;
+      return (x - mPlayer1DX) / mDisplayScale;
     }
 
     private double yFromScr(float y) {
@@ -986,28 +1018,40 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       }
       drawBackground(canvas);
       drawLevelNumber(canvas);
-      mFrozenGame.paint(canvas, mDisplayScale, mDisplayDX, mDisplayDY);
+      mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
+      mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
     }
 
     private void updateGameState() {
-      int game_state = mFrozenGame.play(mLeft || mWasLeft,
-                                        mRight || mWasRight,
-                                        mFire || mUp || mWasFire || mWasUp,
-                                        mDown || mWasDown || mTouchSwap,
-                                        mTrackballDX,
-                                        mTouchFire, mTouchX, mTouchY,
-                                        mATSTouchFire, mATSTouchDX);
-      if ((game_state == FrozenGame.GAME_NEXT_LOST) ||
-          (game_state == FrozenGame.GAME_NEXT_WON )) {
-        if (game_state == FrozenGame.GAME_NEXT_WON) {
+      int game1_state = mFrozenGame1.play(mLeft || mWasLeft,
+                                          mRight || mWasRight,
+                                          mFire || mUp || mWasFire || mWasUp,
+                                          mDown || mWasDown || mTouchSwap,
+                                          mTrackballDX,
+                                          mTouchFire, mTouchX, mTouchY,
+                                          mATSTouchFire, mATSTouchDX);
+      int game2_state = mFrozenGame2.play(mLeft || mWasLeft,
+                                          mRight || mWasRight,
+                                          mFire || mUp || mWasFire || mWasUp,
+                                          mDown || mWasDown || mTouchSwap,
+                                          mTrackballDX,
+                                          mTouchFire, mTouchX, mTouchY,
+                                          mATSTouchFire, mATSTouchDX);
+      if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
+          (game1_state == FrozenGame.GAME_NEXT_WON ) ||
+          (game2_state == FrozenGame.GAME_NEXT_LOST) ||
+          (game2_state == FrozenGame.GAME_NEXT_WON )) {
+        if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
+            (game2_state == FrozenGame.GAME_NEXT_WON)){
           mShowScores = true;
           pause();
         }
         else
-          nextLevel();
+          newGame();
 
         if (mGameListener != null) {
-          if (game_state == FrozenGame.GAME_NEXT_WON)
+          if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
+              (game2_state == FrozenGame.GAME_NEXT_WON))
             mGameListener.onGameEvent(EVENT_GAME_WON);
           else
             mGameListener.onGameEvent(EVENT_GAME_LOST);
@@ -1025,17 +1069,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mATSTouchDX   = 0;
     }
 
-    private void nextLevel() {
-      mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                   mFrozenBubbles, mTargetedBubbles,
-                                   mBubbleBlink, mGameWon, mGameLost,
-                                   mGamePaused, mHurry, mPenguins,
-                                   mCompressorHead, mCompressor, mLauncher,
-                                   mSoundManager, mLevelManager,
-                                   mHighscoreManager);
-      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
-    }
-
     public void cleanUp() {
       synchronized (mSurfaceHolder) {
         // I don't really understand why all this is necessary.
@@ -1044,8 +1077,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         // said you have to call recycle() on all the bitmaps and set
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
-        mFrozenGame.cleanUp();
-        mFrozenGame = null;
+        mFrozenGame1.cleanUp();
+        mFrozenGame1 = null;
+        mFrozenGame2.cleanUp();
+        mFrozenGame2 = null;
         mImagesReady = false;
 
         boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
@@ -1177,7 +1212,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     public void setPosition(double value) {
-      mFrozenGame.setPosition(value);
+      mFrozenGame1.setPosition(value);
+      mFrozenGame2.setPosition(value);
     }
   }
 
