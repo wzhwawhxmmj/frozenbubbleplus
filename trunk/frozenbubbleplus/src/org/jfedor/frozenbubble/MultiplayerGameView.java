@@ -391,14 +391,14 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                     mGamePaused, mHurry, mPenguins,
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
-                                    mHighscoreManager);
+                                    mHighscoreManager, 1);
       mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                     mFrozenBubbles, mTargetedBubbles,
                                     mBubbleBlink, mGameWon, mGameLost,
                                     mGamePaused, mHurry, mPenguins2,
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
-                                    mHighscoreManager);
+                                    mHighscoreManager, 2);
       mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
@@ -481,14 +481,14 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       mGamePaused, mHurry, mPenguins,
                                       mCompressorHead, mCompressor, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager);
+                                      mHighscoreManager, 1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
                                       mGamePaused, mHurry, mPenguins2,
                                       mCompressorHead, mCompressor, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager);
+                                      mHighscoreManager, 2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
