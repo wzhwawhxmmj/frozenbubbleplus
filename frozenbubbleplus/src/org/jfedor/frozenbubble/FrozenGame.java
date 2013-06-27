@@ -134,6 +134,7 @@ public class FrozenGame extends GameScreen {
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
+  int playerId;
   int playResult;
   double moveDown;
 
@@ -156,7 +157,8 @@ public class FrozenGame extends GameScreen {
                     Drawable launcher_arg,
                     SoundManager soundManager_arg,
                     LevelManager levelManager_arg,
-                    HighscoreManager highscoreManager_arg) {
+                    HighscoreManager highscoreManager_arg,
+                    int player_arg) {
     random               = new Random(System.currentTimeMillis());
     launcher             = launcher_arg;
     penguins             = penguins_arg;
@@ -172,12 +174,18 @@ public class FrozenGame extends GameScreen {
     soundManager         = soundManager_arg;
     levelManager         = levelManager_arg;
     highscoreManager     = highscoreManager_arg;
+    playerId             = player_arg;
     playResult           = GAME_PLAYING;
     launchBubblePosition = 20;
     readyToFire          = false;
     swapPressed          = false;
 
-    penguin = new PenguinSprite(penguins_arg, random);
+    if (playerId == 1)
+      penguin = new PenguinSprite(new Rect(361, 436, 361 + 55, 436 + 43),
+                                  penguins_arg, random);
+    else
+      penguin = new PenguinSprite(new Rect(221, 436, 221 + 55, 436 + 43),
+                                  penguins_arg, random);
     this.addSprite(penguin);
     compressor  = new Compressor(compressorHead_arg, compressor_arg);
     hurrySprite = new ImageSprite(new Rect(203, 265, 203 + 240, 265 + 90),
@@ -228,6 +236,30 @@ public class FrozenGame extends GameScreen {
                                           launcher, bubbles, bubblesBlind);
     this.spriteToBack(launchBubble);
     nbBubbles = 0;
+  }
+
+  public FrozenGame(BmpWrap background_arg,
+                    BmpWrap[] bubbles_arg,
+                    BmpWrap[] bubblesBlind_arg,
+                    BmpWrap[] frozenBubbles_arg,
+                    BmpWrap[] targetedBubbles_arg,
+                    BmpWrap bubbleBlink_arg,
+                    BmpWrap gameWon_arg,
+                    BmpWrap gameLost_arg,
+                    BmpWrap gamePaused_arg,
+                    BmpWrap hurry_arg,
+                    BmpWrap penguins_arg,
+                    BmpWrap compressorHead_arg,
+                    BmpWrap compressor_arg,
+                    Drawable launcher_arg,
+                    SoundManager soundManager_arg,
+                    LevelManager levelManager_arg,
+                    HighscoreManager highscoreManager_arg) {
+    this(background_arg, bubbles_arg, bubblesBlind_arg, frozenBubbles_arg,
+         targetedBubbles_arg, bubbleBlink_arg, gameWon_arg, gameLost_arg,
+         gamePaused_arg, hurry_arg, penguins_arg, compressorHead_arg,
+         compressor_arg, launcher_arg, soundManager_arg, levelManager_arg,
+         highscoreManager_arg, 1);
   }
 
   public void cleanUp() {
@@ -354,7 +386,8 @@ public class FrozenGame extends GameScreen {
       int count = map.getInt(String.format("%d-count", i));
       int finalState = map.getInt(String.format("%d-finalState", i));
       int nextPosition = map.getInt(String.format("%d-nextPosition", i));
-      return new PenguinSprite(penguins, random, currentPenguin, count,
+      return new PenguinSprite(new Rect(361, 436, 361 + 55, 436 + 43),
+                               penguins, random, currentPenguin, count,
                                finalState, nextPosition);
     }
     else {

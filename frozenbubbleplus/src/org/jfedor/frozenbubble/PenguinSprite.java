@@ -80,8 +80,8 @@ public class PenguinSprite extends Sprite {
   private BmpWrap spritesImage;
   private Random rand;
 
-  public PenguinSprite(BmpWrap sprites, Random rand) {
-    super(new Rect(361, 436, 361 + 55, 436 + 43));
+  public PenguinSprite(Rect r, BmpWrap sprites, Random rand) {
+    super(r);
 
     this.spritesImage = sprites;
     this.rand = rand;
@@ -91,10 +91,10 @@ public class PenguinSprite extends Sprite {
     nextPosition   = 0;
   }
 
-  public PenguinSprite(BmpWrap sprites, Random rand,
+  public PenguinSprite(Rect r, BmpWrap sprites, Random rand,
                        int currentPenguin, int count,
                        int finalState, int nextPosition) {
-    super(new Rect(361, 436, 361 + 55, 436 + 43));
+    super(r);
 
     this.spritesImage   = sprites;
     this.rand           = rand;
@@ -180,8 +180,10 @@ public class PenguinSprite extends Sprite {
   public void paint(Canvas c, double scale, int dx, int dy) {
     Rect r = this.getSpriteArea();
     drawImageClipped(spritesImage,
-                     360 - (currentPenguin % 4) * 57,
-                     435 - (currentPenguin / 4) * 45,
+                     (r.left - 1) - (currentPenguin % 4) *
+                     (r.right  - r.left + 2),
+                     (r.top  - 1) - (currentPenguin / 4) *
+                     (r.bottom - r.top  + 2),
                      r, c, scale, dx, dy);
   }
 }
