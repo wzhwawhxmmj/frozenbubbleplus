@@ -180,6 +180,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     private Bitmap mGamePausedOrig;
     private Bitmap mHurryOrig;
     private Bitmap mPenguinsOrig;
+    private Bitmap mPenguins2Orig;
     private Bitmap mCompressorHeadOrig;
     private Bitmap mCompressorOrig;
     private Bitmap mLifeOrig;
@@ -195,6 +196,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     private BmpWrap mGamePaused;
     private BmpWrap mHurry;
     private BmpWrap mPenguins;
+    private BmpWrap mPenguins2;
     private BmpWrap mCompressorHead;
     private BmpWrap mCompressor;
     private BmpWrap mLife;
@@ -317,6 +319,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         res, R.drawable.hurry, options);
       mPenguinsOrig = BitmapFactory.decodeResource(
         res, R.drawable.penguins, options);
+      mPenguins2Orig = BitmapFactory.decodeResource(
+        res, R.drawable.penguins2, options);
       mCompressorHeadOrig = BitmapFactory.decodeResource(
         res, R.drawable.compressor, options);
       mCompressorOrig = BitmapFactory.decodeResource(
@@ -355,6 +359,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mGamePaused     = NewBmpWrap();
       mHurry          = NewBmpWrap();
       mPenguins       = NewBmpWrap();
+      mPenguins2      = NewBmpWrap();
       mCompressorHead = NewBmpWrap();
       mCompressor     = NewBmpWrap();
       mLife           = NewBmpWrap();
@@ -390,7 +395,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                     mFrozenBubbles, mTargetedBubbles,
                                     mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
+                                    mGamePaused, mHurry, mPenguins2,
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
                                     mHighscoreManager);
@@ -433,6 +438,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       scaleFrom(mGamePaused, mGamePausedOrig);
       scaleFrom(mHurry, mHurryOrig);
       scaleFrom(mPenguins, mPenguinsOrig);
+      scaleFrom(mPenguins2, mPenguins2Orig);
       scaleFrom(mCompressorHead, mCompressorHeadOrig);
       scaleFrom(mCompressor, mCompressorOrig);
       scaleFrom(mLife, mLifeOrig);
@@ -479,7 +485,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
-                                      mGamePaused, mHurry, mPenguins,
+                                      mGamePaused, mHurry, mPenguins2,
                                       mCompressorHead, mCompressor, mLauncher,
                                       mSoundManager, mLevelManager,
                                       mHighscoreManager);
@@ -1123,6 +1129,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mHurryOrig = null;
         mPenguinsOrig.recycle();
         mPenguinsOrig = null;
+        mPenguins2Orig.recycle();
+        mPenguins2Orig = null;
         mCompressorHeadOrig.recycle();
         mCompressorHeadOrig = null;
         mCompressorOrig.recycle();
@@ -1154,6 +1162,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           mGamePaused.bmp.recycle();
           mHurry.bmp.recycle();
           mPenguins.bmp.recycle();
+          mPenguins2.bmp.recycle();
           mCompressorHead.bmp.recycle();
           mCompressor.bmp.recycle();
           mLife.bmp.recycle();
@@ -1197,6 +1206,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mHurry = null;
         mPenguins.bmp = null;
         mPenguins = null;
+        mPenguins2.bmp = null;
+        mPenguins2 = null;
         mCompressorHead.bmp = null;
         mCompressorHead = null;
         mCompressor.bmp = null;
