@@ -180,12 +180,15 @@ public class FrozenGame extends GameScreen {
     readyToFire          = false;
     swapPressed          = false;
 
+    Rect r;
     if (playerId == 1)
-      penguin = new PenguinSprite(new Rect(361, 436, 361 + 55, 436 + 43),
-                                  penguins_arg, random);
+      r = new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 1,
+                   436 + PenguinSprite.PENGUIN_HEIGHT - 1);
     else
-      penguin = new PenguinSprite(new Rect(221, 436, 221 + 55, 436 + 43),
-                                  penguins_arg, random);
+      r = new Rect(220, 436, 220 + PenguinSprite.PENGUIN_WIDTH - 1,
+                   436 + PenguinSprite.PENGUIN_HEIGHT - 1);
+
+    penguin = new PenguinSprite(r, penguins_arg, random);
     this.addSprite(penguin);
     compressor  = new Compressor(compressorHead_arg, compressor_arg);
     hurrySprite = new ImageSprite(new Rect(203, 265, 203 + 240, 265 + 90),
