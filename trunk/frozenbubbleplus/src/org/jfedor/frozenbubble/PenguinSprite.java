@@ -60,12 +60,15 @@ import android.graphics.Rect;
 import android.os.Bundle;
 
 public class PenguinSprite extends Sprite {
-  public final static int STATE_TURN_LEFT = 0;
+  public final static int PENGUIN_HEIGHT = 45;
+  public final static int PENGUIN_WIDTH  = 57;
+
+  public final static int STATE_TURN_LEFT  = 0;
   public final static int STATE_TURN_RIGHT = 1;
-  public final static int STATE_FIRE = 2;
-  public final static int STATE_VOID = 3;
-  public final static int STATE_GAME_WON = 4;
-  public final static int STATE_GAME_LOST = 5;
+  public final static int STATE_FIRE       = 2;
+  public final static int STATE_VOID       = 3;
+  public final static int STATE_GAME_WON   = 4;
+  public final static int STATE_GAME_LOST  = 5;
 
   public final static int[][] LOST_SEQUENCE =
     {{1,0}, {2,8}, {3,9}, {4,10}, {5,11}, {6,12}, {7,13}, {5,14}};
@@ -179,11 +182,12 @@ public class PenguinSprite extends Sprite {
 
   public void paint(Canvas c, double scale, int dx, int dy) {
     Rect r = this.getSpriteArea();
+    /*
+     * Clip the specified penguin graphic from the image array.
+     */
     drawImageClipped(spritesImage,
-                     (r.left - 1) - (currentPenguin % 4) *
-                     (r.right - r.left + 2),
-                     (r.top - 1) - (currentPenguin / 4) *
-                     (r.bottom - r.top + 2),
+                     (r.left - 1) - ((currentPenguin % 4) * PENGUIN_WIDTH),
+                     (r.top - 1) - ((currentPenguin / 4) * PENGUIN_HEIGHT),
                      r, c, scale, dx, dy);
   }
 }
