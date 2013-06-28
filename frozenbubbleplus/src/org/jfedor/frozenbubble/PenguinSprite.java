@@ -181,9 +181,9 @@ public class PenguinSprite extends Sprite {
     Rect r = this.getSpriteArea();
     drawImageClipped(spritesImage,
                      (r.left - 1) - (currentPenguin % 4) *
-                     (r.right  - r.left + 2),
-                     (r.top  - 1) - (currentPenguin / 4) *
-                     (r.bottom - r.top  + 2),
+                     (r.right - r.left + 2),
+                     (r.top - 1) - (currentPenguin / 4) *
+                     (r.bottom - r.top + 2),
                      r, c, scale, dx, dy);
   }
 }
