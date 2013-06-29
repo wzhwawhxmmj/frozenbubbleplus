@@ -93,12 +93,14 @@ import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 
 class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback {
   private Context               mContext;
-  private MultiplayerGameThread thread;
+  private MultiplayerGameThread mGameThread;
+  private ComputerAI            mAiThread;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -399,6 +401,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
                                     mHighscoreManager, 2);
+      startAiThread();
       mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
@@ -489,6 +492,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       mCompressorHead, mCompressor, mLauncher,
                                       mSoundManager, mLevelManager,
                                       mHighscoreManager, 2);
+        startAiThread();
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
@@ -640,6 +644,15 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mPlayer2DX = (int) (mDisplayDX + (mDisplayScale * ( gameWidth / 2 )));
         resizeBitmaps();
       }
+    }
+
+    public void startAiThread() {
+      if (mAiThread != null) {
+        mAiThread.stopThread();
+        mAiThread = null;
+      }
+      mAiThread = new ComputerAI(mFrozenGame2, mLevelManager);
+      mAiThread.start();
     }
 
     /**
@@ -1036,33 +1049,40 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                           mTrackballDX,
                                           mTouchFire, mTouchX, mTouchY,
                                           mATSTouchFire, mATSTouchDX);
-      int game2_state = mFrozenGame2.play(mLeft || mWasLeft,
-                                          mRight || mWasRight,
-                                          mFire || mUp || mWasFire || mWasUp,
-                                          mDown || mWasDown || mTouchSwap,
-                                          mTrackballDX,
-                                          mTouchFire, mTouchX, mTouchY,
-                                          mATSTouchFire, mATSTouchDX);
+      int game2_state = mFrozenGame2.play(false,
+                                          false,
+                                          mAiThread.getFireFlag(),
+                                          mAiThread.getSwapFlag(),
+                                          0,
+                                          false, 0, 0,
+                                          false, 0);
+
+      int game1_result = mFrozenGame1.getGameResult();
+      int game2_result = mFrozenGame2.getGameResult();
+
+      if (game1_result != FrozenGame.GAME_PLAYING) {
+        if ((game1_result == FrozenGame.GAME_WON) ||
+            (game1_result == FrozenGame.GAME_NEXT_WON))
+          mFrozenGame2.setGameResult(FrozenGame.GAME_LOST);
+        else
+          mFrozenGame2.setGameResult(FrozenGame.GAME_WON);
+      }
+      else if (game2_result != FrozenGame.GAME_PLAYING) {
+        if ((game2_result == FrozenGame.GAME_WON) ||
+            (game2_result == FrozenGame.GAME_NEXT_WON))
+          mFrozenGame1.setGameResult(FrozenGame.GAME_LOST);
+        else
+          mFrozenGame1.setGameResult(FrozenGame.GAME_WON);
+      }
+
       if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
           (game1_state == FrozenGame.GAME_NEXT_WON ) ||
           (game2_state == FrozenGame.GAME_NEXT_LOST) ||
           (game2_state == FrozenGame.GAME_NEXT_WON )) {
-        if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
-            (game2_state == FrozenGame.GAME_NEXT_WON)){
-          mShowScores = true;
-          pause();
-        }
-        else
-          newGame();
-
-        if (mGameListener != null) {
-          if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
-              (game2_state == FrozenGame.GAME_NEXT_WON))
-            mGameListener.onGameEvent(EVENT_GAME_WON);
-          else
-            mGameListener.onGameEvent(EVENT_GAME_LOST);
-        }
+        pause();
+        newGame();
       }
+
       mWasLeft      = false;
       mWasRight     = false;
       mWasFire      = false;
@@ -1236,69 +1256,73 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new MultiplayerGameThread(holder, 0);
+    mAiThread = null;
+
+    mGameThread = new MultiplayerGameThread(holder, 0);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
-    thread.setRunning(true);
-    thread.start();
+    mGameThread.setRunning(true);
+    mGameThread.start();
   }
 
   public MultiplayerGameThread getThread() {
-    return thread;
+    return mGameThread;
   }
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyDown()");
-    return thread.doKeyDown(keyCode, msg);
+    return mGameThread.doKeyDown(keyCode, msg);
   }
 
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyUp()");
-    return thread.doKeyUp(keyCode, msg);
+    return mGameThread.doKeyUp(keyCode, msg);
   }
 
   @Override
   public boolean onTrackballEvent(MotionEvent event) {
     //Log.i("frozen-bubble", "event.getX(): " + event.getX());
     //Log.i("frozen-bubble", "event.getY(): " + event.getY());
-    return thread.doTrackballEvent(event);
+    return mGameThread.doTrackballEvent(event);
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    return thread.doTouchEvent(event);
+    return mGameThread.doTouchEvent(event);
   }
 
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
     if (! hasWindowFocus) {
-      thread.pause();
+      mGameThread.pause();
     }
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
                               int height) {
     //Log.i("frozen-bubble", "GameView.surfaceChanged");
-    thread.setSurfaceSize(width, height);
+    mGameThread.setSurfaceSize(width, height);
   }
 
   public void surfaceCreated(SurfaceHolder holder) {
     //Log.i("frozen-bubble", "GameView.surfaceCreated()");
-    thread.setSurfaceOK(true);
+    mGameThread.setSurfaceOK(true);
   }
 
   public void surfaceDestroyed(SurfaceHolder holder) {
     //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
-    thread.setSurfaceOK(false);
+    mGameThread.setSurfaceOK(false);
   }
 
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
-    thread.cleanUp();
+    mAiThread.stopThread();
+    mAiThread = null;
+    mGameThread.cleanUp();
     mContext = null;
   }
 }

@@ -68,6 +68,10 @@ public class FrozenGame extends GameScreen {
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
 
+  public final static int MIN_LAUNCH_POSITION   = 1;
+  public final static int START_LAUNCH_POSITION = 20;
+  public final static int MAX_LAUNCH_POSITION   = 39;
+
   public final static int KEY_UP    = 38;
   public final static int KEY_LEFT  = 37;
   public final static int KEY_RIGHT = 39;
@@ -176,7 +180,7 @@ public class FrozenGame extends GameScreen {
     highscoreManager     = highscoreManager_arg;
     playerId             = player_arg;
     playResult           = GAME_PLAYING;
-    launchBubblePosition = 20;
+    launchBubblePosition = START_LAUNCH_POSITION;
     readyToFire          = false;
     swapPressed          = false;
 
@@ -634,11 +638,11 @@ public class FrozenGame extends GameScreen {
       double xx = touch_x - 318;
       double yy = 406 - touch_y;
       launchBubblePosition = (Math.PI - Math.atan2(yy, xx)) * 40.0 / Math.PI;
-      if (launchBubblePosition < 1) {
-        launchBubblePosition = 1;
+      if (launchBubblePosition < MIN_LAUNCH_POSITION) {
+        launchBubblePosition = MIN_LAUNCH_POSITION;
       }
-      if (launchBubblePosition > 39) {
-        launchBubblePosition = 39;
+      if (launchBubblePosition > MAX_LAUNCH_POSITION) {
+        launchBubblePosition = MAX_LAUNCH_POSITION;
       }
     }
 
@@ -717,11 +721,11 @@ public class FrozenGame extends GameScreen {
           dx += ats_touch_dx;
         }
         launchBubblePosition += dx;
-        if (launchBubblePosition < 1) {
-          launchBubblePosition = 1;
+        if (launchBubblePosition < MIN_LAUNCH_POSITION) {
+          launchBubblePosition = MIN_LAUNCH_POSITION;
         }
-        if (launchBubblePosition > 39) {
-          launchBubblePosition = 39;
+        if (launchBubblePosition > MAX_LAUNCH_POSITION) {
+          launchBubblePosition = MAX_LAUNCH_POSITION;
         }
         launchBubble.changeDirection((int)launchBubblePosition);
         if (dx < 0) {
@@ -868,13 +872,37 @@ public class FrozenGame extends GameScreen {
     super.paint(c, scale, dx, dy);
   }
 
+  public int getGameResult() {
+    return playResult;
+  }
+
+  public void setGameResult(int result) {
+    playResult = result;
+    endOfGame = true;
+
+    if (result == GAME_WON)
+    {
+      penguin.updateState(PenguinSprite.STATE_GAME_WON);
+      this.addSprite(new ImageSprite(new Rect(152, 190,
+                                              152 + 337,
+                                              190 + 116), gameWon));
+    }
+    else if (result == GAME_LOST)
+    {
+      penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+      this.addSprite(new ImageSprite(new Rect(152, 190,
+                                              152 + 337,
+                                              190 + 116), gameLost));
+    }
+  }
+
   public void setPosition(double value) {
     launchBubblePosition = value;
-    if (launchBubblePosition < 1) {
-      launchBubblePosition = 1;
+    if (launchBubblePosition < MIN_LAUNCH_POSITION) {
+      launchBubblePosition = MIN_LAUNCH_POSITION;
     }
-    if (launchBubblePosition > 39) {
-      launchBubblePosition = 39;
+    if (launchBubblePosition > MAX_LAUNCH_POSITION) {
+      launchBubblePosition = MAX_LAUNCH_POSITION;
     }
     launchBubble.changeDirection((int)launchBubblePosition);
     penguin.updateState(PenguinSprite.STATE_VOID);

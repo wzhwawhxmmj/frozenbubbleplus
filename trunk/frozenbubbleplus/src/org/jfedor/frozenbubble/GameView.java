@@ -102,7 +102,7 @@ import com.efortin.frozenbubble.HighscoreManager;
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private boolean    mBlankScreen = false;
   private Context    mContext;
-  private GameThread thread;
+  private GameThread mGameThread;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -1207,12 +1207,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new GameThread(holder, null, 0);
+    mGameThread = new GameThread(holder, null, 0);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
-    thread.setRunning(true);
-    thread.start();
+    mGameThread.setRunning(true);
+    mGameThread.start();
   }
 
   public GameView(Context context, byte[] levels, int startingLevel) {
@@ -1223,69 +1223,69 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    thread = new GameThread(holder, levels, startingLevel);
+    mGameThread = new GameThread(holder, levels, startingLevel);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
-    thread.setRunning(true);
-    thread.start();
+    mGameThread.setRunning(true);
+    mGameThread.start();
   }
 
   public GameThread getThread() {
-    return thread;
+    return mGameThread;
   }
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyDown()");
-    return thread.doKeyDown(keyCode, msg);
+    return mGameThread.doKeyDown(keyCode, msg);
   }
 
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyUp()");
-    return thread.doKeyUp(keyCode, msg);
+    return mGameThread.doKeyUp(keyCode, msg);
   }
 
   @Override
   public boolean onTrackballEvent(MotionEvent event) {
     //Log.i("frozen-bubble", "event.getX(): " + event.getX());
     //Log.i("frozen-bubble", "event.getY(): " + event.getY());
-    return thread.doTrackballEvent(event);
+    return mGameThread.doTrackballEvent(event);
   }
 
   @Override
   public boolean onTouchEvent(MotionEvent event) {
-    return thread.doTouchEvent(event);
+    return mGameThread.doTouchEvent(event);
   }
 
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
     if (! hasWindowFocus) {
-      thread.pause();
+      mGameThread.pause();
     }
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
                               int height) {
     //Log.i("frozen-bubble", "GameView.surfaceChanged");
-    thread.setSurfaceSize(width, height);
+    mGameThread.setSurfaceSize(width, height);
   }
 
   public void surfaceCreated(SurfaceHolder holder) {
     //Log.i("frozen-bubble", "GameView.surfaceCreated()");
-    thread.setSurfaceOK(true);
+    mGameThread.setSurfaceOK(true);
   }
 
   public void surfaceDestroyed(SurfaceHolder holder) {
     //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
-    thread.setSurfaceOK(false);
+    mGameThread.setSurfaceOK(false);
   }
 
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
-    thread.cleanUp();
+    mGameThread.cleanUp();
     mContext = null;
   }
 
@@ -1318,7 +1318,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mBlankScreen = clearScreen;
     try {
       if (clearScreen) {
-        thread.setState(GameThread.STATE_ABOUT);
+        mGameThread.setState(GameThread.STATE_ABOUT);
         Timer timer = new Timer();
         timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
       }
