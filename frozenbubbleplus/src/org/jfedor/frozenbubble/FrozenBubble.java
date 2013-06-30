@@ -846,7 +846,8 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_LEVEL_START:
-        if (mGameView.getThread().getCurrentLevelIndex() == 0) {
+        if ((mGameView != null) &&
+            (mGameView.getThread().getCurrentLevelIndex() == 0)) {
           //
           // Destroy the current music player, which will free audio
           // stream resources and allow the system to use them.
