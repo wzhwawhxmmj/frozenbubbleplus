@@ -230,10 +230,545 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     Vector<BmpWrap> mImageList;
 
+    public void cleanUp() {
+      synchronized (mSurfaceHolder) {
+        // I don't really understand why all this is necessary.
+        // I used to get a crash (an out-of-memory error) once every six or
+        // seven times I started the game.  I googled the error and someone
+        // said you have to call recycle() on all the bitmaps and set
+        // the pointers to null to facilitate garbage collection.  So I did
+        // and the crashes went away.
+        mFrozenGame1.cleanUp();
+        mFrozenGame1 = null;
+        mFrozenGame2.cleanUp();
+        mFrozenGame2 = null;
+        mImagesReady = false;
+
+        boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
+        mBackgroundOrig.recycle();
+        mBackgroundOrig = null;
+
+        for (int i = 0; i < mBubblesOrig.length; i++) {
+          mBubblesOrig[i].recycle();
+          mBubblesOrig[i] = null;
+        }
+        mBubblesOrig = null;
+
+        for (int i = 0; i < mBubblesBlindOrig.length; i++) {
+          mBubblesBlindOrig[i].recycle();
+          mBubblesBlindOrig[i] = null;
+        }
+        mBubblesBlindOrig = null;
+
+        for (int i = 0; i < mFrozenBubblesOrig.length; i++) {
+          mFrozenBubblesOrig[i].recycle();
+          mFrozenBubblesOrig[i] = null;
+        }
+        mFrozenBubblesOrig = null;
+
+        for (int i = 0; i < mTargetedBubblesOrig.length; i++) {
+          mTargetedBubblesOrig[i].recycle();
+          mTargetedBubblesOrig[i] = null;
+        }
+        mTargetedBubblesOrig = null;
+
+        mBubbleBlinkOrig.recycle();
+        mBubbleBlinkOrig = null;
+        mGameWonOrig.recycle();
+        mGameWonOrig = null;
+        mGameLostOrig.recycle();
+        mGameLostOrig = null;
+        mGamePausedOrig.recycle();
+        mGamePausedOrig = null;
+        mHurryOrig.recycle();
+        mHurryOrig = null;
+        mPenguinsOrig.recycle();
+        mPenguinsOrig = null;
+        mPenguins2Orig.recycle();
+        mPenguins2Orig = null;
+        mCompressorHeadOrig.recycle();
+        mCompressorHeadOrig = null;
+        mCompressorOrig.recycle();
+        mCompressorOrig = null;
+        mLifeOrig.recycle();
+        mLifeOrig = null;
+
+        if (imagesScaled) {
+          mBackground.bmp.recycle();
+          for (int i = 0; i < mBubbles.length; i++) {
+            mBubbles[i].bmp.recycle();
+          }
+
+          for (int i = 0; i < mBubblesBlind.length; i++) {
+            mBubblesBlind[i].bmp.recycle();
+          }
+
+          for (int i = 0; i < mFrozenBubbles.length; i++) {
+            mFrozenBubbles[i].bmp.recycle();
+          }
+
+          for (int i = 0; i < mTargetedBubbles.length; i++) {
+            mTargetedBubbles[i].bmp.recycle();
+          }
+
+          mBubbleBlink.bmp.recycle();
+          mGameWon.bmp.recycle();
+          mGameLost.bmp.recycle();
+          mGamePaused.bmp.recycle();
+          mHurry.bmp.recycle();
+          mPenguins.bmp.recycle();
+          mPenguins2.bmp.recycle();
+          mCompressorHead.bmp.recycle();
+          mCompressor.bmp.recycle();
+          mLife.bmp.recycle();
+        }
+        mBackground.bmp = null;
+        mBackground = null;
+
+        for (int i = 0; i < mBubbles.length; i++) {
+          mBubbles[i].bmp = null;
+          mBubbles[i] = null;
+        }
+        mBubbles = null;
+
+        for (int i = 0; i < mBubblesBlind.length; i++) {
+          mBubblesBlind[i].bmp = null;
+          mBubblesBlind[i] = null;
+        }
+        mBubblesBlind = null;
+
+        for (int i = 0; i < mFrozenBubbles.length; i++) {
+          mFrozenBubbles[i].bmp = null;
+          mFrozenBubbles[i] = null;
+        }
+        mFrozenBubbles = null;
+
+        for (int i = 0; i < mTargetedBubbles.length; i++) {
+          mTargetedBubbles[i].bmp = null;
+          mTargetedBubbles[i] = null;
+        }
+        mTargetedBubbles = null;
+
+        mBubbleBlink.bmp = null;
+        mBubbleBlink = null;
+        mGameWon.bmp = null;
+        mGameWon = null;
+        mGameLost.bmp = null;
+        mGameLost = null;
+        mGamePaused.bmp = null;
+        mGamePaused = null;
+        mHurry.bmp = null;
+        mHurry = null;
+        mPenguins.bmp = null;
+        mPenguins = null;
+        mPenguins2.bmp = null;
+        mPenguins2 = null;
+        mCompressorHead.bmp = null;
+        mCompressorHead = null;
+        mCompressor.bmp = null;
+        mCompressor = null;
+        mLife.bmp = null;
+        mLife = null;
+
+        mImageList = null;
+        mSoundManager.cleanUp();
+        mSoundManager = null;
+        mLevelManager = null;
+      }
+    }
+
+    private void doDraw(Canvas canvas) {
+      //Log.i("frozen-bubble", "doDraw()");
+      if (! mImagesReady) {
+        //Log.i("frozen-bubble", "!mImagesReady, returning");
+        return;
+      }
+      if ((mDisplayDX > 0) || (mDisplayDY > 0)) {
+        //Log.i("frozen-bubble", "Drawing black background.");
+        canvas.drawRGB(0, 0, 0);
+      }
+      drawBackground(canvas);
+      drawLevelNumber(canvas);
+      mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
+      mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
+    }
+
+    /**
+     * Process key presses.  This must be allowed to run regardless of
+     * the game state to correctly handle initial game conditions.
+     * 
+     * @param keyCode
+     *        - the static KeyEvent key identifier.
+     * 
+     * @param msg
+     *        - the key action message.
+     * 
+     * @return
+     *        - true if the key action is processed, false if not.
+     * 
+     * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
+     */
+    boolean doKeyDown(int keyCode, KeyEvent msg) {
+      synchronized (mSurfaceHolder) {
+        /*
+         * Only update the game state if this is a fresh key press.
+         */
+        if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
+            ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
+             (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
+             (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
+             (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
+             (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
+          updateStateOnEvent(null);
+
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+          mLeft    = true;
+          mWasLeft = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+          mRight    = true;
+          mWasRight = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+          mFire    = true;
+          mWasFire = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+          mUp    = true;
+          mWasUp = true;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+          mDown    = true;
+          mWasDown = true;
+          return true;
+        }
+        return false;
+      }
+    }
+
+    /**
+     * Process key releases.  This must be allowed to run regardless of
+     * the game state in order to properly clear key presses.
+     * 
+     * @param keyCode
+     *        - the static KeyEvent key identifier.
+     * 
+     * @param msg
+     *        - the key action message.
+     * 
+     * @return true if the key action is processed, false if not.
+     * 
+     * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
+     */
+    boolean doKeyUp(int keyCode, KeyEvent msg) {
+      synchronized (mSurfaceHolder) {
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+          mLeft = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+          mRight = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+          mFire = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+          mUp = false;
+          return true;
+        }
+        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+          mDown = false;
+          return true;
+        }
+        return false;
+      }
+    }
+
+    /**
+     * This method handles screen touch motion events.
+     * <p>
+     * This method will be called three times in succession for each
+     * touch, to process ACTION_DOWN, ACTION_UP, and ACTION_MOVE.
+     * 
+     * @param  event
+     *         - the motion event
+     * @return True if the event was handled, false otherwise.
+     */
+    boolean doTouchEvent(MotionEvent event) {
+      synchronized (mSurfaceHolder) {
+        if(updateStateOnEvent(event))
+          return true;
+
+        if (mMode == STATE_RUNNING) {
+          double x = xFromScr(event.getX());
+          double y = yFromScr(event.getY());
+
+          // Set the values used when Point To Shoot is on.
+          if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (y < TOUCH_FIRE_Y_THRESHOLD) {
+              mTouchFire = true;
+              mTouchX = x;
+              mTouchY = y;
+            }
+            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
+              mTouchSwap = true;
+          }
+
+          // Set the values used when Aim Then Shoot is on.
+          if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
+              mATSTouchFire = true;
+            }
+            mATSTouchLastX = x;
+          }
+          else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
+              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
+            }
+            mATSTouchLastX = x;
+          }
+          return true;
+        }
+        return false;
+      }
+    }
+
+    /**
+     * Process trackball motion events.
+     * <p>
+     * This method only processes trackball motion for the purpose of
+     * aiming the launcher.  The trackball has no effect on the game
+     * state, much like moving a mouse cursor over a screen does not
+     * perform any intrinsic actions in most applications.
+     *  
+     * @param event
+     *        - the motion event associated with the trackball.
+     * 
+     * @return This function returns true if the trackball motion was
+     *         processed, which notifies the caller that this method
+     *         handled the motion event and no other handling is
+     *         necessary.
+     */
+    boolean doTrackballEvent(MotionEvent event) {
+      synchronized (mSurfaceHolder) {
+        if (mMode == STATE_RUNNING) {
+          if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+
+    private void drawAboutScreen(Canvas canvas) {
+      canvas.drawRGB(0, 0, 0);
+      int x = 168;
+      int y = 20;
+      int ysp = 26;
+      int indent = 10;
+      mFont.print("original frozen bubble:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("guillaume cottenceau", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("alexis younes", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("matthias le bidan", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      y += ysp;
+      mFont.print("java version:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("glenn sanson", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      y += ysp;
+      mFont.print("android port:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("aleksander fedorynski", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("eric fortin", x + indent, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += 2 * ysp;
+      mFont.print("android port source code", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("is available at:", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("http://code.google.com", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+      mFont.print("/p/frozenbubbleandroid", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+    }
+
+    private void drawBackground(Canvas c) {
+      Sprite.drawImage(mBackground, 0, 0, c, mDisplayScale,
+                       mDisplayDX, mDisplayDY);
+    }
+
+    private void drawLevelNumber(Canvas canvas) {
+      int y = 433;
+      int x;
+      int level = mLevelManager.getLevelIndex() + 1;
+      if (level < 10) {
+        x = 185;
+        mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else if (level < 100) {
+        x = 178;
+        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else {
+        x = 173;
+        x += mFont.paintChar(Character.forDigit(level / 100, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        level -= 100 * (level / 100);
+        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+    }
+
+    private void drawHighscoreScreen(Canvas canvas, int level) {
+      canvas.drawRGB(0, 0, 0);
+      int x = 168;
+      int y = 20;
+      int ysp = 26;
+      int indent = 10;
+
+      mFont.print("highscore for level " + (level + 1), x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += 2 * ysp;
+
+      List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
+      long lastScoreId = mHighscoreManager.getLastScoreId();
+      int i = 1;
+      for (HighscoreDO hdo : hlist) {
+        String you = "";
+        if (lastScoreId == hdo.getId()) {
+          you = "|";
+        }
+        // TODO: Add player name support.
+        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
+        // + " - "
+        // + hdo.getShots()
+        // + " - " + (hdo.getTime() / 1000)
+        // + " sec", x + indent,
+        // y, canvas,
+        // mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.print(you + i++ + " - "
+          + hdo.getShots()
+          + " shots - "
+          + (hdo.getTime() / 1000)
+          + " sec", x + indent,
+          y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+    }
+
     public int getCurrentLevelIndex() {
       synchronized (mSurfaceHolder) {
         return mLevelManager.getLevelIndex();
       }
+    }
+
+    private int getScreenOrientation() {
+      //
+      // The method getOrientation() was deprecated in API level 8.
+      //
+      // For API level 8 or greater, use getRotation().
+      //
+      //
+      int rotation = ((Activity) mContext).getWindowManager().
+        getDefaultDisplay().getOrientation();
+      DisplayMetrics dm = new DisplayMetrics();
+      ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
+      int width  = dm.widthPixels;
+      int height = dm.heightPixels;
+      int orientation;
+      //
+      // The orientation determination is based on the natural orienation
+      // mode of the device, which can be either portrait, landscape, or
+      // square.
+      //
+      // After the natural orientation is determined, convert the device
+      // rotation into a fully qualified orientation.
+      //
+      //
+      if ((((rotation == Surface.ROTATION_0  ) ||
+            (rotation == Surface.ROTATION_180)) && (height > width)) ||
+          (((rotation == Surface.ROTATION_90 ) ||
+            (rotation == Surface.ROTATION_270)) && (width  > height))) {
+        //
+        // Natural orientation is portrait.
+        //
+        //
+        switch(rotation) {
+          case Surface.ROTATION_0:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;
+          case Surface.ROTATION_90:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;
+          case Surface.ROTATION_180:
+            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            break;
+          case Surface.ROTATION_270:
+            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            break;
+          default:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;              
+        }
+      }
+      else {
+        //
+        // Natural orientation is landscape or square.
+        //
+        //
+        switch(rotation) {
+          case Surface.ROTATION_0:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;
+          case Surface.ROTATION_90:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;
+          case Surface.ROTATION_180:
+            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            break;
+          case Surface.ROTATION_270:
+            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            break;
+          default:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;              
+        }
+      }
+
+      return orientation;
     }
 
     private BmpWrap NewBmpWrap() {
@@ -401,37 +936,44 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         throw new RuntimeException(e);
       }
 
-      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighscoreManager, 1);
-      mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins2,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighscoreManager, 2);
-      startAiThread();
-      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
+      newGame();
     }
 
-    private void scaleFrom(BmpWrap image, Bitmap bmp) {
-      if ((image.bmp != null) && (image.bmp != bmp)) {
-        image.bmp.recycle();
+    public void newGame() {
+      synchronized (mSurfaceHolder) {
+        mLevelManager.goToFirstLevel();
+        mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                      mFrozenBubbles, mTargetedBubbles,
+                                      mBubbleBlink, mGameWon, mGameLost,
+                                      mGamePaused, mHurry, mPenguins,
+                                      mCompressorHead, mCompressor, mLauncher,
+                                      mSoundManager, mLevelManager,
+                                      mHighscoreManager, 1);
+        mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                      mFrozenBubbles, mTargetedBubbles,
+                                      mBubbleBlink, mGameWon, mGameLost,
+                                      mGamePaused, mHurry, mPenguins2,
+                                      mCompressorHead, mCompressor, mLauncher,
+                                      mSoundManager, mLevelManager,
+                                      mHighscoreManager, 2);
+        startAiThread();
+        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
+    }
 
-      if ((mDisplayScale > 0.99999) && (mDisplayScale < 1.00001)) {
-        image.bmp = bmp;
-        return;
+    public void pause() {
+      synchronized (mSurfaceHolder) {
+        if (mMode == STATE_RUNNING) {
+          setState(STATE_PAUSE);
+
+          if (mGameListener != null)
+            mGameListener.onGameEvent(EVENT_GAME_PAUSED);
+
+          mFrozenGame1     .pause();
+          mFrozenGame2     .pause();
+          mHighscoreManager.pauseLevel();
+        }
       }
-
-      int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
-      int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
-      image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
     }
 
     private void resizeBitmaps() {
@@ -464,18 +1006,21 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mImagesReady = true;
     }
 
-    public void pause() {
+    /**
+     * Restores game state from the indicated Bundle. Typically called when
+     * the Activity is being restored after having been previously
+     * destroyed.
+     *
+     * @param  savedState
+     *         - Bundle containing the game state.
+     */
+    public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
-          setState(STATE_PAUSE);
-
-          if (mGameListener != null)
-            mGameListener.onGameEvent(EVENT_GAME_PAUSED);
-
-          mFrozenGame1     .pause();
-          mFrozenGame2     .pause();
-          mHighscoreManager.pauseLevel();
-        }
+        setState(STATE_PAUSE);
+        mFrozenGame1     .restoreState(map, mImageList);
+        mFrozenGame2     .restoreState(map, mImageList);
+        mLevelManager    .restoreState(map);
+        mHighscoreManager.restoreState(map);
       }
     }
 
@@ -486,28 +1031,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           mFrozenGame2     .resume();
           mHighscoreManager.resumeLevel();
         }
-      }
-    }
-
-    public void newGame() {
-      synchronized (mSurfaceHolder) {
-        mLevelManager.goToFirstLevel();
-        mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                      mFrozenBubbles, mTargetedBubbles,
-                                      mBubbleBlink, mGameWon, mGameLost,
-                                      mGamePaused, mHurry, mPenguins,
-                                      mCompressorHead, mCompressor, mLauncher,
-                                      mSoundManager, mLevelManager,
-                                      mHighscoreManager, 1);
-        mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                      mFrozenBubbles, mTargetedBubbles,
-                                      mBubbleBlink, mGameWon, mGameLost,
-                                      mGamePaused, mHurry, mPenguins2,
-                                      mCompressorHead, mCompressor, mLauncher,
-                                      mSoundManager, mLevelManager,
-                                      mHighscoreManager, 2);
-        startAiThread();
-        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
 
@@ -583,22 +1106,24 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       return map;
     }
 
-    /**
-     * Restores game state from the indicated Bundle. Typically called when
-     * the Activity is being restored after having been previously
-     * destroyed.
-     *
-     * @param  savedState
-     *         - Bundle containing the game state.
-     */
-    public synchronized void restoreState(Bundle map) {
-      synchronized (mSurfaceHolder) {
-        setState(STATE_PAUSE);
-        mFrozenGame1     .restoreState(map, mImageList);
-        mFrozenGame2     .restoreState(map, mImageList);
-        mLevelManager    .restoreState(map);
-        mHighscoreManager.restoreState(map);
+    private void scaleFrom(BmpWrap image, Bitmap bmp) {
+      if ((image.bmp != null) && (image.bmp != bmp)) {
+        image.bmp.recycle();
       }
+
+      if ((mDisplayScale > 0.99999) && (mDisplayScale < 1.00001)) {
+        image.bmp = bmp;
+        return;
+      }
+
+      int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
+      int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
+      image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
+    }
+
+    public void setPosition(double value) {
+      mFrozenGame1.setPosition(value);
+      mFrozenGame2.setPosition(value);
     }
 
     public void setRunning(boolean b) {
@@ -629,88 +1154,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       synchronized (mSurfaceHolder) {
         mSurfaceOK = ok;
       }
-    }
-
-    public boolean surfaceOK() {
-      synchronized (mSurfaceHolder) {
-        return mSurfaceOK;
-      }
-    }
-
-    private int getScreenOrientation() {
-      //
-      // The method getOrientation() was deprecated in API level 8.
-      //
-      // For API level 8 or greater, use getRotation().
-      //
-      //
-      int rotation = ((Activity) mContext).getWindowManager().
-        getDefaultDisplay().getOrientation();
-      DisplayMetrics dm = new DisplayMetrics();
-      ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
-      int width  = dm.widthPixels;
-      int height = dm.heightPixels;
-      int orientation;
-      //
-      // The orientation determination is based on the natural orienation
-      // mode of the device, which can be either portrait, landscape, or
-      // square.
-      //
-      // After the natural orientation is determined, convert the device
-      // rotation into a fully qualified orientation.
-      //
-      //
-      if ((((rotation == Surface.ROTATION_0  ) ||
-            (rotation == Surface.ROTATION_180)) && (height > width)) ||
-          (((rotation == Surface.ROTATION_90 ) ||
-            (rotation == Surface.ROTATION_270)) && (width  > height))) {
-        //
-        // Natural orientation is portrait.
-        //
-        //
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;              
-        }
-      }
-      else {
-        //
-        // Natural orientation is landscape or square.
-        //
-        //
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;              
-        }
-      }
-
-      return orientation;
     }
 
     public void setSurfaceSize(int width, int height) {
@@ -756,198 +1199,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mAiThread.start();
     }
 
-    /**
-     * Process key presses.  This must be allowed to run regardless of
-     * the game state to correctly handle initial game conditions.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * 
-     * @param msg
-     *        - the key action message.
-     * 
-     * @return
-     *        - true if the key action is processed, false if not.
-     * 
-     * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
-     */
-    boolean doKeyDown(int keyCode, KeyEvent msg) {
+    public boolean surfaceOK() {
       synchronized (mSurfaceHolder) {
-        /*
-         * Only update the game state if this is a fresh key press.
-         */
-        if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
-            ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
-          updateStateOnEvent(null);
-
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft    = true;
-          mWasLeft = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight    = true;
-          mWasRight = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire    = true;
-          mWasFire = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp    = true;
-          mWasUp = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown    = true;
-          mWasDown = true;
-          return true;
-        }
-        return false;
-      }
-    }
-
-    /**
-     * Process key releases.  This must be allowed to run regardless of
-     * the game state in order to properly clear key presses.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * 
-     * @param msg
-     *        - the key action message.
-     * 
-     * @return true if the key action is processed, false if not.
-     * 
-     * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
-     */
-    boolean doKeyUp(int keyCode, KeyEvent msg) {
-      synchronized (mSurfaceHolder) {
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown = false;
-          return true;
-        }
-        return false;
-      }
-    }
-
-    /**
-     * Process trackball motion events.
-     * <p>
-     * This method only processes trackball motion for the purpose of
-     * aiming the launcher.  The trackball has no effect on the game
-     * state, much like moving a mouse cursor over a screen does not
-     * perform any intrinsic actions in most applications.
-     *  
-     * @param event
-     *        - the motion event associated with the trackball.
-     * 
-     * @return This function returns true if the trackball motion was
-     *         processed, which notifies the caller that this method
-     *         handled the motion event and no other handling is
-     *         necessary.
-     */
-    boolean doTrackballEvent(MotionEvent event) {
-      synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
-          if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
-            return true;
-          }
-        }
-        return false;
-      }
-    }
-
-    /**
-     * Use the player 1 offset to calculate the horizontal offset to
-     * apply a raw horizontal position to the playfield.
-     * 
-     * @param  x
-     *         - the raw horizontal position.
-     * 
-     * @return - the adjusted horizontal position.
-     */
-    private double xFromScr(float x) {
-      return (x - mPlayer1DX) / mDisplayScale;
-    }
-
-    private double yFromScr(float y) {
-      return (y - mDisplayDY) / mDisplayScale;
-    }
-
-    //
-    //   doTouchEvent() - Implement this method to handle touch screen
-    //                     motion events.
-    //
-    //   This method will be called three times in succession for each
-    //   touch, to process ACTION_DOWN, ACTION_UP, and ACTION_MOVE.
-    //
-    //   Parameters
-    //      event - The motion event.
-    //
-    //   Returns
-    //      True if the event was handled, false otherwise.
-    //
-    //
-    boolean doTouchEvent(MotionEvent event) {
-      synchronized (mSurfaceHolder) {
-        if(updateStateOnEvent(event))
-          return true;
-
-        if (mMode == STATE_RUNNING) {
-          double x = xFromScr(event.getX());
-          double y = yFromScr(event.getY());
-
-          // Set the values used when Point To Shoot is on.
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < TOUCH_FIRE_Y_THRESHOLD) {
-              mTouchFire = true;
-              mTouchX = x;
-              mTouchY = y;
-            }
-            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
-              mTouchSwap = true;
-          }
-
-          // Set the values used when Aim Then Shoot is on.
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchFire = true;
-            }
-            mATSTouchLastX = x;
-          }
-          else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
-            }
-            mATSTouchLastX = x;
-          }
-          return true;
-        }
-        return false;
+        return mSurfaceOK;
       }
     }
 
@@ -989,7 +1243,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
               mShowScores = false;
               setState(STATE_RUNNING);
               if (mGameListener != null) {
-                mGameListener.onGameEvent(EVENT_GAME_RESUME);
+                mGameListener.onGameEvent(EVENT_LEVEL_START);
               }
               return true;
             }
@@ -1004,144 +1258,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       return false;
     }
 
-    private void drawBackground(Canvas c) {
-      Sprite.drawImage(mBackground, 0, 0, c, mDisplayScale,
-                       mDisplayDX, mDisplayDY);
-    }
-
-    private void drawLevelNumber(Canvas canvas) {
-      int y = 433;
-      int x;
-      int level = mLevelManager.getLevelIndex() + 1;
-      if (level < 10) {
-        x = 185;
-        mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else if (level < 100) {
-        x = 178;
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else {
-        x = 173;
-        x += mFont.paintChar(Character.forDigit(level / 100, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        level -= 100 * (level / 100);
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-    }
-
-    private void drawAboutScreen(Canvas canvas) {
-      canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
-      int ysp = 26;
-      int indent = 10;
-      mFont.print("original frozen bubble:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("guillaume cottenceau", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("alexis younes", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("matthias le bidan", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      y += ysp;
-      mFont.print("java version:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("glenn sanson", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      y += ysp;
-      mFont.print("android port:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("aleksander fedorynski", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("eric fortin", x + indent, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += 2 * ysp;
-      mFont.print("android port source code", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("is available at:", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("http://code.google.com", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-      mFont.print("/p/frozenbubbleandroid", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-    }
-
-    private void drawHighscoreScreen(Canvas canvas, int level) {
-      canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
-      int ysp = 26;
-      int indent = 10;
-
-      mFont.print("highscore for level " + (level + 1), x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += 2 * ysp;
-
-      List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
-      long lastScoreId = mHighscoreManager.getLastScoreId();
-      int i = 1;
-      for (HighscoreDO hdo : hlist) {
-        String you = "";
-        if (lastScoreId == hdo.getId()) {
-          you = "|";
-        }
-        // TODO: Add player name support.
-        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
-        // + " - "
-        // + hdo.getShots()
-        // + " - " + (hdo.getTime() / 1000)
-        // + " sec", x + indent,
-        // y, canvas,
-        // mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.print(you + i++ + " - "
-          + hdo.getShots()
-          + " shots - "
-          + (hdo.getTime() / 1000)
-          + " sec", x + indent,
-          y, canvas,
-          mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-      }
-    }
-
-    private void doDraw(Canvas canvas) {
-      //Log.i("frozen-bubble", "doDraw()");
-      if (! mImagesReady) {
-        //Log.i("frozen-bubble", "!mImagesReady, returning");
-        return;
-      }
-      if ((mDisplayDX > 0) || (mDisplayDY > 0)) {
-        //Log.i("frozen-bubble", "Drawing black background.");
-        canvas.drawRGB(0, 0, 0);
-      }
-      drawBackground(canvas);
-      drawLevelNumber(canvas);
-      mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
-      mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
-    }
-
     private void updateGameState() {
       int game1_state = mFrozenGame1.play(mLeft || mWasLeft,
                                           mRight || mWasRight,
@@ -1150,13 +1266,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                           mTrackballDX,
                                           mTouchFire, mTouchX, mTouchY,
                                           mATSTouchFire, mATSTouchDX);
-      int game2_state = mFrozenGame2.play(false,
-                                          false,
-                                          mAiThread.getFireFlag(),
-                                          mAiThread.getSwapFlag(),
-                                          0,
-                                          false, 0, 0,
-                                          false, 0);
+      mFrozenGame2.play(false, false, mAiThread.getFireFlag(),
+                        mAiThread.getSwapFlag(), 0, false, 0, 0, false, 0);
 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();
@@ -1204,156 +1315,21 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mATSTouchDX   = 0;
     }
 
-    public void cleanUp() {
-      synchronized (mSurfaceHolder) {
-        // I don't really understand why all this is necessary.
-        // I used to get a crash (an out-of-memory error) once every six or
-        // seven times I started the game.  I googled the error and someone
-        // said you have to call recycle() on all the bitmaps and set
-        // the pointers to null to facilitate garbage collection.  So I did
-        // and the crashes went away.
-        mFrozenGame1.cleanUp();
-        mFrozenGame1 = null;
-        mFrozenGame2.cleanUp();
-        mFrozenGame2 = null;
-        mImagesReady = false;
-
-        boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
-        mBackgroundOrig.recycle();
-        mBackgroundOrig = null;
-
-        for (int i = 0; i < mBubblesOrig.length; i++) {
-          mBubblesOrig[i].recycle();
-          mBubblesOrig[i] = null;
-        }
-        mBubblesOrig = null;
-
-        for (int i = 0; i < mBubblesBlindOrig.length; i++) {
-          mBubblesBlindOrig[i].recycle();
-          mBubblesBlindOrig[i] = null;
-        }
-        mBubblesBlindOrig = null;
-
-        for (int i = 0; i < mFrozenBubblesOrig.length; i++) {
-          mFrozenBubblesOrig[i].recycle();
-          mFrozenBubblesOrig[i] = null;
-        }
-        mFrozenBubblesOrig = null;
-
-        for (int i = 0; i < mTargetedBubblesOrig.length; i++) {
-          mTargetedBubblesOrig[i].recycle();
-          mTargetedBubblesOrig[i] = null;
-        }
-        mTargetedBubblesOrig = null;
-
-        mBubbleBlinkOrig.recycle();
-        mBubbleBlinkOrig = null;
-        mGameWonOrig.recycle();
-        mGameWonOrig = null;
-        mGameLostOrig.recycle();
-        mGameLostOrig = null;
-        mGamePausedOrig.recycle();
-        mGamePausedOrig = null;
-        mHurryOrig.recycle();
-        mHurryOrig = null;
-        mPenguinsOrig.recycle();
-        mPenguinsOrig = null;
-        mPenguins2Orig.recycle();
-        mPenguins2Orig = null;
-        mCompressorHeadOrig.recycle();
-        mCompressorHeadOrig = null;
-        mCompressorOrig.recycle();
-        mCompressorOrig = null;
-        mLifeOrig.recycle();
-        mLifeOrig = null;
-
-        if (imagesScaled) {
-          mBackground.bmp.recycle();
-          for (int i = 0; i < mBubbles.length; i++) {
-            mBubbles[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mBubblesBlind.length; i++) {
-            mBubblesBlind[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mFrozenBubbles.length; i++) {
-            mFrozenBubbles[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mTargetedBubbles.length; i++) {
-            mTargetedBubbles[i].bmp.recycle();
-          }
-
-          mBubbleBlink.bmp.recycle();
-          mGameWon.bmp.recycle();
-          mGameLost.bmp.recycle();
-          mGamePaused.bmp.recycle();
-          mHurry.bmp.recycle();
-          mPenguins.bmp.recycle();
-          mPenguins2.bmp.recycle();
-          mCompressorHead.bmp.recycle();
-          mCompressor.bmp.recycle();
-          mLife.bmp.recycle();
-        }
-        mBackground.bmp = null;
-        mBackground = null;
-
-        for (int i = 0; i < mBubbles.length; i++) {
-          mBubbles[i].bmp = null;
-          mBubbles[i] = null;
-        }
-        mBubbles = null;
-
-        for (int i = 0; i < mBubblesBlind.length; i++) {
-          mBubblesBlind[i].bmp = null;
-          mBubblesBlind[i] = null;
-        }
-        mBubblesBlind = null;
-
-        for (int i = 0; i < mFrozenBubbles.length; i++) {
-          mFrozenBubbles[i].bmp = null;
-          mFrozenBubbles[i] = null;
-        }
-        mFrozenBubbles = null;
-
-        for (int i = 0; i < mTargetedBubbles.length; i++) {
-          mTargetedBubbles[i].bmp = null;
-          mTargetedBubbles[i] = null;
-        }
-        mTargetedBubbles = null;
-
-        mBubbleBlink.bmp = null;
-        mBubbleBlink = null;
-        mGameWon.bmp = null;
-        mGameWon = null;
-        mGameLost.bmp = null;
-        mGameLost = null;
-        mGamePaused.bmp = null;
-        mGamePaused = null;
-        mHurry.bmp = null;
-        mHurry = null;
-        mPenguins.bmp = null;
-        mPenguins = null;
-        mPenguins2.bmp = null;
-        mPenguins2 = null;
-        mCompressorHead.bmp = null;
-        mCompressorHead = null;
-        mCompressor.bmp = null;
-        mCompressor = null;
-        mLife.bmp = null;
-        mLife = null;
-
-        mImageList = null;
-        mSoundManager.cleanUp();
-        mSoundManager = null;
-        mLevelManager = null;
-      }
+    /**
+     * Use the player 1 offset to calculate the horizontal offset to
+     * apply a raw horizontal position to the playfield.
+     * 
+     * @param  x
+     *         - the raw horizontal position.
+     * 
+     * @return - the adjusted horizontal position.
+     */
+    private double xFromScr(float x) {
+      return (x - mPlayer1DX) / mDisplayScale;
     }
 
-    public void setPosition(double value) {
-      mFrozenGame1.setPosition(value);
-      mFrozenGame2.setPosition(value);
+    private double yFromScr(float y) {
+      return (y - mDisplayDY) / mDisplayScale;
     }
   }
 
