@@ -186,11 +186,11 @@ public class FrozenGame extends GameScreen {
 
     Rect r;
     if (playerId == 1)
-      r = new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 1,
-                   436 + PenguinSprite.PENGUIN_HEIGHT - 1);
+      r = new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
+                   436 + PenguinSprite.PENGUIN_HEIGHT - 2);
     else
-      r = new Rect(220, 436, 220 + PenguinSprite.PENGUIN_WIDTH - 1,
-                   436 + PenguinSprite.PENGUIN_HEIGHT - 1);
+      r = new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
+                   436 + PenguinSprite.PENGUIN_HEIGHT - 2);
 
     penguin = new PenguinSprite(r, penguins_arg, random);
     this.addSprite(penguin);

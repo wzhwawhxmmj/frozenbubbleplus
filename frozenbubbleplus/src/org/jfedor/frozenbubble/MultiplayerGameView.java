@@ -1060,6 +1060,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();
 
+      /*
+       * When one player wins or loses, the other player is granted an
+       * automatic loss or win, respectively.
+       */
       if (game1_result != FrozenGame.GAME_PLAYING) {
         if ((game1_result == FrozenGame.GAME_WON) ||
             (game1_result == FrozenGame.GAME_NEXT_WON))
@@ -1075,10 +1079,13 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           mFrozenGame1.setGameResult(FrozenGame.GAME_WON);
       }
 
+      /*
+       * Only start a new game when player 1 provides input, because the
+       * CPU is prone to sneaking a launch attempt in after the game is
+       * decided.
+       */
       if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
-          (game1_state == FrozenGame.GAME_NEXT_WON ) ||
-          (game2_state == FrozenGame.GAME_NEXT_LOST) ||
-          (game2_state == FrozenGame.GAME_NEXT_WON )) {
+          (game1_state == FrozenGame.GAME_NEXT_WON )) {
         pause();
         newGame();
       }
