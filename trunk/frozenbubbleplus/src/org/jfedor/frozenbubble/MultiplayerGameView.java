@@ -80,16 +80,20 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Vector;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -121,6 +125,16 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
   public void setGameListener (GameListener gl) {
     mGameListener = gl;
   }
+
+  //
+  // The following screen orientation definitions were added to
+  // ActivityInfo in API level 9.
+  //
+  //
+  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
+  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
+  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
+  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
   class MultiplayerGameThread extends Thread {
     private static final int FRAME_DELAY = 40;
@@ -623,6 +637,82 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       }
     }
 
+    private int getScreenOrientation() {
+      //
+      // The method getOrientation() was deprecated in API level 8.
+      //
+      // For API level 8 or greater, use getRotation().
+      //
+      //
+      int rotation = ((Activity) mContext).getWindowManager().
+        getDefaultDisplay().getOrientation();
+      DisplayMetrics dm = new DisplayMetrics();
+      ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
+      int width  = dm.widthPixels;
+      int height = dm.heightPixels;
+      int orientation;
+      //
+      // The orientation determination is based on the natural orienation
+      // mode of the device, which can be either portrait, landscape, or
+      // square.
+      //
+      // After the natural orientation is determined, convert the device
+      // rotation into a fully qualified orientation.
+      //
+      //
+      if ((((rotation == Surface.ROTATION_0  ) ||
+            (rotation == Surface.ROTATION_180)) && (height > width)) ||
+          (((rotation == Surface.ROTATION_90 ) ||
+            (rotation == Surface.ROTATION_270)) && (width  > height))) {
+        //
+        // Natural orientation is portrait.
+        //
+        //
+        switch(rotation) {
+          case Surface.ROTATION_0:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;
+          case Surface.ROTATION_90:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;
+          case Surface.ROTATION_180:
+            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            break;
+          case Surface.ROTATION_270:
+            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            break;
+          default:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;              
+        }
+      }
+      else {
+        //
+        // Natural orientation is landscape or square.
+        //
+        //
+        switch(rotation) {
+          case Surface.ROTATION_0:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;
+          case Surface.ROTATION_90:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;
+          case Surface.ROTATION_180:
+            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            break;
+          case Surface.ROTATION_270:
+            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            break;
+          default:
+            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;              
+        }
+      }
+
+      return orientation;
+    }
+
     public void setSurfaceSize(int width, int height) {
       float newHeight    = height;
       float newWidth     = width;
@@ -637,7 +727,18 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         }
         else {
           mDisplayScale = (1.0 * newWidth) / gameWidth;
-          mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
+          /*
+           * In portrait mode during a multiplayer game, display just
+           * one game field.  Depending on which portrait mode it is,
+           * display player one or player two.  For normal portrait
+           * orientation, show player one, and for reverse portrait,
+           * show player two.
+           */
+          int orientation = getScreenOrientation();
+          if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+            mDisplayDX = (int)(-mDisplayScale * gameWidth);
+          else
+            mDisplayDX = 0;
           mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
         mPlayer1DX = (int) (mDisplayDX - (mDisplayScale * ( gameWidth / 2 )));
@@ -1086,6 +1187,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
        */
       if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
           (game1_state == FrozenGame.GAME_NEXT_WON )) {
+        mShowScores = true;
         pause();
         newGame();
       }
