@@ -102,6 +102,8 @@ import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 
 class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback {
+  private int                   numPlayer1GamesWon;
+  private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
   private ComputerAI            mAiThread;
@@ -388,7 +390,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         canvas.drawRGB(0, 0, 0);
       }
       drawBackground(canvas);
-      drawLevelNumber(canvas);
+      drawWinTotals(canvas);
       mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
       mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
     }
@@ -623,34 +625,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                        mDisplayDX, mDisplayDY);
     }
 
-    private void drawLevelNumber(Canvas canvas) {
-      int y = 433;
-      int x;
-      int level = mLevelManager.getLevelIndex() + 1;
-      if (level < 10) {
-        x = 185;
-        mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else if (level < 100) {
-        x = 178;
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else {
-        x = 173;
-        x += mFont.paintChar(Character.forDigit(level / 100, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        level -= 100 * (level / 100);
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-    }
-
     private void drawHighscoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
       int x = 168;
@@ -686,6 +660,58 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           y, canvas,
           mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
+      }
+    }
+
+    private void drawWinTotals(Canvas canvas) {
+      int y = 433;
+      int x = GAMEFIELD_WIDTH - 40;
+      int gamesWon1 = numPlayer1GamesWon;
+      int gamesWon2 = numPlayer2GamesWon;
+
+      if (numPlayer1GamesWon < 10) {
+        x += 12;
+        x += mFont.paintChar(Character.forDigit(gamesWon1, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else if (numPlayer1GamesWon < 100) {
+        x += 5;
+        x += mFont.paintChar(Character.forDigit(gamesWon1 / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        x += mFont.paintChar(Character.forDigit(gamesWon1 % 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else {
+        x += mFont.paintChar(Character.forDigit(gamesWon1 / 100, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        gamesWon1 -= 100 * (gamesWon1 / 100);
+        x += mFont.paintChar(Character.forDigit(gamesWon1 / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        x += mFont.paintChar(Character.forDigit(gamesWon1 % 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      x += 7;
+      x += mFont.paintChar('-', x, y, canvas,
+                           mDisplayScale, mDisplayDX, mDisplayDY);
+      x += 7;
+      if (numPlayer2GamesWon < 10) {
+        x += mFont.paintChar(Character.forDigit(gamesWon2, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else if (numPlayer2GamesWon < 100) {
+        x += mFont.paintChar(Character.forDigit(gamesWon2 / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        x += mFont.paintChar(Character.forDigit(gamesWon2 % 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else {
+        x += mFont.paintChar(Character.forDigit(gamesWon2 / 100, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        gamesWon1 -= 100 * (gamesWon2 / 100);
+        x += mFont.paintChar(Character.forDigit(gamesWon2 / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        x += mFont.paintChar(Character.forDigit(gamesWon2 % 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
       }
     }
 
@@ -1297,6 +1323,11 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
        */
       if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
           (game1_state == FrozenGame.GAME_NEXT_WON )) {
+        if (game1_state == FrozenGame.GAME_NEXT_WON )
+          numPlayer1GamesWon++;
+        else
+          numPlayer2GamesWon++;
+
         mShowScores = true;
         pause();
         newGame();
@@ -1341,6 +1372,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     holder.addCallback(this);
 
     mAiThread = null;
+    // TODO: save and restore the number of games won.
+    numPlayer1GamesWon = 0;
+    numPlayer2GamesWon = 0;
 
     mGameThread = new MultiplayerGameThread(holder, 0);
     setFocusable(true);
