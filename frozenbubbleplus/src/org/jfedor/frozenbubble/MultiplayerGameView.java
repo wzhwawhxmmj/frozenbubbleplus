@@ -1123,7 +1123,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     public void setPosition(double value) {
       mFrozenGame1.setPosition(value);
-      mFrozenGame2.setPosition(value);
     }
 
     public void setRunning(boolean b) {
@@ -1273,7 +1272,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       int game2_result = mFrozenGame2.getGameResult();
 
       /*
-       * When one player wins or loses, the other player is granted an
+       * When one player wins or loses, the other player is designated the an
        * automatic loss or win, respectively.
        */
       if (game1_result != FrozenGame.GAME_PLAYING) {

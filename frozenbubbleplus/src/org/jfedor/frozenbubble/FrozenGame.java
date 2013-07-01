@@ -876,6 +876,11 @@ public class FrozenGame extends GameScreen {
     return playResult;
   }
 
+  public boolean getOkToFire() {
+    return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
+            readyToFire);
+  }
+
   public void setGameResult(int result) {
     playResult = result;
     endOfGame = true;
