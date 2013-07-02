@@ -53,6 +53,7 @@
 package com.efortin.frozenbubble;
 
 import java.util.List;
+
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

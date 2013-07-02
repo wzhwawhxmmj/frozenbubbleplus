@@ -108,6 +108,10 @@ public class BubbleSprite extends Sprite {
                lastOpenPosition.y);
   }
 
+  public int getColor() {
+    return this.color;
+  }
+
   public int getTypeId() {
     return Sprite.TYPE_BUBBLE;
   }
