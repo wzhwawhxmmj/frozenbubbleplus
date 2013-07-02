@@ -106,7 +106,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
-  private ComputerAI            mAiThread;
+  private ComputerAI            mOpponent;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -1216,12 +1216,12 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     }
 
     public void startAiThread() {
-      if (mAiThread != null) {
-        mAiThread.stopThread();
-        mAiThread = null;
+      if (mOpponent != null) {
+        mOpponent.stopThread();
+        mOpponent = null;
       }
-      mAiThread = new ComputerAI(mFrozenGame2, mLevelManager);
-      mAiThread.start();
+      mOpponent = new ComputerAI(mFrozenGame2);
+      mOpponent.start();
     }
 
     public boolean surfaceOK() {
@@ -1291,8 +1291,12 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                           mTrackballDX,
                                           mTouchFire, mTouchX, mTouchY,
                                           mATSTouchFire, mATSTouchDX);
-      mFrozenGame2.play(false, false, mAiThread.getFireFlag(),
-                        mAiThread.getSwapFlag(), 0, false, 0, 0, false, 0);
+      mFrozenGame2.play(mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_LEFT,
+                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_RIGHT,
+                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_UP,
+                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_DOWN,
+                        0, false, 0, 0, false, 0);
+      mOpponent.clearAction();
 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();
@@ -1371,7 +1375,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
 
-    mAiThread = null;
+    mOpponent = null;
     // TODO: save and restore the number of games won.
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
@@ -1438,8 +1442,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
 
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
-    mAiThread.stopThread();
-    mAiThread = null;
+    mOpponent.stopThread();
+    mOpponent = null;
     mGameThread.cleanUp();
     mContext = null;
   }

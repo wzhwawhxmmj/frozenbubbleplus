@@ -68,9 +68,9 @@ public class FrozenGame extends GameScreen {
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
 
-  public final static int MIN_LAUNCH_POSITION   = 1;
-  public final static int START_LAUNCH_POSITION = 20;
-  public final static int MAX_LAUNCH_POSITION   = 39;
+  public final static double MIN_LAUNCH_POSITION   = 1.0;
+  public final static double START_LAUNCH_POSITION = 20.0;
+  public final static double MAX_LAUNCH_POSITION   = 39.0;
 
   public final static int KEY_UP    = 38;
   public final static int KEY_LEFT  = 37;
@@ -239,7 +239,7 @@ public class FrozenGame extends GameScreen {
 
     this.addSprite(nextBubble);
     launchBubble = new LaunchBubbleSprite(currentColor, 
-                                          (int)launchBubblePosition,
+                                          launchBubblePosition,
                                           launcher, bubbles, bubblesBlind);
     this.spriteToBack(launchBubble);
     nbBubbles = 0;
@@ -679,7 +679,7 @@ public class FrozenGame extends GameScreen {
           nbBubbles++;
 
           movingBubble = new BubbleSprite(new Rect(302, 390, 32, 32),
-                                          (int)launchBubblePosition,
+                                          launchBubblePosition,
                                           currentColor,
                                           bubbles[currentColor],
                                           bubblesBlind[currentColor],
@@ -727,7 +727,7 @@ public class FrozenGame extends GameScreen {
         if (launchBubblePosition > MAX_LAUNCH_POSITION) {
           launchBubblePosition = MAX_LAUNCH_POSITION;
         }
-        launchBubble.changeDirection((int)launchBubblePosition);
+        launchBubble.changeDirection(launchBubblePosition);
         if (dx < 0) {
           penguin.updateState(PenguinSprite.STATE_TURN_LEFT);
         }
@@ -872,13 +872,29 @@ public class FrozenGame extends GameScreen {
     super.paint(c, scale, dx, dy);
   }
 
+  public int getCompressorPosition() {
+    return compressor.steps;
+  }
+
+  public int getCurrentColor() {
+    return currentColor;
+  }
+
   public int getGameResult() {
     return playResult;
+  }
+
+  public int getNextColor() {
+    return nextColor;
   }
 
   public boolean getOkToFire() {
     return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
             readyToFire);
+  }
+
+  public double getPosition() {
+    return launchBubblePosition;
   }
 
   public void setGameResult(int result) {
@@ -909,8 +925,7 @@ public class FrozenGame extends GameScreen {
     if (launchBubblePosition > MAX_LAUNCH_POSITION) {
       launchBubblePosition = MAX_LAUNCH_POSITION;
     }
-    launchBubble.changeDirection((int)launchBubblePosition);
-    penguin.updateState(PenguinSprite.STATE_VOID);
+    launchBubble.changeDirection(launchBubblePosition);
   }
 
   public void swapNextLaunchBubble() {
