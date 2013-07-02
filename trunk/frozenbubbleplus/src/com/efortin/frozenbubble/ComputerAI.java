@@ -52,17 +52,16 @@
 
 package com.efortin.frozenbubble;
 
-import java.util.Random;
-
+import org.gsanson.frozenbubble.Freile;
 import org.jfedor.frozenbubble.FrozenGame;
-import org.jfedor.frozenbubble.LevelManager;
 
-public class ComputerAI extends Thread {
-  private boolean fireFlag;
+import android.view.KeyEvent;
+
+public class ComputerAI extends Thread implements Freile.OpponentListener {
+  private int action;
   private boolean running;
-  private boolean swapFlag;
   private FrozenGame myFrozenGame;
-  private LevelManager myLevelManager;
+  private Freile cpuOpponent;
 
   /**
    * Game AI thread class constructor.
@@ -74,55 +73,75 @@ public class ComputerAI extends Thread {
    * @param levelRef
    *        - reference to the level grid to determine where to fire.
    */
-  public ComputerAI(FrozenGame gameRef, LevelManager levelRef) {
+  public ComputerAI(FrozenGame gameRef) {
     myFrozenGame = gameRef;
-    myLevelManager = levelRef;
-    fireFlag = true;
-    swapFlag = false;
+    cpuOpponent = new Freile(myFrozenGame.getGrid());
+    cpuOpponent.setOpponentListener(this);
+    action = 0;
     running = true;
   }
 
-  /**
-   * Return the current state of the fire flag.  When the AI has
-   * generated the next launch trajectory, the fire flag is set to true.
-   * <p>
-   * This function clears the fire flag when it is read, so this must
-   * only ever be called from one location, period.
-   * 
-   * @return - returns the state of the fire flag.
-   */
-  public boolean getFireFlag() {
-    /*
-     * If the fire flag is true, clear it, and return true.
-     */
-    if (fireFlag) {
-      fireFlag = false;
-      return true;
-    }
-    else
-      return false;
+  public void cleanUp() {
+    cpuOpponent.stopThread();
+    cpuOpponent = null;
   }
 
   /**
-   * Return the current state of the swap flag.  When the AI has
-   * determined that the current launch bubble is less desirable than
-   * the next one, the swap flag is set to true.
-   * <p>
-   * This function clears the swap flag when it is read, so this must
-   * only ever be called from one location, period.
-   * 
-   * @return - returns the state of the swap flag.
+   * The parent must use this method to clear the bubble launch action,
+   * because this class does not know when to clear it.
    */
-  public boolean getSwapFlag() {
-    /*
-     * If the swap flag is true, clear it, and return true.
-     */
-    if (swapFlag) {
-      swapFlag = false;
-      return true;
+  public void clearAction() {
+    if (action == KeyEvent.KEYCODE_DPAD_UP)
+      action = 0;
+
+    synchronized(this) {
+      this.notify();
     }
-    else
-      return false;
+  }
+
+  public double convertAngleToPosition(double angle) {
+    double position = (angle - Freile.MIN_LAUNCHER) /
+                      (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER);
+    position = (position * (FrozenGame.MAX_LAUNCH_POSITION -
+                            FrozenGame.MIN_LAUNCH_POSITION)) +
+               FrozenGame.MIN_LAUNCH_POSITION;
+    return position;
+  }
+
+  public double convertPositionToAngle(double position) {
+    double angle = ((double)(position - FrozenGame.MIN_LAUNCH_POSITION)) /
+                   ((double)(FrozenGame.MAX_LAUNCH_POSITION -
+                             FrozenGame.MIN_LAUNCH_POSITION));
+    angle = (angle * (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER)) +
+            Freile.MIN_LAUNCHER;
+    return angle;
+  }
+
+  /**
+   * Return the current state of the opponent action.  When the AI has
+   * generated the next action, the action is set to a non-zero value.
+   * 
+   * @return - returns the value of the CPU opponent action.
+   */
+  public int getAction() {
+    synchronized(this) {
+      this.notify();
+    }
+
+    return action;
+  }
+
+  public void onOpponentEvent(int event) {
+    switch (event) {
+      case Freile.EVENT_DONE_COMPUTING:
+        synchronized(this) {
+          this.notify();
+        }
+        break;
+
+      default:
+        break;
+    }
   }
 
   @Override
@@ -131,21 +150,61 @@ public class ComputerAI extends Thread {
       try {
         synchronized(this) {
           /*
-           * Only fire if the game state permits, and the last bubble
-           * launch trajectory has been processed.
+           * Compute the next CPU action.
            */
-          if (myFrozenGame.getOkToFire() && !fireFlag) {
-            Random random = new Random();
-            myFrozenGame.setPosition(random.nextInt(FrozenGame.MAX_LAUNCH_POSITION - 1) + 1);
-            fireFlag = true;
-            wait(900);
+          if (!cpuOpponent.isComputing())
+              cpuOpponent.compute(myFrozenGame.getCurrentColor(),
+                                  myFrozenGame.getCompressorPosition());
+
+          /*
+           * Only fire if the game state permits, and the last virtual
+           * opponent action has been processed.
+           */
+          if (myFrozenGame.getOkToFire() &&
+              (action != KeyEvent.KEYCODE_DPAD_UP)) {
+            while (cpuOpponent.isComputing()) {
+              wait();
+            }
+
+            /*
+             * Initialize a timeout interval to force a bubble launch if
+             * the CPU opponent takes too long to compute an action.
+             */
+            long timeout = System.currentTimeMillis() + 10000;
+
+            /*
+             * While the current action is to aim the launcher, keep
+             * pushing the directional aim command.
+             */
+            int actionNew = 0;
+            while ((actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
+                   (System.currentTimeMillis() < timeout)) {
+              actionNew = cpuOpponent.getAction(convertPositionToAngle(
+                myFrozenGame.getPosition()));
+
+              if (actionNew != KeyEvent.KEYCODE_DPAD_UP)
+                action = actionNew;
+
+              wait();
+            }
+
+            /*
+             * Set the launch direction to be as accurate as possible.
+             */
+            if (myFrozenGame.getOkToFire()) {
+              myFrozenGame.setPosition(convertAngleToPosition(
+                cpuOpponent.getExactDirection(0)));
+              action = actionNew;
+            }
           }
-          wait(100);
+
+          wait();
         }
       } catch (InterruptedException e) {
       } finally {
       }
     }
+    cleanUp();
   }
 
   /**
@@ -155,8 +214,9 @@ public class ComputerAI extends Thread {
    */
   public void stopThread() {
     running = false;
+
     synchronized(this) {
-      this.notifyAll();
+      this.notify();
     }
   }
 }

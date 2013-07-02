@@ -60,9 +60,10 @@ import android.graphics.Rect;
 import android.os.Bundle;
 
 public class BubbleSprite extends Sprite {
+  public static final double MINIMUM_DISTANCE = 400.;
+
   private static final double FALL_SPEED       = 1.;
   private static final double MAX_BUBBLE_SPEED = 8.;   
-  private static final double MINIMUM_DISTANCE = 400.;
 
   private int           color;
   private int           fixedAnim;
@@ -155,7 +156,7 @@ public class BubbleSprite extends Sprite {
   /**
    * Class constructor used when creating a launched bubble.
    */
-  public BubbleSprite(Rect area, int direction, int color, BmpWrap bubbleFace,
+  public BubbleSprite(Rect area, double direction, int color, BmpWrap bubbleFace,
                       BmpWrap bubbleBlindFace, BmpWrap frozenFace,
                       BmpWrap[] bubbleFixed, BmpWrap bubbleBlink,
                       BubbleManager bubbleManager, SoundManager soundManager,

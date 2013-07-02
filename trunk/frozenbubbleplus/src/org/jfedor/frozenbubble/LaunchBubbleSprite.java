@@ -61,13 +61,13 @@ import android.os.Bundle;
 
 public class LaunchBubbleSprite extends Sprite {
   private int currentColor;
-  private int currentDirection;
+  private double currentDirection;
 
   private Drawable  launcher;
   private BmpWrap[] bubbles;
   private BmpWrap[] colorblindBubbles;
 
-  public LaunchBubbleSprite(int initialColor, int initialDirection,
+  public LaunchBubbleSprite(int initialColor, double initialDirection,
                             Drawable launcher,
                             BmpWrap[] bubbles, BmpWrap[] colorblindBubbles) {
     super(new Rect(276, 362, 276 + 86, 362 + 76));
@@ -85,8 +85,8 @@ public class LaunchBubbleSprite extends Sprite {
     }
     super.saveState(map, saved_sprites);
     map.putInt(String.format("%d-currentColor", getSavedId()), currentColor);
-    map.putInt(String.format("%d-currentDirection", getSavedId()),
-               currentDirection);
+    map.putDouble(String.format("%d-currentDirection", getSavedId()),
+                  currentDirection);
   }
 
   public int getTypeId() {
@@ -97,7 +97,7 @@ public class LaunchBubbleSprite extends Sprite {
     currentColor = newColor;
   }
 
-  public void changeDirection(int newDirection) {
+  public void changeDirection(double newDirection) {
     currentDirection = newDirection;
   }
 
@@ -113,7 +113,8 @@ public class LaunchBubbleSprite extends Sprite {
     c.save();
     int xCenter = 318;
     int yCenter = 406;
-    c.rotate((float)(0.025 * 180 * (currentDirection - 20)),
+    c.rotate((float)(0.025 * 180 * (currentDirection -
+                                    FrozenGame.START_LAUNCH_POSITION)),
              (float)(xCenter * scale + dx), (float)(yCenter * scale + dy));
     launcher.setBounds((int)((xCenter - 50) * scale + dx),
                        (int)((yCenter - 50) * scale + dy),
