@@ -110,14 +110,14 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
-  // event types
+  // Event types.
   public static final int EVENT_GAME_WON    = 2;
   public static final int EVENT_GAME_LOST   = 3;
   public static final int EVENT_GAME_PAUSED = 4;
   public static final int EVENT_GAME_RESUME = 5;
   public static final int EVENT_LEVEL_START = 6;
   
-  // listener user set
+  // Listener user set.
   public interface GameListener {
     public abstract void onGameEvent(int event);
   }
