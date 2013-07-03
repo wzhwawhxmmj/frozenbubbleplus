@@ -121,10 +121,6 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * @return - returns the value of the CPU opponent action.
    */
   public int getAction() {
-    synchronized(this) {
-      this.notify();
-    }
-
     return action;
   }
 
@@ -151,6 +147,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
            */
           if (!cpuOpponent.isComputing())
               cpuOpponent.compute(myFrozenGame.getCurrentColor(),
+                                  myFrozenGame.getNextColor(),
                                   myFrozenGame.getCompressorPosition());
 
           /*
