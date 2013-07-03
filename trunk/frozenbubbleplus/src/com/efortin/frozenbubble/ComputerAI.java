@@ -67,11 +67,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * Game AI thread class constructor.
    * 
    * @param gameRef
-   *        - reference to the game to access information used to decide
-   *        when to fire.
-   * 
-   * @param levelRef
-   *        - reference to the level grid to determine where to fire.
+   *        - reference used to access game information for this player.
    */
   public ComputerAI(FrozenGame gameRef) {
     myFrozenGame = gameRef;
@@ -91,7 +87,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * because this class does not know when to clear it.
    */
   public void clearAction() {
-    if (action == KeyEvent.KEYCODE_DPAD_UP)
+    if ((action == KeyEvent.KEYCODE_DPAD_UP) ||
+        (action == KeyEvent.KEYCODE_DPAD_DOWN))
       action = 0;
 
     synchronized(this) {
