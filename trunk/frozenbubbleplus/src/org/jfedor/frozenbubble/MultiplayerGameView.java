@@ -80,6 +80,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Vector;
 
+import org.gsanson.frozenbubble.MalusBar;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -102,6 +104,11 @@ import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 
 class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback {
+
+  public static final int GAMEFIELD_WIDTH          = 320;
+  public static final int GAMEFIELD_HEIGHT         = 480;
+  public static final int EXTENDED_GAMEFIELD_WIDTH = 640;
+
   private int                   numPlayer1GamesWon;
   private int                   numPlayer2GamesWon;
   private Context               mContext;
@@ -139,15 +146,12 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
   public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
   class MultiplayerGameThread extends Thread {
+
     private static final int FRAME_DELAY = 40;
 
     public static final int STATE_RUNNING = 1;
     public static final int STATE_PAUSE   = 2;
     public static final int STATE_ABOUT   = 4;
-
-    public static final int GAMEFIELD_WIDTH          = 320;
-    public static final int GAMEFIELD_HEIGHT         = 480;
-    public static final int EXTENDED_GAMEFIELD_WIDTH = 640;
 
     private static final double TRACKBALL_COEFFICIENT      = 5;
     private static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
@@ -203,6 +207,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     private Bitmap mCompressorOrig;
     private Bitmap mLifeOrig;
     private Bitmap mFontImageOrig;
+    private Bitmap mBananaOrig;
+    private Bitmap mTomatoOrig;
     private BmpWrap mBackground;
     private BmpWrap[] mBubbles;
     private BmpWrap[] mBubblesBlind;
@@ -219,12 +225,16 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     private BmpWrap mCompressor;
     private BmpWrap mLife;
     private BmpWrap mFontImage;
+    private BmpWrap mBanana;
+    private BmpWrap mTomato;
 
     private BubbleFont    mFont;
     private Drawable      mLauncher;  // drawable because we rotate it
     private FrozenGame    mFrozenGame1;
     private FrozenGame    mFrozenGame2;
     private LevelManager  mLevelManager;
+    private MalusBar      malusBar1;
+    private MalusBar      malusBar2;
     private SoundManager  mSoundManager;
     private SurfaceHolder mSurfaceHolder;
 
@@ -294,6 +304,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mCompressorOrig = null;
         mLifeOrig.recycle();
         mLifeOrig = null;
+        mBananaOrig.recycle();
+        mBananaOrig = null;
+        mTomatoOrig.recycle();
+        mTomatoOrig = null;
 
         if (imagesScaled) {
           mBackground.bmp.recycle();
@@ -323,6 +337,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
           mCompressorHead.bmp.recycle();
           mCompressor.bmp.recycle();
           mLife.bmp.recycle();
+          mBanana.bmp.recycle();
+          mTomato.bmp.recycle();
         }
         mBackground.bmp = null;
         mBackground = null;
@@ -371,6 +387,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mCompressor = null;
         mLife.bmp = null;
         mLife = null;
+        mBanana.bmp = null;
+        mBanana = null;
+        mTomato.bmp = null;
+        mTomato = null;
 
         mImageList = null;
         mSoundManager.cleanUp();
@@ -906,6 +926,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         res, R.drawable.life, options);
       mFontImageOrig = BitmapFactory.decodeResource(
         res, R.drawable.bubble_font, options);
+      mBananaOrig = BitmapFactory.decodeResource(
+        res, R.drawable.banana, options);
+      mTomatoOrig = BitmapFactory.decodeResource(
+        res, R.drawable.tomato, options);
 
       mImageList = new Vector<BmpWrap>();
 
@@ -941,6 +965,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mCompressor     = NewBmpWrap();
       mLife           = NewBmpWrap();
       mFontImage      = NewBmpWrap();
+      mBanana         = NewBmpWrap();
+      mTomato         = NewBmpWrap();
 
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
@@ -968,18 +994,24 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public void newGame() {
       synchronized (mSurfaceHolder) {
         mLevelManager.goToFirstLevel();
+        malusBar1 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH - 164, 40,
+                                 mBanana, mTomato);
+        malusBar2 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH + 134, 40,
+                                 mBanana, mTomato);
         mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
                                       mGamePaused, mHurry, mPenguins,
-                                      mCompressorHead, mCompressor, mLauncher,
+                                      mCompressorHead, mCompressor,
+                                      malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
                                       mHighscoreManager, 1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
                                       mGamePaused, mHurry, mPenguins2,
-                                      mCompressorHead, mCompressor, mLauncher,
+                                      mCompressorHead, mCompressor,
+                                      malusBar1, mLauncher,
                                       mSoundManager, mLevelManager,
                                       mHighscoreManager, 2);
         startAiThread();
@@ -1028,6 +1060,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       scaleFrom(mCompressor, mCompressorOrig);
       scaleFrom(mLife, mLifeOrig);
       scaleFrom(mFontImage, mFontImageOrig);
+      scaleFrom(mBanana, mBananaOrig);
+      scaleFrom(mTomato, mTomatoOrig);
       //Log.i("frozen-bubble", "resizeBitmaps done.");
       mImagesReady = true;
     }
@@ -1297,6 +1331,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                         mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_DOWN,
                         0, false, 0, 0, false, 0);
       mOpponent.clearAction();
+
+      malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
+      malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();

@@ -52,35 +52,83 @@
 
 package org.gsanson.frozenbubble;
 
-public interface Opponent {
+import org.jfedor.frozenbubble.BmpWrap;
+import org.jfedor.frozenbubble.Sprite;
+
+import android.graphics.Canvas;
+import android.graphics.Rect;
+
+public class MalusBar extends Sprite {
+
+  /** X-pos for tomatoes */
+  int minX;
+  /** Max Y-pos for bar */
+  int maxY;
+  /** Number of waiting bubbles */
+  int nbMalus;
+
+  /** Banana Image */
+  private BmpWrap banana;
+  /** Tomato Image */
+  private BmpWrap tomato;
 
   /**
-   * Checks whether opponent has a control command awaiting
-   * @return
+   * Manages a malus bar (bananas & tomatoes).
+   * 
+   * @param coordX
+   *        - X-coord of game facade.
+   * @param coordY
+   *        - Y-coord of game facade.
+   * 
+   * @param leftSide
+   *        - if on left side (false => right side).
+   * 
+   * @param tomato
+   *        - image resource for a tomato.
+   * 
+   * @param banana
+   *        - image resource for a banana.
    */
-  public boolean isComputing();
+  public MalusBar(int coordX, int coordY, BmpWrap banana, BmpWrap tomato) {
+    super(new Rect(coordX, coordY, coordX + 33, coordY + 354));
+    minX = coordX;
+    maxY = coordY + 354;
 
-  /**
-   * Get the exact direction (radian value) pointer should reach
-   * @param currentDirection
-   * @return
-   */
-  public double getExactDirection(double currentDirection);
+    this.banana = banana;
+    this.tomato = tomato;
+  }
 
-  /**
-   * The action opponent want to make (left, right, fire)
-   * @param currentDirection
-   * @return
-   */
-  public int getAction(double currentDirection);
+  @Override
+  public final void paint(Canvas c, double scale, int dx, int dy) {
+    int count = nbMalus;
+    int pos = maxY;
+    while (count >= 7) {
+      pos -= 13;
+      drawImage(tomato, minX, pos, c, scale, dx, dy);
+      count -= 7;
+    }
+    while (count > 0) {
+      pos -= 11;
+      drawImage(banana, minX + 3, pos, c, scale, dx, dy);
+      count--;
+    }
+  }
 
-  /**
-   * Make any necessary computation before next turn
-   * @param currentColor
-   * @param nextColor
-   * @param compressor
-   */
-  public void compute(int currentColor, int nextColor, int compressor);
+  public void addBubbles(int toAdd) {
+    nbMalus += toAdd;
+  }
 
-  public int[] getBallDestination();
+  public int getBubbles() {
+    return nbMalus;
+  }
+
+  public int getTypeId() {
+    return Sprite.TYPE_IMAGE;
+  }
+
+  public int removeLine() {
+    int nb = Math.min(7, nbMalus);
+    nbMalus -= nb;
+    return nb;
+  }
 }
