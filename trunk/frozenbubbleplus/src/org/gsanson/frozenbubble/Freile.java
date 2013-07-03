@@ -34,9 +34,9 @@ public class Freile implements Opponent, Runnable {
   //**********************************************************
   // Listener interface for various opponent events
   //**********************************************************
-  // event types
+  // Event types.
   public static final int EVENT_DONE_COMPUTING = 1;
-  //listener user set
+  // Listener user set.
   public interface OpponentListener {
     public abstract void onOpponentEvent(int event);
   }

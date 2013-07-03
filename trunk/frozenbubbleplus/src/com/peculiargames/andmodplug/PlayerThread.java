@@ -206,6 +206,9 @@ public class PlayerThread extends Thread {
   private int     posWas;
   private boolean songFinished;
 
+  // Track if player has started (after loading a new mod).
+  private boolean sPlayerStarted;
+
   // start the player in a paused state?
   private boolean mStart_paused;
 
@@ -246,15 +249,12 @@ public class PlayerThread extends Thread {
   //*******************************************************************
   // Listener interface for various events
   //*******************************************************************
-  // event types
+  // Event types.
   public static final int EVENT_PLAYER_STARTED = 1;
   public static final int EVENT_PATTERN_CHANGE = 2;
   public static final int EVENT_SONG_COMPLETED = 3;
 
-  // track if player has started (after loading a new mod)
-  private boolean sPlayerStarted;
-
-  // listener user set
+  // Listener user set.
   public interface PlayerListener {
     public abstract void onPlayerEvent(int type);
   }
