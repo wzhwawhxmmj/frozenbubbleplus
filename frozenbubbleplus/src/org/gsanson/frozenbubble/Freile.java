@@ -140,7 +140,7 @@ public class Freile implements Opponent, Runnable {
           mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
       }
 
-      while (!computing) {
+      while (running && !computing) {
         synchronized(this) {
           try {
             wait();
@@ -296,6 +296,7 @@ public class Freile implements Opponent, Runnable {
    */
   public void stopThread() {
     running = false;
+
     synchronized(this) {
       this.notify();
     }
