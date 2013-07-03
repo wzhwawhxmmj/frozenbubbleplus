@@ -60,7 +60,7 @@ import android.graphics.Bitmap;
 // do it if references to Bitmap were kept directly everywhere since you can't
 // overwrite an Android Bitmap in place (or at least I haven't found how to
 // do it.)
-class BmpWrap {
+public class BmpWrap {
   BmpWrap(int id) {
     this.id = id;
   }

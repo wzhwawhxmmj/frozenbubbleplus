@@ -55,6 +55,8 @@ package org.jfedor.frozenbubble;
 import java.util.Random;
 import java.util.Vector;
 
+import org.gsanson.frozenbubble.MalusBar;
+
 import android.graphics.Canvas;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -111,7 +113,7 @@ public class FrozenGame extends GameScreen {
   BubbleSprite movingBubble;
   BubbleManager bubbleManager;
   LevelManager levelManager;
-
+  MalusBar malusBar;
   HighscoreManager highscoreManager;
 
   Vector<Sprite> jumping;
@@ -140,6 +142,7 @@ public class FrozenGame extends GameScreen {
   int nbBubbles;
   int playerId;
   int playResult;
+  int sendToOpponent;
   double moveDown;
 
   Drawable launcher;
@@ -158,6 +161,7 @@ public class FrozenGame extends GameScreen {
                     BmpWrap penguins_arg,
                     BmpWrap compressorHead_arg,
                     BmpWrap compressor_arg,
+                    MalusBar malusBar_arg,
                     Drawable launcher_arg,
                     SoundManager soundManager_arg,
                     LevelManager levelManager_arg,
@@ -191,6 +195,13 @@ public class FrozenGame extends GameScreen {
     else
       r = new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
                    436 + PenguinSprite.PENGUIN_HEIGHT - 2);
+
+    malusBar = null;
+    if (malusBar_arg != null)
+    {
+      malusBar = malusBar_arg;
+      this.addSprite(malusBar);
+    }
 
     penguin = new PenguinSprite(r, penguins_arg, random);
     this.addSprite(penguin);
@@ -265,8 +276,8 @@ public class FrozenGame extends GameScreen {
     this(background_arg, bubbles_arg, bubblesBlind_arg, frozenBubbles_arg,
          targetedBubbles_arg, bubbleBlink_arg, gameWon_arg, gameLost_arg,
          gamePaused_arg, hurry_arg, penguins_arg, compressorHead_arg,
-         compressor_arg, launcher_arg, soundManager_arg, levelManager_arg,
-         highscoreManager_arg, 1);
+         compressor_arg, null, launcher_arg, soundManager_arg,
+         levelManager_arg, highscoreManager_arg, 1);
   }
 
   public void cleanUp() {
@@ -534,6 +545,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public void addFallingBubble(BubbleSprite sprite) {
+    sendToOpponent++;
     spriteToFront(sprite);
     falling.addElement(sprite);
   }
@@ -553,12 +565,16 @@ public class FrozenGame extends GameScreen {
     jumping.removeElement(sprite);
   }
 
+  public double getMoveDown() {
+    return moveDown;
+  }
+
   public Random getRandom() {
     return random;
   }
 
-  public double getMoveDown() {
-    return moveDown;
+  public int getSendToOpponent() {
+     return sendToOpponent;
   }
 
   private void sendBubblesDown() {
@@ -740,6 +756,7 @@ public class FrozenGame extends GameScreen {
       }
     }
 
+    sendToOpponent = 0;
     if (movingBubble != null) {
       movingBubble.move();
       if (movingBubble.fixed()) {

@@ -100,6 +100,11 @@ import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
+
+  public static final int GAMEFIELD_WIDTH          = 320;
+  public static final int GAMEFIELD_HEIGHT         = 480;
+  public static final int EXTENDED_GAMEFIELD_WIDTH = 640;
+
   private boolean    mBlankScreen = false;
   private Context    mContext;
   private GameThread mGameThread;
@@ -125,15 +130,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   }
 
   class GameThread extends Thread {
+
     private static final int FRAME_DELAY = 40;
 
     public static final int STATE_RUNNING = 1;
     public static final int STATE_PAUSE   = 2;
     public static final int STATE_ABOUT   = 4;
-
-    public static final int GAMEFIELD_WIDTH          = 320;
-    public static final int GAMEFIELD_HEIGHT         = 480;
-    public static final int EXTENDED_GAMEFIELD_WIDTH = 640;
 
     private static final double TRACKBALL_COEFFICIENT      = 5;
     private static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
