@@ -68,6 +68,7 @@ public class Freile implements Opponent, Runnable {
 
   public Freile(BubbleSprite[][] grid) {
     this.grid = grid;
+    mOpponentListener = null;
     running = true;
 
     new Thread(this).start();
@@ -136,8 +137,10 @@ public class Freile implements Opponent, Runnable {
     while (running) {
       if (computing) {
         computing = false;
-        if (mOpponentListener != null)
-          mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
+        synchronized(this) {
+          if (mOpponentListener != null)
+            mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
+        }
       }
 
       while (running && !computing) {
@@ -151,64 +154,67 @@ public class Freile implements Opponent, Runnable {
         }
       }
 
-      // Compute grid options
-      int[][] gridOptions = new int[8][13];
-
-      // Check for best option
-      int bestOption = -1;
-      bestDirection = 0.;
-      colorSwap = false;
-
-      int newOption;
-      int[] position = null;
-      for (double direction = 0.;
-           direction < MAX_LAUNCHER;
-           direction += LAUNCHER_ROTATION) {
-        position = getCollision(direction);
-        newOption = computeOption(position[0], position[1], color, gridOptions);
-        if (newOption > bestOption) {
-          bestOption = newOption;
-          bestDirection = direction;
-          bestDestination = position;
-        }        
-      }
-      for (double direction = -LAUNCHER_ROTATION;
-           direction > MIN_LAUNCHER;
-           direction -= LAUNCHER_ROTATION) {
-        position = getCollision(direction);
-        newOption = computeOption(position[0], position[1],
-                                  color, gridOptions);
-        if (newOption > bestOption) {
-          bestOption = newOption;
-          bestDirection = direction;
-          bestDestination = position;
-        }
-      }
-      if (color != nextColor) {
+      if (running) {
+        // Compute grid options
+        int[][] gridOptions = new int[8][13];
+  
+        // Check for best option
+        int bestOption = -1;
+        bestDirection = 0.;
+        colorSwap = false;
+  
+        int newOption;
+        int[] position = null;
         for (double direction = 0.;
              direction < MAX_LAUNCHER;
              direction += LAUNCHER_ROTATION) {
           position = getCollision(direction);
           newOption = computeOption(position[0], position[1],
-                                    nextColor, gridOptions);
+                                    color, gridOptions);
           if (newOption > bestOption) {
             bestOption = newOption;
             bestDirection = direction;
             bestDestination = position;
-            colorSwap = true;
-          }       
+          }        
         }
         for (double direction = -LAUNCHER_ROTATION;
              direction > MIN_LAUNCHER;
              direction -= LAUNCHER_ROTATION) {
           position = getCollision(direction);
           newOption = computeOption(position[0], position[1],
-                                    nextColor, gridOptions);
+                                    color, gridOptions);
           if (newOption > bestOption) {
             bestOption = newOption;
             bestDirection = direction;
             bestDestination = position;
-            colorSwap = true;
+          }
+        }
+        if (color != nextColor) {
+          for (double direction = 0.;
+               direction < MAX_LAUNCHER;
+               direction += LAUNCHER_ROTATION) {
+            position = getCollision(direction);
+            newOption = computeOption(position[0], position[1],
+                                      nextColor, gridOptions);
+            if (newOption > bestOption) {
+              bestOption = newOption;
+              bestDirection = direction;
+              bestDestination = position;
+              colorSwap = true;
+            }       
+          }
+          for (double direction = -LAUNCHER_ROTATION;
+               direction > MIN_LAUNCHER;
+               direction -= LAUNCHER_ROTATION) {
+            position = getCollision(direction);
+            newOption = computeOption(position[0], position[1],
+                                      nextColor, gridOptions);
+            if (newOption > bestOption) {
+              bestOption = newOption;
+              bestDirection = direction;
+              bestDestination = position;
+              colorSwap = true;
+            }
           }
         }
       }
@@ -298,6 +304,7 @@ public class Freile implements Opponent, Runnable {
     running = false;
 
     synchronized(this) {
+      mOpponentListener = null;
       this.notify();
     }
   }
