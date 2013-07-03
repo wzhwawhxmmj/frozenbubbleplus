@@ -25,9 +25,10 @@ public interface Opponent {
 	/**
 	 * Make any necessary computation before next turn
 	 * @param currentColor
+	 * @param nextColor
 	 * @param compressor
 	 */
-	public void compute(int currentColor, int compressor);
+	public void compute(int currentColor, int nextColor, int compressor);
 
 	public int[] getBallDestination();
 }

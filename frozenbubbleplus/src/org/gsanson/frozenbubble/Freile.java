@@ -51,11 +51,15 @@ public class Freile implements Opponent, Runnable {
 	private BubbleSprite[][] grid;
 	/** Current color */
 	private int color;
+	/** Next color */
+	private int nextColor;
 	/** Current compressor level */
 	private int compressor;
+	/** Swap launch bubble with next bubble? */
+	private boolean colorSwap;
 	/** Calculating new position */
 	private boolean computing;
-	/** Thread running flag **/
+	/** Thread running flag */
 	private boolean running;
 	/** Best direction */
 	private double bestDirection;	
@@ -86,10 +90,19 @@ public class Freile implements Opponent, Runnable {
 		int direction = 0;
 
 		/*
-		 *  If the angle error is less than a minimum acceptable threshold,
-		 *  cease aiming the launcher and fire the bubble.
+		 * If the flag is set to swap the current launch bubble with the
+		 * next one, then return the appropriate action.
+		 * 
+		 * If the angle error is less than a minimum acceptable threshold,
+		 * cease aiming the launcher and fire the bubble.
+		 * 
+		 * Otherwise, rotate the launcher to the appropriate firing angle.
 		 */
-		if (Math.abs(currentDirection - bestDirection) < 0.04) {
+		if (colorSwap) {
+		  direction = KeyEvent.KEYCODE_DPAD_DOWN;
+		  colorSwap = false;
+		}
+		else if (Math.abs(currentDirection - bestDirection) < 0.04) {
 			direction = KeyEvent.KEYCODE_DPAD_UP;
 		} else {
 			if (currentDirection < bestDirection) {
@@ -102,9 +115,10 @@ public class Freile implements Opponent, Runnable {
 		return direction;
 	}
 
-	public void compute(int currentColor, int compressor) {
+	public void compute(int currentColor, int nextColor, int compressor) {
 
 		this.color = currentColor;
+		this.nextColor = nextColor;
 		this.compressor = compressor;
 
 		computing = true;
@@ -143,10 +157,13 @@ public class Freile implements Opponent, Runnable {
 			// Check for best option
 			int bestOption = -1;
 			bestDirection = 0.;
+			colorSwap = false;
 
 			int newOption;
 			int[] position = null;
-			for (double direction = 0.; direction < MAX_LAUNCHER; direction += LAUNCHER_ROTATION) {
+			for (double direction = 0.;
+			     direction < MAX_LAUNCHER;
+			     direction += LAUNCHER_ROTATION) {
 				position = getCollision(direction);
 				newOption = computeOption(position[0], position[1], color, gridOptions);
 				if (newOption > bestOption) {
@@ -155,15 +172,46 @@ public class Freile implements Opponent, Runnable {
 					bestDestination = position;
 				}				
 			}
-			for (double direction = -LAUNCHER_ROTATION; direction > MIN_LAUNCHER; direction -= LAUNCHER_ROTATION) {
+			for (double direction = -LAUNCHER_ROTATION;
+			     direction > MIN_LAUNCHER;
+			     direction -= LAUNCHER_ROTATION) {
 				position = getCollision(direction);
-				newOption = computeOption(position[0], position[1], color, gridOptions);
+				newOption = computeOption(position[0], position[1],
+				                          color, gridOptions);
 				if (newOption > bestOption) {
 					bestOption = newOption;
 					bestDirection = direction;
 					bestDestination = position;
 				}
-			}			
+			}
+			if (color != nextColor) {
+  			for (double direction = 0.;
+  			     direction < MAX_LAUNCHER;
+  			     direction += LAUNCHER_ROTATION) {
+          position = getCollision(direction);
+          newOption = computeOption(position[0], position[1],
+                                    nextColor, gridOptions);
+          if (newOption > bestOption) {
+            bestOption = newOption;
+            bestDirection = direction;
+            bestDestination = position;
+            colorSwap = true;
+          }       
+        }
+        for (double direction = -LAUNCHER_ROTATION;
+             direction > MIN_LAUNCHER;
+             direction -= LAUNCHER_ROTATION) {
+          position = getCollision(direction);
+          newOption = computeOption(position[0], position[1],
+                                    nextColor, gridOptions);
+          if (newOption > bestOption) {
+            bestOption = newOption;
+            bestDirection = direction;
+            bestDestination = position;
+            colorSwap = true;
+          }
+        }
+			}
 		}
 	}
 
