@@ -490,6 +490,10 @@ public class BubbleSprite extends Sprite {
     moveY = -GO_UP_SPEED;
     realY += moveY;
     Point currentPosition = currentPosition();
+    /*
+     * Only check for collisions if the grid position corresponding to
+     * current bubble location exists.  Otherwise just move the bubble.
+     */
     if ((currentPosition.x < 8) && (currentPosition.y < 13)) {
       BubbleSprite[][] grid = frozen.getGrid();
   
@@ -504,18 +508,22 @@ public class BubbleSprite extends Sprite {
         fixed = true;
         super.absoluteMove(new Point((int)realX, (int)realY));
   
-        bubbleManager.addBubble(bubbleFace);
-        grid[lastOpenPosition.x][lastOpenPosition.y] = this;
-        moveX = 0.;
-        moveY = 0.;
-        fixedAnim = 0;
+        if (!this.register(grid)) {
+          frozen.removeSprite(this);
+          frozen.malusBar.addBubbles(1);
+        }
+        else {
+          bubbleManager.addBubble(bubbleFace);
+          moveX = 0.;
+          moveY = 0.;
+          fixedAnim = 0;
+        }
         frozen.deleteGoingUpBubble(this);
         return;
       }
     }
 
     super.absoluteMove(new Point((int)realX, (int)realY));
-      
   }
 
   public void jump() {
@@ -573,5 +581,27 @@ public class BubbleSprite extends Sprite {
         fixedAnim = -1;
       }
     }
+  }
+
+  /**
+   * Adds an attack bubble to the grid.
+   * 
+   * Due to rounded values, two attack bubbles may fill the same cell.
+   * In this case, one of the bubbles is not registered.
+   * 
+   * @param grid
+   *        - the array of bubbles.
+   * 
+   * @return true if the bubble becomes registered in the grid (false if
+   *         another attack bubble already occupies the same position)
+   */
+  public boolean register(BubbleSprite[][] grid) {
+    boolean register = grid[lastOpenPosition.x][lastOpenPosition.y] == null;
+    
+    if (register) {
+      grid[lastOpenPosition.x][lastOpenPosition.y] = this;
+    }
+
+    return register;
   }
 }

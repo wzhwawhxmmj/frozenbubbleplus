@@ -1012,8 +1012,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       mGamePaused, mHurry, mPenguins2,
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
-                                      mSoundManager, mLevelManager,
-                                      mHighscoreManager, 2);
+                                      mSoundManager, mLevelManager, null, 2);
         startAiThread();
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
