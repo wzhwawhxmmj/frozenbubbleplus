@@ -87,11 +87,11 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * because this class does not know when to clear it.
    */
   public void clearAction() {
-    if ((action == KeyEvent.KEYCODE_DPAD_UP) ||
-        (action == KeyEvent.KEYCODE_DPAD_DOWN))
-      action = 0;
-
     synchronized(this) {
+      if ((action == KeyEvent.KEYCODE_DPAD_UP) ||
+          (action == KeyEvent.KEYCODE_DPAD_DOWN))
+        action = 0;
+
       this.notify();
     }
   }
@@ -99,16 +99,16 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
   public double convertAngleToPosition(double angle) {
     double position = (angle - Freile.MIN_LAUNCHER) /
                       (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER);
-    position = (position * (FrozenGame.MAX_LAUNCH_POSITION -
-                            FrozenGame.MIN_LAUNCH_POSITION)) +
-               FrozenGame.MIN_LAUNCH_POSITION;
+    position = (position * (FrozenGame.MAX_LAUNCH_DIRECTION -
+                            FrozenGame.MIN_LAUNCH_DIRECTION)) +
+               FrozenGame.MIN_LAUNCH_DIRECTION;
     return position;
   }
 
   public double convertPositionToAngle(double position) {
-    double angle = ((double)(position - FrozenGame.MIN_LAUNCH_POSITION)) /
-                   ((double)(FrozenGame.MAX_LAUNCH_POSITION -
-                             FrozenGame.MIN_LAUNCH_POSITION));
+    double angle = ((double)(position - FrozenGame.MIN_LAUNCH_DIRECTION)) /
+                   ((double)(FrozenGame.MAX_LAUNCH_DIRECTION -
+                             FrozenGame.MIN_LAUNCH_DIRECTION));
     angle = (angle * (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER)) +
             Freile.MIN_LAUNCHER;
     return angle;
