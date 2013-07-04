@@ -80,6 +80,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
   public void cleanUp() {
     cpuOpponent.stopThread();
     cpuOpponent = null;
+    myFrozenGame = null;
   }
 
   /**
@@ -145,19 +146,21 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
           /*
            * Compute the next CPU action.
            */
-          if ((myFrozenGame.getGameResult() == FrozenGame.GAME_PLAYING) &&
-              !cpuOpponent.isComputing())
-              cpuOpponent.compute(myFrozenGame.getCurrentColor(),
-                                  myFrozenGame.getNextColor(),
-                                  myFrozenGame.getCompressorPosition());
+          if (running && (myFrozenGame != null) &&
+              (myFrozenGame.getGameResult() == FrozenGame.GAME_PLAYING) &&
+            !cpuOpponent.isComputing())
+            cpuOpponent.compute(myFrozenGame.getCurrentColor(),
+                                myFrozenGame.getNextColor(),
+                                myFrozenGame.getCompressorPosition());
 
           /*
            * Only fire if the game state permits, and the last virtual
            * opponent action has been processed.
            */
-          if (myFrozenGame.getOkToFire() &&
+          if (running && (myFrozenGame != null) &&
+              myFrozenGame.getOkToFire() &&
               (action != KeyEvent.KEYCODE_DPAD_UP)) {
-            while (cpuOpponent.isComputing()) {
+            while (running && cpuOpponent.isComputing()) {
               wait();
             }
 
@@ -172,7 +175,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
              * pushing the directional aim command.
              */
             int actionNew = 0;
-            while ((actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
+            while (running && (myFrozenGame != null) &&
+                   (actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
                    (System.currentTimeMillis() < timeout)) {
               actionNew = cpuOpponent.getAction(convertPositionToAngle(
                 myFrozenGame.getPosition()));
@@ -186,14 +190,16 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
             /*
              * Set the launch direction to be as accurate as possible.
              */
-            if (myFrozenGame.getOkToFire()) {
+            if (running && (myFrozenGame != null) &&
+                myFrozenGame.getOkToFire()) {
               myFrozenGame.setPosition(convertAngleToPosition(
                 cpuOpponent.getExactDirection(0)));
               action = actionNew;
             }
           }
 
-          wait();
+          if (running)
+            wait();
         }
       } catch (InterruptedException e) {
       } finally {
