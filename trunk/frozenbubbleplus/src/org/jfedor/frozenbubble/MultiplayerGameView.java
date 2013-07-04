@@ -1350,10 +1350,14 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       }
       else if (game2_result != FrozenGame.GAME_PLAYING) {
         if ((game2_result == FrozenGame.GAME_WON) ||
-            (game2_result == FrozenGame.GAME_NEXT_WON))
+            (game2_result == FrozenGame.GAME_NEXT_WON)) {
+          mHighscoreManager.lostLevel();
           mFrozenGame1.setGameResult(FrozenGame.GAME_LOST);
-        else
+        }
+        else {
+          mHighscoreManager.endLevel(mFrozenGame1.nbBubbles);
           mFrozenGame1.setGameResult(FrozenGame.GAME_WON);
+        }
       }
 
       /*
