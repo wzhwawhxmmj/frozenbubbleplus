@@ -196,8 +196,8 @@ public class Freile implements Opponent, Runnable {
           try {
             wait(1000);
           } catch (InterruptedException e) {
-            // TODO 
-            e.printStackTrace();
+            // TODO - auto-generated exception handler stub.
+            //e.printStackTrace();
           }
         }
       }

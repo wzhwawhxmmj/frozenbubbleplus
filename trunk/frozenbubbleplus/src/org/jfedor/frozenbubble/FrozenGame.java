@@ -557,6 +557,56 @@ public class FrozenGame extends GameScreen {
     falling.addElement(sprite);
   }
 
+  public void addJumpingBubble(BubbleSprite sprite) {
+    spriteToFront(sprite);
+    jumping.addElement(sprite);
+  }
+
+  private void blinkLine(int number) {
+    int move = number % 2;
+    int column = (number+1) >> 1;
+
+    for (int i=move ; i<13 ; i++) {
+      if (bubblePlay[column][i] != null) {
+        bubblePlay[column][i].blink();
+      }
+    }
+  }
+
+  private boolean checkLost() {
+    boolean lost = false;
+
+    if (!endOfGame) {
+      if (movingBubble != null) {
+        if (movingBubble.fixed()) {
+          if (movingBubble.getSpritePosition().y>=380 &&
+              !movingBubble.released()) {
+            lost = true;
+          }
+        }
+      }
+  
+      for (int i = 0; i < 8; i++) {
+        if (bubblePlay[i][12 - compressor.steps] != null) {
+          lost = true;
+          break;
+        }
+      }
+  
+      if (lost) {
+        penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+        if (highscoreManager != null)
+          highscoreManager.lostLevel();
+        playResult = GAME_LOST;
+        endOfGame = true;
+        initFrozenify();
+        soundManager.playSound(FrozenBubble.SOUND_LOST);
+      }
+    }
+
+    return (playResult == GAME_LOST);
+  }
+
   public void deleteFallingBubble(BubbleSprite sprite) {
     removeSprite(sprite);
     falling.removeElement(sprite);
@@ -567,49 +617,9 @@ public class FrozenGame extends GameScreen {
     goingUp.removeElement(sprite);
   }
 
-  public void addJumpingBubble(BubbleSprite sprite) {
-    spriteToFront(sprite);
-    jumping.addElement(sprite);
-  }
-
   public void deleteJumpingBubble(BubbleSprite sprite) {
     removeSprite(sprite);
     jumping.removeElement(sprite);
-  }
-
-  private void releaseBubbles() {
-    if ((malusBar != null) && (malusBar.getBubbles() > 0)) {
-      boolean[] lanes = new boolean[8];
-      int malusBalls = malusBar.removeLine();
-      
-      if (malusBalls == 7) { // Remove full line
-        for (int i = 0; i < 7; i++) {
-          lanes[i] = true;
-        }
-      } else {
-        while (malusBalls > 0) {
-          int pos = random.nextInt(8);
-          if (!lanes[pos]) {
-            lanes[pos] = true;
-            malusBalls--;
-          }
-        }
-      }
-      
-      for (int i = 0; i < 7; i++) {
-        if (lanes[i]) {
-          int color = random.nextInt(LevelManager.MODERATE);
-          BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(190+i*32-(15%2)*16, 44+15*28, 32, 32),
-            START_LAUNCH_DIRECTION,
-            color, bubbles[color], bubblesBlind[color],
-            frozenBubbles[color], targetedBubbles, bubbleBlink,
-            bubbleManager, soundManager, this);
-          goingUp.add(malusBubble);
-          this.addSprite(malusBubble);
-        }
-      }
-    }
   }
 
   public double getMoveDown() {
@@ -624,6 +634,42 @@ public class FrozenGame extends GameScreen {
      return sendToOpponent;
   }
 
+  private void releaseBubbles() {
+    if ((malusBar != null) && (malusBar.getBubbles() > 0)) {
+      boolean[] lanes = new boolean[8];
+      int malusBalls = malusBar.removeLine();
+      int pos = random.nextInt(8);
+      
+      if (malusBalls == 7) { // Remove full line
+        for (int i = 0; i < 7; i++) {
+          lanes[i] = true;
+        }
+      } else {
+        while (malusBalls > 0) {
+          pos = random.nextInt(8);
+          if (!lanes[pos]) {
+            lanes[pos] = true;
+            malusBalls--;
+          }
+        }
+      }
+      
+      for (int i = 0; i < 7; i++) {
+        if (lanes[i]) {
+          int color = random.nextInt(LevelManager.MODERATE);
+          BubbleSprite malusBubble = new BubbleSprite(
+            new Rect(190+i*32-(pos%2)*16, 44+15*28, 32, 32),
+            START_LAUNCH_DIRECTION,
+            color, bubbles[color], bubblesBlind[color],
+            frozenBubbles[color], targetedBubbles, bubbleBlink,
+            bubbleManager, soundManager, this);
+          goingUp.add(malusBubble);
+          this.addSprite(malusBubble);
+        }
+      }
+    }
+  }
+
   private void sendBubblesDown() {
     soundManager.playSound(FrozenBubble.SOUND_NEWROOT);
 
@@ -632,8 +678,11 @@ public class FrozenGame extends GameScreen {
         if (bubblePlay[i][j] != null) {
           bubblePlay[i][j].moveDown();
 
-          if (bubblePlay[i][j].getSpritePosition().y>=380) {
+          if ((bubblePlay[i][j].getSpritePosition().y>=380) && !endOfGame) {
             penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+            if (highscoreManager != null)
+              highscoreManager.lostLevel();
+            playResult = GAME_LOST;
             endOfGame = true;
             initFrozenify();
             soundManager.playSound(FrozenBubble.SOUND_LOST);
@@ -644,17 +693,6 @@ public class FrozenGame extends GameScreen {
 
     moveDown += 28.;
     compressor.moveDown();
-  }
-
-  private void blinkLine(int number) {
-    int move = number % 2;
-    int column = (number+1) >> 1;
-
-    for (int i=move ; i<13 ; i++) {
-      if (bubblePlay[column][i] != null) {
-        bubblePlay[column][i].blink();
-      }
-    }
   }
 
   public int play(boolean key_left, boolean key_right,
@@ -809,31 +847,25 @@ public class FrozenGame extends GameScreen {
     if (movingBubble != null) {
       movingBubble.move();
       if (movingBubble.fixed()) {
-        if (movingBubble.getSpritePosition().y>=380 &&
-            !movingBubble.released()) {
-          penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-          highscoreManager.lostLevel();
-          playResult = GAME_LOST;
-          endOfGame = true;
-          initFrozenify();
-          soundManager.playSound(FrozenBubble.SOUND_LOST);
-        }
-        else if (bubbleManager.countBubbles() == 0) {
-          penguin.updateState(PenguinSprite.STATE_GAME_WON);
-          this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                         gameWon));
-          highscoreManager.endLevel(nbBubbles);
-          playResult = GAME_WON;
-          endOfGame = true;
-          soundManager.playSound(FrozenBubble.SOUND_WON);
-        }
-        else {
-          fixedBubbles++;
-          blinkDelay = 0;
-
-          if (fixedBubbles == 8) {
-            fixedBubbles = 0;
-            sendBubblesDown();
+        if (!checkLost()) {
+          if (bubbleManager.countBubbles() == 0) {
+            penguin.updateState(PenguinSprite.STATE_GAME_WON);
+            this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
+                                           gameWon));
+            if (highscoreManager != null)
+              highscoreManager.endLevel(nbBubbles);
+            playResult = GAME_WON;
+            endOfGame = true;
+            soundManager.playSound(FrozenBubble.SOUND_WON);
+          }
+          else {
+            fixedBubbles++;
+            blinkDelay = 0;
+  
+            if (fixedBubbles == 8) {
+              fixedBubbles = 0;
+              sendBubblesDown();
+            }
           }
         }
         movingBubble = null;
@@ -842,32 +874,26 @@ public class FrozenGame extends GameScreen {
       if (movingBubble != null) {
         movingBubble.move();
         if (movingBubble.fixed()) {
-          if (movingBubble.getSpritePosition().y>=380 &&
-              !movingBubble.released()) {
-            penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-            highscoreManager.lostLevel();
-            playResult = GAME_LOST;
-            endOfGame = true;
-            initFrozenify();
-            soundManager.playSound(FrozenBubble.SOUND_LOST);
-          }
-          else if (bubbleManager.countBubbles() == 0) {
-            penguin.updateState(PenguinSprite.STATE_GAME_WON);
-            this.addSprite(new ImageSprite(new Rect(152, 190,
-                                                    152 + 337,
-                                                    190 + 116), gameWon));
-            highscoreManager.endLevel(nbBubbles);
-            playResult = GAME_WON;
-            endOfGame = true;
-            soundManager.playSound(FrozenBubble.SOUND_WON);
-          }
-          else {
-            fixedBubbles++;
-            blinkDelay = 0;
-
-            if (fixedBubbles == 8) {
-              fixedBubbles = 0;
-              sendBubblesDown();
+          if (!checkLost()) {
+            if (bubbleManager.countBubbles() == 0) {
+              penguin.updateState(PenguinSprite.STATE_GAME_WON);
+              this.addSprite(new ImageSprite(new Rect(152, 190,
+                                                      152 + 337,
+                                                      190 + 116), gameWon));
+              if (highscoreManager != null)
+                highscoreManager.endLevel(nbBubbles);
+              playResult = GAME_WON;
+              endOfGame = true;
+              soundManager.playSound(FrozenBubble.SOUND_WON);
+            }
+            else {
+              fixedBubbles++;
+              blinkDelay = 0;
+  
+              if (fixedBubbles == 8) {
+                fixedBubbles = 0;
+                sendBubblesDown();
+              }
             }
           }
           movingBubble = null;
@@ -900,6 +926,8 @@ public class FrozenGame extends GameScreen {
           releaseBubbles();
           malusBar.releaseTime = 0;
         }
+
+        checkLost();
       }
     }
 
