@@ -66,6 +66,8 @@ public class MalusBar extends Sprite {
   int maxY;
   /** Number of waiting bubbles */
   int nbMalus;
+  /** Time to release bubbles */
+  public int releaseTime;
 
   /** Banana Image */
   private BmpWrap banana;
@@ -93,6 +95,7 @@ public class MalusBar extends Sprite {
     super(new Rect(coordX, coordY, coordX + 33, coordY + 354));
     minX = coordX;
     maxY = coordY + 354;
+    releaseTime = 0;
 
     this.banana = banana;
     this.tomato = tomato;
@@ -115,6 +118,8 @@ public class MalusBar extends Sprite {
   }
 
   public void addBubbles(int toAdd) {
+    if (toAdd > 0)
+      releaseTime = 0;
     nbMalus += toAdd;
   }
 

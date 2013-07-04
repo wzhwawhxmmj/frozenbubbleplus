@@ -127,7 +127,8 @@ public class Freile implements Opponent, Runnable {
   }
 
   /**
-   * Checks if work is still in progress
+   * Checks if work is still in progress.
+   * 
    * @return true if the calculation is not yet finished
    */
   public boolean isComputing() {
@@ -169,14 +170,11 @@ public class Freile implements Opponent, Runnable {
   }
 
   public void compute(int currentColor, int nextColor, int compressor) {
-
-    this.color = currentColor;
-    this.nextColor = nextColor;
-    this.compressor = compressor;
-
-    computing = true;
-
     synchronized (this) {
+      this.color = currentColor;
+      this.nextColor = nextColor;
+      this.compressor = compressor;
+      computing = true;
       notify();
     }
   }
@@ -187,18 +185,16 @@ public class Freile implements Opponent, Runnable {
 
   public void run() {
     while (running) {
-      if (computing) {
-        computing = false;
-        synchronized(this) {
+      synchronized(this) {
+        if (computing) {
+          computing = false;
           if (mOpponentListener != null)
             mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
         }
-      }
 
-      while (running && !computing) {
-        synchronized(this) {
+        while (running && !computing) {
           try {
-            wait();
+            wait(1000);
           } catch (InterruptedException e) {
             // TODO 
             e.printStackTrace();

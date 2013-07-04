@@ -70,9 +70,9 @@ public class FrozenGame extends GameScreen {
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
 
-  public final static double MIN_LAUNCH_POSITION   = 1.0;
-  public final static double START_LAUNCH_POSITION = 20.0;
-  public final static double MAX_LAUNCH_POSITION   = 39.0;
+  public final static double MIN_LAUNCH_DIRECTION   = 1.0;
+  public final static double START_LAUNCH_DIRECTION = 20.0;
+  public final static double MAX_LAUNCH_DIRECTION   = 39.0;
 
   public final static int KEY_UP    = 38;
   public final static int KEY_LEFT  = 37;
@@ -84,6 +84,9 @@ public class FrozenGame extends GameScreen {
   public static final int GAME_WON       = 3;
   public static final int GAME_NEXT_LOST = 4;
   public static final int GAME_NEXT_WON  = 5;
+
+  public static final int HURRY_ME_TIME = 480;
+  public static final int RELEASE_TIME  = 300;
 
   public static String PARAMETER_PLAYER  = "player";
   public static String PARAMETER_OFFLINE = "offline";
@@ -116,8 +119,9 @@ public class FrozenGame extends GameScreen {
   MalusBar malusBar;
   HighscoreManager highscoreManager;
 
-  Vector<Sprite> jumping;
   Vector<Sprite> falling;
+  Vector<Sprite> goingUp;
+  Vector<Sprite> jumping;
 
   BubbleSprite[][] bubblePlay;
 
@@ -184,7 +188,7 @@ public class FrozenGame extends GameScreen {
     highscoreManager     = highscoreManager_arg;
     playerId             = player_arg;
     playResult           = GAME_PLAYING;
-    launchBubblePosition = START_LAUNCH_POSITION;
+    launchBubblePosition = START_LAUNCH_DIRECTION;
     readyToFire          = false;
     swapPressed          = false;
 
@@ -209,8 +213,9 @@ public class FrozenGame extends GameScreen {
     hurrySprite = new ImageSprite(new Rect(203, 265, 203 + 240, 265 + 90),
                                   hurry_arg);
 
-    jumping = new Vector<Sprite>();
     falling = new Vector<Sprite>();
+    goingUp = new Vector<Sprite>();
+    jumping = new Vector<Sprite>();
 
     bubblePlay    = new BubbleSprite[8][13];
     bubbleManager = new BubbleManager(bubbles);
@@ -394,8 +399,8 @@ public class FrozenGame extends GameScreen {
     }
     else if (type == Sprite.TYPE_LAUNCH_BUBBLE) {
       int currentColor = map.getInt(String.format("%d-currentColor", i));
-      int currentDirection =
-        map.getInt(String.format("%d-currentDirection", i));
+      double currentDirection =
+        map.getDouble(String.format("%d-currentDirection", i));
       return new LaunchBubbleSprite(currentColor, currentDirection,
                                     launcher, bubbles, bubblesBlind);
     }
@@ -545,6 +550,8 @@ public class FrozenGame extends GameScreen {
   }
 
   public void addFallingBubble(BubbleSprite sprite) {
+    if (malusBar != null)
+      malusBar.releaseTime = 0;
     sendToOpponent++;
     spriteToFront(sprite);
     falling.addElement(sprite);
@@ -555,6 +562,11 @@ public class FrozenGame extends GameScreen {
     falling.removeElement(sprite);
   }
 
+  public void deleteGoingUpBubble(BubbleSprite sprite) {
+    //removeSprite(sprite);
+    goingUp.removeElement(sprite);
+  }
+
   public void addJumpingBubble(BubbleSprite sprite) {
     spriteToFront(sprite);
     jumping.addElement(sprite);
@@ -563,6 +575,41 @@ public class FrozenGame extends GameScreen {
   public void deleteJumpingBubble(BubbleSprite sprite) {
     removeSprite(sprite);
     jumping.removeElement(sprite);
+  }
+
+  private void releaseBubbles() {
+    if ((malusBar != null) && (malusBar.getBubbles() > 0)) {
+      boolean[] lanes = new boolean[8];
+      int malusBalls = malusBar.removeLine();
+      
+      if (malusBalls == 7) { // Remove full line
+        for (int i = 0; i < 7; i++) {
+          lanes[i] = true;
+        }
+      } else {
+        while (malusBalls > 0) {
+          int pos = random.nextInt(8);
+          if (!lanes[pos]) {
+            lanes[pos] = true;
+            malusBalls--;
+          }
+        }
+      }
+      
+      for (int i = 0; i < 7; i++) {
+        if (lanes[i]) {
+          int color = random.nextInt(LevelManager.MODERATE);
+          BubbleSprite malusBubble = new BubbleSprite(
+            new Rect(190+i*32-(15%2)*16, 44+15*28, 32, 32),
+            START_LAUNCH_DIRECTION,
+            color, bubbles[color], bubblesBlind[color],
+            frozenBubbles[color], targetedBubbles, bubbleBlink,
+            bubbleManager, soundManager, this);
+          goingUp.add(malusBubble);
+          this.addSprite(malusBubble);
+        }
+      }
+    }
   }
 
   public double getMoveDown() {
@@ -654,11 +701,11 @@ public class FrozenGame extends GameScreen {
       double xx = touch_x - 318;
       double yy = 406 - touch_y;
       launchBubblePosition = (Math.PI - Math.atan2(yy, xx)) * 40.0 / Math.PI;
-      if (launchBubblePosition < MIN_LAUNCH_POSITION) {
-        launchBubblePosition = MIN_LAUNCH_POSITION;
+      if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
+        launchBubblePosition = MIN_LAUNCH_DIRECTION;
       }
-      if (launchBubblePosition > MAX_LAUNCH_POSITION) {
-        launchBubblePosition = MAX_LAUNCH_POSITION;
+      if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
+        launchBubblePosition = MAX_LAUNCH_DIRECTION;
       }
     }
 
@@ -690,7 +737,7 @@ public class FrozenGame extends GameScreen {
       }
     }
     else {
-      if ((move[FIRE] == KEY_UP) || hurryTime > 480) {
+      if ((move[FIRE] == KEY_UP) || (hurryTime > HURRY_ME_TIME)) {
         if ((movingBubble == null) && readyToFire) {
           nbBubbles++;
 
@@ -718,6 +765,8 @@ public class FrozenGame extends GameScreen {
           soundManager.playSound(FrozenBubble.SOUND_LAUNCH);
           readyToFire = false;
           hurryTime = 0;
+          if (malusBar != null)
+            malusBar.releaseTime = RELEASE_TIME;
           removeSprite(hurrySprite);
         }
         else {
@@ -737,11 +786,11 @@ public class FrozenGame extends GameScreen {
           dx += ats_touch_dx;
         }
         launchBubblePosition += dx;
-        if (launchBubblePosition < MIN_LAUNCH_POSITION) {
-          launchBubblePosition = MIN_LAUNCH_POSITION;
+        if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
+          launchBubblePosition = MIN_LAUNCH_DIRECTION;
         }
-        if (launchBubblePosition > MAX_LAUNCH_POSITION) {
-          launchBubblePosition = MAX_LAUNCH_POSITION;
+        if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
+          launchBubblePosition = MAX_LAUNCH_DIRECTION;
         }
         launchBubble.changeDirection(launchBubblePosition);
         if (dx < 0) {
@@ -828,6 +877,8 @@ public class FrozenGame extends GameScreen {
 
     if (movingBubble == null && !endOfGame) {
       hurryTime++;
+      if (malusBar != null)
+        malusBar.releaseTime++;
       // If hurryTime == 2 (1 + 1) we could be in the "Don't rush me"
       // mode.  Remove the sprite just in case the user switched
       // to this mode when the "Hurry" sprite was shown, to make it
@@ -842,6 +893,12 @@ public class FrozenGame extends GameScreen {
         }
         else if (hurryTime % 40 == 35) {
           removeSprite(hurrySprite);
+        }
+      }
+      if (malusBar != null) {
+        if (malusBar.releaseTime > RELEASE_TIME) {
+          releaseBubbles();
+          malusBar.releaseTime = 0;
         }
       }
     }
@@ -869,6 +926,10 @@ public class FrozenGame extends GameScreen {
 
     for (int i=0 ; i<falling.size() ; i++) {
       ((BubbleSprite)falling.elementAt(i)).fall();
+    }
+
+    for (int i=0 ; i<goingUp.size() ; i++) {
+      ((BubbleSprite)goingUp.elementAt(i)).goUp();
     }
 
     for (int i=0 ; i<jumping.size() ; i++) {
@@ -936,11 +997,11 @@ public class FrozenGame extends GameScreen {
 
   public void setPosition(double value) {
     launchBubblePosition = value;
-    if (launchBubblePosition < MIN_LAUNCH_POSITION) {
-      launchBubblePosition = MIN_LAUNCH_POSITION;
+    if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
+      launchBubblePosition = MIN_LAUNCH_DIRECTION;
     }
-    if (launchBubblePosition > MAX_LAUNCH_POSITION) {
-      launchBubblePosition = MAX_LAUNCH_POSITION;
+    if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
+      launchBubblePosition = MAX_LAUNCH_DIRECTION;
     }
     launchBubble.changeDirection(launchBubblePosition);
   }

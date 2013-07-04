@@ -63,7 +63,8 @@ public class BubbleSprite extends Sprite {
   public static final double MINIMUM_DISTANCE = 400.;
 
   private static final double FALL_SPEED       = 1.;
-  private static final double MAX_BUBBLE_SPEED = 8.;   
+  private static final double MAX_BUBBLE_SPEED = 8.;
+  private static final double GO_UP_SPEED      = 16.;
 
   private int           color;
   private int           fixedAnim;
@@ -393,47 +394,6 @@ public class BubbleSprite extends Sprite {
     return list;
   }
 
-  void checkJump(Vector<Sprite> jump, BmpWrap compare) {
-    if (checkJump) {
-      return;
-    }
-
-    checkJump = true;
-
-    if (this.bubbleFace == compare) {
-      checkJump(jump, this.getNeighbors(this.lastOpenPosition));
-    }
-  }
-
-  void checkJump(Vector<Sprite> jump, Vector<BubbleSprite> neighbors) {
-    jump.addElement(this);
-
-    for (int i=0 ; i<neighbors.size() ; i++) {
-      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
-
-      if (current != null) {
-        current.checkJump(jump, this.bubbleFace);
-      }
-    }
-  }
-
-  public void checkFall() {
-    if (checkFall) {
-      return;
-    }
-
-    checkFall = true;
-    Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
-
-    for (int i=0 ; i<v.size() ; i++) {
-      BubbleSprite current = (BubbleSprite)v.elementAt(i);
-
-      if (current != null) {
-        current.checkFall();
-      }
-    }
-  }
-
   boolean checkCollision(Vector<BubbleSprite> neighbors) {
     for (int i=0 ; i<neighbors.size() ; i++) {
       BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
@@ -458,21 +418,44 @@ public class BubbleSprite extends Sprite {
     return (value < MINIMUM_DISTANCE);
   }
 
-  public void jump() {
-    if (fixed) {
-      moveX = -6. + frozen.getRandom().nextDouble() * 12.;
-      moveY = -5. - frozen.getRandom().nextDouble() * 10.;
-      fixed = false;
+  public void checkFall() {
+    if (checkFall) {
+      return;
     }
 
-    moveY += FALL_SPEED;
-    realY += moveY;
-    realX += moveX;
+    checkFall = true;
+    Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
 
-    super.absoluteMove(new Point((int)realX, (int)realY));
+    for (int i=0 ; i<v.size() ; i++) {
+      BubbleSprite current = (BubbleSprite)v.elementAt(i);
 
-    if (realY >= 680.) {
-      frozen.deleteJumpingBubble(this);
+      if (current != null) {
+        current.checkFall();
+      }
+    }
+  }
+
+  void checkJump(Vector<Sprite> jump, BmpWrap compare) {
+    if (checkJump) {
+      return;
+    }
+
+    checkJump = true;
+
+    if (this.bubbleFace == compare) {
+      checkJump(jump, this.getNeighbors(this.lastOpenPosition));
+    }
+  }
+
+  void checkJump(Vector<Sprite> jump, Vector<BubbleSprite> neighbors) {
+    jump.addElement(this);
+
+    for (int i=0 ; i<neighbors.size() ; i++) {
+      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
+
+      if (current != null) {
+        current.checkJump(jump, this.bubbleFace);
+      }
     }
   }
 
@@ -489,6 +472,67 @@ public class BubbleSprite extends Sprite {
 
     if (realY >= 680.) {
       frozen.deleteFallingBubble(this);
+    }
+  }
+
+  public void goUp() {
+    realX += moveX;
+
+    if (realX>=414.) {
+      moveX = -moveX;
+      realX += (414. - realX);
+    }
+    else if (realX<=190.) {
+      moveX = -moveX;
+      realX += (190. - realX);
+    }
+
+    moveY = -GO_UP_SPEED;
+    realY += moveY;
+    Point currentPosition = currentPosition();
+    if ((currentPosition.x < 8) && (currentPosition.y < 13)) {
+      BubbleSprite[][] grid = frozen.getGrid();
+  
+      if (grid[currentPosition.x][currentPosition.y] == null)
+        lastOpenPosition = currentPosition;
+  
+      Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
+  
+      if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
+        realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
+        realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
+        fixed = true;
+        super.absoluteMove(new Point((int)realX, (int)realY));
+  
+        bubbleManager.addBubble(bubbleFace);
+        grid[lastOpenPosition.x][lastOpenPosition.y] = this;
+        moveX = 0.;
+        moveY = 0.;
+        fixedAnim = 0;
+        frozen.deleteGoingUpBubble(this);
+        return;
+      }
+    }
+
+    super.absoluteMove(new Point((int)realX, (int)realY));
+      
+  }
+
+  public void jump() {
+    if (fixed) {
+      moveX = -6. + frozen.getRandom().nextDouble() * 12.;
+      moveY = -5. - frozen.getRandom().nextDouble() * 10.;
+      fixed = false;
+    }
+
+    moveY += FALL_SPEED;
+    realY += moveY;
+    realX += moveX;
+
+    super.absoluteMove(new Point((int)realX, (int)realY));
+
+    if (realY >= 680.) {
+      frozen.deleteJumpingBubble(this);
     }
   }
 

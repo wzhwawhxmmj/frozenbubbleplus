@@ -114,7 +114,7 @@ public class LaunchBubbleSprite extends Sprite {
     int xCenter = 318;
     int yCenter = 406;
     c.rotate((float)(0.025 * 180 * (currentDirection -
-                                    FrozenGame.START_LAUNCH_POSITION)),
+                                    FrozenGame.START_LAUNCH_DIRECTION)),
              (float)(xCenter * scale + dx), (float)(yCenter * scale + dy));
     launcher.setBounds((int)((xCenter - 50) * scale + dx),
                        (int)((yCenter - 50) * scale + dy),
