@@ -64,7 +64,7 @@ public class BubbleSprite extends Sprite {
 
   private static final double FALL_SPEED       = 1.;
   private static final double MAX_BUBBLE_SPEED = 8.;
-  private static final double GO_UP_SPEED      = 16.;
+  private static final double GO_UP_SPEED      = 20.;
 
   private int           color;
   private int           fixedAnim;

@@ -161,7 +161,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
               myFrozenGame.getOkToFire() &&
               (action != KeyEvent.KEYCODE_DPAD_UP)) {
             while (running && cpuOpponent.isComputing()) {
-              wait();
+              wait(1000);
             }
 
             /*
@@ -184,7 +184,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
               if (actionNew != KeyEvent.KEYCODE_DPAD_UP)
                 action = actionNew;
 
-              wait();
+              wait(1000);
             }
 
             /*
@@ -199,7 +199,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
           }
 
           if (running)
-            wait();
+            wait(1000);
         }
       } catch (InterruptedException e) {
       } finally {
