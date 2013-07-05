@@ -491,10 +491,12 @@ public class BubbleSprite extends Sprite {
     realY += moveY;
     Point currentPosition = currentPosition();
     /*
-     * Only check for collisions if the grid position corresponding to
-     * current bubble location exists.  Otherwise just move the bubble.
+     * Only check for collisions if the current position of the attack
+     * bubble corresponds to a fixed grid location.  Otherwise just move
+     * the bubble.
      */
-    if ((currentPosition.x < 8) && (currentPosition.y < 13)) {
+    if ((currentPosition.x >= 0) && (currentPosition.x < 8) &&
+        (currentPosition.y >= 0) && (currentPosition.y < 13)) {
       BubbleSprite[][] grid = frozen.getGrid();
   
       if (grid[currentPosition.x][currentPosition.y] == null)
