@@ -88,11 +88,11 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * because this class does not know when to clear it.
    */
   public void clearAction() {
-    synchronized(this) {
-      if ((action == KeyEvent.KEYCODE_DPAD_UP) ||
-          (action == KeyEvent.KEYCODE_DPAD_DOWN))
-        action = 0;
+    if ((action == KeyEvent.KEYCODE_DPAD_UP) ||
+        (action == KeyEvent.KEYCODE_DPAD_DOWN))
+      action = 0;
 
+    synchronized(this) {
       this.notify();
     }
   }
@@ -142,64 +142,69 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
   public void run() {
     while(running) {
       try {
-        synchronized(this) {
-          /*
-           * Compute the next CPU action.
-           */
-          if (running && (myFrozenGame != null) &&
-              (myFrozenGame.getGameResult() == FrozenGame.GAME_PLAYING) &&
-            !cpuOpponent.isComputing())
-            cpuOpponent.compute(myFrozenGame.getCurrentColor(),
-                                myFrozenGame.getNextColor(),
-                                myFrozenGame.getCompressorPosition());
+        /*
+         * Compute the next CPU action.
+         */
+        if (running && (myFrozenGame != null) &&
+            (myFrozenGame.getGameResult() == FrozenGame.GAME_PLAYING) &&
+          !cpuOpponent.isComputing())
+          cpuOpponent.compute(myFrozenGame.getCurrentColor(),
+                              myFrozenGame.getNextColor(),
+                              myFrozenGame.getCompressorPosition());
 
-          /*
-           * Only fire if the game state permits, and the last virtual
-           * opponent action has been processed.
-           */
-          if (running && (myFrozenGame != null) &&
-              myFrozenGame.getOkToFire() &&
-              (action != KeyEvent.KEYCODE_DPAD_UP)) {
-            while (running && cpuOpponent.isComputing()) {
-              wait(1000);
-            }
-
-            /*
-             * Initialize a timeout interval to force a bubble launch if
-             * the CPU opponent takes too long to compute an action.
-             */
-            long timeout = System.currentTimeMillis() + 10000;
-
-            /*
-             * While the current action is to aim the launcher, keep
-             * pushing the directional aim command.
-             */
-            int actionNew = 0;
-            while (running && (myFrozenGame != null) &&
-                   (actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
-                   (System.currentTimeMillis() < timeout)) {
-              actionNew = cpuOpponent.getAction(convertPositionToAngle(
-                myFrozenGame.getPosition()));
-
-              if (actionNew != KeyEvent.KEYCODE_DPAD_UP)
-                action = actionNew;
-
-              wait(1000);
-            }
-
-            /*
-             * Set the launch direction to be as accurate as possible.
-             */
-            if (running && (myFrozenGame != null) &&
-                myFrozenGame.getOkToFire()) {
-              myFrozenGame.setPosition(convertAngleToPosition(
-                cpuOpponent.getExactDirection(0)));
-              action = actionNew;
+        /*
+         * Only fire if the game state permits, and the last virtual
+         * opponent action has been processed.
+         */
+        if (running && (myFrozenGame != null) &&
+            myFrozenGame.getOkToFire() &&
+            (action != KeyEvent.KEYCODE_DPAD_UP)) {
+          while (running && cpuOpponent.isComputing()) {
+            synchronized(this) {
+              wait();
             }
           }
 
-          if (running)
-            wait(1000);
+          /*
+           * Initialize a timeout interval to force a bubble launch if
+           * the CPU opponent takes too long to compute an action.
+           */
+          long timeout = System.currentTimeMillis() + 10000;
+
+          /*
+           * While the current action is to aim the launcher, keep
+           * pushing the directional aim command.
+           */
+          int actionNew = 0;
+          while (running && (myFrozenGame != null) &&
+                 (actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
+                 (System.currentTimeMillis() < timeout)) {
+            actionNew = cpuOpponent.getAction(convertPositionToAngle(
+              myFrozenGame.getPosition()));
+
+            if (actionNew != KeyEvent.KEYCODE_DPAD_UP)
+              action = actionNew;
+
+            synchronized(this) {
+              wait();
+            }
+          }
+
+          /*
+           * Set the launch direction to be as accurate as possible.
+           */
+          if (running && (myFrozenGame != null) &&
+              myFrozenGame.getOkToFire()) {
+            myFrozenGame.setPosition(convertAngleToPosition(
+              cpuOpponent.getExactDirection(0)));
+            action = actionNew;
+          }
+        }
+
+        if (running) {
+          synchronized(this) {
+            wait();
+          }
         }
       } catch (InterruptedException e) {
       } finally {

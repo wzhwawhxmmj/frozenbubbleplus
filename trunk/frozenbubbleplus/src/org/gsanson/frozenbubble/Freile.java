@@ -170,11 +170,12 @@ public class Freile implements Opponent, Runnable {
   }
 
   public void compute(int currentColor, int nextColor, int compressor) {
+    this.color = currentColor;
+    this.nextColor = nextColor;
+    this.compressor = compressor;
+    computing = true;
+
     synchronized (this) {
-      this.color = currentColor;
-      this.nextColor = nextColor;
-      this.compressor = compressor;
-      computing = true;
       notify();
     }
   }
@@ -185,20 +186,20 @@ public class Freile implements Opponent, Runnable {
 
   public void run() {
     while (running) {
-      synchronized(this) {
-        if (computing) {
-          computing = false;
-          if (mOpponentListener != null)
-            mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
-        }
+      if (computing) {
+        computing = false;
+        if (mOpponentListener != null)
+          mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
+      }
 
-        while (running && !computing) {
-          try {
+      while (running && !computing) {
+        try {
+          synchronized(this) {
             wait(1000);
-          } catch (InterruptedException e) {
-            // TODO - auto-generated exception handler stub.
-            //e.printStackTrace();
           }
+        } catch (InterruptedException e) {
+          // TODO - auto-generated exception handler stub.
+          //e.printStackTrace();
         }
       }
 
@@ -350,9 +351,9 @@ public class Freile implements Opponent, Runnable {
    */
   public void stopThread() {
     running = false;
+    mOpponentListener = null;
 
     synchronized(this) {
-      mOpponentListener = null;
       this.notify();
     }
   }
