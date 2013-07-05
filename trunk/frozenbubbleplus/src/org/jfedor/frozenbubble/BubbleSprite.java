@@ -317,9 +317,18 @@ public class BubbleSprite extends Sprite {
 
         soundManager.playSound(FrozenBubble.SOUND_DESTROY);
       }
+      else if (!this.register(grid)) {
+        /*
+         * If the moving bubble failed to register because the grid
+         * location it would fill is already occupied, simply remove
+         * the sprite, but otherwise act like it became affixed.
+         */
+        frozen.removeSprite(this);
+        soundManager.playSound(FrozenBubble.SOUND_STICK);
+        return;
+      }
       else {
         bubbleManager.addBubble(bubbleFace);
-        grid[lastOpenPosition.x][lastOpenPosition.y] = this;
         moveX = 0.;
         moveY = 0.;
         fixedAnim = 0;
@@ -328,70 +337,6 @@ public class BubbleSprite extends Sprite {
     }
 
     super.absoluteMove(new Point((int)realX, (int)realY));
-  }
-
-  Vector<BubbleSprite> getNeighbors(Point p) {
-    BubbleSprite[][] grid = frozen.getGrid();
-    Vector<BubbleSprite> list = new Vector<BubbleSprite>();
-
-    if ((p.y % 2) == 0) {
-      if (p.x > 0) {
-        list.addElement(grid[p.x-1][p.y]);
-      }
-
-      if (p.x < 7) {
-        list.addElement(grid[p.x+1][p.y]);
-
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-          list.addElement(grid[p.x+1][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-          list.addElement(grid[p.x+1][p.y+1]);
-        }
-      }
-      else {
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-        }
-      }
-    }
-    else {
-      if (p.x < 7) {
-        list.addElement(grid[p.x+1][p.y]);
-      }
-
-      if (p.x > 0) {
-        list.addElement(grid[p.x-1][p.y]);
-
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-          list.addElement(grid[p.x-1][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-          list.addElement(grid[p.x-1][p.y+1]);
-        }
-      }
-      else {
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-        }
-      }
-    }
-
-    return list;
   }
 
   boolean checkCollision(Vector<BubbleSprite> neighbors) {
@@ -457,6 +402,70 @@ public class BubbleSprite extends Sprite {
         current.checkJump(jump, this.bubbleFace);
       }
     }
+  }
+
+  Vector<BubbleSprite> getNeighbors(Point p) {
+    BubbleSprite[][] grid = frozen.getGrid();
+    Vector<BubbleSprite> list = new Vector<BubbleSprite>();
+
+    if ((p.y % 2) == 0) {
+      if (p.x > 0) {
+        list.addElement(grid[p.x-1][p.y]);
+      }
+
+      if (p.x < 7) {
+        list.addElement(grid[p.x+1][p.y]);
+
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+          list.addElement(grid[p.x+1][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+          list.addElement(grid[p.x+1][p.y+1]);
+        }
+      }
+      else {
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+        }
+      }
+    }
+    else {
+      if (p.x < 7) {
+        list.addElement(grid[p.x+1][p.y]);
+      }
+
+      if (p.x > 0) {
+        list.addElement(grid[p.x-1][p.y]);
+
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+          list.addElement(grid[p.x-1][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+          list.addElement(grid[p.x-1][p.y+1]);
+        }
+      }
+      else {
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+        }
+      }
+    }
+
+    return list;
   }
 
   public void fall() {
@@ -586,23 +595,19 @@ public class BubbleSprite extends Sprite {
   }
 
   /**
-   * Adds an attack bubble to the grid.
-   * 
-   * Due to rounded values, two attack bubbles may fill the same cell.
-   * In this case, one of the bubbles is not registered.
+   * Adds a bubble to the fixed grid.
    * 
    * @param grid
-   *        - the array of bubbles.
+   *        - the array of fixed bubbles.
    * 
    * @return true if the bubble becomes registered in the grid (false if
-   *         another attack bubble already occupies the same position)
+   *         another bubble already occupies the same position).
    */
   public boolean register(BubbleSprite[][] grid) {
     boolean register = grid[lastOpenPosition.x][lastOpenPosition.y] == null;
-    
-    if (register) {
+
+    if (register)
       grid[lastOpenPosition.x][lastOpenPosition.y] = this;
-    }
 
     return register;
   }
