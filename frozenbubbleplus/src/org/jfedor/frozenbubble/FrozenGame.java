@@ -956,12 +956,12 @@ public class FrozenGame extends GameScreen {
       ((BubbleSprite)falling.elementAt(i)).fall();
     }
 
-    for (int i=0 ; i<goingUp.size() ; i++) {
-      ((BubbleSprite)goingUp.elementAt(i)).goUp();
-    }
-
     for (int i=0 ; i<jumping.size() ; i++) {
       ((BubbleSprite)jumping.elementAt(i)).jump();
+    }
+
+    for (int i=0 ; i<goingUp.size() ; i++) {
+      ((BubbleSprite)goingUp.elementAt(i)).goUp();
     }
 
     return GAME_PLAYING;
