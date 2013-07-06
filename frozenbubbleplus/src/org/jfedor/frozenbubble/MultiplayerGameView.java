@@ -518,8 +518,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      * This method will be called three times in succession for each
      * touch, to process ACTION_DOWN, ACTION_UP, and ACTION_MOVE.
      * 
-     * @param  event
-     *         - the motion event
+     * @param event
+     *        - the motion event
      * @return True if the event was handled, false otherwise.
      */
     boolean doTouchEvent(MotionEvent event) {
@@ -595,6 +595,13 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       int y = 20;
       int ysp = 26;
       int indent = 10;
+      int orientation = getScreenOrientation();
+
+      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+        x += GAMEFIELD_WIDTH/2;
+      else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        x -= GAMEFIELD_WIDTH/2;
+
       mFont.print("original frozen bubble:", x, y, canvas,
                   mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
@@ -645,40 +652,58 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                        mDisplayDX, mDisplayDY);
     }
 
+    /**
+     * Draw the high score screen for multiplayer game mode.
+     * <p>
+     * The objective of multiplayer game mode is endurance - fire as
+     * many bubbles as possible for as long as possible.  Thus the high
+     * score will exhibit the most shots fired during the longest game.
+     * 
+     * @param canvas
+     *        - the drawing canvas to display the scores on.
+     * @param level
+     *        - the level difficulty index.
+     */
     private void drawHighscoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
       int x = 168;
       int y = 20;
       int ysp = 26;
       int indent = 10;
+      int orientation = getScreenOrientation();
 
-      mFont.print("highscore for level " + (level + 1), x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
+      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+        x += GAMEFIELD_WIDTH/2;
+      else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        x -= GAMEFIELD_WIDTH/2;
+
+      mFont.print("highscore for " +
+                  LevelManager.DifficultyStrings[mHighscoreManager.getLevel()],
+                  x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
       y += 2 * ysp;
 
       List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
       long lastScoreId = mHighscoreManager.getLastScoreId();
-      int i = 1;
+      int j = hlist.size();
+      int i = j - 1;
+      String entries[] = new String[j];
       for (HighscoreDO hdo : hlist) {
         String you = "";
         if (lastScoreId == hdo.getId()) {
           you = "|";
         }
         // TODO: Add player name support.
-        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
-        // + " - "
-        // + hdo.getShots()
-        // + " - " + (hdo.getTime() / 1000)
-        // + " sec", x + indent,
-        // y, canvas,
-        // mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.print(you + i++ + " - "
-          + hdo.getShots()
-          + " shots - "
-          + (hdo.getTime() / 1000)
-          + " sec", x + indent,
-          y, canvas,
-          mDisplayScale, mDisplayDX, mDisplayDY);
+        // entries[i] = you + (i + 1) + " - " + hdo.getName().toLowerCase() +
+        //                " - " + hdo.getShots() + " shots - " +
+        //                (hdo.getTime() / 1000) + " sec";
+        entries[i] = you + (i + 1) + " - " + hdo.getShots() + " shots - " +
+                       (hdo.getTime() / 1000) + " sec";
+        i--;
+      }
+
+      for (i = 0; i < j; i++) {
+        mFont.print(entries[i], x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
     }
@@ -971,7 +996,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
       mSoundManager     = new SoundManager(mContext);
-      mHighscoreManager = new HighscoreManager(getContext());
+      mHighscoreManager = new HighscoreManager(getContext(),
+                                               HighscoreManager.
+                                               MULTIPLAYER_DATABASE_NAME);
 
       try {
         InputStream is     = mContext.getAssets().open("levels.txt");
@@ -993,7 +1020,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
 
     public void newGame() {
       synchronized (mSurfaceHolder) {
-        mLevelManager.goToFirstLevel();
         malusBar1 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH - 164, 40,
                                  mBanana, mTomato);
         malusBar2 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH + 134, 40,
@@ -1069,9 +1095,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      * Restores game state from the indicated Bundle. Typically called when
      * the Activity is being restored after having been previously
      * destroyed.
-     *
-     * @param  savedState
-     *         - Bundle containing the game state.
+     * 
+     * @param savedState
+     *        - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
@@ -1150,8 +1176,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     /**
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
-     *
-     * @return  Bundle with this view's state
+     * 
+     * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
       synchronized (mSurfaceHolder) {
@@ -1236,7 +1262,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
            * show player two.
            */
           int orientation = getScreenOrientation();
-          if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+          if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
             mDisplayDX = (int)(-mDisplayScale * gameWidth);
           else
             mDisplayDX = 0;
@@ -1269,18 +1295,17 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      * processed, this function will return true, otherwise if the
      * calling method should also process the motion event, this
      * function will return false.
-     *
-     * @param  event
-     *         - The MotionEvent to process for the purpose of updating
-     *         the game state.  If this parameter is null, then the
-     *         game state is forced to update if applicable based on
-     *         the current game state.
-     *
-     * @return  This function returns true to inform the calling
-     *          - Function that the game state has been updated and that
-     *          no further processing is necessary, and false to
-     *          indicate that the caller should continue processing the
-     *          motion event.
+     * 
+     * @param event
+     *        - The MotionEvent to process for the purpose of updating
+     *        the game state.  If this parameter is null, then the
+     *        game state is forced to update if applicable based on
+     *        the current game state.
+     * 
+     * @return This function returns true to inform the calling function
+     *         that the game state has been updated and that no further
+     *         processing is necessary, and false to indicate that the
+     *         caller should continue processing the motion event.
      */
     private boolean updateStateOnEvent(MotionEvent event) {
       boolean event_action_down = false;
@@ -1393,10 +1418,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      * Use the player 1 offset to calculate the horizontal offset to
      * apply a raw horizontal position to the playfield.
      * 
-     * @param  x
-     *         - the raw horizontal position.
+     * @param x
+     *        - the raw horizontal position.
      * 
-     * @return - the adjusted horizontal position.
+     * @return the adjusted horizontal position.
      */
     private double xFromScr(float x) {
       return (x - mPlayer1DX) / mDisplayScale;

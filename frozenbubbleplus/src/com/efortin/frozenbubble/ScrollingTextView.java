@@ -237,9 +237,9 @@ public class ScrollingTextView extends TextView implements Runnable {
    * <p>If the scroll count is set to -1, then the text will scroll
    * indefinitely.
    * 
-   * @param  scrollCount
-   *         - The additional number of times to scroll the text.  If
-   *         this parameter is zero, the text will still scroll once.
+   * @param scrollCount
+   *        - The additional number of times to scroll the text.  If
+   *        this parameter is zero, the text will still scroll once.
    */
   public void setScrollRepeatLimit(int scrollCount) {
     this.scrollCount = scrollCount;

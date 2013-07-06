@@ -65,6 +65,9 @@ import android.os.Bundle;
  */
 public class HighscoreManager {
 
+  public static final String PUZZLE_DATABASE_NAME      = "frozenbubble";
+  public static final String MULTIPLAYER_DATABASE_NAME = "multiplayer";
+
   private int currentLevel = 0;
   private long startTime   = 0;
   private long pausedTime  = 0;
@@ -73,14 +76,14 @@ public class HighscoreManager {
   private final Context     ctx;
   String name = null;
 
-  public HighscoreManager(Context context) {
+  public HighscoreManager(Context context, String databaseName) {
     ctx = context;
-    db = new HighscoreDB(ctx);
+    db = new HighscoreDB(ctx, databaseName);
   }
 
   /**
-   * @param  nbBubbles
-   *         - The number of bubbles launched by the player.
+   * @param nbBubbles
+   *        - The number of bubbles launched by the player.
    */
   public void endLevel(int nbBubbles) {
     long endTime  = System.currentTimeMillis();

@@ -119,7 +119,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * Return the current state of the opponent action.  When the AI has
    * generated the next action, the action is set to a non-zero value.
    * 
-   * @return - returns the value of the CPU opponent action.
+   * @return returns the value of the CPU opponent action.
    */
   public int getAction() {
     return action;

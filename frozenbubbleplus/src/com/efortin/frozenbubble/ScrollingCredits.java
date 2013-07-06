@@ -164,9 +164,9 @@ public class ScrollingCredits extends Activity implements Runnable {
    * be applied before setting the view content by applying the XML
    * layout or it will generate an exception.
    * 
-   * @param  layoutResID
-   *         - The resource ID of the XML layout to use for the window
-   *         layout settings.
+   * @param layoutResID
+   *        - The resource ID of the XML layout to use for the window
+   *        layout settings.
    */
   private void setWindowLayout(int layoutResID) {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
