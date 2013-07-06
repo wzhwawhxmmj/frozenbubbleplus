@@ -202,7 +202,7 @@ public class CollisionHelper {
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 13; j++) {
           if (outGrid[i][j] == STATE_CHECK_NEXT) {
-            if (color == grid[i][j].getColor()) {
+            if (isColor(i, j, color, grid, null)) {
               outGrid[i][j] = STATE_REMOVE;
               nbRemove++;
               changed = true;
