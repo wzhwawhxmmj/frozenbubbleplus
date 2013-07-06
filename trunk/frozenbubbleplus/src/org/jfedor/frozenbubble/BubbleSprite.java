@@ -86,38 +86,6 @@ public class BubbleSprite extends Sprite {
   private boolean fixed;
   private boolean released;
 
-  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
-    if (getSavedId() != -1) {
-      return;
-    }
-    super.saveState(map, savedSprites);
-    map.putInt(String.format("%d-color", getSavedId()), color);
-    map.putDouble(String.format("%d-moveX", getSavedId()), moveX);
-    map.putDouble(String.format("%d-moveY", getSavedId()), moveY);
-    map.putDouble(String.format("%d-realX", getSavedId()), realX);
-    map.putDouble(String.format("%d-realY", getSavedId()), realY);
-    map.putBoolean(String.format("%d-fixed", getSavedId()), fixed);
-    map.putBoolean(String.format("%d-blink", getSavedId()), blink);
-    map.putBoolean(String.format("%d-released", getSavedId()), released);
-    map.putBoolean(String.format("%d-checkJump", getSavedId()), checkJump);
-    map.putBoolean(String.format("%d-checkFall", getSavedId()), checkFall);
-    map.putInt(String.format("%d-fixedAnim", getSavedId()), fixedAnim);
-    map.putBoolean(String.format("%d-frozen", getSavedId()),
-                   bubbleFace == frozenFace ? true : false);
-    map.putInt(String.format("%d-lastOpenPosition.x", getSavedId()),
-               lastOpenPosition.x);
-    map.putInt(String.format("%d-lastOpenPosition.y", getSavedId()),
-               lastOpenPosition.y);
-  }
-
-  public int getColor() {
-    return this.color;
-  }
-
-  public int getTypeId() {
-    return Sprite.TYPE_BUBBLE;
-  }
-
   /**
    * Class constructor used when restoring the game state from a bundle.
    */
@@ -209,6 +177,79 @@ public class BubbleSprite extends Sprite {
     bubbleManager.addBubble(bubbleFace);
   }
 
+  public void blink() {
+    blink = true;
+  }
+
+  boolean checkCollision(Vector<BubbleSprite> neighbors) {
+    for (int i=0 ; i<neighbors.size() ; i++) {
+      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
+
+      if (current != null) {
+        if (checkCollision(current)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  boolean checkCollision(BubbleSprite sprite) {
+    double value =
+      (sprite.getSpriteArea().left - this.realX) *
+      (sprite.getSpriteArea().left - this.realX) +
+      (sprite.getSpriteArea().top - this.realY) *
+      (sprite.getSpriteArea().top - this.realY);
+
+    return (value < MINIMUM_DISTANCE);
+  }
+
+  public boolean checked() {
+    return checkFall;
+  }
+
+  public void checkFall() {
+    if (checkFall) {
+      return;
+    }
+
+    checkFall = true;
+    Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
+
+    for (int i=0 ; i<v.size() ; i++) {
+      BubbleSprite current = (BubbleSprite)v.elementAt(i);
+
+      if (current != null) {
+        current.checkFall();
+      }
+    }
+  }
+
+  void checkJump(Vector<Sprite> jump, BmpWrap compare) {
+    if (checkJump) {
+      return;
+    }
+
+    checkJump = true;
+
+    if (this.bubbleFace == compare) {
+      checkJump(jump, this.getNeighbors(this.lastOpenPosition));
+    }
+  }
+
+  void checkJump(Vector<Sprite> jump, Vector<BubbleSprite> neighbors) {
+    jump.addElement(this);
+
+    for (int i=0 ; i<neighbors.size() ; i++) {
+      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
+
+      if (current != null) {
+        current.checkJump(jump, this.bubbleFace);
+      }
+    }
+  }
+
   Point currentPosition() {
     int posY = (int)Math.floor((realY-28.-frozen.getMoveDown())/28.);
     int posX = (int)Math.floor((realX-174.)/32. + 0.5*(posY%2));
@@ -228,28 +269,173 @@ public class BubbleSprite extends Sprite {
     return new Point(posX, posY);
   }
 
-  public void removeFromManager() {
-    bubbleManager.removeBubble(bubbleFace);
+  public int getColor() {
+    return this.color;
   }
 
   public boolean fixed() {
     return fixed;
   }
 
-  public boolean checked() {
-    return checkFall;
+  public void frozenify() {
+    changeSpriteArea(new Rect(getSpritePosition().x-1,
+                              getSpritePosition().y-1, 34, 42));
+    bubbleFace = frozenFace;
   }
 
-  public boolean released() {
-    return released;
+  Vector<BubbleSprite> getNeighbors(Point p) {
+    BubbleSprite[][] grid = frozen.getGrid();
+    Vector<BubbleSprite> list = new Vector<BubbleSprite>();
+
+    if ((p.y % 2) == 0) {
+      if (p.x > 0) {
+        list.addElement(grid[p.x-1][p.y]);
+      }
+
+      if (p.x < 7) {
+        list.addElement(grid[p.x+1][p.y]);
+
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+          list.addElement(grid[p.x+1][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+          list.addElement(grid[p.x+1][p.y+1]);
+        }
+      }
+      else {
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+        }
+      }
+    }
+    else {
+      if (p.x < 7) {
+        list.addElement(grid[p.x+1][p.y]);
+      }
+
+      if (p.x > 0) {
+        list.addElement(grid[p.x-1][p.y]);
+
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+          list.addElement(grid[p.x-1][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+          list.addElement(grid[p.x-1][p.y+1]);
+        }
+      }
+      else {
+        if (p.y > 0) {
+          list.addElement(grid[p.x][p.y-1]);
+        }
+
+        if (p.y < 12) {
+          list.addElement(grid[p.x][p.y+1]);
+        }
+      }
+    }
+
+    return list;
   }
 
-  public void moveDown() {
+  public int getTypeId() {
+    return Sprite.TYPE_BUBBLE;
+  }
+
+  public void fall() {
     if (fixed) {
-      realY += 28.;
+      moveY = frozen.getRandom().nextDouble()* 5.;
+    }
+
+    fixed = false;
+    moveY += FALL_SPEED;
+    realY += moveY;
+
+    super.absoluteMove(new Point((int)realX, (int)realY));
+
+    if (realY >= 680.) {
+      frozen.deleteFallingBubble(this);
+    }
+  }
+
+  public void goUp() {
+    realX += moveX;
+
+    if (realX>=414.) {
+      moveX = -moveX;
+      realX += (414. - realX);
+    }
+    else if (realX<=190.) {
+      moveX = -moveX;
+      realX += (190. - realX);
+    }
+
+    moveY = -GO_UP_SPEED;
+    realY += moveY;
+    Point currentPosition = currentPosition();
+    /*
+     * Only check for collisions if the current position of the attack
+     * bubble corresponds to a fixed grid location.  Otherwise just move
+     * the bubble.
+     */
+    if ((currentPosition.x >= 0) && (currentPosition.x < 8) &&
+        (currentPosition.y >= 0) && (currentPosition.y < 13)) {
+      BubbleSprite[][] grid = frozen.getGrid();
+  
+      if (grid[currentPosition.x][currentPosition.y] == null)
+        lastOpenPosition = currentPosition;
+  
+      Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
+  
+      if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
+        realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
+        realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
+        fixed = true;
+        super.absoluteMove(new Point((int)realX, (int)realY));
+  
+        if (!this.register(grid)) {
+          frozen.removeSprite(this);
+          frozen.malusBar.addBubbles(1);
+        }
+        else {
+          bubbleManager.addBubble(bubbleFace);
+          moveX = 0.;
+          moveY = 0.;
+          fixedAnim = 0;
+        }
+        frozen.deleteGoingUpBubble(this);
+        return;
+      }
     }
 
     super.absoluteMove(new Point((int)realX, (int)realY));
+  }
+
+  public void jump() {
+    if (fixed) {
+      moveX = -6. + frozen.getRandom().nextDouble() * 12.;
+      moveY = -5. - frozen.getRandom().nextDouble() * 10.;
+      fixed = false;
+    }
+
+    moveY += FALL_SPEED;
+    realY += moveY;
+    realX += moveX;
+
+    super.absoluteMove(new Point((int)realX, (int)realY));
+
+    if (realY >= 680.) {
+      frozen.deleteJumpingBubble(this);
+    }
   }
 
   public void move() {
@@ -341,230 +527,12 @@ public class BubbleSprite extends Sprite {
     super.absoluteMove(new Point((int)realX, (int)realY));
   }
 
-  boolean checkCollision(Vector<BubbleSprite> neighbors) {
-    for (int i=0 ; i<neighbors.size() ; i++) {
-      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
-
-      if (current != null) {
-        if (checkCollision(current)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  boolean checkCollision(BubbleSprite sprite) {
-    double value =
-      (sprite.getSpriteArea().left - this.realX) *
-      (sprite.getSpriteArea().left - this.realX) +
-      (sprite.getSpriteArea().top - this.realY) *
-      (sprite.getSpriteArea().top - this.realY);
-
-    return (value < MINIMUM_DISTANCE);
-  }
-
-  public void checkFall() {
-    if (checkFall) {
-      return;
-    }
-
-    checkFall = true;
-    Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
-
-    for (int i=0 ; i<v.size() ; i++) {
-      BubbleSprite current = (BubbleSprite)v.elementAt(i);
-
-      if (current != null) {
-        current.checkFall();
-      }
-    }
-  }
-
-  void checkJump(Vector<Sprite> jump, BmpWrap compare) {
-    if (checkJump) {
-      return;
-    }
-
-    checkJump = true;
-
-    if (this.bubbleFace == compare) {
-      checkJump(jump, this.getNeighbors(this.lastOpenPosition));
-    }
-  }
-
-  void checkJump(Vector<Sprite> jump, Vector<BubbleSprite> neighbors) {
-    jump.addElement(this);
-
-    for (int i=0 ; i<neighbors.size() ; i++) {
-      BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
-
-      if (current != null) {
-        current.checkJump(jump, this.bubbleFace);
-      }
-    }
-  }
-
-  Vector<BubbleSprite> getNeighbors(Point p) {
-    BubbleSprite[][] grid = frozen.getGrid();
-    Vector<BubbleSprite> list = new Vector<BubbleSprite>();
-
-    if ((p.y % 2) == 0) {
-      if (p.x > 0) {
-        list.addElement(grid[p.x-1][p.y]);
-      }
-
-      if (p.x < 7) {
-        list.addElement(grid[p.x+1][p.y]);
-
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-          list.addElement(grid[p.x+1][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-          list.addElement(grid[p.x+1][p.y+1]);
-        }
-      }
-      else {
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-        }
-      }
-    }
-    else {
-      if (p.x < 7) {
-        list.addElement(grid[p.x+1][p.y]);
-      }
-
-      if (p.x > 0) {
-        list.addElement(grid[p.x-1][p.y]);
-
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-          list.addElement(grid[p.x-1][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-          list.addElement(grid[p.x-1][p.y+1]);
-        }
-      }
-      else {
-        if (p.y > 0) {
-          list.addElement(grid[p.x][p.y-1]);
-        }
-
-        if (p.y < 12) {
-          list.addElement(grid[p.x][p.y+1]);
-        }
-      }
-    }
-
-    return list;
-  }
-
-  public void fall() {
+  public void moveDown() {
     if (fixed) {
-      moveY = frozen.getRandom().nextDouble()* 5.;
-    }
-
-    fixed = false;
-    moveY += FALL_SPEED;
-    realY += moveY;
-
-    super.absoluteMove(new Point((int)realX, (int)realY));
-
-    if (realY >= 680.) {
-      frozen.deleteFallingBubble(this);
-    }
-  }
-
-  public void goUp() {
-    realX += moveX;
-
-    if (realX>=414.) {
-      moveX = -moveX;
-      realX += (414. - realX);
-    }
-    else if (realX<=190.) {
-      moveX = -moveX;
-      realX += (190. - realX);
-    }
-
-    moveY = -GO_UP_SPEED;
-    realY += moveY;
-    Point currentPosition = currentPosition();
-    /*
-     * Only check for collisions if the current position of the attack
-     * bubble corresponds to a fixed grid location.  Otherwise just move
-     * the bubble.
-     */
-    if ((currentPosition.x >= 0) && (currentPosition.x < 8) &&
-        (currentPosition.y >= 0) && (currentPosition.y < 13)) {
-      BubbleSprite[][] grid = frozen.getGrid();
-  
-      if (grid[currentPosition.x][currentPosition.y] == null)
-        lastOpenPosition = currentPosition;
-  
-      Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
-  
-      if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
-        realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
-        realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
-        fixed = true;
-        super.absoluteMove(new Point((int)realX, (int)realY));
-  
-        if (!this.register(grid)) {
-          frozen.removeSprite(this);
-          frozen.malusBar.addBubbles(1);
-        }
-        else {
-          bubbleManager.addBubble(bubbleFace);
-          moveX = 0.;
-          moveY = 0.;
-          fixedAnim = 0;
-        }
-        frozen.deleteGoingUpBubble(this);
-        return;
-      }
+      realY += 28.;
     }
 
     super.absoluteMove(new Point((int)realX, (int)realY));
-  }
-
-  public void jump() {
-    if (fixed) {
-      moveX = -6. + frozen.getRandom().nextDouble() * 12.;
-      moveY = -5. - frozen.getRandom().nextDouble() * 10.;
-      fixed = false;
-    }
-
-    moveY += FALL_SPEED;
-    realY += moveY;
-    realX += moveX;
-
-    super.absoluteMove(new Point((int)realX, (int)realY));
-
-    if (realY >= 680.) {
-      frozen.deleteJumpingBubble(this);
-    }
-  }
-
-  public void blink() {
-    blink = true;
-  }
-
-  public void frozenify() {
-    changeSpriteArea(new Rect(getSpritePosition().x-1,
-                              getSpritePosition().y-1, 34, 42));
-    bubbleFace = frozenFace;
   }
 
   public final void paint(Canvas c, double scale, int dx, int dy) {
@@ -612,5 +580,37 @@ public class BubbleSprite extends Sprite {
       grid[lastOpenPosition.x][lastOpenPosition.y] = this;
 
     return register;
+  }
+
+  public boolean released() {
+    return released;
+  }
+
+  public void removeFromManager() {
+    bubbleManager.removeBubble(bubbleFace);
+  }
+
+  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
+    if (getSavedId() != -1) {
+      return;
+    }
+    super.saveState(map, savedSprites);
+    map.putInt(String.format("%d-color", getSavedId()), color);
+    map.putDouble(String.format("%d-moveX", getSavedId()), moveX);
+    map.putDouble(String.format("%d-moveY", getSavedId()), moveY);
+    map.putDouble(String.format("%d-realX", getSavedId()), realX);
+    map.putDouble(String.format("%d-realY", getSavedId()), realY);
+    map.putBoolean(String.format("%d-fixed", getSavedId()), fixed);
+    map.putBoolean(String.format("%d-blink", getSavedId()), blink);
+    map.putBoolean(String.format("%d-released", getSavedId()), released);
+    map.putBoolean(String.format("%d-checkJump", getSavedId()), checkJump);
+    map.putBoolean(String.format("%d-checkFall", getSavedId()), checkFall);
+    map.putInt(String.format("%d-fixedAnim", getSavedId()), fixedAnim);
+    map.putBoolean(String.format("%d-frozen", getSavedId()),
+                   bubbleFace == frozenFace ? true : false);
+    map.putInt(String.format("%d-lastOpenPosition.x", getSavedId()),
+               lastOpenPosition.x);
+    map.putInt(String.format("%d-lastOpenPosition.y", getSavedId()),
+               lastOpenPosition.y);
   }
 }

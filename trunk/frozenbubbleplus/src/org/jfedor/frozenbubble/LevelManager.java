@@ -64,10 +64,21 @@ public class LevelManager {
   public static final int HARD     = 7;
   public static final int INSANE   = 8;
 
+  public static final String[] DifficultyStrings = {
+    "frozen bubble",
+    "frozen bubble",
+    "frozen bubble",
+    "frozen bubble",
+    "easy",
+    "normal",
+    "moderate",
+    "hard",
+    "insane"
+  };
+
   private boolean randomMode;
   private long randomSeed;
   private int currentLevel;
-  private int difficulty;
   private Vector<byte[][]> levelList;
 
   public void saveState(Bundle map) {
@@ -93,12 +104,12 @@ public class LevelManager {
   public LevelManager(long seed, int difficulty) {
     this.randomMode = true;
     this.randomSeed = seed;
-    this.currentLevel = 0;
-    difficulty = ((difficulty - 1) % HARD) + 1;
-    if (difficulty < EASY)
-      this.difficulty = EASY;
+    this.currentLevel = difficulty;
+    currentLevel = ((currentLevel - 1) % INSANE) + 1;
+    if (currentLevel < EASY)
+      this.currentLevel = EASY;
     else
-      this.difficulty = difficulty;
+      this.currentLevel = difficulty;
     levelList = new Vector<byte[][]>();
     levelList.addElement(getLevel(null));
   }
@@ -115,7 +126,6 @@ public class LevelManager {
   public LevelManager(byte[] levels, int startingLevel) {
     randomMode = false;
     randomSeed = 0;
-    difficulty = EASY;
     String allLevels = new String(levels);
     currentLevel = startingLevel;
     levelList = new Vector<byte[][]>();
@@ -186,7 +196,7 @@ public class LevelManager {
       rand.nextInt(7);
       for (int j=0 ; j<5 ; j++) {
         for (int i=0 ; i<8 ; i++) {
-          temp[i][j] = (byte)rand.nextInt(difficulty);
+          temp[i][j] = (byte)rand.nextInt(currentLevel);
         }
       }
       randomSeed = rand.nextInt();

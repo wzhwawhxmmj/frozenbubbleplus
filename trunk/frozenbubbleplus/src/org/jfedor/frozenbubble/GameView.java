@@ -367,7 +367,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
       mSoundManager     = new SoundManager(mContext);
-      mHighscoreManager = new HighscoreManager(getContext());
+      mHighscoreManager = new HighscoreManager(getContext(),
+                                               HighscoreManager.
+                                               PUZZLE_DATABASE_NAME);
 
       if (null == customLevels) {
         try {
@@ -538,8 +540,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
-     *
-     * @return  Bundle with this view's state
+     * 
+     * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
       synchronized (mSurfaceHolder) {
@@ -556,9 +558,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * Restores game state from the indicated Bundle. Typically called when
      * the Activity is being restored after having been previously
      * destroyed.
-     *
-     * @param  savedState
-     *         - Bundle containing the game state.
+     * 
+     * @param savedState
+     *        - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
@@ -632,13 +634,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * 
      * @param keyCode
      *        - the static KeyEvent key identifier.
-     * 
      * @param msg
      *        - the key action message.
-     * 
      * @return
      *        - true if the key action is processed, false if not.
-     * 
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
@@ -818,18 +817,18 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * processed, this function will return true, otherwise if the
      * calling method should also process the motion event, this
      * function will return false.
-     *
-     * @param  event
-     *         - The MotionEvent to process for the purpose of updating
-     *         the game state.  If this parameter is null, then the
-     *         game state is forced to update if applicable based on
-     *         the current game state.
-     *
-     * @return  This function returns true to inform the calling
-     *          - Function that the game state has been updated and that
-     *          no further processing is necessary, and false to
-     *          indicate that the caller should continue processing the
-     *          motion event.
+     * 
+     * @param event
+     *        - The MotionEvent to process for the purpose of updating
+     *        the game state.  If this parameter is null, then the
+     *        game state is forced to update if applicable based on
+     *        the current game state.
+     * 
+     * @return This function returns true to inform the calling
+     *         - Function that the game state has been updated and that
+     *         no further processing is necessary, and false to
+     *         indicate that the caller should continue processing the
+     *         motion event.
      */
     private boolean updateStateOnEvent(MotionEvent event) {
       boolean event_action_down = false;
@@ -956,6 +955,18 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
+    /**
+     * Draw the high score screen for puzzle game mode.
+     * <p>
+     * The objective of puzzle game mode is efficiency - fire as few
+     * bubbles as possible as quickly as possible.  Thus the high score
+     * will exhibit the fewest shots fired the quickest.
+     * 
+     * @param canvas
+     *        - the drawing canvas to display the scores on.
+     * @param level
+     *        - the level index.
+     */
     private void drawHighscoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
       int x = 168;
@@ -1309,12 +1320,12 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
    * Display a blank screen (black background) for the specified wait
    * interval.
    * 
-   * @param  clearScreen
-   *         - If true, show a blank screen for the specified wait
-   *         interval.  If false, show the normal screen.
-   *
-   * @param  wait
-   *         - The amount of time to display the blank screen.
+   * @param clearScreen
+   *        - If true, show a blank screen for the specified wait
+   *        interval.  If false, show the normal screen.
+   * 
+   * @param wait
+   *        - The amount of time to display the blank screen.
    */
   public void clearGameScreen(boolean clearScreen, int wait) {
     mBlankScreen = clearScreen;

@@ -66,11 +66,11 @@ public class HighscoreDO {
   /**
    * Used when reading entries from the database.
    *
-   * @param  id
-   * @param  level
-   * @param  name
-   * @param  shots
-   * @param  time
+   * @param id
+   * @param level
+   * @param name
+   * @param shots
+   * @param time
    */
   public HighscoreDO(int id, int level, String name, int shots, long time) {
     super();
@@ -84,10 +84,10 @@ public class HighscoreDO {
   /**
    * Used when an entry is not yet in the database (no ID).
    *
-   * @param  level
-   * @param  name
-   * @param  shots
-   * @param  time
+   * @param level
+   * @param name
+   * @param shots
+   * @param time
    */
   public HighscoreDO(int level, String name, int shots, long time) {
     super();
