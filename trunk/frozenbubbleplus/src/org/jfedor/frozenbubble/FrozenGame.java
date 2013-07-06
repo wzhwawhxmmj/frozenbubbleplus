@@ -1034,6 +1034,10 @@ public class FrozenGame extends GameScreen {
     launchBubble.changeDirection(launchBubblePosition);
   }
 
+  public void setSendToOpponent(int numAttackBubbles) {
+    sendToOpponent = numAttackBubbles;
+ }
+
   public void swapNextLaunchBubble() {
     if (currentColor != nextColor) {
       int tempColor = currentColor;
