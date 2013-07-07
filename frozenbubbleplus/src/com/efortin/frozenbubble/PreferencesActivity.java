@@ -62,6 +62,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
 
 public class PreferencesActivity extends PreferenceActivity{
@@ -84,8 +85,8 @@ public class PreferencesActivity extends PreferenceActivity{
   private CheckBoxPreference screenOption;
   private CheckBoxPreference soundOption;
   private ListPreference     targetOption;
-  private SeekBarPreference  collisionOption;
-  private SeekBarPreference  difficultyOption;
+  private Preference         collisionOption;
+  private Preference         difficultyOption;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -105,8 +106,8 @@ public class PreferencesActivity extends PreferenceActivity{
     screenOption = (CheckBoxPreference)findPreference("fullscreen_option");
     soundOption = (CheckBoxPreference)findPreference("sound_effects_option");
     targetOption = (ListPreference)findPreference("targeting_option");
-    //collisionOption = (SeekBarPreference)findPreference("collision_option");
-    //difficultyOption = (SeekBarPreference)findPreference("difficulty_option");
+    collisionOption = (Preference)findPreference("collision_option");
+    difficultyOption = (Preference)findPreference("difficulty_option");
   }
 
   private void restoreGamePrefs() {
@@ -136,5 +137,7 @@ public class PreferencesActivity extends PreferenceActivity{
     screenOption.setChecked(fullscreen);
     soundOption.setChecked(soundOn);
     targetOption.setValue(String.valueOf(targetMode));
+    collisionOption.setDefaultValue(collision);
+    difficultyOption.setDefaultValue(difficulty);
   }
 }
