@@ -17,6 +17,8 @@
   <string name="menu_settings">Parámetros</string>
   <string name="cancel">Cancelar</string>
   <string name="ok">OK</string>
+  <string name="play_level_music">Tocar Música</string>
+  <string name="play_sound_effects">Tocar Efectos Sonoros</string>
   <string name="title_activity_frozen_bubble">Frozen Bubble</string>
   <string name="title_activity_splash_screen">Frozen Bubble</string>
   <string name="scrolling_credits">"Original Development\n"
@@ -78,7 +80,12 @@
     <item>Rotar y luego disparar</item>
   </string-array>
   <string-array name="sound_options_array">
-    <item>Tocar Efectos Sonoros</item>
-    <item>Tocar Música</item>
+    <item>@string/play_sound_effects</item>
+    <item>@string/play_level_music</item>
   </string-array>
+  <string-array name="targeting_values_array">
+    <item>false</item>
+    <item>true</item>
+    <item>false</item>
+   </string-array>
 </resources>
