@@ -60,7 +60,9 @@ import android.graphics.Rect;
 import android.os.Bundle;
 
 public class BubbleSprite extends Sprite {
-  public static final double MINIMUM_DISTANCE = 400.;
+  public static final int MIN_PIX = 20;
+  public static final int MAX_PIX = 29;
+  public static double minDistance = MIN_PIX * MIN_PIX;
 
   private static final double FALL_SPEED       = 1.;
   private static final double MAX_BUBBLE_SPEED = 8.;
@@ -202,7 +204,7 @@ public class BubbleSprite extends Sprite {
       (sprite.getSpriteArea().top - this.realY) *
       (sprite.getSpriteArea().top - this.realY);
 
-    return (value < MINIMUM_DISTANCE);
+    return (value < minDistance);
   }
 
   public boolean checked() {
@@ -612,5 +614,9 @@ public class BubbleSprite extends Sprite {
                lastOpenPosition.x);
     map.putInt(String.format("%d-lastOpenPosition.y", getSavedId()),
                lastOpenPosition.y);
+  }
+
+  public static void setSensitivity(double collisionSensitivity) {
+    minDistance = collisionSensitivity * collisionSensitivity;
   }
 }
