@@ -84,6 +84,7 @@ public class SplashScreen extends Activity {
   private final static int SCREEN_ID = 100;
   private final static int BTN1_ID   = 101;
   private final static int BTN2_ID   = 102;
+  private final static int BTN3_ID   = 103;
 
   private Boolean homeShown = false;
   private Boolean musicOn = true;
@@ -112,16 +113,15 @@ public class SplashScreen extends Activity {
         startFrozenBubble(2);
       }
     });
-    start2pGameButton.setText("Start 2p Game");
+    start2pGameButton.setText("Player vs. CPU");
     start2pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() *
-                                      start2pGameButton.getText().length()));
+    start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() * 10));
     start2pGameButton.setHorizontalFadingEdgeEnabled(true);
     start2pGameButton.setFadingEdgeLength(5);
     start2pGameButton.setShadowLayer(5, 5, 5, R.color.black);
     start2pGameButton.setId(BTN2_ID);
     LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
-                                             LayoutParams.WRAP_CONTENT);
+                                              LayoutParams.WRAP_CONTENT);
     myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
     myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
     // Add view to layout.
@@ -135,20 +135,41 @@ public class SplashScreen extends Activity {
         startFrozenBubble(1);
       }
     });
-    start1pGameButton.setText("Start 1p Game");
+    start1pGameButton.setText("Puzzle");
     start1pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() *
-                                      start1pGameButton.getText().length()));
+    start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() * 10));
     start1pGameButton.setHorizontalFadingEdgeEnabled(true);
     start1pGameButton.setFadingEdgeLength(5);
     start1pGameButton.setShadowLayer(5, 5, 5, R.color.black);
     start1pGameButton.setId(BTN1_ID);
     LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
-                                             LayoutParams.WRAP_CONTENT);
+                                              LayoutParams.WRAP_CONTENT);
     myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
     myParams2.addRule(RelativeLayout.ABOVE, start2pGameButton.getId());
     // Add view to layout.
     myLayout.addView(start1pGameButton, myParams2);
+    // Construct the options button.
+    Button optionsButton = new Button(this);
+    optionsButton.setOnClickListener(new Button.OnClickListener(){
+
+      public void onClick(View v){
+        // Process the button tap and start the preferences activity.
+        startPreferencesScreen();
+      }
+    });
+    optionsButton.setText("Options");
+    optionsButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    optionsButton.setWidth((int) (optionsButton.getTextSize() * 10));
+    optionsButton.setHorizontalFadingEdgeEnabled(true);
+    optionsButton.setFadingEdgeLength(5);
+    optionsButton.setShadowLayer(5, 5, 5, R.color.black);
+    optionsButton.setId(BTN3_ID);
+    LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams3.addRule(RelativeLayout.BELOW, start2pGameButton.getId());
+    // Add view to layout.
+    myLayout.addView(optionsButton, myParams3);
   }
 
   private void cleanUp() {
@@ -338,5 +359,10 @@ public class SplashScreen extends Activity {
       setContentView(myLayout);
       myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
     }
+  }
+
+  private void startPreferencesScreen() {
+    Intent intent = new Intent(this, PreferencesActivity.class);
+    startActivity(intent);
   }
 }

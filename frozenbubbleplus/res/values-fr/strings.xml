@@ -17,6 +17,8 @@
   <string name="menu_settings">Paramètres</string>
   <string name="cancel">Annuler</string>
   <string name="ok">OK</string>
+  <string name="play_level_music">Jouer Musique</string>
+  <string name="play_sound_effects">Jouer Effets Sonores</string>
   <string name="title_activity_frozen_bubble">Frozen Bubble</string>
   <string name="title_activity_splash_screen">Frozen Bubble</string>
   <string name="scrolling_credits">"Développement Original\n"
@@ -78,7 +80,12 @@
     <item>Pivoter Puis Tirer</item>
   </string-array>
   <string-array name="sound_options_array">
-    <item>Jouer Effets Sonores</item>
-    <item>Jouer Musique</item>
+    <item>@string/play_sound_effects</item>
+    <item>@string/play_level_music</item>
   </string-array>
+  <string-array name="targeting_values_array">
+    <item>false</item>
+    <item>true</item>
+    <item>false</item>
+   </string-array>
 </resources>
