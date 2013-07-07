@@ -77,7 +77,7 @@ public class CollisionHelper {
    */
   public static int[] collide(int x, int y, BubbleSprite[][] grid) {
 
-    int minDist = (int)BubbleSprite.MINIMUM_DISTANCE;
+    int minDist = (int)BubbleSprite.minDistance;
     int[] minCoords = null;
     int[][] toCheck = toCheck(x, y);
 
@@ -146,7 +146,7 @@ public class CollisionHelper {
       int dx = (targetX << 5) - ((targetY % 2) << 4) - x;
       int dy = targetY * 28 - y;
 
-      collision = dx * dx + dy * dy < BubbleSprite.MINIMUM_DISTANCE;
+      collision = dx * dx + dy * dy < BubbleSprite.minDistance;
     }
 
     return collision;
