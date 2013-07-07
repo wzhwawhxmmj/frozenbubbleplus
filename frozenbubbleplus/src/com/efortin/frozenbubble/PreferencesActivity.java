@@ -61,10 +61,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
-import android.preference.DialogPreference;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
-import android.widget.SeekBar;
 
 public class PreferencesActivity extends PreferenceActivity{
 
@@ -86,8 +84,7 @@ public class PreferencesActivity extends PreferenceActivity{
   private CheckBoxPreference screenOption;
   private CheckBoxPreference soundOption;
   private ListPreference     targetOption;
-  //private SeekBarPreference  collisionOption;
-  private SeekBarPreference collisionOption;
+  private SeekBarPreference  collisionOption;
   private SeekBarPreference  difficultyOption;
 
   @Override
