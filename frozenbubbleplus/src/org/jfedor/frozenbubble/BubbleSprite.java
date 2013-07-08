@@ -616,7 +616,7 @@ public class BubbleSprite extends Sprite {
                lastOpenPosition.y);
   }
 
-  public static void setSensitivity(double collisionSensitivity) {
-    minDistance = collisionSensitivity * collisionSensitivity;
+  public static void setCollisionThreshold(int collision) {
+    minDistance = collision * collision;
   }
 }

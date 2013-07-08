@@ -119,7 +119,7 @@ public class PreferencesActivity extends PreferenceActivity{
           PreferenceManager.getDefaultSharedPreferences(this);
       collision  = prefs.getInt("collision_option", BubbleSprite.MIN_PIX);
       compressor = prefs.getBoolean("compressor_option", true);
-      difficulty = prefs.getInt("difficultyOption", LevelManager.MODERATE);
+      difficulty = prefs.getInt("difficulty_option", LevelManager.MODERATE);
       dontRushMe = prefs.getBoolean("rush_me_option", false);
       fullscreen = prefs.getBoolean("fullscreen_option", true);
       colorMode  = prefs.getBoolean("colorblind_option", false);
@@ -152,7 +152,7 @@ public class PreferencesActivity extends PreferenceActivity{
   private void restoreGamePrefs() {
     SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                      Context.MODE_PRIVATE);
-    collision  = mConfig.getInt("collision",BubbleSprite.MIN_PIX);
+    collision  = mConfig.getInt("collision", BubbleSprite.MIN_PIX);
     compressor = mConfig.getBoolean("compressor", true);
     difficulty = mConfig.getInt("difficulty", LevelManager.MODERATE);
     dontRushMe = mConfig.getBoolean("dontRushMe", false);

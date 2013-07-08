@@ -151,6 +151,9 @@ public class FrozenBubble extends Activity
 
   public static boolean isRunning = false;
 
+  private static int     collision  = BubbleSprite.MIN_PIX;
+  private static boolean compressor = true;
+  private static int     difficulty = LevelManager.MODERATE;
   private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
   private static int     gameMode   = GAME_NORMAL;
@@ -453,13 +456,17 @@ public class FrozenBubble extends Activity
   private void restoreGamePrefs() {
     SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
                                                      Context.MODE_PRIVATE);
-    dontRushMe = mConfig.getBoolean("dontRushMe", false         );
-    fullscreen = mConfig.getBoolean("fullscreen", true          );
-    gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL   );
-    musicOn    = mConfig.getBoolean("musicOn",    true          );
-    soundOn    = mConfig.getBoolean("soundOn",    true          );
-    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT);
+    collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX );
+    compressor = mConfig.getBoolean("compressor", true                 );
+    difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
+    dontRushMe = mConfig.getBoolean("dontRushMe", false                );
+    fullscreen = mConfig.getBoolean("fullscreen", true                 );
+    gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL          );
+    musicOn    = mConfig.getBoolean("musicOn",    true                 );
+    soundOn    = mConfig.getBoolean("soundOn",    true                 );
+    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT       );
 
+    BubbleSprite.setCollisionThreshold(collision);
     setTargetMode(targetMode);
   }
 
@@ -710,6 +717,10 @@ public class FrozenBubble extends Activity
 
     builder.create();
     builder.show();
+  }
+
+  public synchronized static int getDifficulty() {
+    return difficulty;
   }
 
   public synchronized static void setMode(int newMode) {
