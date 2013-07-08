@@ -60,20 +60,22 @@ import android.os.Bundle;
 public abstract class GameScreen {
   private Vector<Sprite> sprites;
 
-  public final void saveSprites(Bundle map, Vector<Sprite> savedSprites) {
+  public final void saveSprites(Bundle map, Vector<Sprite> savedSprites,
+                                int id) {
     for (int i = 0; i < sprites.size(); i++) {
-      ((Sprite)sprites.elementAt(i)).saveState(map, savedSprites);
-      map.putInt(String.format("game-%d", i),
+      ((Sprite)sprites.elementAt(i)).saveState(map, savedSprites, id);
+      map.putInt(String.format("%d-game-%d", id, i),
                  ((Sprite)sprites.elementAt(i)).getSavedId());
     }
-    map.putInt("numGameSprites", sprites.size());
+    map.putInt(String.format("%d-numGameSprites", id), sprites.size());
   }
 
-  public final void restoreSprites(Bundle map, Vector<Sprite> savedSprites) {
+  public final void restoreSprites(Bundle map, Vector<Sprite> savedSprites,
+                                   int id) {
     sprites = new Vector<Sprite>();
-    int numSprites = map.getInt("numGameSprites");
+    int numSprites = map.getInt(String.format("%d-numGameSprites", id));
     for (int i = 0; i < numSprites; i++) {
-      int spriteIdx = map.getInt(String.format("game-%d", i));
+      int spriteIdx = map.getInt(String.format("%d-game-%d", id, i));
       sprites.addElement(savedSprites.elementAt(spriteIdx));
     }
   }

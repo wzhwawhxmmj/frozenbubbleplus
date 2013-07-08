@@ -546,6 +546,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     public Bundle saveState(Bundle map) {
       synchronized (mSurfaceHolder) {
         if (map != null) {
+          map.putInt("numPlayers", 1);
           mFrozenGame      .saveState(map);
           mLevelManager    .saveState(map);
           mHighscoreManager.saveState(map);

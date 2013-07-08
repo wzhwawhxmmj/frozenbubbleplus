@@ -74,17 +74,17 @@ public abstract class Sprite {
     saved_id = -1;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites, int id) {
     if (saved_id != -1) {
       return;
     }
     saved_id = saved_sprites.size();
     saved_sprites.addElement(this);
-    map.putInt(String.format("%d-left", saved_id), spriteArea.left);
-    map.putInt(String.format("%d-right", saved_id), spriteArea.right);
-    map.putInt(String.format("%d-top", saved_id), spriteArea.top);
-    map.putInt(String.format("%d-bottom", saved_id), spriteArea.bottom);
-    map.putInt(String.format("%d-type", saved_id), getTypeId());
+    map.putInt(String.format("%d-%d-left", id, saved_id), spriteArea.left);
+    map.putInt(String.format("%d-%d-right", id, saved_id), spriteArea.right);
+    map.putInt(String.format("%d-%d-top", id, saved_id), spriteArea.top);
+    map.putInt(String.format("%d-%d-bottom", id, saved_id), spriteArea.bottom);
+    map.putInt(String.format("%d-%d-type", id, saved_id), getTypeId());
   }
 
   public final int getSavedId() {

@@ -67,12 +67,13 @@ public class ImageSprite extends Sprite {
     this.displayedImage = img;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
+  public void saveState(Bundle map, Vector<Sprite> savedSprites, int id) {
     if (getSavedId() != -1) {
       return;
     }
-    super.saveState(map, savedSprites);
-    map.putInt(String.format("%d-imageId", getSavedId()), displayedImage.id);
+    super.saveState(map, savedSprites, id);
+    map.putInt(String.format("%d-%d-imageId", id, getSavedId()),
+               displayedImage.id);
   }
 
   public int getTypeId() {

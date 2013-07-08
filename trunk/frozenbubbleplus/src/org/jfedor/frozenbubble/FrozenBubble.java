@@ -238,13 +238,20 @@ public class FrozenBubble extends Activity
          !intent.getExtras().containsKey("levels")) {
       // Default levels.
       activityCustomStarted = false;
-      // Check if this is a single or multiplayer game.
-      if (intent.hasExtra("numPlayers")) {
-        int numPlayers = intent.getIntExtra("numPlayers", 1);
+      // Check if this is a single player or multiplayer game.
+      int numPlayers = 1;
+      if (intent.hasExtra("numPlayers"))
+        numPlayers = intent.getIntExtra("numPlayers", 1);
+      if (numPlayers > 1) {
         mMultiplayerGameView = new MultiplayerGameView(this, numPlayers);
         setContentView(mMultiplayerGameView);
         mMultiplayerGameView.setGameListener(this);
         mMultiplayerGameThread = mMultiplayerGameView.getThread();
+        if (savedInstanceState != null) {
+          int savedPlayers = savedInstanceState.getInt("numPlayers");
+          if (savedPlayers == 2)
+            mMultiplayerGameThread.restoreState(savedInstanceState);
+        }
         mMultiplayerGameView.requestFocus();
       }
       else {
@@ -252,8 +259,11 @@ public class FrozenBubble extends Activity
         mGameView = (GameView)findViewById(R.id.game);
         mGameView.setGameListener(this);
         mGameThread = mGameView.getThread();
-        if (savedInstanceState != null)
-          mGameThread.restoreState(savedInstanceState);
+        if (savedInstanceState != null) {
+          int savedPlayers = savedInstanceState.getInt("numPlayers");
+          if (savedPlayers == 1)
+            mGameThread.restoreState(savedInstanceState);
+        }
 
         mGameView.requestFocus();
       }
@@ -425,6 +435,9 @@ public class FrozenBubble extends Activity
     super.onSaveInstanceState(outState);
     if (mGameThread != null)
       mGameThread.saveState(outState);
+
+    if (mMultiplayerGameThread != null)
+      mMultiplayerGameThread.saveState(outState);
   }
 
   /* (non-Javadoc)

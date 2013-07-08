@@ -57,6 +57,7 @@ import org.jfedor.frozenbubble.Sprite;
 
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Bundle;
 
 public class MalusBar extends Sprite {
 
@@ -135,5 +136,15 @@ public class MalusBar extends Sprite {
     int nb = Math.min(7, nbMalus);
     nbMalus -= nb;
     return nb;
+  }
+
+  public void restoreState(Bundle map, int id) {
+    nbMalus     = map.getInt(String.format("%d-nbMalus", id));
+    releaseTime = map.getInt(String.format("%d-releaseTime", id));
+  }
+
+  public void saveState(Bundle map, int id) {
+    map.putInt(String.format("%d-nbMalus", id), nbMalus);
+    map.putInt(String.format("%d-releaseTime", id), releaseTime);
   }
 }
