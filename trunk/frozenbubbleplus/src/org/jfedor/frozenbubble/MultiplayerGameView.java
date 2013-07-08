@@ -1009,7 +1009,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         SharedPreferences sp = mContext.getSharedPreferences(
           FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
         startingLevel = sp.getInt("level", 0);
-        mLevelManager = new LevelManager(0, LevelManager.MODERATE);
+        mLevelManager = new LevelManager(0, FrozenBubble.getDifficulty());
       } catch (IOException e) {
         // Should never happen.
         throw new RuntimeException(e);
