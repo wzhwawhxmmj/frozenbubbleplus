@@ -838,15 +838,7 @@ public class FrozenGame extends GameScreen {
         launchBubblePosition += dx;
         clampLaunchPosition();
         launchBubble.changeDirection(launchBubblePosition);
-        if (dx < 0) {
-          penguin.updateState(PenguinSprite.STATE_TURN_LEFT);
-        }
-        else if (dx > 0) {
-          penguin.updateState(PenguinSprite.STATE_TURN_RIGHT);
-        }
-        else {
-          penguin.updateState(PenguinSprite.STATE_VOID);
-        }
+        updatePenguinState(dx);
       }
     }
 
@@ -1042,6 +1034,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public void setPosition(double value) {
+    updatePenguinState(value - launchBubblePosition);
     launchBubblePosition = value;
     clampLaunchPosition();
     launchBubble.changeDirection(launchBubblePosition);
@@ -1065,6 +1058,18 @@ public class FrozenGame extends GameScreen {
         nextBubble.changeImage(bubblesBlind[nextColor]);
 
       soundManager.playSound(FrozenBubble.SOUND_WHIP);
+    }
+  }
+
+  public void updatePenguinState(double dx) {
+    if (dx < 0) {
+      penguin.updateState(PenguinSprite.STATE_TURN_LEFT);
+    }
+    else if (dx > 0) {
+      penguin.updateState(PenguinSprite.STATE_TURN_RIGHT);
+    }
+    else {
+      penguin.updateState(PenguinSprite.STATE_VOID);
     }
   }
 }
