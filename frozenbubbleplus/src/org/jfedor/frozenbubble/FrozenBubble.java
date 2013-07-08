@@ -719,6 +719,10 @@ public class FrozenBubble extends Activity
     builder.show();
   }
 
+  public synchronized static boolean getCompressor() {
+    return compressor;
+  }
+
   public synchronized static int getDifficulty() {
     return difficulty;
   }

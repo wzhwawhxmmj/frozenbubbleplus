@@ -262,7 +262,9 @@ public class SplashScreen extends Activity {
   public void onResume() {
     super.onPause();
     if (myModPlayer != null) {
-      myModPlayer.unPausePlay();
+      restoreGamePrefs();
+      if (musicOn)
+        myModPlayer.unPausePlay();
     }
   }
 
