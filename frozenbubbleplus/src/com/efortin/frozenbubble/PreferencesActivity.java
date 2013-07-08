@@ -64,6 +64,7 @@ import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceManager;
 
 public class PreferencesActivity extends PreferenceActivity{
 
@@ -99,29 +100,67 @@ public class PreferencesActivity extends PreferenceActivity{
   }
 
   private void getPreferences() {
-    colorOption = (CheckBoxPreference)findPreference("colorblind_option");
+    collisionOption  = (Preference)findPreference("collision_option");
+    colorOption      = (CheckBoxPreference)findPreference("colorblind_option");
     compressorOption = (CheckBoxPreference)findPreference("compressor_option");
-    hurryOption = (CheckBoxPreference)findPreference("rush_me_option");
-    musicOption = (CheckBoxPreference)findPreference("play_music_option");
-    screenOption = (CheckBoxPreference)findPreference("fullscreen_option");
-    soundOption = (CheckBoxPreference)findPreference("sound_effects_option");
-    targetOption = (ListPreference)findPreference("targeting_option");
-    collisionOption = (Preference)findPreference("collision_option");
     difficultyOption = (Preference)findPreference("difficulty_option");
+    hurryOption      = (CheckBoxPreference)findPreference("rush_me_option");
+    musicOption      = (CheckBoxPreference)findPreference("play_music_option");
+    screenOption     = (CheckBoxPreference)findPreference("fullscreen_option");
+    soundOption      =
+        (CheckBoxPreference)findPreference("sound_effects_option");
+    targetOption     = (ListPreference)findPreference("targeting_option");
+  }
+
+  @Override
+  public void onWindowFocusChanged(boolean hasFocus) {
+    if (!hasFocus) {
+      SharedPreferences prefs =
+          PreferenceManager.getDefaultSharedPreferences(this);
+      collision  = prefs.getInt("collision_option", BubbleSprite.MIN_PIX);
+      compressor = prefs.getBoolean("compressor_option", true);
+      difficulty = prefs.getInt("difficultyOption", LevelManager.MODERATE);
+      dontRushMe = prefs.getBoolean("rush_me_option", false);
+      fullscreen = prefs.getBoolean("fullscreen_option", true);
+      colorMode  = prefs.getBoolean("colorblind_option", false);
+      musicOn    = prefs.getBoolean("play_music_option", true);
+      soundOn    = prefs.getBoolean("sound_effects_option", true);
+      targetMode = Integer.valueOf(prefs.getString("targeting_option",
+          Integer.toString(FrozenBubble.POINT_TO_SHOOT)));
+
+      if (!colorMode)
+        gameMode = FrozenBubble.GAME_NORMAL;
+      else
+        gameMode = FrozenBubble.GAME_COLORBLIND;
+
+      SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                  Context.MODE_PRIVATE);
+      SharedPreferences.Editor editor = sp.edit();
+      editor.putInt("collision", collision);
+      editor.putBoolean("compressor", compressor);
+      editor.putInt("difficulty", difficulty);
+      editor.putBoolean("dontRushMe", !dontRushMe);
+      editor.putBoolean("fullscreen", fullscreen);
+      editor.putInt("gameMode", gameMode);
+      editor.putBoolean("musicOn", musicOn);
+      editor.putBoolean("soundOn", soundOn);
+      editor.putInt("targetMode", targetMode);
+      editor.commit();
+    }
   }
 
   private void restoreGamePrefs() {
     SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                      Context.MODE_PRIVATE);
-    collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX);
+    collision  = mConfig.getInt("collision",BubbleSprite.MIN_PIX);
     compressor = mConfig.getBoolean("compressor", true);
-    difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
+    difficulty = mConfig.getInt("difficulty", LevelManager.MODERATE);
     dontRushMe = mConfig.getBoolean("dontRushMe", false);
     fullscreen = mConfig.getBoolean("fullscreen", true);
-    gameMode   = mConfig.getInt    ("gameMode",   FrozenBubble.GAME_NORMAL);
-    musicOn    = mConfig.getBoolean("musicOn",    true);
-    soundOn    = mConfig.getBoolean("soundOn",    true);
-    targetMode = mConfig.getInt    ("targetMode", FrozenBubble.POINT_TO_SHOOT);
+    gameMode   = mConfig.getInt("gameMode", FrozenBubble.GAME_NORMAL);
+    musicOn    = mConfig.getBoolean("musicOn", true);
+    soundOn    = mConfig.getBoolean("soundOn", true);
+    targetMode = mConfig.getInt("targetMode", FrozenBubble.POINT_TO_SHOOT);
 
     if (gameMode == FrozenBubble.GAME_NORMAL)
       colorMode = false;
@@ -130,14 +169,14 @@ public class PreferencesActivity extends PreferenceActivity{
   }
 
   private void setDefaults() {
+    collisionOption.setDefaultValue(collision);
     colorOption.setChecked(colorMode);
     compressorOption.setChecked(compressor);
+    difficultyOption.setDefaultValue(difficulty);
     hurryOption.setChecked(!dontRushMe);
     musicOption.setChecked(musicOn);
     screenOption.setChecked(fullscreen);
     soundOption.setChecked(soundOn);
-    targetOption.setValue(String.valueOf(targetMode));
-    collisionOption.setDefaultValue(collision);
-    difficultyOption.setDefaultValue(difficulty);
+    targetOption.setValue(Integer.toString(targetMode));
   }
 }
