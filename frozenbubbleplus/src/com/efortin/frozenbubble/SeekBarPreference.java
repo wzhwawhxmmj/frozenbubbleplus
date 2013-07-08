@@ -266,5 +266,9 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
         }
         
     }
+
+    public void setDefaultValue(int newValue) {
+      mCurrentValue = newValue;
+    }
     
 }
