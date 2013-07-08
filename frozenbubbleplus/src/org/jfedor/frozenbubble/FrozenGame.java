@@ -141,7 +141,7 @@ public class FrozenGame extends GameScreen {
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
-  int playerId;
+  int player;
   int playResult;
   int sendToOpponent;
   double moveDown;
@@ -183,14 +183,14 @@ public class FrozenGame extends GameScreen {
     soundManager         = soundManager_arg;
     levelManager         = levelManager_arg;
     highscoreManager     = highscoreManager_arg;
-    playerId             = player_arg;
+    player             = player_arg;
     playResult           = GAME_PLAYING;
     launchBubblePosition = START_LAUNCH_DIRECTION;
     readyToFire          = false;
     swapPressed          = false;
 
     Rect r;
-    if (playerId == 1)
+    if (player == 1)
       r = new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
                    436 + PenguinSprite.PENGUIN_HEIGHT - 2);
     else
@@ -293,69 +293,77 @@ public class FrozenGame extends GameScreen {
   public void saveState(Bundle map) {
     cleanUp();
     Vector<Sprite> savedSprites = new Vector<Sprite>();
-    saveSprites(map, savedSprites);
+    saveSprites(map, savedSprites, player);
     for (int i = 0; i < jumping.size(); i++) {
-      ((Sprite)jumping.elementAt(i)).saveState(map, savedSprites);
-      map.putInt(String.format("jumping-%d", i),
+      ((Sprite)jumping.elementAt(i)).saveState(map, savedSprites, player);
+      map.putInt(String.format("%d-jumping-%d", player, i),
                  ((Sprite)jumping.elementAt(i)).getSavedId());
     }
-    map.putInt("numJumpingSprites", jumping.size());
+    map.putInt(String.format("%d-numJumpingSprites", player), jumping.size());
     for (int i = 0; i < goingUp.size(); i++) {
-      ((Sprite)goingUp.elementAt(i)).saveState(map, savedSprites);
-      map.putInt(String.format("goingUp-%d", i),
+      ((Sprite)goingUp.elementAt(i)).saveState(map, savedSprites, player);
+      map.putInt(String.format("%d-goingUp-%d", player, i),
                  ((Sprite)goingUp.elementAt(i)).getSavedId());
     }
-    map.putInt("numGoingUpSprites", goingUp.size());
+    map.putInt(String.format("%d-numGoingUpSprites", player), goingUp.size());
     for (int i = 0; i < falling.size(); i++) {
-      ((Sprite)falling.elementAt(i)).saveState(map, savedSprites);
-      map.putInt(String.format("falling-%d", i),
+      ((Sprite)falling.elementAt(i)).saveState(map, savedSprites, player);
+      map.putInt(String.format("%d-falling-%d", player, i),
                  ((Sprite)falling.elementAt(i)).getSavedId());
     }
-    map.putInt("numFallingSprites", falling.size());
+    map.putInt(String.format("%d-numFallingSprites", player), falling.size());
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
         if (bubblePlay[i][j] != null) {
-          bubblePlay[i][j].saveState(map, savedSprites);
-          map.putInt(String.format("play-%d-%d", i, j),
+          bubblePlay[i][j].saveState(map, savedSprites, player);
+          map.putInt(String.format("%d-play-%d-%d", player, i, j),
                      bubblePlay[i][j].getSavedId());
         }
         else {
-          map.putInt(String.format("play-%d-%d", i, j), -1);
+          map.putInt(String.format("%d-play-%d-%d", player, i, j), -1);
         }
       }
     }
-    launchBubble.saveState(map, savedSprites);
-    map.putInt("launchBubbleId", launchBubble.getSavedId());
-    map.putDouble("launchBubblePosition", launchBubblePosition);
-    penguin.saveState(map, savedSprites);
-    compressor.saveState(map);
-    map.putInt("penguinId", penguin.getSavedId());
-    nextBubble.saveState(map, savedSprites);
-    map.putInt("nextBubbleId", nextBubble.getSavedId());
-    map.putInt("currentColor", currentColor);
-    map.putInt("nextColor", nextColor);
+    launchBubble.saveState(map, savedSprites, player);
+    map.putInt(String.format("%d-launchBubbleId", player),
+               launchBubble.getSavedId());
+    map.putDouble(String.format("%d-launchBubblePosition", player),
+                  launchBubblePosition);
+    if (malusBar != null) {
+      malusBar.saveState(map, player);
+    }
+    penguin.saveState(map, savedSprites, player);
+    compressor.saveState(map, player);
+    map.putInt(String.format("%d-penguinId", player), penguin.getSavedId());
+    nextBubble.saveState(map, savedSprites, player);
+    map.putInt(String.format("%d-nextBubbleId", player),
+               nextBubble.getSavedId());
+    map.putInt(String.format("%d-currentColor", player), currentColor);
+    map.putInt(String.format("%d-nextColor", player), nextColor);
     if (movingBubble != null) {
-      movingBubble.saveState(map, savedSprites);
-      map.putInt("movingBubbleId", movingBubble.getSavedId());
+      movingBubble.saveState(map, savedSprites, player);
+      map.putInt(String.format("%d-movingBubbleId", player),
+                 movingBubble.getSavedId());
     }
     else {
-      map.putInt("movingBubbleId", -1);
+      map.putInt(String.format("%d-movingBubbleId", player), -1);
     }
-    bubbleManager.saveState(map);
-    map.putInt("fixedBubbles", fixedBubbles);
-    map.putDouble("moveDown", moveDown);
-    map.putInt("nbBubbles", nbBubbles);
-    map.putInt("playResult", playResult);
-    map.putInt("blinkDelay", blinkDelay);
-    hurrySprite.saveState(map, savedSprites);
-    map.putInt("hurryId", hurrySprite.getSavedId());
-    map.putInt("hurryTime", hurryTime);
-    map.putBoolean("readyToFire", readyToFire);
-    map.putBoolean("endOfGame", endOfGame);
-    map.putBoolean("frozenify", frozenify);
-    map.putInt("frozenifyX", frozenifyX);
-    map.putInt("frozenifyY", frozenifyY);
-    map.putInt("numSavedSprites", savedSprites.size());
+    bubbleManager.saveState(map, player);
+    map.putInt(String.format("%d-fixedBubbles", player), fixedBubbles);
+    map.putDouble(String.format("%d-moveDown", player), moveDown);
+    map.putInt(String.format("%d-nbBubbles", player), nbBubbles);
+    map.putInt(String.format("%d-playResult", player), playResult);
+    map.putInt(String.format("%d-blinkDelay", player), blinkDelay);
+    hurrySprite.saveState(map, savedSprites, player);
+    map.putInt(String.format("%d-hurryId", player), hurrySprite.getSavedId());
+    map.putInt(String.format("%d-hurryTime", player), hurryTime);
+    map.putBoolean(String.format("%d-readyToFire", player), readyToFire);
+    map.putBoolean(String.format("%d-endOfGame", player), endOfGame);
+    map.putBoolean(String.format("%d-frozenify", player), frozenify);
+    map.putInt(String.format("%d-frozenifyX", player), frozenifyX);
+    map.putInt(String.format("%d-frozenifyY", player), frozenifyY);
+    map.putInt(String.format("%d-numSavedSprites", player),
+               savedSprites.size());
 
     for (int i = 0; i < savedSprites.size(); i++) {
       ((Sprite)savedSprites.elementAt(i)).clearSavedId();
@@ -363,27 +371,31 @@ public class FrozenGame extends GameScreen {
   }
 
   private Sprite restoreSprite(Bundle map, Vector<BmpWrap> imageList, int i) {
-    int left = map.getInt(String.format("%d-left", i));
-    int right = map.getInt(String.format("%d-right", i));
-    int top = map.getInt(String.format("%d-top", i));
-    int bottom = map.getInt(String.format("%d-bottom", i));
-    int type = map.getInt(String.format("%d-type", i));
+    int left = map.getInt(String.format("%d-%d-left", player, i));
+    int right = map.getInt(String.format("%d-%d-right", player, i));
+    int top = map.getInt(String.format("%d-%d-top", player, i));
+    int bottom = map.getInt(String.format("%d-%d-bottom", player, i));
+    int type = map.getInt(String.format("%d-%d-type", player, i));
     if (type == Sprite.TYPE_BUBBLE) {
-      int color = map.getInt(String.format("%d-color", i));
-      double moveX = map.getDouble(String.format("%d-moveX", i));
-      double moveY = map.getDouble(String.format("%d-moveY", i));
-      double realX = map.getDouble(String.format("%d-realX", i));
-      double realY = map.getDouble(String.format("%d-realY", i));
-      boolean fixed = map.getBoolean(String.format("%d-fixed", i));
-      boolean blink = map.getBoolean(String.format("%d-blink", i));
-      boolean released = map.getBoolean(String.format("%d-released", i));
-      boolean checkJump = map.getBoolean(String.format("%d-checkJump", i));
-      boolean checkFall = map.getBoolean(String.format("%d-checkFall", i));
-      int fixedAnim = map.getInt(String.format("%d-fixedAnim", i));
-      boolean frozen = map.getBoolean(String.format("%d-frozen", i));
-      Point lastOpenPosition =
-        new Point(map.getInt(String.format("%d-lastOpenPosition.x", i)),
-                  map.getInt(String.format("%d-lastOpenPosition.y", i)));
+      int color = map.getInt(String.format("%d-%d-color", player, i));
+      double moveX = map.getDouble(String.format("%d-%d-moveX", player, i));
+      double moveY = map.getDouble(String.format("%d-%d-moveY", player, i));
+      double realX = map.getDouble(String.format("%d-%d-realX", player, i));
+      double realY = map.getDouble(String.format("%d-%d-realY", player, i));
+      boolean fixed = map.getBoolean(String.format("%d-%d-fixed", player, i));
+      boolean blink = map.getBoolean(String.format("%d-%d-blink", player, i));
+      boolean released =
+          map.getBoolean(String.format("%d-%d-released", player, i));
+      boolean checkJump =
+          map.getBoolean(String.format("%d-%d-checkJump", player, i));
+      boolean checkFall =
+          map.getBoolean(String.format("%d-%d-checkFall", player, i));
+      int fixedAnim = map.getInt(String.format("%d-%d-fixedAnim", player, i));
+      boolean frozen =
+          map.getBoolean(String.format("%d-%d-frozen", player, i));
+      Point lastOpenPosition = new Point(
+          map.getInt(String.format("%d-%d-lastOpenPosition.x", player, i)),
+          map.getInt(String.format("%d-%d-lastOpenPosition.y", player, i)));
       return new BubbleSprite(new Rect(left, top, right, bottom),
                               color, moveX, moveY, realX, realY,
                               fixed, blink, released, checkJump, checkFall,
@@ -396,22 +408,26 @@ public class FrozenGame extends GameScreen {
                               bubbleManager, soundManager, this);
     }
     else if (type == Sprite.TYPE_IMAGE) {
-      int imageId = map.getInt(String.format("%d-imageId", i));
+      int imageId = map.getInt(String.format("%d-%d-imageId", player, i));
       return new ImageSprite(new Rect(left, top, right, bottom),
                              (BmpWrap)imageList.elementAt(imageId));
     }
     else if (type == Sprite.TYPE_LAUNCH_BUBBLE) {
-      int currentColor = map.getInt(String.format("%d-currentColor", i));
+      int currentColor =
+          map.getInt(String.format("%d-%d-currentColor", player, i));
       double currentDirection =
-        map.getDouble(String.format("%d-currentDirection", i));
+        map.getDouble(String.format("%d-%d-currentDirection", player, i));
       return new LaunchBubbleSprite(currentColor, currentDirection,
                                     launcher, bubbles, bubblesBlind);
     }
     else if (type == Sprite.TYPE_PENGUIN) {
-      int currentPenguin = map.getInt(String.format("%d-currentPenguin", i));
-      int count = map.getInt(String.format("%d-count", i));
-      int finalState = map.getInt(String.format("%d-finalState", i));
-      int nextPosition = map.getInt(String.format("%d-nextPosition", i));
+      int currentPenguin =
+          map.getInt(String.format("%d-%d-currentPenguin", player, i));
+      int count = map.getInt(String.format("%d-%d-count", player, i));
+      int finalState =
+          map.getInt(String.format("%d-%d-finalState", player, i));
+      int nextPosition =
+          map.getInt(String.format("%d-%d-nextPosition", player, i));
       return new PenguinSprite(new Rect(361, 436, 361 + 55, 436 + 43),
                                penguins, random, currentPenguin, count,
                                finalState, nextPosition);
@@ -434,34 +450,39 @@ public class FrozenGame extends GameScreen {
 
   public void restoreState(Bundle map, Vector<BmpWrap> imageList) {
     Vector<Sprite> savedSprites = new Vector<Sprite>();
-    int numSavedSprites = map.getInt("numSavedSprites");
+    int numSavedSprites =
+        map.getInt(String.format("%d-numSavedSprites", player));
     for (int i = 0; i < numSavedSprites; i++) {
       savedSprites.addElement(restoreSprite(map, imageList, i));
     }
 
-    restoreSprites(map, savedSprites);
+    restoreSprites(map, savedSprites, player);
     jumping = new Vector<Sprite>();
-    int numJumpingSprites = map.getInt("numJumpingSprites");
+    int numJumpingSprites =
+        map.getInt(String.format("%d-numJumpingSprites", player));
     for (int i = 0; i < numJumpingSprites; i++) {
-      int spriteIdx = map.getInt(String.format("jumping-%d", i));
+      int spriteIdx = map.getInt(String.format("%d-jumping-%d", player, i));
       jumping.addElement(savedSprites.elementAt(spriteIdx));
     }
     goingUp = new Vector<Sprite>();
-    int numGoingUpSprites = map.getInt("numGoingUpSprites");
+    int numGoingUpSprites =
+        map.getInt(String.format("%d-numGoingUpSprites", player));
     for (int i = 0; i < numGoingUpSprites; i++) {
-      int spriteIdx = map.getInt(String.format("goingUp-%d", i));
+      int spriteIdx = map.getInt(String.format("%d-goingUp-%d", player, i));
       goingUp.addElement(savedSprites.elementAt(spriteIdx));
     }
     falling = new Vector<Sprite>();
-    int numFallingSprites = map.getInt("numFallingSprites");
+    int numFallingSprites =
+        map.getInt(String.format("%d-numFallingSprites", player));
     for (int i = 0; i < numFallingSprites; i++) {
-      int spriteIdx = map.getInt(String.format("falling-%d", i));
+      int spriteIdx = map.getInt(String.format("%d-falling-%d", player, i));
       falling.addElement(savedSprites.elementAt(spriteIdx));
     }
     bubblePlay = new BubbleSprite[8][13];
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
-        int spriteIdx = map.getInt(String.format("play-%d-%d", i, j));
+        int spriteIdx =
+            map.getInt(String.format("%d-play-%d-%d", player, i, j));
         if (spriteIdx != -1) {
           bubblePlay[i][j] = (BubbleSprite)savedSprites.elementAt(spriteIdx);
         }
@@ -470,37 +491,43 @@ public class FrozenGame extends GameScreen {
         }
       }
     }
-    int launchBubbleId = map.getInt("launchBubbleId");
+    int launchBubbleId =
+        map.getInt(String.format("%d-launchBubbleId", player));
     launchBubble = (LaunchBubbleSprite)savedSprites.elementAt(launchBubbleId);
-    launchBubblePosition = map.getDouble("launchBubblePosition");
-    int penguinId = map.getInt("penguinId");
+    launchBubblePosition =
+        map.getDouble(String.format("%d-launchBubblePosition", player));
+    if (malusBar != null) {
+      malusBar.restoreState(map, player);
+    }
+    int penguinId = map.getInt(String.format("%d-penguinId", player));
     penguin = (PenguinSprite)savedSprites.elementAt(penguinId);
-    compressor.restoreState(map);
-    int nextBubbleId = map.getInt("nextBubbleId");
+    compressor.restoreState(map, player);
+    int nextBubbleId = map.getInt(String.format("%d-nextBubbleId", player));
     nextBubble = (ImageSprite)savedSprites.elementAt(nextBubbleId);
-    currentColor = map.getInt("currentColor");
-    nextColor = map.getInt("nextColor");
-    int movingBubbleId = map.getInt("movingBubbleId");
+    currentColor = map.getInt(String.format("%d-currentColor", player));
+    nextColor = map.getInt(String.format("%d-nextColor", player));
+    int movingBubbleId =
+        map.getInt(String.format("%d-movingBubbleId", player));
     if (movingBubbleId == -1) {
       movingBubble = null;
     }
     else {
       movingBubble = (BubbleSprite)savedSprites.elementAt(movingBubbleId);
     }
-    bubbleManager.restoreState(map);
-    fixedBubbles = map.getInt("fixedBubbles");
-    moveDown = map.getDouble("moveDown");
-    nbBubbles = map.getInt("nbBubbles");
-    playResult = map.getInt("playResult");
-    blinkDelay = map.getInt("blinkDelay");
-    int hurryId = map.getInt("hurryId");
+    bubbleManager.restoreState(map, player);
+    fixedBubbles = map.getInt(String.format("%d-fixedBubbles", player));
+    moveDown = map.getDouble(String.format("%d-moveDown", player));
+    nbBubbles = map.getInt(String.format("%d-nbBubbles", player));
+    playResult = map.getInt(String.format("%d-playResult", player));
+    blinkDelay = map.getInt(String.format("%d-blinkDelay", player));
+    int hurryId = map.getInt(String.format("%d-hurryId", player));
     hurrySprite = (ImageSprite)savedSprites.elementAt(hurryId);
-    hurryTime = map.getInt("hurryTime");
-    readyToFire = map.getBoolean("readyToFire");
-    endOfGame = map.getBoolean("endOfGame");
-    frozenify = map.getBoolean("frozenify");
-    frozenifyX = map.getInt("frozenifyX");
-    frozenifyY = map.getInt("frozenifyY");
+    hurryTime = map.getInt(String.format("%d-hurryTime", player));
+    readyToFire = map.getBoolean(String.format("%d-readyToFire", player));
+    endOfGame = map.getBoolean(String.format("%d-endOfGame", player));
+    frozenify = map.getBoolean(String.format("%d-frozenify", player));
+    frozenifyX = map.getInt(String.format("%d-frozenifyX", player));
+    frozenifyY = map.getInt(String.format("%d-frozenifyY", player));
   }
 
   private void initFrozenify() {

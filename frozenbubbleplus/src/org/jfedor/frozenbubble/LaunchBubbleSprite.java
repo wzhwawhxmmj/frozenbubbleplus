@@ -79,13 +79,14 @@ public class LaunchBubbleSprite extends Sprite {
     this.colorblindBubbles = colorblindBubbles;
   }
 
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites, int id) {
     if (getSavedId() != -1) {
       return;
     }
-    super.saveState(map, saved_sprites);
-    map.putInt(String.format("%d-currentColor", getSavedId()), currentColor);
-    map.putDouble(String.format("%d-currentDirection", getSavedId()),
+    super.saveState(map, saved_sprites, id);
+    map.putInt(String.format("%d-%d-currentColor", id, getSavedId()),
+               currentColor);
+    map.putDouble(String.format("%d-%d-currentDirection", id, getSavedId()),
                   currentDirection);
   }
 

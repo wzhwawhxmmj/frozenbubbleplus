@@ -592,27 +592,30 @@ public class BubbleSprite extends Sprite {
     bubbleManager.removeBubble(bubbleFace);
   }
 
-  public void saveState(Bundle map, Vector<Sprite> savedSprites) {
+  public void saveState(Bundle map, Vector<Sprite> savedSprites, int id) {
     if (getSavedId() != -1) {
       return;
     }
-    super.saveState(map, savedSprites);
-    map.putInt(String.format("%d-color", getSavedId()), color);
-    map.putDouble(String.format("%d-moveX", getSavedId()), moveX);
-    map.putDouble(String.format("%d-moveY", getSavedId()), moveY);
-    map.putDouble(String.format("%d-realX", getSavedId()), realX);
-    map.putDouble(String.format("%d-realY", getSavedId()), realY);
-    map.putBoolean(String.format("%d-fixed", getSavedId()), fixed);
-    map.putBoolean(String.format("%d-blink", getSavedId()), blink);
-    map.putBoolean(String.format("%d-released", getSavedId()), released);
-    map.putBoolean(String.format("%d-checkJump", getSavedId()), checkJump);
-    map.putBoolean(String.format("%d-checkFall", getSavedId()), checkFall);
-    map.putInt(String.format("%d-fixedAnim", getSavedId()), fixedAnim);
-    map.putBoolean(String.format("%d-frozen", getSavedId()),
+    super.saveState(map, savedSprites, id);
+    map.putInt(String.format("%d-%d-color", id, getSavedId()), color);
+    map.putDouble(String.format("%d-%d-moveX", id, getSavedId()), moveX);
+    map.putDouble(String.format("%d-%d-moveY", id, getSavedId()), moveY);
+    map.putDouble(String.format("%d-%d-realX", id, getSavedId()), realX);
+    map.putDouble(String.format("%d-%d-realY", id, getSavedId()), realY);
+    map.putBoolean(String.format("%d-%d-fixed", id, getSavedId()), fixed);
+    map.putBoolean(String.format("%d-%d-blink", id, getSavedId()), blink);
+    map.putBoolean(String.format("%d-%d-released", id, getSavedId()),
+                   released);
+    map.putBoolean(String.format("%d-%d-checkJump", id, getSavedId()),
+                   checkJump);
+    map.putBoolean(String.format("%d-%d-checkFall", id, getSavedId()),
+                   checkFall);
+    map.putInt(String.format("%d-%d-fixedAnim", id, getSavedId()), fixedAnim);
+    map.putBoolean(String.format("%d-%d-frozen", id, getSavedId()),
                    bubbleFace == frozenFace ? true : false);
-    map.putInt(String.format("%d-lastOpenPosition.x", getSavedId()),
+    map.putInt(String.format("%d-%d-lastOpenPosition.x", id, getSavedId()),
                lastOpenPosition.x);
-    map.putInt(String.format("%d-lastOpenPosition.y", getSavedId()),
+    map.putInt(String.format("%d-%d-lastOpenPosition.y", id, getSavedId()),
                lastOpenPosition.y);
   }
 

@@ -1102,6 +1102,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
         setState(STATE_PAUSE);
+        numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
+        numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
         mFrozenGame1     .restoreState(map, mImageList);
         mFrozenGame2     .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
@@ -1182,6 +1184,9 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public Bundle saveState(Bundle map) {
       synchronized (mSurfaceHolder) {
         if (map != null) {
+          map.putInt("numPlayers", 2);
+          map.putInt("numPlayer1GamesWon", numPlayer1GamesWon);
+          map.putInt("numPlayer2GamesWon", numPlayer2GamesWon);
           mFrozenGame1     .saveState(map);
           mFrozenGame2     .saveState(map);
           mLevelManager    .saveState(map);

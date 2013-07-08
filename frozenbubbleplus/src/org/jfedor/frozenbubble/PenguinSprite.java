@@ -108,16 +108,18 @@ public class PenguinSprite extends Sprite {
   }
 
   @Override
-  public void saveState(Bundle map, Vector<Sprite> saved_sprites) {
+  public void saveState(Bundle map, Vector<Sprite> saved_sprites, int id) {
     if (getSavedId() != -1) {
       return;
     }
-    super.saveState(map, saved_sprites);
-    map.putInt(String.format("%d-currentPenguin", getSavedId()),
-                             currentPenguin);
-    map.putInt(String.format("%d-count", getSavedId()), count);
-    map.putInt(String.format("%d-finalState", getSavedId()), finalState);
-    map.putInt(String.format("%d-nextPosition", getSavedId()), nextPosition);
+    super.saveState(map, saved_sprites, id);
+    map.putInt(String.format("%d-%d-currentPenguin", id, getSavedId()),
+               currentPenguin);
+    map.putInt(String.format("%d-%d-count", id, getSavedId()), count);
+    map.putInt(String.format("%d-%d-finalState", id, getSavedId()),
+               finalState);
+    map.putInt(String.format("%d-%d-nextPosition", id, getSavedId()),
+               nextPosition);
   }
 
   public int getTypeId() {

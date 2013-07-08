@@ -67,14 +67,17 @@ public class BubbleManager {
     this.bubblesLeft  = 0;
   }
 
-  public void saveState(Bundle map) {
-    map.putInt     ("BubbleManager-bubblesLeft", bubblesLeft);
-    map.putIntArray("BubbleManager-countBubbles", countBubbles);
+  public void saveState(Bundle map, int id) {
+    map.putInt(String.format("%d-BubbleManager-bubblesLeft", id), bubblesLeft);
+    map.putIntArray(String.format("%d-BubbleManager-countBubbles", id),
+                    countBubbles);
   }
 
-  public void restoreState(Bundle map) {
-    bubblesLeft  = map.getInt     ("BubbleManager-bubblesLeft");
-    countBubbles = map.getIntArray("BubbleManager-countBubbles");
+  public void restoreState(Bundle map, int id) {
+    bubblesLeft  =
+        map.getInt(String.format("%d-BubbleManager-bubblesLeft", id));
+    countBubbles =
+        map.getIntArray(String.format("%d-BubbleManager-countBubbles", id));
   }
 
   public void addBubble(BmpWrap bubble) {

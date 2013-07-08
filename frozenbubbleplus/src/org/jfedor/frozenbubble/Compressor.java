@@ -66,12 +66,12 @@ public class Compressor {
     this.steps = 0;
   }
 
-  public void saveState(Bundle map) {
-    map.putInt("compressor-steps", steps);
+  public void saveState(Bundle map, int id) {
+    map.putInt(String.format("%d-compressor-steps", id), steps);
   }
 
-  public void restoreState(Bundle map) {
-    steps = map.getInt("compressor-steps");
+  public void restoreState(Bundle map, int id) {
+    steps = map.getInt(String.format("%d-compressor-steps", id));
   }
 
   public void moveDown() {
