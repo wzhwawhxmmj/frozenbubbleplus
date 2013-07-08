@@ -88,9 +88,6 @@ public class FrozenGame extends GameScreen {
   public static final int HURRY_ME_TIME = 480;
   public static final int RELEASE_TIME  = 300;
 
-  public static String PARAMETER_PLAYER  = "player";
-  public static String PARAMETER_OFFLINE = "offline";
-
   // Change mode (normal/colorblind)
   public final static int KEY_M = 77;
   // Toggle sound on/off
@@ -303,6 +300,12 @@ public class FrozenGame extends GameScreen {
                  ((Sprite)jumping.elementAt(i)).getSavedId());
     }
     map.putInt("numJumpingSprites", jumping.size());
+    for (int i = 0; i < goingUp.size(); i++) {
+      ((Sprite)goingUp.elementAt(i)).saveState(map, savedSprites);
+      map.putInt(String.format("goingUp-%d", i),
+                 ((Sprite)goingUp.elementAt(i)).getSavedId());
+    }
+    map.putInt("numGoingUpSprites", goingUp.size());
     for (int i = 0; i < falling.size(); i++) {
       ((Sprite)falling.elementAt(i)).saveState(map, savedSprites);
       map.putInt(String.format("falling-%d", i),
@@ -442,6 +445,12 @@ public class FrozenGame extends GameScreen {
     for (int i = 0; i < numJumpingSprites; i++) {
       int spriteIdx = map.getInt(String.format("jumping-%d", i));
       jumping.addElement(savedSprites.elementAt(spriteIdx));
+    }
+    goingUp = new Vector<Sprite>();
+    int numGoingUpSprites = map.getInt("numGoingUpSprites");
+    for (int i = 0; i < numGoingUpSprites; i++) {
+      int spriteIdx = map.getInt(String.format("goingUp-%d", i));
+      goingUp.addElement(savedSprites.elementAt(spriteIdx));
     }
     falling = new Vector<Sprite>();
     int numFallingSprites = map.getInt("numFallingSprites");
@@ -612,8 +621,16 @@ public class FrozenGame extends GameScreen {
     falling.removeElement(sprite);
   }
 
+  /**
+   * Remove the designated goingUp bubble sprite from the vector of
+   * attack bubbles because it is now fixed to the game grid.  The
+   * sprite is not removed from the vector of all sprites in the game
+   * because it has been added to the play field.
+   * 
+   * @param sprite
+   *        - the attack bubble that has become fixed to the game grid.
+   */
   public void deleteGoingUpBubble(BubbleSprite sprite) {
-    //removeSprite(sprite);
     goingUp.removeElement(sprite);
   }
 
@@ -739,12 +756,7 @@ public class FrozenGame extends GameScreen {
       double xx = touch_x - 318;
       double yy = 406 - touch_y;
       launchBubblePosition = (Math.PI - Math.atan2(yy, xx)) * 40.0 / Math.PI;
-      if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
-        launchBubblePosition = MIN_LAUNCH_DIRECTION;
-      }
-      if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
-        launchBubblePosition = MAX_LAUNCH_DIRECTION;
-      }
+      clampLaunchPosition();
     }
 
     if ((move[FIRE] == 0) || touch_fire) {
@@ -824,12 +836,7 @@ public class FrozenGame extends GameScreen {
           dx += ats_touch_dx;
         }
         launchBubblePosition += dx;
-        if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
-          launchBubblePosition = MIN_LAUNCH_DIRECTION;
-        }
-        if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
-          launchBubblePosition = MAX_LAUNCH_DIRECTION;
-        }
+        clampLaunchPosition();
         launchBubble.changeDirection(launchBubblePosition);
         if (dx < 0) {
           penguin.updateState(PenguinSprite.STATE_TURN_LEFT);
@@ -1025,14 +1032,18 @@ public class FrozenGame extends GameScreen {
     }
   }
 
-  public void setPosition(double value) {
-    launchBubblePosition = value;
+  public void clampLaunchPosition() {
     if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
       launchBubblePosition = MIN_LAUNCH_DIRECTION;
     }
     if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
       launchBubblePosition = MAX_LAUNCH_DIRECTION;
     }
+  }
+
+  public void setPosition(double value) {
+    launchBubblePosition = value;
+    clampLaunchPosition();
     launchBubble.changeDirection(launchBubblePosition);
   }
 
