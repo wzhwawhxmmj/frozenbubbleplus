@@ -152,7 +152,7 @@ public class FrozenBubble extends Activity
   public static boolean isRunning = false;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
-  private static boolean compressor = true;
+  private static boolean compressor = false;
   private static int     difficulty = LevelManager.MODERATE;
   private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
@@ -457,7 +457,7 @@ public class FrozenBubble extends Activity
     SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
                                                      Context.MODE_PRIVATE);
     collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX );
-    compressor = mConfig.getBoolean("compressor", true                 );
+    compressor = mConfig.getBoolean("compressor", false                );
     difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
     dontRushMe = mConfig.getBoolean("dontRushMe", false                );
     fullscreen = mConfig.getBoolean("fullscreen", true                 );

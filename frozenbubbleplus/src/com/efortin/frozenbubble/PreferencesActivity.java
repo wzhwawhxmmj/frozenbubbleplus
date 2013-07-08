@@ -70,7 +70,7 @@ import android.view.KeyEvent;
 public class PreferencesActivity extends PreferenceActivity{
 
   private static int     collision  = BubbleSprite.MIN_PIX;
-  private static boolean compressor = true;
+  private static boolean compressor = false;
   private static int     difficulty = LevelManager.MODERATE;
   private static boolean dontRushMe = false;
   private static boolean fullscreen = true;
@@ -116,10 +116,41 @@ public class PreferencesActivity extends PreferenceActivity{
   @Override
   public void onContentChanged() {
     super.onContentChanged();
+    savePreferences();
+  }
+
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent msg) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      savePreferences();
+    }
+    return super.onKeyDown(keyCode, msg);
+  }
+
+  private void restoreGamePrefs() {
+    SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                                     Context.MODE_PRIVATE);
+    collision  = mConfig.getInt("collision", BubbleSprite.MIN_PIX);
+    compressor = mConfig.getBoolean("compressor", false);
+    difficulty = mConfig.getInt("difficulty", LevelManager.MODERATE);
+    dontRushMe = mConfig.getBoolean("dontRushMe", false);
+    fullscreen = mConfig.getBoolean("fullscreen", true);
+    gameMode   = mConfig.getInt("gameMode", FrozenBubble.GAME_NORMAL);
+    musicOn    = mConfig.getBoolean("musicOn", true);
+    soundOn    = mConfig.getBoolean("soundOn", true);
+    targetMode = mConfig.getInt("targetMode", FrozenBubble.POINT_TO_SHOOT);
+
+    if (gameMode == FrozenBubble.GAME_NORMAL)
+      colorMode = false;
+    else
+      colorMode = true;
+  }
+
+  private void savePreferences() {
     SharedPreferences prefs =
         PreferenceManager.getDefaultSharedPreferences(this);
     collision  = prefs.getInt("collision_option", BubbleSprite.MIN_PIX);
-    compressor = prefs.getBoolean("compressor_option", true);
+    compressor = prefs.getBoolean("compressor_option", false);
     difficulty = prefs.getInt("difficulty_option", LevelManager.MODERATE);
     dontRushMe = prefs.getBoolean("rush_me_option", false);
     fullscreen = prefs.getBoolean("fullscreen_option", true);
@@ -147,33 +178,6 @@ public class PreferencesActivity extends PreferenceActivity{
     editor.putBoolean("soundOn", soundOn);
     editor.putInt("targetMode", targetMode);
     editor.commit();
-  }
-
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent msg) {
-    if (keyCode == KeyEvent.KEYCODE_BACK) {
-      this.onContentChanged();
-    }
-    return super.onKeyDown(keyCode, msg);
-  }
-
-  private void restoreGamePrefs() {
-    SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                                     Context.MODE_PRIVATE);
-    collision  = mConfig.getInt("collision", BubbleSprite.MIN_PIX);
-    compressor = mConfig.getBoolean("compressor", true);
-    difficulty = mConfig.getInt("difficulty", LevelManager.MODERATE);
-    dontRushMe = mConfig.getBoolean("dontRushMe", false);
-    fullscreen = mConfig.getBoolean("fullscreen", true);
-    gameMode   = mConfig.getInt("gameMode", FrozenBubble.GAME_NORMAL);
-    musicOn    = mConfig.getBoolean("musicOn", true);
-    soundOn    = mConfig.getBoolean("soundOn", true);
-    targetMode = mConfig.getInt("targetMode", FrozenBubble.POINT_TO_SHOOT);
-
-    if (gameMode == FrozenBubble.GAME_NORMAL)
-      colorMode = false;
-    else
-      colorMode = true;
   }
 
   private void setDefaults() {

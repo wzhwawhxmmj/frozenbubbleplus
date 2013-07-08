@@ -858,7 +858,7 @@ public class FrozenGame extends GameScreen {
             endOfGame = true;
             soundManager.playSound(FrozenBubble.SOUND_WON);
           }
-          else {
+          else if ((malusBar == null) || FrozenBubble.getCompressor()) {
             fixedBubbles++;
             blinkDelay = 0;
   
@@ -886,7 +886,7 @@ public class FrozenGame extends GameScreen {
               endOfGame = true;
               soundManager.playSound(FrozenBubble.SOUND_WON);
             }
-            else {
+            else if ((malusBar == null) || FrozenBubble.getCompressor()) {
               fixedBubbles++;
               blinkDelay = 0;
   
@@ -931,24 +931,26 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    if (fixedBubbles == 6) {
-      if (blinkDelay < 15) {
-        blinkLine(blinkDelay);
+    if ((malusBar == null) || FrozenBubble.getCompressor()) {
+      if (fixedBubbles == 6) {
+        if (blinkDelay < 15) {
+          blinkLine(blinkDelay);
+        }
+  
+        blinkDelay++;
+        if (blinkDelay == 40) {
+          blinkDelay = 0;
+        }
       }
-
-      blinkDelay++;
-      if (blinkDelay == 40) {
-        blinkDelay = 0;
-      }
-    }
-    else if (fixedBubbles == 7) {
-      if (blinkDelay < 15) {
-        blinkLine(blinkDelay);
-      }
-
-      blinkDelay++;
-      if (blinkDelay == 25) {
-        blinkDelay = 0;
+      else if (fixedBubbles == 7) {
+        if (blinkDelay < 15) {
+          blinkLine(blinkDelay);
+        }
+  
+        blinkDelay++;
+        if (blinkDelay == 25) {
+          blinkDelay = 0;
+        }
       }
     }
 
