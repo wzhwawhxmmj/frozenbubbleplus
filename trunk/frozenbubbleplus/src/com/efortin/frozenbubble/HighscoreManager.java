@@ -68,6 +68,7 @@ public class HighscoreManager {
   public static final String PUZZLE_DATABASE_NAME      = "frozenbubble";
   public static final String MULTIPLAYER_DATABASE_NAME = "multiplayer";
 
+  private boolean isPaused = true;
   private int currentLevel = 0;
   private long startTime   = 0;
   private long pausedTime  = 0;
@@ -135,17 +136,30 @@ public class HighscoreManager {
     startTime    = System.currentTimeMillis();
     currentLevel = level;
     pausedTime   = 0;
+    isPaused     = false;
     //Log.i("FrozenBubble-highscore", "startLevel(" + level + ")");
   }
 
+  /**
+   * Accumulate the play time between pause/resume cycles.
+   * <p>
+   * <code>pausedTime</code> is an accumulation of the play time
+   * between pause/resume cycles.
+   */
   public void pauseLevel() {
-    pausedTime += System.currentTimeMillis() - startTime;
+    long currentTime = System.currentTimeMillis();
+    if (!isPaused) {
+      isPaused = true;
+      pausedTime += currentTime - startTime;
+    }
+    startTime = currentTime;
     //Log.i("FrozenBubble-highscore", "pauseLevel() " + (pausedTime / 1000F) +
     //  " seconds used");
   }
 
   public void resumeLevel() {
     startTime = System.currentTimeMillis();
+    isPaused = false;
     //Log.i("FrozenBubble-highscore", "resumeLevel() " + (pausedTime / 1000F) +
     //  " seconds used");
   }
