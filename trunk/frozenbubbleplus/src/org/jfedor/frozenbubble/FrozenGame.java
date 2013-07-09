@@ -493,6 +493,7 @@ public class FrozenGame extends GameScreen {
         map.getDouble(String.format("%d-launchBubblePosition", player));
     if (malusBar != null) {
       malusBar.restoreState(map, player);
+      this.addSprite(malusBar);
     }
     int penguinId = map.getInt(String.format("%d-penguinId", player));
     penguin = (PenguinSprite)savedSprites.elementAt(penguinId);

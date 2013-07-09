@@ -74,8 +74,6 @@
 
 package org.jfedor.frozenbubble;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Vector;
@@ -84,7 +82,6 @@ import org.gsanson.frozenbubble.MalusBar;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -849,7 +846,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       return new_img;
     }
 
-    public MultiplayerGameThread(SurfaceHolder surfaceHolder, int startingLevel) {
+    public MultiplayerGameThread(SurfaceHolder surfaceHolder) {
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
@@ -999,22 +996,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       mHighscoreManager = new HighscoreManager(getContext(),
                                                HighscoreManager.
                                                MULTIPLAYER_DATABASE_NAME);
-
-      try {
-        InputStream is     = mContext.getAssets().open("levels.txt");
-        int         size   = is.available();
-        byte[]      levels = new byte[size];
-        is.read(levels);
-        is.close();
-        SharedPreferences sp = mContext.getSharedPreferences(
-          FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
-        startingLevel = sp.getInt("level", 0);
-        mLevelManager = new LevelManager(0, FrozenBubble.getDifficulty());
-      } catch (IOException e) {
-        // Should never happen.
-        throw new RuntimeException(e);
-      }
-
+      mLevelManager     = new LevelManager(0, FrozenBubble.getDifficulty());
       newGame();
     }
 
@@ -1450,7 +1432,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    mGameThread = new MultiplayerGameThread(holder, 0);
+    mGameThread = new MultiplayerGameThread(holder);
     setFocusable(true);
     setFocusableInTouchMode(true);
 
