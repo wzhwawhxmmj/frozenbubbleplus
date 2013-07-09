@@ -346,6 +346,7 @@ public class FrozenGame extends GameScreen {
     map.putDouble(String.format("%d-moveDown", player), moveDown);
     map.putInt(String.format("%d-nbBubbles", player), nbBubbles);
     map.putInt(String.format("%d-playResult", player), playResult);
+    map.putInt(String.format("%d-sendToOpponent", player), sendToOpponent);
     map.putInt(String.format("%d-blinkDelay", player), blinkDelay);
     hurrySprite.saveState(map, savedSprites, player);
     map.putInt(String.format("%d-hurryId", player), hurrySprite.getSavedId());
@@ -513,6 +514,7 @@ public class FrozenGame extends GameScreen {
     moveDown = map.getDouble(String.format("%d-moveDown", player));
     nbBubbles = map.getInt(String.format("%d-nbBubbles", player));
     playResult = map.getInt(String.format("%d-playResult", player));
+    sendToOpponent = map.getInt(String.format("%d-sendToOpponent", player));
     blinkDelay = map.getInt(String.format("%d-blinkDelay", player));
     int hurryId = map.getInt(String.format("%d-hurryId", player));
     hurrySprite = (ImageSprite)savedSprites.elementAt(hurryId);
