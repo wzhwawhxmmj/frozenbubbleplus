@@ -213,11 +213,6 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
     cleanUp();
   }
 
-  public void restoreState() {
-    if(!cpuOpponent.isComputing())
-      cpuOpponent.restoreState(myFrozenGame.getGrid());
-  }
-
   /**
    * Stop the thread <code>run()</code> execution.
    * <p>

@@ -252,6 +252,7 @@ public class FrozenBubble extends Activity
           if (savedPlayers == 2)
             mMultiplayerGameThread.restoreState(savedInstanceState);
         }
+        mMultiplayerGameThread.startOpponent();
         mMultiplayerGameView.requestFocus();
       }
       else {
@@ -831,8 +832,10 @@ public class FrozenBubble extends Activity
     if (mGameThread != null)
       mGameThread.newGame();
 
-    if (mMultiplayerGameThread != null)
+    if (mMultiplayerGameThread != null) {
       mMultiplayerGameThread.newGame();
+      mMultiplayerGameThread.startOpponent();
+    }
 
     playMusic(false);
   }
