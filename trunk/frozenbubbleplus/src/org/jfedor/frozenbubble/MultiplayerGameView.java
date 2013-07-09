@@ -1108,6 +1108,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mFrozenGame2     .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
         mHighscoreManager.restoreState(map);
+        mOpponent        .restoreState();
       }
     }
 

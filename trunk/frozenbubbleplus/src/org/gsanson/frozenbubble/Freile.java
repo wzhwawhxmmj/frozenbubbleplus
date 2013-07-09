@@ -344,6 +344,11 @@ public class Freile implements Opponent, Runnable {
     return position;
   }
 
+  public void restoreState(BubbleSprite[][] grid) {
+    if (running && !computing)
+      this.grid = grid;
+  }
+
   /**
    * Stop the thread <code>run()</code> execution.
    * <p>
