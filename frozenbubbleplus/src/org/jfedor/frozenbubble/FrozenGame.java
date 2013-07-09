@@ -189,13 +189,12 @@ public class FrozenGame extends GameScreen {
     readyToFire          = false;
     swapPressed          = false;
 
-    Rect r;
-    if (player == 1)
-      r = new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
-                   436 + PenguinSprite.PENGUIN_HEIGHT - 2);
-    else
-      r = new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
-                   436 + PenguinSprite.PENGUIN_HEIGHT - 2);
+    penguin = new PenguinSprite(PenguinSprite.getPenguinRect(player),
+                                penguins_arg, random);
+    this.addSprite(penguin);
+    compressor  = new Compressor(compressorHead_arg, compressor_arg);
+    hurrySprite = new ImageSprite(new Rect(203, 265, 203 + 240, 265 + 90),
+                                  hurry_arg);
 
     malusBar = null;
     if (malusBar_arg != null)
@@ -203,12 +202,6 @@ public class FrozenGame extends GameScreen {
       malusBar = malusBar_arg;
       this.addSprite(malusBar);
     }
-
-    penguin = new PenguinSprite(r, penguins_arg, random);
-    this.addSprite(penguin);
-    compressor  = new Compressor(compressorHead_arg, compressor_arg);
-    hurrySprite = new ImageSprite(new Rect(203, 265, 203 + 240, 265 + 90),
-                                  hurry_arg);
 
     falling = new Vector<Sprite>();
     goingUp = new Vector<Sprite>();
@@ -428,7 +421,8 @@ public class FrozenGame extends GameScreen {
           map.getInt(String.format("%d-%d-finalState", player, i));
       int nextPosition =
           map.getInt(String.format("%d-%d-nextPosition", player, i));
-      return new PenguinSprite(new Rect(361, 436, 361 + 55, 436 + 43),
+
+      return new PenguinSprite(PenguinSprite.getPenguinRect(player),
                                penguins, random, currentPenguin, count,
                                finalState, nextPosition);
     }
@@ -1061,10 +1055,16 @@ public class FrozenGame extends GameScreen {
   }
 
   public void setPosition(double value) {
-    updatePenguinState(value - launchBubblePosition);
+    double dx = value - launchBubblePosition;
+    /*
+     * For small changes, don't update the penguin state.
+     */
+    if ((dx < 0.25) && (dx > -0.25))
+      dx = 0;
     launchBubblePosition = value;
     clampLaunchPosition();
     launchBubble.changeDirection(launchBubblePosition);
+    updatePenguinState(dx);
   }
 
   public void setSendToOpponent(int numAttackBubbles) {
