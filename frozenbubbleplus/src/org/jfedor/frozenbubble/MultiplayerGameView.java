@@ -1039,7 +1039,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
                                       mSoundManager, mLevelManager, null, 2);
-        startAiThread();
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
@@ -1108,7 +1107,6 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mFrozenGame2     .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
         mHighscoreManager.restoreState(map);
-        mOpponent        .restoreState();
       }
     }
 
@@ -1280,7 +1278,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       }
     }
 
-    public void startAiThread() {
+    public void startOpponent() {
       if (mOpponent != null) {
         mOpponent.stopThread();
         mOpponent = null;
@@ -1406,6 +1404,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         mShowScores = true;
         pause();
         newGame();
+        startOpponent();
       }
 
       mWasLeft      = false;
