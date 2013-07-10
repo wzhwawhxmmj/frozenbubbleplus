@@ -671,19 +671,31 @@ public class FrozenGame extends GameScreen {
     /*
      * If the number of bubble sprite grid entries does not match the
      * number of bubbles in the bubble manager, then we need to re-
-     * initialize the bubble manager.  The sprite will still persist on
-     * the screen, but that is the only drawback.  Previously you would
-     * be unable to win the game prior to the addition of this
-     * synchronization code.
+     * initialize the bubble manager, and re-initialize all the bubble
+     * sprites on the game screen.  You would be unable to win prior to
+     * the addition of this synchronization code due to the number of
+     * bubbles in the bubble manager never reaching zero, and the excess
+     * sprite or sprites would remain stuck on the screen.
      */
     if (numBubblesManager != numBubblesPlay) {
       bubbleManager.initialize();
+      removeAllBubbleSprites();
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 13; j++) {
           if (bubblePlay[i][j] != null ) {
             bubblePlay[i][j].addToManager();
+            this.addSprite(bubblePlay[i][j]);
           }
         }
+      }
+      for (int i=0 ; i<falling.size() ; i++) {
+        this.addSprite(falling.elementAt(i));
+      }
+      for (int i=0 ; i<goingUp.size() ; i++) {
+        this.addSprite(goingUp.elementAt(i));
+      }
+      for (int i=0 ; i<jumping.size() ; i++) {
+        this.addSprite(jumping.elementAt(i));
       }
     }
   }
