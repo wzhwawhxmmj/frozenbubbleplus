@@ -176,6 +176,10 @@ public class BubbleSprite extends Sprite {
 
     fixed = true;
     fixedAnim = -1;
+    addToManager();
+  }
+
+  public void addToManager() {
     bubbleManager.addBubble(bubbleFace);
   }
 
@@ -409,7 +413,7 @@ public class BubbleSprite extends Sprite {
           frozen.malusBar.addBubbles(1);
         }
         else {
-          bubbleManager.addBubble(bubbleFace);
+          addToManager();
           moveX = 0.;
           moveY = 0.;
           fixedAnim = 0;
@@ -518,7 +522,7 @@ public class BubbleSprite extends Sprite {
         return;
       }
       else {
-        bubbleManager.addBubble(bubbleFace);
+        addToManager();
         moveX = 0.;
         moveY = 0.;
         fixedAnim = 0;
