@@ -124,6 +124,8 @@ public class SplashScreen extends Activity {
                                               LayoutParams.WRAP_CONTENT);
     myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
     myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.topMargin = 15;
+    myParams1.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(start2pGameButton, myParams1);
     // Construct the 1 player game button.
@@ -146,6 +148,8 @@ public class SplashScreen extends Activity {
                                               LayoutParams.WRAP_CONTENT);
     myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
     myParams2.addRule(RelativeLayout.ABOVE, start2pGameButton.getId());
+    myParams2.topMargin = 15;
+    myParams2.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(start1pGameButton, myParams2);
     // Construct the options button.
@@ -168,6 +172,8 @@ public class SplashScreen extends Activity {
                                               LayoutParams.WRAP_CONTENT);
     myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
     myParams3.addRule(RelativeLayout.BELOW, start2pGameButton.getId());
+    myParams3.topMargin = 15;
+    myParams3.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(optionsButton, myParams3);
   }
