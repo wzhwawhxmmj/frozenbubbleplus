@@ -392,19 +392,19 @@ public class BubbleSprite extends Sprite {
     if ((currentPosition.x >= 0) && (currentPosition.x < 8) &&
         (currentPosition.y >= 0) && (currentPosition.y < 13)) {
       BubbleSprite[][] grid = frozen.getGrid();
-  
+
       if (grid[currentPosition.x][currentPosition.y] == null)
         lastOpenPosition = currentPosition;
-  
+
       Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
-  
+
       if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
         realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
         realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
         fixed = true;
         super.absoluteMove(new Point((int)realX, (int)realY));
-  
-        if (!this.register(grid)) {
+
+        if (!this.register(grid, lastOpenPosition)) {
           frozen.removeSprite(this);
           frozen.malusBar.addBubbles(1);
         }
@@ -507,7 +507,7 @@ public class BubbleSprite extends Sprite {
 
         soundManager.playSound(FrozenBubble.SOUND_DESTROY);
       }
-      else if (!this.register(grid)) {
+      else if (!this.register(grid, lastOpenPosition)) {
         /*
          * If the moving bubble failed to register because the grid
          * location it would fill is already occupied, simply remove
@@ -571,15 +571,16 @@ public class BubbleSprite extends Sprite {
    * 
    * @param grid
    *        - the array of fixed bubbles.
-   * 
+   * @param position
+   *        - the position in the grid to check for occupancy.
    * @return true if the bubble becomes registered in the grid (false if
    *         another bubble already occupies the same position).
    */
-  public boolean register(BubbleSprite[][] grid) {
-    boolean register = grid[lastOpenPosition.x][lastOpenPosition.y] == null;
+  public boolean register(BubbleSprite[][] grid, Point position) {
+    boolean register = grid[position.x][position.y] == null;
 
     if (register)
-      grid[lastOpenPosition.x][lastOpenPosition.y] = this;
+      grid[position.x][position.y] = this;
 
     return register;
   }
