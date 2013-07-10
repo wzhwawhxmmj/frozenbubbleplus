@@ -640,6 +640,54 @@ public class FrozenGame extends GameScreen {
     return (playResult == GAME_LOST);
   }
 
+  /**
+   * This function is an unfortunate patch that is necessitated due to
+   * the fact that there is as of yet an unfixed bug in the BubbleSprite
+   * management code.
+   * <p>
+   * Somewhere amongst goUp() and move() in BubbleSprite.java, a flaw
+   * exists whereby a bubble is added to the bubble manager, and the
+   * bubble sprite is added to the game screen, but the entry in the
+   * bubblePlay grid was either rendered null or a bubble superposition
+   * in the grid occurred.  The former is suspected, because ensuring
+   * the grid location is null before assigning a bubble sprite to it is
+   * very rigorously enforced.
+   * <p>
+   * <b>TODO</b> - fix the grid entry nullifcation/superposition bug.
+   */
+  public void synchronizeBubbleManager() {
+    int numBubblesManager = bubbleManager.countBubbles();
+    int numBubblesPlay = 0;
+    /*
+     * Check the grid for occupied locations.
+     */
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 13; j++) {
+        if (bubblePlay[i][j] != null ) {
+          numBubblesPlay++;
+        }
+      }
+    }
+    /*
+     * If the number of bubble sprite grid entries does not match the
+     * number of bubbles in the bubble manager, then we need to re-
+     * initialize the bubble manager.  The sprite will still persist on
+     * the screen, but that is the only drawback as opposed to being
+     * unable to win the game, which is the case if the bubble manager
+     * is not re-synchronized to the bubble sprite grid.
+     */
+    if (numBubblesManager != numBubblesPlay) {
+      bubbleManager.initialize();
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 13; j++) {
+          if (bubblePlay[i][j] != null ) {
+            bubblePlay[i][j].addToManager();
+          }
+        }
+      }
+    }
+  }
+
   public void deleteFallingBubble(BubbleSprite sprite) {
     removeSprite(sprite);
     falling.removeElement(sprite);
@@ -867,62 +915,14 @@ public class FrozenGame extends GameScreen {
     }
 
     sendToOpponent = 0;
-    if (movingBubble != null) {
-      movingBubble.move();
-      if (movingBubble.fixed()) {
-        if (!checkLost()) {
-          if (bubbleManager.countBubbles() == 0) {
-            penguin.updateState(PenguinSprite.STATE_GAME_WON);
-            this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                           gameWon));
-            if (highscoreManager != null)
-              highscoreManager.endLevel(nbBubbles);
-            playResult = GAME_WON;
-            endOfGame = true;
-            soundManager.playSound(FrozenBubble.SOUND_WON);
-          }
-          else if ((malusBar == null) || FrozenBubble.getCompressor()) {
-            fixedBubbles++;
-            blinkDelay = 0;
-  
-            if (fixedBubbles == 8) {
-              fixedBubbles = 0;
-              sendBubblesDown();
-            }
-          }
-        }
-        movingBubble = null;
-      }
-
-      if (movingBubble != null) {
-        movingBubble.move();
-        if (movingBubble.fixed()) {
-          if (!checkLost()) {
-            if (bubbleManager.countBubbles() == 0) {
-              penguin.updateState(PenguinSprite.STATE_GAME_WON);
-              this.addSprite(new ImageSprite(new Rect(152, 190,
-                                                      152 + 337,
-                                                      190 + 116), gameWon));
-              if (highscoreManager != null)
-                highscoreManager.endLevel(nbBubbles);
-              playResult = GAME_WON;
-              endOfGame = true;
-              soundManager.playSound(FrozenBubble.SOUND_WON);
-            }
-            else if ((malusBar == null) || FrozenBubble.getCompressor()) {
-              fixedBubbles++;
-              blinkDelay = 0;
-  
-              if (fixedBubbles == 8) {
-                fixedBubbles = 0;
-                sendBubblesDown();
-              }
-            }
-          }
-          movingBubble = null;
-        }
-      }
-    }
+    /*
+     * The moving bubble is moved twice, which produces smoother
+     * animation. Thus the moving bubble effectively moves at twice the
+     * animation speed with respect to other bubbles that are only
+     * moved once per iteration.
+     */
+    manageMovingBubble();
+    manageMovingBubble();
 
     if (movingBubble == null && !endOfGame) {
       hurryTime++;
@@ -977,17 +977,19 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    for (int i=0 ; i<goingUp.size() ; i++) {
-      ((BubbleSprite)goingUp.elementAt(i)).goUp();
-    }
-
     for (int i=0 ; i<falling.size() ; i++) {
       ((BubbleSprite)falling.elementAt(i)).fall();
+    }
+
+    for (int i=0 ; i<goingUp.size() ; i++) {
+      ((BubbleSprite)goingUp.elementAt(i)).goUp();
     }
 
     for (int i=0 ; i<jumping.size() ; i++) {
       ((BubbleSprite)jumping.elementAt(i)).jump();
     }
+
+    synchronizeBubbleManager();
 
     return GAME_PLAYING;
   }
@@ -1026,6 +1028,37 @@ public class FrozenGame extends GameScreen {
 
   public double getPosition() {
     return launchBubblePosition;
+  }
+
+  public void manageMovingBubble() {
+    if (movingBubble != null) {
+      movingBubble.move();
+      if (movingBubble.fixed()) {
+        if (!checkLost()) {
+          if (bubbleManager.countBubbles() == 0) {
+            penguin.updateState(PenguinSprite.STATE_GAME_WON);
+            this.addSprite(new ImageSprite(new Rect(152, 190,
+                                                    152 + 337,
+                                                    190 + 116), gameWon));
+            if (highscoreManager != null)
+              highscoreManager.endLevel(nbBubbles);
+            playResult = GAME_WON;
+            endOfGame = true;
+            soundManager.playSound(FrozenBubble.SOUND_WON);
+          }
+          else if ((malusBar == null) || FrozenBubble.getCompressor()) {
+            fixedBubbles++;
+            blinkDelay = 0;
+
+            if (fixedBubbles == 8) {
+              fixedBubbles = 0;
+              sendBubblesDown();
+            }
+          }
+        }
+        movingBubble = null;
+      }
+    }
   }
 
   public void setGameResult(int result) {

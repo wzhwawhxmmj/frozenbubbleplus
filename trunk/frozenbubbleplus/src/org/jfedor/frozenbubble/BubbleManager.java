@@ -94,6 +94,13 @@ public class BubbleManager {
     return bubblesLeft;
   }
 
+  public void initialize() {
+    for (int i=0 ; i<bubbles.length ; i++) {
+      countBubbles[i] = 0;
+    }
+    bubblesLeft = 0;
+  }
+
   public int nextBubbleIndex(Random rand) {
     int select = rand.nextInt() % bubbles.length;
 
