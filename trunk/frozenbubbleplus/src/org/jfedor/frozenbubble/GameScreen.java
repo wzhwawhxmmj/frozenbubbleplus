@@ -89,6 +89,17 @@ public abstract class GameScreen {
     sprites.addElement(sprite);
   }
 
+  public final void removeAllBubbleSprites() {
+    int i = 0;
+    while ((sprites.size() > 0) && (i < sprites.size())) {
+      if(((Sprite)sprites.elementAt(i)).getTypeId() == Sprite.TYPE_BUBBLE) {
+        removeSprite((Sprite)sprites.elementAt(i));
+      }
+      else
+        i++;
+    }
+  }
+
   public final void removeSprite(Sprite sprite) {
     sprites.removeElement(sprite);
   }
