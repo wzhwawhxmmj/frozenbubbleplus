@@ -653,13 +653,13 @@ public class FrozenGame extends GameScreen {
    * the grid location is null before assigning a bubble sprite to it is
    * very rigorously enforced.
    * <p>
-   * <b>TODO</b> - fix the grid entry nullifcation/superposition bug.
+   * <b>TODO</b> - fix the grid entry nullification/superposition bug.
    */
   public void synchronizeBubbleManager() {
     int numBubblesManager = bubbleManager.countBubbles();
     int numBubblesPlay = 0;
     /*
-     * Check the grid for occupied locations.
+     * Check the bubble sprite grid for occupied locations.
      */
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
@@ -672,9 +672,9 @@ public class FrozenGame extends GameScreen {
      * If the number of bubble sprite grid entries does not match the
      * number of bubbles in the bubble manager, then we need to re-
      * initialize the bubble manager.  The sprite will still persist on
-     * the screen, but that is the only drawback as opposed to being
-     * unable to win the game, which is the case if the bubble manager
-     * is not re-synchronized to the bubble sprite grid.
+     * the screen, but that is the only drawback.  Previously you would
+     * be unable to win the game prior to the addition of this
+     * synchronization code.
      */
     if (numBubblesManager != numBubblesPlay) {
       bubbleManager.initialize();
