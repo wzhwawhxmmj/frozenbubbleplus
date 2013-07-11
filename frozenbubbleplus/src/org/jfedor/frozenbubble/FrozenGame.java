@@ -735,19 +735,35 @@ public class FrozenGame extends GameScreen {
      return sendToOpponent;
   }
 
+  /**
+   * Populate random columns in a row of attack bubbles to launch onto
+   * the game field.
+   * <p>
+   * Note that there are actually 8 columns in each row in the bubble
+   * sprite game grid, but only up to 7 are filled at a time.  In an
+   * actual play field, the rows alternate between a maximum 7 and 8
+   * bubbles per row.  Thus 7 bubbles are sent up as that is the maximum
+   * number of bubbles that can fit in each alternating row.
+   * <p>
+   * The entire row is randomly offset to the right by half a bubble
+   * width, and then each bubble is randomly offset to the left by half
+   * a bubble width.  There are 15 distinct positions for bubbles to
+   * occupy in two rows, and this approach ensures that each one of
+   * these locations has the potential to be filled.
+   */
   private void releaseBubbles() {
     if ((malusBar != null) && (malusBar.getBubbles() > 0)) {
-      boolean[] lanes = new boolean[8];
+      boolean[] lanes = new boolean[7];
       int malusBalls = malusBar.removeLine();
-      int pos = random.nextInt(8);
+      int pos = random.nextInt(7);
       
-      if (malusBalls == 7) { // Remove full line
+      if (malusBalls == 7) { // Full line was removed.
         for (int i = 0; i < 7; i++) {
           lanes[i] = true;
         }
       } else {
         while (malusBalls > 0) {
-          pos = random.nextInt(8);
+          pos = random.nextInt(7);
           if (!lanes[pos]) {
             lanes[pos] = true;
             malusBalls--;
@@ -758,8 +774,9 @@ public class FrozenGame extends GameScreen {
       for (int i = 0; i < 7; i++) {
         if (lanes[i]) {
           int color = random.nextInt(LevelManager.MODERATE);
+          int offset = random.nextInt(2)*16;
           BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(190+i*32-(pos%2)*16, 44+15*28, 32, 32),
+            new Rect(206+offset+i*32-random.nextInt(2)*16, 44+15*28, 32, 32),
             START_LAUNCH_DIRECTION,
             color, bubbles[color], bubblesBlind[color],
             frozenBubbles[color], targetedBubbles, bubbleBlink,
