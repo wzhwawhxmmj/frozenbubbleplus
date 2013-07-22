@@ -103,6 +103,7 @@ import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.ModPlayer;
+import com.efortin.frozenbubble.PreferencesActivity;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.SplashScreen;
 
@@ -377,6 +378,7 @@ public class FrozenBubble extends Activity
   @Override
   public void onOptionsMenuClosed(Menu menu) {
     super.onOptionsMenuClosed(menu);
+    PreferencesActivity.setDefaultPreferences(this);
     allowUnpause = true;
   }
 
@@ -737,12 +739,20 @@ public class FrozenBubble extends Activity
     builder.show();
   }
 
+  public synchronized static int getCollision() {
+    return collision;
+  }
+
   public synchronized static boolean getCompressor() {
     return compressor;
   }
 
   public synchronized static int getDifficulty() {
     return difficulty;
+  }
+
+  public synchronized static boolean getFullscreen() {
+    return fullscreen;
   }
 
   public synchronized static void setMode(int newMode) {
@@ -771,6 +781,10 @@ public class FrozenBubble extends Activity
 
   public synchronized static boolean getAimThenShoot() {
     return ((targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT));
+  }
+
+  public synchronized static int getTargetMode() {
+    return targetMode;
   }
 
   public synchronized void setTargetMode(int tm) {
