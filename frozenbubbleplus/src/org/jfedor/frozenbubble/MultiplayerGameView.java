@@ -661,7 +661,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      * @param level
      *        - the level difficulty index.
      */
-    private void drawHighscoreScreen(Canvas canvas, int level) {
+    private void drawHighScoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
       int x = 168;
       int y = 20;
@@ -679,28 +679,29 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                   x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
       y += 2 * ysp;
 
-      List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
+      List<HighscoreDO> hlist = mHighscoreManager.getLowScore(level, 15);
       long lastScoreId = mHighscoreManager.getLastScoreId();
-      int j = hlist.size();
-      int i = j - 1;
-      String entries[] = new String[j];
+      int i = 1;
       for (HighscoreDO hdo : hlist) {
         String you = "";
         if (lastScoreId == hdo.getId()) {
           you = "|";
         }
         // TODO: Add player name support.
-        // entries[i] = you + (i + 1) + " - " + hdo.getName().toLowerCase() +
-        //                " - " + hdo.getShots() + " shots - " +
-        //                (hdo.getTime() / 1000) + " sec";
-        entries[i] = you + (i + 1) + " - " + hdo.getShots() + " shots - " +
-                       (hdo.getTime() / 1000) + " sec";
-        i--;
-      }
-
-      for (i = 0; i < j; i++) {
-        mFont.print(entries[i], x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
+        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
+        // + " - "
+        // + hdo.getShots()
+        // + " - " + (hdo.getTime() / 1000)
+        // + " sec", x + indent,
+        // y, canvas,
+        // mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.print(you + i++ + " - "
+          + hdo.getShots()
+          + " shots - "
+          + (hdo.getTime() / 1000)
+          + " sec", x + indent,
+          y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
     }
@@ -1127,7 +1128,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                   }
                   else if (mMode == STATE_PAUSE) {
                     if (mShowScores)
-                      drawHighscoreScreen(c, mHighscoreManager.getLevel());
+                      drawHighScoreScreen(c, mHighscoreManager.getLevel());
                     else
                       doDraw(c);
                   }

@@ -180,7 +180,11 @@ public class HighscoreManager {
     //  " seconds used in level " + currentLevel);
   }
 
-  public List<HighscoreDO> getHighscore(int level, int limit) {
+  public List<HighscoreDO> getLowScore(int level, int limit) {
+    return db.selectLastByLevel(level, limit);
+  }
+
+  public List<HighscoreDO> getHighScore(int level, int limit) {
     return db.selectByLevel(level, limit);
   }
 

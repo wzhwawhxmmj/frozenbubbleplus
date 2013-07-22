@@ -137,6 +137,22 @@ public class HighscoreDB {
     return list;
   }
 
+  public List<HighscoreDO> selectLastByLevel(int level, int limit) {
+    List<HighscoreDO> list = new ArrayList<HighscoreDO>();
+    Cursor cursor = db.query(TABLE_NAME, null, "level=" + level, null,
+                             null, null, "shots asc, time asc", "" + limit);
+    if (cursor.moveToLast()) {
+      do {
+        list.add(new HighscoreDO(cursor.getInt(0), cursor.getInt(1),
+                 cursor.getString(2), cursor.getInt(3), cursor.getLong(4)));
+      } while (cursor.moveToPrevious());
+    }
+    if ((cursor != null) && !cursor.isClosed()) {
+      cursor.close();
+    }
+    return list;
+  }
+
   private static class OpenHelper extends SQLiteOpenHelper {
     OpenHelper(Context context) {
       super(context, databaseName, null, DATABASE_VERSION);

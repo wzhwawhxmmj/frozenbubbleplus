@@ -507,7 +507,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
                   }
                   else if (mMode == STATE_PAUSE) {
                     if (mShowScores)
-                      drawHighscoreScreen(c, mHighscoreManager.getLevel());
+                      drawHighScoreScreen(c, mHighscoreManager.getLevel());
                     else
                       doDraw(c);
                   }
@@ -969,7 +969,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * @param level
      *        - the level index.
      */
-    private void drawHighscoreScreen(Canvas canvas, int level) {
+    private void drawHighScoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
       int x = 168;
       int y = 20;
@@ -980,7 +980,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
                   mDisplayScale, mDisplayDX, mDisplayDY);
       y += 2 * ysp;
 
-      List<HighscoreDO> hlist = mHighscoreManager.getHighscore(level, 15);
+      List<HighscoreDO> hlist = mHighscoreManager.getHighScore(level, 15);
       long lastScoreId = mHighscoreManager.getLastScoreId();
       int i = 1;
       for (HighscoreDO hdo : hlist) {
