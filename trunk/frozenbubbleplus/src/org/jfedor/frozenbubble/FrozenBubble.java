@@ -92,6 +92,7 @@ import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.OrientationEventListener;
@@ -103,6 +104,7 @@ import android.widget.Toast;
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.ScrollingCredits;
+import com.efortin.frozenbubble.SplashScreen;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
@@ -149,7 +151,8 @@ public class FrozenBubble extends Activity
   public final static int POINT_TO_SHOOT  = 1;
   public final static int ROTATE_TO_SHOOT = 2;
 
-  public static boolean isRunning = false;
+  public static boolean isRunning  = false;
+  public static int     numPlayers = 0;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
@@ -239,7 +242,7 @@ public class FrozenBubble extends Activity
       // Default levels.
       activityCustomStarted = false;
       // Check if this is a single player or multiplayer game.
-      int numPlayers = 1;
+      numPlayers = 1;
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
       if (numPlayers > 1) {
@@ -377,6 +380,29 @@ public class FrozenBubble extends Activity
     allowUnpause = true;
   }
 
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      //
+      // Preserve game information and perform activity cleanup.
+      //
+      //
+      pause();
+      isRunning = false;
+      cleanUp();
+      //
+      // Create an intent to launch the home screen.
+      //
+      //
+      Intent intent = new Intent(this, SplashScreen.class);
+      intent.putExtra("startHomeScreen", true);
+      startActivity(intent);
+      finish();
+      return true;
+    }
+    return super.onKeyDown(keyCode, event);
+  }
+
   /**
    * Invoked when the Activity loses user focus.
    */
@@ -384,30 +410,7 @@ public class FrozenBubble extends Activity
   protected void onPause() {
     //Log.i(TAG, "FrozenBubble.onPause()");
     super.onPause();
-    if (mGameView != null) {
-      mGameView.getThread().pause();
-      // Allow editor functionalities.
-      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                  Context.MODE_PRIVATE);
-      SharedPreferences.Editor editor = sp.edit();
-      // If I didn't run game from editor, save last played level.
-      Intent i = getIntent();
-      if ((null == i) || !activityCustomStarted) {
-        editor.putInt("level", mGameThread.getCurrentLevelIndex());
-      }
-      else {
-        // Editor's intent is running.
-        editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
-      }
-      editor.commit();
-    }
-
-    if (mMultiplayerGameView != null)
-      mMultiplayerGameView.getThread().pause();
-
-    // Pause the MOD player and preserve song information.
-    if (myModPlayer != null)
-      myModPlayer.pausePlay();
+    pause();
   }
 
   /**
@@ -597,6 +600,7 @@ public class FrozenBubble extends Activity
    */
   private void startCustomGame(Intent intent) {
     activityCustomStarted = true;
+    numPlayers = 1;
     // Get custom level last played.
     SharedPreferences sp = getSharedPreferences(PREFS_NAME,
                                                 Context.MODE_PRIVATE);
@@ -823,6 +827,7 @@ public class FrozenBubble extends Activity
 
     if (myModPlayer != null)
       myModPlayer.destroyMusicPlayer();
+    myModPlayer = null;
   }
 
   /**
@@ -886,6 +891,7 @@ public class FrozenBubble extends Activity
           //
           if (myModPlayer != null)
             myModPlayer.destroyMusicPlayer();
+          myModPlayer = null;
           //
           // Clear the game screen and suspend input processing for
           // three seconds.
@@ -912,6 +918,36 @@ public class FrozenBubble extends Activity
       default:
         break;
     }
+  }
+
+  /**
+   * Pause the game and save the current game information.
+   */
+  private void pause() {
+    if (mGameView != null) {
+      mGameView.getThread().pause();
+      // Allow editor functionalities.
+      SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                  Context.MODE_PRIVATE);
+      SharedPreferences.Editor editor = sp.edit();
+      // If I didn't run game from editor, save last played level.
+      Intent i = getIntent();
+      if ((null == i) || !activityCustomStarted) {
+        editor.putInt("level", mGameThread.getCurrentLevelIndex());
+      }
+      else {
+        // Editor's intent is running.
+        editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
+      }
+      editor.commit();
+    }
+
+    if (mMultiplayerGameView != null)
+      mMultiplayerGameView.getThread().pause();
+
+    // Pause the MOD player and preserve song information.
+    if (myModPlayer != null)
+      myModPlayer.pausePlay();
   }
 
   /**

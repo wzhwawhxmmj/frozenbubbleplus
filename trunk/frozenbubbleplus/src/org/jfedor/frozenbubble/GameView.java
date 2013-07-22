@@ -453,9 +453,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
           if (mGameListener != null)
             mGameListener.onGameEvent(EVENT_GAME_PAUSED);
-
-          mFrozenGame      .pause();
-          mHighscoreManager.pauseLevel();
+          if (mFrozenGame != null)
+            mFrozenGame.pause();
+          if (mHighscoreManager != null)
+            mHighscoreManager.pauseLevel();
         }
       }
     }
@@ -1022,6 +1023,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     private void updateGameState() {
+      if ((mFrozenGame == null) || (mHighscoreManager == null))
+        return;
+
       int game_state = mFrozenGame.play(mLeft || mWasLeft,
                                         mRight || mWasRight,
                                         mFire || mUp || mWasFire || mWasUp,
@@ -1277,7 +1281,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
     if (! hasWindowFocus) {
-      mGameThread.pause();
+      if (mGameThread != null)
+        mGameThread.pause();
     }
   }
 
