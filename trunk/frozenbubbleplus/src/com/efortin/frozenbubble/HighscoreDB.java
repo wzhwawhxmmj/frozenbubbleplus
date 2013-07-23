@@ -89,6 +89,10 @@ public class HighscoreDB {
     insertStmt = db.compileStatement(INSERT);
   }
 
+  public void close() {
+    db.close();
+  }
+
   public long insert(HighscoreDO hi) {
     insertStmt.bindLong(1, hi.getLevel());
     insertStmt.bindString(2, hi.getName());

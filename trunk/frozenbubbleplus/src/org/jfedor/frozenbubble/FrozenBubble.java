@@ -103,7 +103,6 @@ import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.ModPlayer;
-import com.efortin.frozenbubble.PreferencesActivity;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.SplashScreen;
 
@@ -378,19 +377,22 @@ public class FrozenBubble extends Activity
   @Override
   public void onOptionsMenuClosed(Menu menu) {
     super.onOptionsMenuClosed(menu);
-    PreferencesActivity.setDefaultPreferences(this);
     allowUnpause = true;
   }
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
+      isRunning = false;
       //
       // Preserve game information and perform activity cleanup.
       //
       //
       pause();
-      isRunning = false;
+      if (mGameView != null)
+        mGameView.getThread().setRunning(false);
+      if (mMultiplayerGameView != null)
+        mMultiplayerGameView.getThread().setRunning(false);
       cleanUp();
       //
       // Create an intent to launch the home screen.
@@ -487,6 +489,7 @@ public class FrozenBubble extends Activity
 
     BubbleSprite.setCollisionThreshold(collision);
     setTargetMode(targetMode);
+    setTargetModeOrientation();
   }
 
   private int getScreenOrientation() {
@@ -720,6 +723,7 @@ public class FrozenBubble extends Activity
             setTargetMode(ROTATE_TO_SHOOT);
             break;
         }
+        setTargetModeOrientation();
       }
     })
     // Set the action buttons
@@ -739,28 +743,56 @@ public class FrozenBubble extends Activity
     builder.show();
   }
 
+  public synchronized static boolean getAimThenShoot() {
+    return ((targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT));
+  }
+
   public synchronized static int getCollision() {
     return collision;
+  }
+
+  public synchronized static void setCollision(int newCollision) {
+    collision = newCollision;
   }
 
   public synchronized static boolean getCompressor() {
     return compressor;
   }
 
+  public synchronized static void setCompressor(boolean newCompressor) {
+    compressor = newCompressor;
+  }
+
   public synchronized static int getDifficulty() {
     return difficulty;
+  }
+
+  public synchronized static void setDifficulty(int newDifficulty) {
+    difficulty = newDifficulty;
+  }
+
+  public synchronized static boolean getDontRushMe() {
+    return dontRushMe;
+  }
+
+  public synchronized static void setDontRushMe(boolean dont) {
+    dontRushMe = dont;
   }
 
   public synchronized static boolean getFullscreen() {
     return fullscreen;
   }
 
-  public synchronized static void setMode(int newMode) {
-    gameMode = newMode;
+  public synchronized static  void setFullscreen(boolean newFullscreen) {
+    fullscreen = newFullscreen;
   }
 
   public synchronized static int getMode() {
     return gameMode;
+  }
+
+  public synchronized static void setMode(int newMode) {
+    gameMode = newMode;
   }
 
   public synchronized static boolean getMusicOn() {
@@ -779,17 +811,15 @@ public class FrozenBubble extends Activity
     soundOn = so;
   }
 
-  public synchronized static boolean getAimThenShoot() {
-    return ((targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT));
-  }
-
   public synchronized static int getTargetMode() {
     return targetMode;
   }
 
-  public synchronized void setTargetMode(int tm) {
+  public synchronized static void setTargetMode(int tm) {
     targetMode = tm;
+  }
 
+  private void setTargetModeOrientation() {
     if ((targetMode == ROTATE_TO_SHOOT) &&
         AccelerometerManager.isSupported(getApplicationContext())) {
       AccelerometerManager.startListening(getApplicationContext(),this);
@@ -810,14 +840,6 @@ public class FrozenBubble extends Activity
       AccelerometerManager.stopListening();
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     }
-  }
-
-  public synchronized static boolean getDontRushMe() {
-    return dontRushMe;
-  }
-
-  public synchronized static void setDontRushMe(boolean dont) {
-    dontRushMe = dont;
   }
 
   public void cleanUp() {

@@ -1209,6 +1209,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         mSoundManager.cleanUp();
         mSoundManager = null;
         mLevelManager = null;
+        mHighscoreManager.close();
       }
     }
 
@@ -1280,7 +1281,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
-    if (! hasWindowFocus) {
+    if (!hasWindowFocus) {
       if (mGameThread != null)
         mGameThread.pause();
     }

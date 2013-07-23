@@ -82,6 +82,10 @@ public class HighscoreManager {
     db = new HighscoreDB(ctx, databaseName);
   }
 
+  public void close() {
+    db.close();
+  }
+
   /**
    * @param nbBubbles
    *        - The number of bubbles launched by the player.

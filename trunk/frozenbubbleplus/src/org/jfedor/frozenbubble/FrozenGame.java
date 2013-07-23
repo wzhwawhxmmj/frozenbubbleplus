@@ -766,7 +766,7 @@ public class FrozenGame extends GameScreen {
 
       for (int i = 0; i < 15; i++) {
         if (lanes[i]) {
-          int color = random.nextInt(LevelManager.MODERATE);
+          int color = random.nextInt(FrozenBubble.getDifficulty());
           BubbleSprite malusBubble = new BubbleSprite(
             new Rect(columnX[i], 44+15*28, 32, 32),
             START_LAUNCH_DIRECTION,

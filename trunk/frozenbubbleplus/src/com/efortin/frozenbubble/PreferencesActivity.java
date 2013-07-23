@@ -65,43 +65,21 @@ import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 
 public class PreferencesActivity extends PreferenceActivity{
+  private int     collision  = BubbleSprite.MIN_PIX;
+  private boolean compressor = false;
+  private int     difficulty = LevelManager.MODERATE;
+  private boolean dontRushMe = false;
+  private boolean fullscreen = true;
+  private boolean colorMode  = false;
+  private int     gameMode   = FrozenBubble.GAME_NORMAL;
+  private boolean musicOn    = true;
+  private boolean soundOn    = true;
+  private int     targetMode = FrozenBubble.POINT_TO_SHOOT;
 
-  private static int     collision  = BubbleSprite.MIN_PIX;
-  private static boolean compressor = false;
-  private static int     difficulty = LevelManager.MODERATE;
-  private static boolean dontRushMe = false;
-  private static boolean fullscreen = true;
-  private static boolean colorMode  = false;
-  private static int     gameMode   = FrozenBubble.GAME_NORMAL;
-  private static boolean musicOn    = true;
-  private static boolean soundOn    = true;
-  private static int     targetMode = FrozenBubble.POINT_TO_SHOOT;
-
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-     super.onCreate(savedInstanceState);
-
-     setDefaultPreferences(this);
-     addPreferencesFromResource(R.layout.activity_preferences_screen);
-  }
-
-  @Override
-  public void onContentChanged() {
-    super.onContentChanged();
-    savePreferences();
-  }
-
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent msg) {
-    if (keyCode == KeyEvent.KEYCODE_BACK) {
-      savePreferences();
-    }
-    return super.onKeyDown(keyCode, msg);
-  }
-
-  private static void restoreGamePrefs() {
+  private void getFrozenBubblePrefs() {
     collision  = FrozenBubble.getCollision();
     compressor = FrozenBubble.getCompressor();
+    difficulty = FrozenBubble.getDifficulty();
     dontRushMe = FrozenBubble.getDontRushMe();
     fullscreen = FrozenBubble.getFullscreen();
     gameMode   = FrozenBubble.getMode();
@@ -113,6 +91,23 @@ public class PreferencesActivity extends PreferenceActivity{
       colorMode = false;
     else
       colorMode = true;
+  }
+
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+     super.onCreate(savedInstanceState);
+
+     setDefaultPreferences();
+     addPreferencesFromResource(R.layout.activity_preferences_screen);
+  }
+
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent msg) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      savePreferences();
+      finish();
+    }
+    return super.onKeyDown(keyCode, msg);
   }
 
   private void savePreferences() {
@@ -134,6 +129,8 @@ public class PreferencesActivity extends PreferenceActivity{
     else
       gameMode = FrozenBubble.GAME_COLORBLIND;
 
+    setFrozenBubblePrefs();
+
     SharedPreferences sp = getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                 Context.MODE_PRIVATE);
     SharedPreferences.Editor editor = sp.edit();
@@ -149,11 +146,11 @@ public class PreferencesActivity extends PreferenceActivity{
     editor.commit();
   }
 
-  public static void setDefaultPreferences(Context context) {
-    restoreGamePrefs();
+  private void setDefaultPreferences() {
+    getFrozenBubblePrefs();
 
     SharedPreferences prefs =
-        PreferenceManager.getDefaultSharedPreferences(context);
+        PreferenceManager.getDefaultSharedPreferences(this);
     SharedPreferences.Editor editor = prefs.edit();
 
     editor.putInt("collision_option", collision);
@@ -166,5 +163,17 @@ public class PreferencesActivity extends PreferenceActivity{
     editor.putBoolean("sound_effects_option", soundOn);
     editor.putString("targeting_option", Integer.toString(targetMode));
     editor.commit();
+  }
+
+  private void setFrozenBubblePrefs() {
+    FrozenBubble.setCollision(collision);
+    FrozenBubble.setCompressor(compressor);
+    FrozenBubble.setDifficulty(difficulty);
+    FrozenBubble.setDontRushMe(dontRushMe);
+    FrozenBubble.setFullscreen(fullscreen);
+    FrozenBubble.setMode(gameMode);
+    FrozenBubble.setMusicOn(musicOn);
+    FrozenBubble.setSoundOn(soundOn);
+    FrozenBubble.setTargetMode(targetMode);
   }
 }
