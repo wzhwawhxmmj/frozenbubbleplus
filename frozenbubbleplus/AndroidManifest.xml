@@ -41,10 +41,6 @@
       android:name="com.efortin.frozenbubble.ScrollingCredits"
       android:configChanges="orientation|keyboardHidden"
       android:label="@string/menu_about">
-      <intent-filter>
-        <action android:name="android.intent.action.VIEW" />
-        <category android:name="android.intent.category.DEFAULT" />
-      </intent-filter>>
     </activity>
 
     <activity
