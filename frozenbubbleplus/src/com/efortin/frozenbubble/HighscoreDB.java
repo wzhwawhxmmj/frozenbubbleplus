@@ -144,12 +144,14 @@ public class HighscoreDB {
   public List<HighscoreDO> selectLastByLevel(int level, int limit) {
     List<HighscoreDO> list = new ArrayList<HighscoreDO>();
     Cursor cursor = db.query(TABLE_NAME, null, "level=" + level, null,
-                             null, null, "shots asc, time asc", "" + limit);
+                             null, null, "shots asc, time asc", null);
     if (cursor.moveToLast()) {
+      int index = 0;
       do {
         list.add(new HighscoreDO(cursor.getInt(0), cursor.getInt(1),
                  cursor.getString(2), cursor.getInt(3), cursor.getLong(4)));
-      } while (cursor.moveToPrevious());
+        index++;
+      } while (cursor.moveToPrevious() && (index < limit));
     }
     if ((cursor != null) && !cursor.isClosed()) {
       cursor.close();
