@@ -117,14 +117,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public static final int EVENT_GAME_PAUSED = 4;
   public static final int EVENT_GAME_RESUME = 5;
   public static final int EVENT_LEVEL_START = 6;
-  
+
   // Listener user set.
   public interface GameListener {
     public abstract void onGameEvent(int event);
   }
-  
+
   GameListener mGameListener;
-  
+
   public void setGameListener (GameListener gl) {
     mGameListener = gl;
   }
@@ -316,7 +316,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       mGameLostOrig = BitmapFactory.decodeResource(
         res, R.drawable.lose_panel, options);
       mGamePausedOrig = BitmapFactory.decodeResource(
-        res, R.drawable.paused, options);
+        res, R.drawable.pause_panel, options);
       mHurryOrig = BitmapFactory.decodeResource(
         res, R.drawable.hurry, options);
       mPenguinsOrig = BitmapFactory.decodeResource(
@@ -1080,7 +1080,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         // said you have to call recycle() on all the bitmaps and set
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
-        mFrozenGame.cleanUp();
         mFrozenGame = null;
         mImagesReady = false;
 
