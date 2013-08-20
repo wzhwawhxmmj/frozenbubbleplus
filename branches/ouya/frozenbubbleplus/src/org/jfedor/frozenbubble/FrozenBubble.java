@@ -99,6 +99,7 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
@@ -170,6 +171,7 @@ public class FrozenBubble extends Activity
   private boolean activityCustomStarted = false;
   private boolean allowUnpause;
   private int     currentOrientation;
+  private long    lastBackPressTime = 0;
 
   private GameThread mGameThread = null;
   private MultiplayerGameThread mMultiplayerGameThread = null;
@@ -253,12 +255,12 @@ public class FrozenBubble extends Activity
     menu.add(0, MENU_FULLSCREEN_ON,  0, R.string.menu_fullscreen_on);
     menu.add(0, MENU_FULLSCREEN_OFF, 0, R.string.menu_fullscreen_off);
     menu.add(0, MENU_SOUND_OPTIONS,  0, R.string.menu_sound_options);
-    menu.add(0, MENU_TARGET_MODE,    0, R.string.menu_target_mode);
+    //menu.add(0, MENU_TARGET_MODE,    0, R.string.menu_target_mode);
     menu.add(0, MENU_DONT_RUSH_ME,   0, R.string.menu_dont_rush_me);
     menu.add(0, MENU_RUSH_ME,        0, R.string.menu_rush_me);
-    menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
     menu.add(0, MENU_NEW_GAME,       0, R.string.menu_new_game);
-    menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
+    menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
+    //menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
     return true;
   }
 
@@ -266,12 +268,12 @@ public class FrozenBubble extends Activity
   public boolean onPrepareOptionsMenu(Menu menu) {
     super.onPrepareOptionsMenu(menu);
     allowUnpause = false;
-    menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
     menu.findItem(MENU_COLORBLIND_ON ).setVisible(getMode() == GAME_NORMAL);
     menu.findItem(MENU_COLORBLIND_OFF).setVisible(getMode() != GAME_NORMAL);
     menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
     menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
-    menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
+    menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
+    //menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
     menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
     menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
     return true;
@@ -319,9 +321,9 @@ public class FrozenBubble extends Activity
         if (mMultiplayerGameView != null)
           mMultiplayerGameView.getThread().setState(MultiplayerGameView.MultiplayerGameThread.STATE_ABOUT);
         return true;
-      case MENU_TARGET_MODE:
-        targetOptionsDialog();
-        return true;
+      //case MENU_TARGET_MODE:
+      //  targetOptionsDialog();
+      //  return true;
       case MENU_DONT_RUSH_ME:
         setDontRushMe(true);
         editor.putBoolean("dontRushMe", dontRushMe);
@@ -332,9 +334,9 @@ public class FrozenBubble extends Activity
         editor.putBoolean("dontRushMe", dontRushMe);
         editor.commit();
         return true;
-      case MENU_EDITOR:
-        startEditor();
-        return true;
+      //case MENU_EDITOR:
+      //  startEditor();
+      //  return true;
     }
 
     return false;
@@ -349,25 +351,39 @@ public class FrozenBubble extends Activity
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      numPlayers = 0;
+      long currentTime = System.currentTimeMillis();
       //
-      // Preserve game information and perform activity cleanup.
-      //
-      //
-      pause();
-      if (mGameView != null)
-        mGameView.getThread().setRunning(false);
-      if (mMultiplayerGameView != null)
-        mMultiplayerGameView.getThread().setRunning(false);
-      cleanUp();
-      //
-      // Create an intent to launch the home screen.
+      // If the player presses back twice in less than three seconds,
+      // then exit the game.  Otherwise pop up a toast telling them that
+      // if they press the button again the game will exit.
       //
       //
-      Intent intent = new Intent(this, SplashScreen.class);
-      intent.putExtra("startHomeScreen", true);
-      startActivity(intent);
-      finish();
+      if ((currentTime - lastBackPressTime) < 3000) {
+        numPlayers = 0;
+        //
+        // Preserve game information and perform activity cleanup.
+        //
+        //
+        pause();
+        if (mGameView != null)
+          mGameView.getThread().setRunning(false);
+        if (mMultiplayerGameView != null)
+          mMultiplayerGameView.getThread().setRunning(false);
+        cleanUp();
+        //
+        // Create an intent to launch the home screen.
+        //
+        //
+        Intent intent = new Intent(this, SplashScreen.class);
+        intent.putExtra("startHomeScreen", true);
+        startActivity(intent);
+        finish();
+      }
+      else
+        Toast.makeText(getApplicationContext(), "Press again to exit...",
+                       Toast.LENGTH_SHORT).show();
+
+      lastBackPressTime = currentTime;
       return true;
     }
     return super.onKeyDown(keyCode, event);
@@ -555,8 +571,15 @@ public class FrozenBubble extends Activity
         // User clicked Cancel.  Do nothing.
       }
     });
-    builder.create();
-    builder.show();
+    AlertDialog alert = builder.create();
+    alert.show();
+    // Show the OK button as initially selected.
+    alert.getButton(AlertDialog.BUTTON_POSITIVE).setFocusable(true);
+    alert.getButton(AlertDialog.BUTTON_POSITIVE).setFocusableInTouchMode(true);
+    alert.getButton(AlertDialog.BUTTON_NEGATIVE).setFocusable(true);
+    alert.getButton(AlertDialog.BUTTON_NEGATIVE).setFocusableInTouchMode(true);
+    alert.getButton(AlertDialog.BUTTON_NEGATIVE).requestFocus();
+    alert.getButton(AlertDialog.BUTTON_NEGATIVE).setSelected(true);
   }
 
   /**
