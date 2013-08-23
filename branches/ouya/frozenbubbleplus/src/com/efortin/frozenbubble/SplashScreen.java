@@ -189,8 +189,6 @@ public class SplashScreen extends Activity {
     myParams3.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(optionsButton, myParams3);
-    // Highlight the appropriate button to show as selected.
-    selectInitialButton();
   }
 
   private void cleanUp() {
@@ -406,6 +404,12 @@ public class SplashScreen extends Activity {
       setBackgroundImage(R.drawable.home_screen);
       addHomeButtons();
       setContentView(myLayout);
+      myLayout.setFocusable(true);
+      myLayout.setFocusableInTouchMode(true);
+      myLayout.requestFocus();
+      // Highlight the appropriate button to show as selected.
+      selectInitialButton();
+      // Create a new music player to play the home screen music.
       myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
     }
   }
