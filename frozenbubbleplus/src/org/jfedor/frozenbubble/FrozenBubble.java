@@ -928,6 +928,8 @@ public class FrozenBubble extends Activity
         break;
 
       case GameView.EVENT_GAME_PAUSED:
+        saveState();
+
         if (myModPlayer != null)
           myModPlayer.pausePlay();
         break;
@@ -979,7 +981,7 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   * Pause the game and save the current game information.
+   * Pause the game.
    */
   private void pause() {
     if (mGameView != null)
@@ -988,9 +990,7 @@ public class FrozenBubble extends Activity
     if (mMultiplayerGameView != null)
       mMultiplayerGameView.getThread().pause();
 
-    saveState();
-
-    // Pause the MOD player and preserve song information.
+    // Pause the MOD player.
     if (myModPlayer != null)
       myModPlayer.pausePlay();
   }
