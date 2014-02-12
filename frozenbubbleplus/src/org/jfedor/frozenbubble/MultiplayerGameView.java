@@ -99,18 +99,33 @@ import android.view.SurfaceView;
 import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
+import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
+import com.efortin.frozenbubble.PlayerAction;
 
-class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback {
+class MultiplayerGameView extends SurfaceView implements
+  SurfaceHolder.Callback, NetworkListener {
 
-  public static final int GAMEFIELD_WIDTH          = 320;
-  public static final int GAMEFIELD_HEIGHT         = 480;
-  public static final int EXTENDED_GAMEFIELD_WIDTH = 640;
+  public static final byte PLAYER0                  = 0;
+  public static final byte PLAYER1                  = 1;
+  public static final byte PLAYER2                  = 2;
+  public static final int  GAMEFIELD_WIDTH          = 320;
+  public static final int  GAMEFIELD_HEIGHT         = 480;
+  public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
 
   private int                   numPlayer1GamesWon;
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
   private ComputerAI            mOpponent;
+  private PlayerInput           mLocalInput;
+  private PlayerInput           mRemoteInput;
+  private PlayerInput           mPlayer1;
+  private PlayerInput           mPlayer2;
+  /*
+   * TODO: initialize my player ID based on whether this player is
+   *       providing input locally or remotely over the network.
+   */
+  private byte                  myPlayerID = PLAYER1;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -151,7 +166,352 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
   public final static int KEY_P = 80;
   // Toggle sound on/off
   public final static int KEY_S = 83;
-  boolean modeKeyPressed, pauseKeyPressed, soundKeyPressed;
+
+  @Override
+  public void onNetworkEvent(PlayerAction action) {
+    setPlayerAction(action);
+  }
+
+  /**
+   * This class encapsulates player input action variables and methods.
+   * <p>This is to provide a common interface to the game independent
+   * of the input source.
+   * @author Eric Fortin
+   *
+   */
+  class PlayerInput {
+    private boolean modeKeyToggle  = false;
+    private boolean pauseKeyToggle = false;
+    private boolean soundKeyToggle = false;
+    private boolean mLeft          = false;
+    private boolean mRight         = false;
+    private boolean mUp            = false;
+    private boolean mDown          = false;
+    private boolean mFire          = false;
+    private boolean mWasLeft       = false;
+    private boolean mWasRight      = false;
+    private boolean mWasFire       = false;
+    private boolean mWasUp         = false;
+    private boolean mWasDown       = false;
+    private double  mTrackballDx   = 0;
+    private boolean mTouchFire     = false;
+    private boolean mTouchSwap     = false;
+    private double  mTouchX;
+    private double  mTouchY;
+    private boolean mTouchFireATS  = false;
+    private double  mTouchDxATS    = 0;
+    private double  mTouchLastX    = 0;
+    private FrozenGame mGameRef    = null;
+    public  boolean isLocalInput;
+
+    public PlayerInput(boolean isLocalInput) {
+      init();
+      this.isLocalInput = isLocalInput;
+    }
+
+    /**
+     * Check if a bubble launch action is active.
+     * @return True if the player is launching a bubble.
+     */
+    public boolean actionFire() {
+      return mFire || mUp || mWasFire || mWasUp;
+    }
+
+    /**
+     * Check if a move left action is active.
+     * @return True if the player is moving left.
+     */
+    public boolean actionLeft() {
+      return mLeft || mWasLeft;
+    }
+
+    /**
+     * Check if a move right action is active.
+     * @return True if the player is moving right.
+     */
+    public boolean actionRight() {
+      return mRight || mWasRight;
+    }
+
+    /**
+     * Check if a bubble swap action is active.
+     * @return True if the player is swapping the launch bubble.
+     */
+    public boolean actionSwap() {
+      return mDown || mWasDown || mTouchSwap;
+    }
+
+    /**
+     * Check if a touchscreen initiated bubble launch is active.
+     * @return True if the player is launching a bubble.
+     */
+    public boolean actionTouchFire() {
+      return mTouchFire;
+    }
+
+    /**
+     * Check if an ATS (aim-then-shoot) touchscreen initiated bubble
+     * launch is active.
+     * @return True if the player is launching a bubble.
+     */
+    public boolean actionTouchFireATS() {
+      return mTouchFireATS;
+    }
+
+    /**
+     * Obtain the ATS (aim-then-shoot) touch horizontal position change.
+     * @return The horizontal touch change in position.
+     */
+    public double getTouchDxATS() {
+      return mTouchDxATS;
+    }
+
+    /**
+     * Obtain the horizontal touch position.
+     * @return The horizontal touch position.
+     */
+    public double getTouchX() {
+      return mTouchX;
+    }
+
+    /**
+     * Obtain the vertical touch position.
+     * @return The vertical touch position.
+     */
+    public double getTouchY() {
+      return mTouchY;
+    }
+
+    /**
+     * Obtain the trackball position change.
+     * @return The trackball position change.
+     */
+    public double getTrackBallDx() {
+      return mTrackballDx;
+    }
+
+    /**
+     * Based on the provided keypress, check if it corresponds to a new
+     * player action.
+     * @param keyCode
+     * @return True if the current keypress indicates a new player action.
+     */
+    public boolean checkNewActionKeyPress(int keyCode) {
+      return (!mLeft && !mRight && !mFire && !mUp && !mDown) &&
+             ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_DOWN));
+    }
+
+    /**
+     * Initialize the player input action flags for the purpose of
+     * processing the next player action.
+     */
+    public synchronized void clearActionFlags() {
+      mWasLeft      = false;
+      mWasRight     = false;
+      mWasFire      = false;
+      mWasUp        = false;
+      mWasDown      = false;
+      mTrackballDx  = 0;
+      mTouchFire    = false;
+      mTouchSwap    = false;
+      mTouchFireATS = false;
+      mTouchDxATS   = 0;
+    }
+
+    public void init() {
+      mGameRef = null;
+      clearActionFlags();
+    }
+
+    /**
+     * Set the game reference for this player.
+     * @param gameRef - the reference to this player's game object.
+     */
+    public void setGameRef(FrozenGame gameRef) {
+      mGameRef = gameRef;
+    }
+
+    /**
+     * Process key presses.
+     * @param keyCode
+     * @return True if the key press was processed, false if not.
+     */
+    public boolean setKeyDown(int keyCode) {
+      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+        mLeft    = true;
+        mWasLeft = true;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+        mRight    = true;
+        mWasRight = true;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+        mFire    = true;
+        mWasFire = true;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+        mUp    = true;
+        mWasUp = true;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+        mDown    = true;
+        mWasDown = true;
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Process key releases.
+     * @param keyCode
+     * @return True if the key release was processed, false if not.
+     */
+    public boolean setKeyUp(int keyCode) {
+      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+        mLeft = false;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+        mRight = false;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+        mFire = false;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+        mUp = false;
+        return true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+        mDown = false;
+        return true;
+      }
+      return false;
+    }
+
+    public boolean setTouchEvent(int event, double x, double y) {
+      if (mGameThread.mMode == MultiplayerGameThread.STATE_RUNNING) {
+        // Set the values used when Point To Shoot is on.
+        if (event == MotionEvent.ACTION_DOWN) {
+          if (y < MultiplayerGameThread.TOUCH_FIRE_Y_THRESHOLD) {
+            mTouchFire = true;
+            mTouchX = x;
+            mTouchY = y;
+          }
+          else if (Math.abs(x - 318) <=
+                   MultiplayerGameThread.TOUCH_SWAP_X_THRESHOLD)
+            mTouchSwap = true;
+        }
+
+        // Set the values used when Aim Then Shoot is on.
+        if (event == MotionEvent.ACTION_DOWN) {
+          if (y < MultiplayerGameThread.ATS_TOUCH_FIRE_Y_THRESHOLD) {
+            mTouchFireATS = true;
+          }
+          mTouchLastX = x;
+        }
+        else if (event == MotionEvent.ACTION_MOVE) {
+          if (y >= MultiplayerGameThread.ATS_TOUCH_FIRE_Y_THRESHOLD) {
+            mTouchDxATS = (x - mTouchLastX) *
+            MultiplayerGameThread.ATS_TOUCH_COEFFICIENT;
+          }
+          mTouchLastX = x;
+        }
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Accumulate the change in trackball horizontal position.
+     * @param trackBallDX
+     */
+    public void setTrackBallDx(double trackBallDX) {
+      mTrackballDx += trackBallDX;
+    }
+
+    /**
+     * Set the flag to indicate that the down key was pressed.
+     */
+    public void setWasDown() {
+      mWasUp = true;
+    }
+
+    /**
+     * Set the flag to indicate that the up key was pressed.
+     */
+    public void setWasUp() {
+      mWasUp = true;
+    }
+
+    /**
+     * Process function key presses.  Function keys toggle features on and
+     * off (e.g., game paused on/off, sound on/off, etc.).
+     * @param keyCode
+     */
+    public void toggleKeyPress(int keyCode) {
+      if (keyCode == KEY_M)
+        modeKeyToggle = !modeKeyToggle;
+      else if (keyCode == KEY_P) {
+        pauseKeyToggle = !pauseKeyToggle;
+        mGameThread.pauseButtonPressed(pauseKeyToggle);
+      }
+      else if (keyCode == KEY_S)
+        soundKeyToggle = !soundKeyToggle;
+    }
+
+    /**
+     * Obtain the current state of a feature toggle key.
+     * @param keyCode
+     * @return The state of the desired feature toggle key flag.
+     */
+    public boolean toggleKeyState(int keyCode) {
+      if (keyCode == KEY_M)
+        return modeKeyToggle;
+      else if (keyCode == KEY_P)
+        return pauseKeyToggle;
+      else if (keyCode == KEY_S)
+        return soundKeyToggle;
+
+      return false;
+    }
+  }
+
+  /**
+   * Set the player action for a remote player - as in a person playing
+   * via a client device over a network.
+   * @param newAction - the object containing the remote input info.
+   */
+  public synchronized void setPlayerAction(PlayerAction newAction) {
+    if (mGameThread != null)
+      mGameThread.updateStateOnEvent(null);
+
+    if ((newAction.playerID == PLAYER1) && (mPlayer1.mGameRef != null)) {
+      mPlayer1.mGameRef.setPosition(newAction.aimPosition);
+      // Don't permit a simultaneous swap and launch.
+      if (newAction.launchBubble)
+        mPlayer1.setWasUp();
+      else if (newAction.swapBubble)
+        mPlayer1.setWasDown();
+    }
+    else if ((newAction.playerID == PLAYER2) && (mPlayer2.mGameRef != null)) {
+      mPlayer2.mGameRef.setPosition(newAction.aimPosition);
+      // Don't permit a simultaneous swap and launch.
+      if (newAction.launchBubble)
+        mPlayer2.setWasUp();
+      else if (newAction.swapBubble)
+        mPlayer2.setWasDown();
+    }
+  }
 
   class MultiplayerGameThread extends Thread {
 
@@ -161,35 +521,17 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     public static final int STATE_PAUSE   = 2;
     public static final int STATE_ABOUT   = 4;
 
-    private static final double TRACKBALL_COEFFICIENT      = 5;
-    private static final double TOUCH_BUTTON_THRESHOLD     = 16;
-    private static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
-    private static final double TOUCH_SWAP_X_THRESHOLD     = 14;
-    private static final double ATS_TOUCH_COEFFICIENT      = 0.2;
-    private static final double ATS_TOUCH_FIRE_Y_THRESHOLD = 350;
+    public static final double TRACKBALL_COEFFICIENT      = 5;
+    public static final double TOUCH_BUTTON_THRESHOLD     = 16;
+    public static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
+    public static final double TOUCH_SWAP_X_THRESHOLD     = 14;
+    public static final double ATS_TOUCH_COEFFICIENT      = 0.2;
+    public static final double ATS_TOUCH_FIRE_Y_THRESHOLD = 350;
 
     private boolean mImagesReady  = false;
     private boolean mRun          = false;
     private boolean mShowScores   = false;
     private boolean mSurfaceOK    = false;
-    private boolean mLeft         = false;
-    private boolean mRight        = false;
-    private boolean mUp           = false;
-    private boolean mDown         = false;
-    private boolean mFire         = false;
-    private boolean mWasLeft      = false;
-    private boolean mWasRight     = false;
-    private boolean mWasFire      = false;
-    private boolean mWasUp        = false;
-    private boolean mWasDown      = false;
-    private double  mTrackballDX  = 0;
-    private boolean mTouchFire    = false;
-    private boolean mTouchSwap    = false;
-    private double  mTouchX;
-    private double  mTouchY;
-    private boolean mATSTouchFire = false;
-    private double  mATSTouchDX   = 0;
-    private double  mATSTouchLastX;
 
     private int    mDisplayDX;
     private int    mDisplayDY;
@@ -263,6 +605,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         // said you have to call recycle() on all the bitmaps and set
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
+        mPlayer1.init();
+        mPlayer2.init();
         mFrozenGame1 = null;
         mFrozenGame2 = null;
         mImagesReady = false;
@@ -457,40 +801,10 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         /*
          * Only update the game state if this is a fresh key press.
          */
-        if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
-            ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
+        if (mLocalInput.checkNewActionKeyPress(keyCode))
           updateStateOnEvent(null);
 
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft    = true;
-          mWasLeft = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight    = true;
-          mWasRight = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire    = true;
-          mWasFire = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp    = true;
-          mWasUp = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown    = true;
-          mWasDown = true;
-          return true;
-        }
-        return false;
+        return mLocalInput.setKeyDown(keyCode);
       }
     }
 
@@ -510,27 +824,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown = false;
-          return true;
-        }
-        return false;
+        return mLocalInput.setKeyUp(keyCode);
       }
     }
 
@@ -549,51 +843,38 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         double x = xFromScr(event.getX());
         double y = yFromScr(event.getY());
 
+        /*
+         * Check for a pause button sprite press.  This will toggle the
+         * pause button sprite between paused and unpaused.  If the game
+         * was previously paused by the pause button, ignore screen touches
+         * that aren't on the pause button sprite.
+         */
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
           if ((Math.abs(x - 183) <= TOUCH_BUTTON_THRESHOLD) &&
               (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
-            pauseKeyPressed = !pauseKeyPressed;
-            if (mFrozenGame1 != null)
-              mFrozenGame1.pauseButtonPressed(pauseKeyPressed);
+            mLocalInput.toggleKeyPress(KEY_P);
           }
-          else if (pauseKeyPressed)
+          else if (mLocalInput.toggleKeyState(KEY_P))
             return false;
         }
 
+        /*
+         * Update the game state (paused, running, etc.) if necessary.
+         */
         if(updateStateOnEvent(event))
           return true;
 
-        if ((mMode == STATE_RUNNING) && (pauseKeyPressed))
+        /*
+         * If the game is running and the pause button sprite was pressed,
+         * pause the game.
+         */
+        if ((mMode == STATE_RUNNING) && (mLocalInput.toggleKeyState(KEY_P)))
           pause();
 
-        if (mMode == STATE_RUNNING) {
-          // Set the values used when Point To Shoot is on.
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < TOUCH_FIRE_Y_THRESHOLD) {
-              mTouchFire = true;
-              mTouchX = x;
-              mTouchY = y;
-            }
-            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
-              mTouchSwap = true;
-          }
-
-          // Set the values used when Aim Then Shoot is on.
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchFire = true;
-            }
-            mATSTouchLastX = x;
-          }
-          else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
-            }
-            mATSTouchLastX = x;
-          }
-          return true;
-        }
-        return false;
+        /*
+         * Process the screen touch event.
+         */
+        return mLocalInput.setTouchEvent(event.getAction(), x, y);
       }
     }
 
@@ -617,7 +898,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       synchronized (mSurfaceHolder) {
         if (mMode == STATE_RUNNING) {
           if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
+            mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             return true;
           }
         }
@@ -1061,6 +1342,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
                                       mHighscoreManager, 1);
+        mPlayer1.setGameRef(mFrozenGame1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
@@ -1069,6 +1351,7 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
                                       mSoundManager, mLevelManager, null, 2);
+        mPlayer2.setGameRef(mFrozenGame2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
     }
@@ -1088,6 +1371,11 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
             mHighscoreManager.pauseLevel();
         }
       }
+    }
+
+    public void pauseButtonPressed(boolean pauseKeyPressed) {
+      if (mFrozenGame1 != null)
+        mFrozenGame1.pauseButtonPressed(pauseKeyPressed);
     }
 
     private void resizeBitmaps() {
@@ -1379,18 +1667,21 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
       return false;
     }
 
-    private void updateGameState() {
+    private synchronized void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
           (mOpponent == null) || (mHighscoreManager == null))
         return;
 
-      int game1_state = mFrozenGame1.play(mLeft || mWasLeft,
-                                          mRight || mWasRight,
-                                          mFire || mUp || mWasFire || mWasUp,
-                                          mDown || mWasDown || mTouchSwap,
-                                          mTrackballDX,
-                                          mTouchFire, mTouchX, mTouchY,
-                                          mATSTouchFire, mATSTouchDX);
+      int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
+                                          mPlayer1.actionRight(),
+                                          mPlayer1.actionFire(),
+                                          mPlayer1.actionSwap(),
+                                          mPlayer1.getTrackBallDx(),
+                                          mPlayer1.actionTouchFire(),
+                                          mPlayer1.getTouchX(),
+                                          mPlayer1.getTouchY(),
+                                          mPlayer1.actionTouchFireATS(),
+                                          mPlayer1.getTouchDxATS());
       mFrozenGame2.play(mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_LEFT,
                         mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_RIGHT,
                         mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_UP,
@@ -1445,16 +1736,8 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
         startOpponent();
       }
 
-      mWasLeft      = false;
-      mWasRight     = false;
-      mWasFire      = false;
-      mWasUp        = false;
-      mWasDown      = false;
-      mTrackballDX  = 0;
-      mTouchFire    = false;
-      mTouchSwap    = false;
-      mATSTouchFire = false;
-      mATSTouchDX   = 0;
+      mPlayer1.clearActionFlags();
+      mPlayer2.clearActionFlags();
     }
 
     /**
@@ -1488,10 +1771,11 @@ class MultiplayerGameView extends SurfaceView implements SurfaceHolder.Callback 
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    modeKeyPressed  = false;
-    pauseKeyPressed = false;
-    soundKeyPressed = false;
-
+    // TODO: for now, the local and remote player IDs are fixed.
+    mPlayer1 = new PlayerInput(true);
+    mPlayer2 = new PlayerInput(false);
+    mLocalInput = mPlayer1;
+    mRemoteInput = mPlayer2;
     mGameThread = new MultiplayerGameThread(holder);
     setFocusable(true);
     setFocusableInTouchMode(true);
