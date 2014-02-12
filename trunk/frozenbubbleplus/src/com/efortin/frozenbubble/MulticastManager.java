@@ -66,18 +66,23 @@ import android.net.wifi.WifiManager;
 /**
  * Multicast manager class.
  * <p>
+ * To perform multicast networking in Android, the project manifest must
+ * have the following permissions added to it:<br>
+ * INTERNET<br>
+ * CHANGE_WIFI_MULTICAST_STATE
+ * <p>
  * This class instantiates a thread to send and receive WiFi multicast
  * datagrams via UDP.  UDP multicasting requires a WiFi access point -
  * i.e., a router, so multicasting does not perform like WiFi P2P
  * direct, where no access point is required.
  * <p>
- * In order for the multicast manager to actually send and receive
- * WiFi multicast messages, <code>configureMulticast()</code> must be
- * called to configure the multicast socket settings prior to
- * <code>start()</code>ing the thread.
+ * In order for the multicast manager to actually send and receive WiFi
+ * multicast messages, <code>configureMulticast()</code> must be called
+ * to configure the multicast socket settings prior to <br><code>start()
+ * </code>ing the thread.
  * <p>
  * Furthermore, multicast host addresses must be in the IPv4 class
- * D address range, with the leftmost octect being within the 224 to
+ * D address range, with the leftmost octet being within the 224 to
  * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
  * multicast host address.
  * <p>
