@@ -102,12 +102,14 @@ import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
 import com.efortin.frozenbubble.PlayerAction;
 
-class MultiplayerGameView extends SurfaceView implements
+public class MultiplayerGameView extends SurfaceView implements
   SurfaceHolder.Callback, NetworkListener {
 
   public static final byte PLAYER0                  = 0;
   public static final byte PLAYER1                  = 1;
   public static final byte PLAYER2                  = 2;
+  public static final int  PLAYER_CPU               = 0;
+  public static final int  PLAYER_HUMAN             = 1;
   public static final int  GAMEFIELD_WIDTH          = 320;
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
@@ -125,7 +127,10 @@ class MultiplayerGameView extends SurfaceView implements
    * TODO: initialize my player ID based on whether this player is
    *       providing input locally or remotely over the network.
    */
-  private byte                  myPlayerID = PLAYER1;
+  private byte                  myPlayerID     = PLAYER1;
+  private int                   opponentType   = PLAYER_HUMAN;
+  private boolean               muteKeyToggle  = false;
+  private boolean               pauseKeyToggle = false;
   //**********************************************************
   // Listener interface for various events
   //**********************************************************
@@ -157,16 +162,6 @@ class MultiplayerGameView extends SurfaceView implements
   public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
   public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
-  /*
-   * TODO: implement keyboard keypress functionality.
-   */
-  // Change mode (normal/colorblind)
-  public final static int KEY_M = 77;
-  // Pause/resume game
-  public final static int KEY_P = 80;
-  // Toggle sound on/off
-  public final static int KEY_S = 83;
-
   @Override
   public void onNetworkEvent(PlayerAction action) {
     setPlayerAction(action);
@@ -179,10 +174,7 @@ class MultiplayerGameView extends SurfaceView implements
    * @author Eric Fortin
    *
    */
-  class PlayerInput {
-    private boolean modeKeyToggle  = false;
-    private boolean pauseKeyToggle = false;
-    private boolean soundKeyToggle = false;
+  public class PlayerInput {
     private boolean mLeft          = false;
     private boolean mRight         = false;
     private boolean mUp            = false;
@@ -214,7 +206,10 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is launching a bubble.
      */
     public boolean actionFire() {
-      return mFire || mUp || mWasFire || mWasUp;
+      boolean tempFire = mWasFire || mWasUp;
+      mWasFire = false;
+      mWasUp = false;
+      return mFire || mUp || tempFire;
     }
 
     /**
@@ -222,7 +217,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is moving left.
      */
     public boolean actionLeft() {
-      return mLeft || mWasLeft;
+      boolean tempLeft = mWasLeft;
+      mWasLeft = false;
+      return mLeft || tempLeft;
     }
 
     /**
@@ -230,7 +227,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is moving right.
      */
     public boolean actionRight() {
-      return mRight || mWasRight;
+      boolean tempRight = mWasRight;
+      mWasRight = false;
+      return mRight || tempRight;
     }
 
     /**
@@ -238,7 +237,10 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is swapping the launch bubble.
      */
     public boolean actionSwap() {
-      return mDown || mWasDown || mTouchSwap;
+      boolean tempSwap = mWasDown || mTouchSwap;
+      mWasDown = false;
+      mTouchSwap = false;
+      return mDown || tempSwap;
     }
 
     /**
@@ -246,7 +248,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is launching a bubble.
      */
     public boolean actionTouchFire() {
-      return mTouchFire;
+      boolean tempFire = mTouchFire;
+      mTouchFire = false;
+      return tempFire;
     }
 
     /**
@@ -255,7 +259,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return True if the player is launching a bubble.
      */
     public boolean actionTouchFireATS() {
-      return mTouchFireATS;
+      boolean tempFire = mTouchFireATS;
+      mTouchFireATS = false;
+      return tempFire;
     }
 
     /**
@@ -263,7 +269,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return The horizontal touch change in position.
      */
     public double getTouchDxATS() {
-      return mTouchDxATS;
+      double tempDx = mTouchDxATS;
+      mTouchDxATS = 0;
+      return tempDx;
     }
 
     /**
@@ -287,7 +295,9 @@ class MultiplayerGameView extends SurfaceView implements
      * @return The trackball position change.
      */
     public double getTrackBallDx() {
-      return mTrackballDx;
+      double tempDx = mTrackballDx;
+      mTrackballDx = 0;
+      return tempDx;
     }
 
     /**
@@ -305,16 +315,13 @@ class MultiplayerGameView extends SurfaceView implements
               (keyCode == KeyEvent.KEYCODE_DPAD_DOWN));
     }
 
-    /**
-     * Initialize the player input action flags for the purpose of
-     * processing the next player action.
-     */
-    public synchronized void clearActionFlags() {
+    public void init() {
+      mGameRef      = null;
+      mWasDown      = false;
+      mWasFire      = false;
       mWasLeft      = false;
       mWasRight     = false;
-      mWasFire      = false;
       mWasUp        = false;
-      mWasDown      = false;
       mTrackballDx  = 0;
       mTouchFire    = false;
       mTouchSwap    = false;
@@ -322,9 +329,28 @@ class MultiplayerGameView extends SurfaceView implements
       mTouchDxATS   = 0;
     }
 
-    public void init() {
-      mGameRef = null;
-      clearActionFlags();
+    /**
+     * Process virtual key presses.  This method only sets the
+     * historical keypress flags, which are cleared on access via
+     * the various get() methods.
+     * @param keyCode
+     */
+    public void setAction(int keyCode) {
+      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+        mWasLeft = true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+        mWasRight = true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+        mWasFire = true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+        mWasUp = true;
+      }
+      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+        mWasDown = true;
+      }
     }
 
     /**
@@ -438,52 +464,6 @@ class MultiplayerGameView extends SurfaceView implements
     public void setTrackBallDx(double trackBallDX) {
       mTrackballDx += trackBallDX;
     }
-
-    /**
-     * Set the flag to indicate that the down key was pressed.
-     */
-    public void setWasDown() {
-      mWasUp = true;
-    }
-
-    /**
-     * Set the flag to indicate that the up key was pressed.
-     */
-    public void setWasUp() {
-      mWasUp = true;
-    }
-
-    /**
-     * Process function key presses.  Function keys toggle features on and
-     * off (e.g., game paused on/off, sound on/off, etc.).
-     * @param keyCode
-     */
-    public void toggleKeyPress(int keyCode) {
-      if (keyCode == KEY_M)
-        modeKeyToggle = !modeKeyToggle;
-      else if (keyCode == KEY_P) {
-        pauseKeyToggle = !pauseKeyToggle;
-        mGameThread.pauseButtonPressed(pauseKeyToggle);
-      }
-      else if (keyCode == KEY_S)
-        soundKeyToggle = !soundKeyToggle;
-    }
-
-    /**
-     * Obtain the current state of a feature toggle key.
-     * @param keyCode
-     * @return The state of the desired feature toggle key flag.
-     */
-    public boolean toggleKeyState(int keyCode) {
-      if (keyCode == KEY_M)
-        return modeKeyToggle;
-      else if (keyCode == KEY_P)
-        return pauseKeyToggle;
-      else if (keyCode == KEY_S)
-        return soundKeyToggle;
-
-      return false;
-    }
   }
 
   /**
@@ -499,17 +479,17 @@ class MultiplayerGameView extends SurfaceView implements
       mPlayer1.mGameRef.setPosition(newAction.aimPosition);
       // Don't permit a simultaneous swap and launch.
       if (newAction.launchBubble)
-        mPlayer1.setWasUp();
+        mPlayer1.setAction(KeyEvent.KEYCODE_DPAD_UP);
       else if (newAction.swapBubble)
-        mPlayer1.setWasDown();
+        mPlayer1.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
     }
     else if ((newAction.playerID == PLAYER2) && (mPlayer2.mGameRef != null)) {
       mPlayer2.mGameRef.setPosition(newAction.aimPosition);
       // Don't permit a simultaneous swap and launch.
       if (newAction.launchBubble)
-        mPlayer2.setWasUp();
+        mPlayer2.setAction(KeyEvent.KEYCODE_DPAD_UP);
       else if (newAction.swapBubble)
-        mPlayer2.setWasDown();
+        mPlayer2.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
     }
   }
 
@@ -804,6 +784,14 @@ class MultiplayerGameView extends SurfaceView implements
         if (mLocalInput.checkNewActionKeyPress(keyCode))
           updateStateOnEvent(null);
 
+        /*
+         * Process the key press if it is a function key.
+         */
+        toggleKeyPress(keyCode, true);
+
+        /*
+         * Process the key press if it is a game input key.
+         */
         return mLocalInput.setKeyDown(keyCode);
       }
     }
@@ -852,9 +840,9 @@ class MultiplayerGameView extends SurfaceView implements
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
           if ((Math.abs(x - 183) <= TOUCH_BUTTON_THRESHOLD) &&
               (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
-            mLocalInput.toggleKeyPress(KEY_P);
+            toggleKeyPress(KeyEvent.KEYCODE_P, false);
           }
-          else if (mLocalInput.toggleKeyState(KEY_P))
+          else if (toggleKeyState(KeyEvent.KEYCODE_P))
             return false;
         }
 
@@ -868,7 +856,7 @@ class MultiplayerGameView extends SurfaceView implements
          * If the game is running and the pause button sprite was pressed,
          * pause the game.
          */
-        if ((mMode == STATE_RUNNING) && (mLocalInput.toggleKeyState(KEY_P)))
+        if ((mMode == STATE_RUNNING) && (toggleKeyState(KeyEvent.KEYCODE_P)))
           pause();
 
         /*
@@ -1600,12 +1588,17 @@ class MultiplayerGameView extends SurfaceView implements
       }
     }
 
+    /**
+     * Create a CPU opponent object (if necessary) and start the thread.
+     * <p>Calling this function set the opponent type to CPU as well.
+     */
     public void startOpponent() {
+      opponentType = PLAYER_CPU;
       if (mOpponent != null) {
         mOpponent.stopThread();
         mOpponent = null;
       }
-      mOpponent = new ComputerAI(mFrozenGame2);
+      mOpponent = new ComputerAI(mFrozenGame2, mPlayer2);
       mOpponent.start();
     }
 
@@ -1613,6 +1606,44 @@ class MultiplayerGameView extends SurfaceView implements
       synchronized (mSurfaceHolder) {
         return mSurfaceOK;
       }
+    }
+
+    /**
+     * Process function key presses.  Function keys toggle features on and
+     * off (e.g., game paused on/off, sound on/off, etc.).
+     * @param keyCode - the key code to process.
+     * @param updateNow - if true, apply state changes.
+     */
+    public void toggleKeyPress(int keyCode, boolean updateNow) {
+      if (keyCode == KeyEvent.KEYCODE_M)
+        muteKeyToggle = !muteKeyToggle;
+      else if (keyCode == KeyEvent.KEYCODE_P) {
+        pauseKeyToggle = !pauseKeyToggle;
+        mGameThread.pauseButtonPressed(pauseKeyToggle);
+        if (updateNow) {
+          updateStateOnEvent(null);
+          /*
+           * If the game is running and the pause button was pressed,
+           * pause the game.
+           */
+          if (pauseKeyToggle && (mMode == STATE_RUNNING))
+            pause();
+        }
+      }
+    }
+
+    /**
+     * Obtain the current state of a feature toggle key.
+     * @param keyCode
+     * @return The state of the desired feature toggle key flag.
+     */
+    public boolean toggleKeyState(int keyCode) {
+      if (keyCode == KeyEvent.KEYCODE_M)
+        return muteKeyToggle;
+      else if (keyCode == KeyEvent.KEYCODE_P)
+        return pauseKeyToggle;
+
+      return false;
     }
 
     /**
@@ -1669,7 +1700,8 @@ class MultiplayerGameView extends SurfaceView implements
 
     private synchronized void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
-          (mOpponent == null) || (mHighscoreManager == null))
+          ((mOpponent == null) && (opponentType == PLAYER_CPU)) ||
+          (mHighscoreManager == null))
         return;
 
       int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
@@ -1682,12 +1714,22 @@ class MultiplayerGameView extends SurfaceView implements
                                           mPlayer1.getTouchY(),
                                           mPlayer1.actionTouchFireATS(),
                                           mPlayer1.getTouchDxATS());
-      mFrozenGame2.play(mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_LEFT,
-                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_RIGHT,
-                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_UP,
-                        mOpponent.getAction() == KeyEvent.KEYCODE_DPAD_DOWN,
-                        0, false, 0, 0, false, 0);
-      mOpponent.clearAction();
+      mFrozenGame2.play(mPlayer2.actionLeft(),
+                        mPlayer2.actionRight(),
+                        mPlayer2.actionFire(),
+                        mPlayer2.actionSwap(),
+                        mPlayer2.getTrackBallDx(),
+                        mPlayer2.actionTouchFire(),
+                        mPlayer2.getTouchX(),
+                        mPlayer2.getTouchY(),
+                        mPlayer2.actionTouchFireATS(),
+                        mPlayer2.getTouchDxATS());
+      /*
+       * If playing a CPU opponent, notify the computer that the current
+       * action has been processed and we are ready for a new action.
+       */
+      if (mOpponent != null)
+        mOpponent.clearAction();
 
       malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
       malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
@@ -1733,11 +1775,10 @@ class MultiplayerGameView extends SurfaceView implements
         mShowScores = true;
         pause();
         newGame();
-        startOpponent();
-      }
 
-      mPlayer1.clearActionFlags();
-      mPlayer2.clearActionFlags();
+        if (opponentType == PLAYER_CPU)
+          startOpponent();
+      }
     }
 
     /**
@@ -1777,6 +1818,11 @@ class MultiplayerGameView extends SurfaceView implements
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
     mGameThread = new MultiplayerGameThread(holder);
+
+    /*
+     * Give this view focus-ability for improved compatibility with
+     * various input devices.
+     */
     setFocusable(true);
     setFocusableInTouchMode(true);
 
