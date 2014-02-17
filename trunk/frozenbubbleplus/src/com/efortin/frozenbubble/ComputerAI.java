@@ -54,7 +54,6 @@ package com.efortin.frozenbubble;
 
 import org.gsanson.frozenbubble.Freile;
 import org.jfedor.frozenbubble.FrozenGame;
-import org.jfedor.frozenbubble.MultiplayerGameView.PlayerInput;
 
 import android.view.KeyEvent;
 
@@ -63,14 +62,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
   private boolean running;
   private FrozenGame myFrozenGame;
   private Freile cpuOpponent;
-  /*
-   * TODO: provide better isolation from the MultiPlayerGameView class,
-   * preferably by creating a base class extended by the PlayerInput
-   * class that implements the bare minimum variables and methods.
-   * 
-   * Refer to the usage of myPlayerInput in this module.
-   */
-  private PlayerInput myPlayerInput;
+  private VirtualInput myPlayerInput;
 
   /**
    * Game AI thread class constructor.
@@ -78,7 +70,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
    * @param gameRef
    *        - reference used to access game information for this player.
    */
-  public ComputerAI(FrozenGame gameRef, PlayerInput inputRef) {
+  public ComputerAI(FrozenGame gameRef, VirtualInput inputRef) {
     myFrozenGame = gameRef;
     myPlayerInput = inputRef;
     cpuOpponent = new Freile(myFrozenGame.getGrid());

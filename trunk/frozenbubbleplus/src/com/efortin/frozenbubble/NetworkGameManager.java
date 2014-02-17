@@ -78,6 +78,51 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     mNetworkListener = ml;
   }
 
+  /**
+   * This class encapsulates variables used to identify all possible
+   * player actions.
+   * @author Eric Fortin
+   */
+  public class PlayerAction {
+    public byte  playerID;  // the player ID associated with this action.
+    public short actionID;  // the ID of this particular action 
+    /*
+     * The following are flags associated with player actions.
+     * 
+     * launchBubble - this flag indicates that the player desires a bubble
+     *                launch to occur.  This flag must be set with a valid
+     *                aimPosition value.
+     * 
+     * swapBubble   - this flag indicates that the player desires that the
+     *                current launch bubble be swapped with the next
+     *                launch bubble.
+     */
+    public boolean launchBubble;
+    public boolean swapBubble;
+    /*
+     * The following are distance values associated with player actions.
+     * 
+     * aimPosition - this is the bubble launch position.
+     */
+    public double aimPosition;
+
+    /**
+     * Class constructor.
+     * @param playerID - the player ID associated with this action.
+     */
+    public PlayerAction(byte playerID, short actionID) {
+      this.playerID = playerID;
+      this.actionID = actionID;
+      initialize();
+    }
+
+    private void initialize() {
+      launchBubble = false;
+      swapBubble   = false;
+      aimPosition  = 0.0f;
+    }
+  }
+
   @Override
   public void onMulticastEvent(int type, String string) {
     /*
