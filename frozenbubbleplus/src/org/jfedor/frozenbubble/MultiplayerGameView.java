@@ -100,9 +100,10 @@ import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
-import com.efortin.frozenbubble.PlayerAction;
+import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
+import com.efortin.frozenbubble.VirtualInput;
 
-public class MultiplayerGameView extends SurfaceView implements
+class MultiplayerGameView extends SurfaceView implements
   SurfaceHolder.Callback, NetworkListener {
 
   public static final byte PLAYER0                  = 0;
@@ -174,17 +175,12 @@ public class MultiplayerGameView extends SurfaceView implements
    * @author Eric Fortin
    *
    */
-  public class PlayerInput {
+  class PlayerInput extends VirtualInput {
+    private boolean mCenter        = false;
+    private boolean mDown          = false;
     private boolean mLeft          = false;
     private boolean mRight         = false;
     private boolean mUp            = false;
-    private boolean mDown          = false;
-    private boolean mFire          = false;
-    private boolean mWasLeft       = false;
-    private boolean mWasRight      = false;
-    private boolean mWasFire       = false;
-    private boolean mWasUp         = false;
-    private boolean mWasDown       = false;
     private double  mTrackballDx   = 0;
     private boolean mTouchFire     = false;
     private boolean mTouchSwap     = false;
@@ -202,14 +198,24 @@ public class MultiplayerGameView extends SurfaceView implements
     }
 
     /**
+     * Check if a center button press action is active.
+     * @return True if the player pressed the center button.
+     */
+    public boolean actionCenter() {
+      boolean tempCenter = mWasCenter;
+      mWasCenter = false;
+      return tempCenter;
+    }
+
+    /**
      * Check if a bubble launch action is active.
      * @return True if the player is launching a bubble.
      */
-    public boolean actionFire() {
-      boolean tempFire = mWasFire || mWasUp;
-      mWasFire = false;
+    public boolean actionUp() {
+      boolean tempFire = mWasCenter || mWasUp;
+      mWasCenter = false;
       mWasUp = false;
-      return mFire || mUp || tempFire;
+      return mCenter || mUp || tempFire;
     }
 
     /**
@@ -236,7 +242,7 @@ public class MultiplayerGameView extends SurfaceView implements
      * Check if a bubble swap action is active.
      * @return True if the player is swapping the launch bubble.
      */
-    public boolean actionSwap() {
+    public boolean actionDown() {
       boolean tempSwap = mWasDown || mTouchSwap;
       mWasDown = false;
       mTouchSwap = false;
@@ -307,7 +313,7 @@ public class MultiplayerGameView extends SurfaceView implements
      * @return True if the current keypress indicates a new player action.
      */
     public boolean checkNewActionKeyPress(int keyCode) {
-      return (!mLeft && !mRight && !mFire && !mUp && !mDown) &&
+      return (!mLeft && !mRight && !mCenter && !mUp && !mDown) &&
              ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
               (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
               (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
@@ -316,41 +322,13 @@ public class MultiplayerGameView extends SurfaceView implements
     }
 
     public void init() {
+      this.init_vars();
       mGameRef      = null;
-      mWasDown      = false;
-      mWasFire      = false;
-      mWasLeft      = false;
-      mWasRight     = false;
-      mWasUp        = false;
       mTrackballDx  = 0;
       mTouchFire    = false;
       mTouchSwap    = false;
       mTouchFireATS = false;
       mTouchDxATS   = 0;
-    }
-
-    /**
-     * Process virtual key presses.  This method only sets the
-     * historical keypress flags, which are cleared on access via
-     * the various get() methods.
-     * @param keyCode
-     */
-    public void setAction(int keyCode) {
-      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        mWasLeft = true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        mWasRight = true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-        mWasFire = true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-        mWasUp = true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-        mWasDown = true;
-      }
     }
 
     /**
@@ -378,8 +356,8 @@ public class MultiplayerGameView extends SurfaceView implements
         return true;
       }
       else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-        mFire    = true;
-        mWasFire = true;
+        mCenter    = true;
+        mWasCenter = true;
         return true;
       }
       else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
@@ -410,7 +388,7 @@ public class MultiplayerGameView extends SurfaceView implements
         return true;
       }
       else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-        mFire = false;
+        mCenter = false;
         return true;
       }
       else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
@@ -1706,8 +1684,8 @@ public class MultiplayerGameView extends SurfaceView implements
 
       int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
                                           mPlayer1.actionRight(),
-                                          mPlayer1.actionFire(),
-                                          mPlayer1.actionSwap(),
+                                          mPlayer1.actionUp(),
+                                          mPlayer1.actionDown(),
                                           mPlayer1.getTrackBallDx(),
                                           mPlayer1.actionTouchFire(),
                                           mPlayer1.getTouchX(),
@@ -1716,8 +1694,8 @@ public class MultiplayerGameView extends SurfaceView implements
                                           mPlayer1.getTouchDxATS());
       mFrozenGame2.play(mPlayer2.actionLeft(),
                         mPlayer2.actionRight(),
-                        mPlayer2.actionFire(),
-                        mPlayer2.actionSwap(),
+                        mPlayer2.actionUp(),
+                        mPlayer2.actionDown(),
                         mPlayer2.getTrackBallDx(),
                         mPlayer2.actionTouchFire(),
                         mPlayer2.getTouchX(),

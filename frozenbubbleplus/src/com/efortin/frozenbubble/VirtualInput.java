@@ -52,47 +52,63 @@
 
 package com.efortin.frozenbubble;
 
+import android.view.KeyEvent;
+
 /**
- * This class encapsulates variables used to identify all possible
- * player actions.
+ * This class encapsulates variables used to interface all possible
+ * virtual player actions.
  * @author Eric Fortin
  */
-public class PlayerAction {
-  public byte  playerID;  // the player ID associated with this action.
-  public short actionID;  // the ID of this particular action 
+public abstract class VirtualInput {
+  protected boolean mWasCenter = false;
+  protected boolean mWasDown   = false;
+  protected boolean mWasLeft   = false;
+  protected boolean mWasRight  = false;
+  protected boolean mWasUp     = false;
+
   /*
-   * The following are flags associated with player actions.
-   * 
-   * launchBubble - this flag indicates that the player desires a bubble
-   *                launch to occur.  This flag must be set with a valid
-   *                aimPosition value.
-   * 
-   * swapBubble   - this flag indicates that the player desires that the
-   *                current launch bubble be swapped with the next
-   *                launch bubble.
+   * The following are abstract methods that must be implemented by
+   * descendants.  They must clear the appropriate action flag and
+   * return its original value.
    */
-  public boolean launchBubble;
-  public boolean swapBubble;
-  /*
-   * The following are distance values associated with player actions.
-   * 
-   * aimPosition - this is the bubble launch position.
-   */
-  public double aimPosition;
+  public abstract boolean actionCenter();
+  public abstract boolean actionDown();
+  public abstract boolean actionLeft();
+  public abstract boolean actionRight();
+  public abstract boolean actionUp();
 
   /**
-   * Class constructor.
-   * @param playerID - the player ID associated with this action.
+   * Initialize class variables to defaults.
    */
-  public PlayerAction(byte playerID, short actionID) {
-    this.playerID = playerID;
-    this.actionID = actionID;
-    initialize();
+  public final void init_vars() {
+    mWasCenter = false;
+    mWasDown   = false;
+    mWasLeft   = false;
+    mWasRight  = false;
+    mWasUp     = false;
   }
 
-  private void initialize() {
-    launchBubble = false;
-    swapBubble   = false;
-    aimPosition  = 0.0f;
+  /**
+   * Process virtual key presses.  This method only sets the
+   * historical keypress flags, which must be cleared by ancestors
+   * that inherit this class.
+   * @param keyCode
+   */
+  public final void setAction(int keyCode) {
+    if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+      mWasCenter = true;
+    }
+    else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+      mWasDown = true;
+    }
+    else if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+      mWasLeft = true;
+    }
+    else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+      mWasRight = true;
+    }
+    else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+      mWasUp = true;
+    }
   }
 }
