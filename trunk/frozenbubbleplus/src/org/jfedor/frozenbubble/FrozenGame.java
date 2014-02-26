@@ -1103,8 +1103,7 @@ public class FrozenGame extends GameScreen {
   }
 
   /**
-   * Set the game result associated with this player as belonging to the
-   * winning player or the losing player.
+   * Set the game result associated with this player.
    * @param result - GAME_WON if this player won the game, GAME_LOST if
    * this player lost the game.
    */
