@@ -195,8 +195,7 @@ public class FrozenGame extends GameScreen {
       this.addSprite(pauseButtonSprite);
     }
 
-    penguin = new PenguinSprite(PenguinSprite.getPenguinRect(player),
-                                penguins_arg, random);
+    penguin = new PenguinSprite(getPenguinRect(player), penguins_arg, random);
     this.addSprite(penguin);
 
     compressor   = new Compressor(compressorHead_arg, compressor_arg);
@@ -421,9 +420,9 @@ public class FrozenGame extends GameScreen {
       int nextPosition =
           map.getInt(String.format("%d-%d-nextPosition", player, i));
 
-      return new PenguinSprite(PenguinSprite.getPenguinRect(player),
-                               penguins, random, currentPenguin, count,
-                               finalState, nextPosition);
+      return new PenguinSprite(getPenguinRect(player), penguins, random,
+                               currentPenguin, count, finalState,
+                               nextPosition);
     }
     else {
       Log.e("frozen-bubble", "Unrecognized sprite type: " + type);
@@ -737,6 +736,15 @@ public class FrozenGame extends GameScreen {
 
   public double getMoveDown() {
     return moveDown;
+  }
+
+  private Rect getPenguinRect(int player) {
+    if (player == 1)
+      return new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
+                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
+    else
+      return new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
+                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
   }
 
   public Random getRandom() {
@@ -1094,23 +1102,30 @@ public class FrozenGame extends GameScreen {
     }
   }
 
+  /**
+   * Set the game result associated with this player as belonging to the
+   * winning player or the losing player.
+   * @param result - GAME_WON if this player won the game, GAME_LOST if
+   * this player lost the game.
+   */
   public void setGameResult(int result) {
-    playResult = result;
-    endOfGame = true;
-
-    if (result == GAME_WON)
-    {
-      penguin.updateState(PenguinSprite.STATE_GAME_WON);
-      this.addSprite(new ImageSprite(new Rect(152, 190,
-                                              152 + 337,
-                                              190 + 116), gameWon));
-    }
-    else if (result == GAME_LOST)
-    {
-      penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-      this.addSprite(new ImageSprite(new Rect(152, 190,
-                                              152 + 337,
-                                              190 + 116), gameLost));
+    if (!endOfGame) {
+      playResult = result;
+      if (result == GAME_WON)
+      {
+        penguin.updateState(PenguinSprite.STATE_GAME_WON);
+        this.addSprite(new ImageSprite(new Rect(152, 190,
+                                                152 + 337,
+                                                190 + 116), gameWon));
+      }
+      else if (result == GAME_LOST)
+      {
+        penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+        this.addSprite(new ImageSprite(new Rect(152, 190,
+                                                152 + 337,
+                                                190 + 116), gameLost));
+      }
+      endOfGame = true;
     }
   }
 
@@ -1124,16 +1139,18 @@ public class FrozenGame extends GameScreen {
   }
 
   public void setPosition(double value) {
-    double dx = value - launchBubblePosition;
-    /*
-     * For small changes, don't update the penguin state.
-     */
-    if ((dx < 0.25) && (dx > -0.25))
-      dx = 0;
-    launchBubblePosition = value;
-    clampLaunchPosition();
-    launchBubble.changeDirection(launchBubblePosition);
-    updatePenguinState(dx);
+    if (!endOfGame) {
+      double dx = value - launchBubblePosition;
+      /*
+       * For small position changes, don't update the penguin state.
+       */
+      if ((dx < 0.25) && (dx > -0.25))
+        dx = 0;
+      launchBubblePosition = value;
+      clampLaunchPosition();
+      launchBubble.changeDirection(launchBubblePosition);
+      updatePenguinState(dx);
+    }
   }
 
   public void setSendToOpponent(int numAttackBubbles) {
