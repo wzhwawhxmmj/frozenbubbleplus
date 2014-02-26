@@ -801,7 +801,7 @@ public class FrozenBubble extends Activity
     return fullscreen;
   }
 
-  public synchronized static  void setFullscreen(boolean newFullscreen) {
+  public synchronized static void setFullscreen(boolean newFullscreen) {
     fullscreen = newFullscreen;
   }
 
