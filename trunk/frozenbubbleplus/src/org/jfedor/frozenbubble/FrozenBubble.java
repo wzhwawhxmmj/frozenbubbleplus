@@ -104,7 +104,7 @@ import android.widget.Toast;
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.ScrollingCredits;
-import com.efortin.frozenbubble.SplashScreen;
+import com.efortin.frozenbubble.HomeScreen;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
@@ -151,7 +151,12 @@ public class FrozenBubble extends Activity
   public final static int POINT_TO_SHOOT  = 1;
   public final static int ROTATE_TO_SHOOT = 2;
 
+  public final static int LOCALE_LOCAL    = 0;
+  public final static int LOCALE_LAN      = 1;
+  public final static int LOCALE_INTERNET = 2;
+
   public static int numPlayers = 0;
+  public static int gameLocale = LOCALE_LOCAL;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
@@ -364,7 +369,7 @@ public class FrozenBubble extends Activity
       // Create an intent to launch the home screen.
       //
       //
-      Intent intent = new Intent(this, SplashScreen.class);
+      Intent intent = new Intent(this, HomeScreen.class);
       intent.putExtra("startHomeScreen", true);
       startActivity(intent);
       finish();

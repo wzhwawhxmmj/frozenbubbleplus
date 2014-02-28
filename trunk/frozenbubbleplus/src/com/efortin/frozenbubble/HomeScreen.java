@@ -71,7 +71,7 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
 
-public class SplashScreen extends Activity {
+public class HomeScreen extends Activity {
   /*
    * Provide unique IDs for the views associated with the relative
    * layout.  These are used to define relative view layout positions
@@ -85,15 +85,18 @@ public class SplashScreen extends Activity {
   private final static int BTN1_ID   = 101;
   private final static int BTN2_ID   = 102;
   private final static int BTN3_ID   = 103;
+  private final static int BTN4_ID   = 104;
+  private final static int BTN5_ID   = 105;
+  private final static int BTN6_ID   = 106;
 
   private static int buttonSelected = BTN1_ID;
 
-  private Boolean homeShown = false;
-  private Boolean musicOn = true;
-  private ImageView myImageView = null;
+  private Boolean homeShown       = false;
+  private Boolean musicOn         = true;
+  private ImageView myImageView   = null;
   private RelativeLayout myLayout = null;
-  private ModPlayer myModPlayer = null;
-  private Thread splashThread = null;
+  private ModPlayer myModPlayer   = null;
+  private Thread splashThread     = null;
 
   /**
    * Given that we are using a relative layout for the home screen in
@@ -106,13 +109,15 @@ public class SplashScreen extends Activity {
    * highlighted.
    */
   private void addHomeButtons() {
-    // Construct the 2 player game button.
+    /*
+     * Construct the 2 player game button.
+     */
     Button start2pGameButton = new Button(this);
     start2pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN2_ID;
         // Process the button tap and start/resume a 2 player game.
-        startFrozenBubble(2);
+        startFrozenBubble(2, FrozenBubble.LOCALE_LOCAL);
       }
     });
     start2pGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -122,7 +127,7 @@ public class SplashScreen extends Activity {
         return false;
       }
     });
-    start2pGameButton.setText("Player vs. CPU");
+    start2pGameButton.setText("2 Player");
     start2pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
     start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() * 10));
     start2pGameButton.setHorizontalFadingEdgeEnabled(true);
@@ -139,13 +144,15 @@ public class SplashScreen extends Activity {
     myParams1.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(start2pGameButton, myParams1);
-    // Construct the 1 player game button.
+    /*
+     * Construct the 1 player game button.
+     */
     Button start1pGameButton = new Button(this);
     start1pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN1_ID;
         // Process the button tap and start/resume a 1 player game.
-        startFrozenBubble(1);
+        startFrozenBubble(1, FrozenBubble.LOCALE_LOCAL);
       }
     });
     start1pGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -155,7 +162,7 @@ public class SplashScreen extends Activity {
         return false;
       }
     });
-    start1pGameButton.setText("Puzzle");
+    start1pGameButton.setText("1 Player");
     start1pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
     start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() * 10));
     start1pGameButton.setHorizontalFadingEdgeEnabled(true);
@@ -172,7 +179,9 @@ public class SplashScreen extends Activity {
     myParams2.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(start1pGameButton, myParams2);
-    // Construct the options button.
+    /*
+     * Construct the options button.
+     */
     Button optionsButton = new Button(this);
     optionsButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
@@ -205,6 +214,124 @@ public class SplashScreen extends Activity {
     myParams3.bottomMargin = 15;
     // Add view to layout.
     myLayout.addView(optionsButton, myParams3);
+  }
+
+  /**
+   * Given that we are using a relative layout for the home screen in
+   * order to display the background image and various buttons, this
+   * function adds the buttons to the layout to provide multiplayer game
+   * options to the player.
+   * <p>
+   * The buttons are defined in relation to one another so that when
+   * using keys to navigate the buttons, the appropriate button will be
+   * highlighted.
+   */
+  private void addMultiplayerButtons() {
+    /*
+     * Construct the LAN game button.
+     */
+    Button startLanGameButton = new Button(this);
+    startLanGameButton.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        buttonSelected = BTN5_ID;
+        // Process the button tap and start a LAN game.
+        startFrozenBubble(2, FrozenBubble.LOCALE_LAN);
+      }
+    });
+    startLanGameButton.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    startLanGameButton.setText("Local Network");
+    startLanGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    startLanGameButton.setWidth((int) (startLanGameButton.getTextSize() * 10));
+    startLanGameButton.setHorizontalFadingEdgeEnabled(true);
+    startLanGameButton.setFadingEdgeLength(5);
+    startLanGameButton.setShadowLayer(5, 5, 5, R.color.black);
+    startLanGameButton.setId(BTN5_ID);
+    startLanGameButton.setFocusable(true);
+    startLanGameButton.setFocusableInTouchMode(true);
+    LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.topMargin = 15;
+    myParams1.bottomMargin = 15;
+    // Add view to layout.
+    myLayout.addView(startLanGameButton, myParams1);
+    /*
+     * Construct the Player vs. CPU game button.
+     */
+    Button startCPUGameButton = new Button(this);
+    startLanGameButton.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        buttonSelected = BTN4_ID;
+        // Process the button tap and start a 2 player game.
+        startFrozenBubble(2, FrozenBubble.LOCALE_LOCAL);
+      }
+    });
+    startCPUGameButton.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    startCPUGameButton.setText("Player vs. CPU");
+    startCPUGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    startCPUGameButton.setWidth((int) (startCPUGameButton.getTextSize() * 10));
+    startCPUGameButton.setHorizontalFadingEdgeEnabled(true);
+    startCPUGameButton.setFadingEdgeLength(5);
+    startCPUGameButton.setShadowLayer(5, 5, 5, R.color.black);
+    startCPUGameButton.setId(BTN4_ID);
+    startCPUGameButton.setFocusable(true);
+    startCPUGameButton.setFocusableInTouchMode(true);
+    LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.ABOVE, startCPUGameButton.getId());
+    myParams2.topMargin = 15;
+    myParams2.bottomMargin = 15;
+    // Add view to layout.
+    myLayout.addView(startCPUGameButton, myParams2);
+    /*
+     * Construct the Internet game button.
+     */
+    Button startIPGameButton = new Button(this);
+    startIPGameButton.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        buttonSelected = BTN6_ID;
+        // Process the button tap and start an internet game.
+        startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
+      }
+    });
+    startIPGameButton.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    startIPGameButton.setText("Internet");
+    startIPGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    startIPGameButton.setWidth((int) (startIPGameButton.getTextSize() * 10));
+    startIPGameButton.setHorizontalFadingEdgeEnabled(true);
+    startIPGameButton.setFadingEdgeLength(5);
+    startIPGameButton.setShadowLayer(5, 5, 5, R.color.black);
+    startIPGameButton.setId(BTN6_ID);
+    startIPGameButton.setFocusable(true);
+    startIPGameButton.setFocusableInTouchMode(true);
+    LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams3.addRule(RelativeLayout.BELOW, startIPGameButton.getId());
+    myParams3.topMargin = 15;
+    myParams3.bottomMargin = 15;
+    // Add view to layout.
+    myLayout.addView(startIPGameButton, myParams3);
   }
 
   private void cleanUp() {
@@ -246,7 +373,7 @@ public class SplashScreen extends Activity {
     myImageView = new ImageView(this);
 
     if (FrozenBubble.numPlayers != 0)
-      startFrozenBubble(FrozenBubble.numPlayers);
+      startFrozenBubble(FrozenBubble.numPlayers, FrozenBubble.gameLocale);
     else if (getIntent().hasExtra("startHomeScreen")) {
       setBackgroundImage(R.drawable.home_screen);
       setContentView(myLayout);
@@ -379,7 +506,16 @@ public class SplashScreen extends Activity {
     }
   }
 
-  private void startFrozenBubble(int numPlayers) {
+  /**
+   * Start the game with the specified number of players in the
+   * specified locale.  A 1 player game can only be played locally.
+   * @param numPlayers - the number of players (1 or 2)
+   * @param locale - the location of the opponent.  A local opponent
+   * will be played by the CPU.  A LAN opponent will be played over
+   * the network using multicasting, and an internet opponent will
+   * be played using TCP.
+   */
+  private void startFrozenBubble(int numPlayers, int locale) {
     //
     // Since the default game activity creates its own player,
     // destroy the current player.
@@ -392,6 +528,7 @@ public class SplashScreen extends Activity {
     //
     Intent intent = new Intent(this, FrozenBubble.class);
     intent.putExtra("numPlayers", (int)numPlayers);
+    intent.putExtra("locale", (int)locale );
     startActivity(intent);
     //
     // Terminate the splash screen activity.
