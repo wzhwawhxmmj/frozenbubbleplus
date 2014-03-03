@@ -69,6 +69,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 import android.widget.RelativeLayout.LayoutParams;
 
 public class HomeScreen extends Activity {
@@ -116,8 +117,8 @@ public class HomeScreen extends Activity {
     start2pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN2_ID;
-        // Process the button tap and start/resume a 2 player game.
-        startFrozenBubble(2, FrozenBubble.LOCALE_LOCAL);
+        // Display the 2 player mode buttons page.
+        displayButtonPage(2);
       }
     });
     start2pGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -235,7 +236,9 @@ public class HomeScreen extends Activity {
       public void onClick(View v){
         buttonSelected = BTN5_ID;
         // Process the button tap and start a LAN game.
-        startFrozenBubble(2, FrozenBubble.LOCALE_LAN);
+        //startFrozenBubble(2, FrozenBubble.LOCALE_LAN);
+        Toast.makeText(getApplicationContext(),
+            "Not available in this version.", Toast.LENGTH_SHORT).show();
       }
     });
     startLanGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -266,7 +269,7 @@ public class HomeScreen extends Activity {
      * Construct the Player vs. CPU game button.
      */
     Button startCPUGameButton = new Button(this);
-    startLanGameButton.setOnClickListener(new Button.OnClickListener(){
+    startCPUGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN4_ID;
         // Process the button tap and start a 2 player game.
@@ -292,7 +295,7 @@ public class HomeScreen extends Activity {
     LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
     myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
-    myParams2.addRule(RelativeLayout.ABOVE, startCPUGameButton.getId());
+    myParams2.addRule(RelativeLayout.ABOVE, startLanGameButton.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
     // Add view to layout.
@@ -305,7 +308,9 @@ public class HomeScreen extends Activity {
       public void onClick(View v){
         buttonSelected = BTN6_ID;
         // Process the button tap and start an internet game.
-        startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
+        //startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
+        Toast.makeText(getApplicationContext(),
+            "Not available in this version.", Toast.LENGTH_SHORT).show();
       }
     });
     startIPGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -327,7 +332,7 @@ public class HomeScreen extends Activity {
     LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
     myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
-    myParams3.addRule(RelativeLayout.BELOW, startIPGameButton.getId());
+    myParams3.addRule(RelativeLayout.BELOW, startLanGameButton.getId());
     myParams3.topMargin = 15;
     myParams3.bottomMargin = 15;
     // Add view to layout.
@@ -341,15 +346,53 @@ public class HomeScreen extends Activity {
     }
   }
 
+  /**
+   * Manage a set of button "pages", where each page displays buttons.
+   * The pages are indexed by a unique identifier.  When a valid page
+   * identifier is provided, all buttons corresponding to other pages
+   * are removed and the buttons for the requested page ID are added.
+   * @param pageID - the requested page identifier (1-based).
+   */
+  private void displayButtonPage(int pageID) {
+    if (pageID == 1) {
+      buttonSelected = BTN2_ID;
+      removeViewByID(BTN4_ID);
+      removeViewByID(BTN5_ID);
+      removeViewByID(BTN6_ID);
+      addHomeButtons();
+      selectInitialButton();
+    }
+    else if (pageID == 2) {
+      buttonSelected = BTN4_ID;
+      removeViewByID(BTN1_ID);
+      removeViewByID(BTN2_ID);
+      removeViewByID(BTN3_ID);
+      addMultiplayerButtons();
+      selectInitialButton();
+    }
+  }
+
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      cleanUp();
-      //
-      // Terminate the splash screen activity.
-      //
-      //
-      finish();
+      /*
+       * When one of the multiplayer game buttons was selected, if the
+       * back button was pressed, remove the multiplayer buttons and
+       * display the home buttons.  The 2 player button becomes selected
+       * by default on the home screen.
+       * 
+       * Otherwise if one of the base level buttons was selected, then
+       * terminate the home screen activity.
+       */
+      if ((buttonSelected == BTN4_ID) ||
+          (buttonSelected == BTN5_ID) ||
+          (buttonSelected == BTN6_ID)) {
+        displayButtonPage(1);
+      }
+      else {
+        cleanUp();
+        finish();
+      }
       return true;
     }
     return super.onKeyDown(keyCode, event);
@@ -454,6 +497,12 @@ public class HomeScreen extends Activity {
     return true;
   }
 
+  private void removeViewByID(int id) {
+    if (myLayout != null) {
+      myLayout.removeView(myLayout.findViewById(id));
+    }
+  }
+
   private void restoreGamePrefs() {
     SharedPreferences mConfig = getSharedPreferences(FrozenBubble.PREFS_NAME,
                                                      Context.MODE_PRIVATE);
@@ -541,7 +590,12 @@ public class HomeScreen extends Activity {
     if (!homeShown) {
       homeShown = true;
       setBackgroundImage(R.drawable.home_screen);
-      addHomeButtons();
+      if ((buttonSelected == BTN1_ID) ||
+          (buttonSelected == BTN2_ID) ||
+          (buttonSelected == BTN3_ID))
+        addHomeButtons();
+      else
+        addMultiplayerButtons();
       setContentView(myLayout);
       myLayout.setFocusable(true);
       myLayout.setFocusableInTouchMode(true);
