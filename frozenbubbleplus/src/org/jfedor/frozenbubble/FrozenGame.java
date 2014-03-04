@@ -65,8 +65,13 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.efortin.frozenbubble.HighscoreManager;
+import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenGame extends GameScreen {
+  private final int[] columnX = { 190, 206, 232, 248, 264,
+                                  280, 296, 312, 328, 344,
+                                  360, 376, 392, 408, 424 };
+
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
 
@@ -132,6 +137,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
+  boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
   int fixedBubbles;
@@ -165,7 +171,7 @@ public class FrozenGame extends GameScreen {
                     SoundManager soundManager_arg,
                     LevelManager levelManager_arg,
                     HighscoreManager highscoreManager_arg,
-                    int player_arg) {
+                    VirtualInput input_arg) {
     random               = new Random(System.currentTimeMillis());
     launcher             = launcher_arg;
     penguins             = penguins_arg;
@@ -181,11 +187,19 @@ public class FrozenGame extends GameScreen {
     levelManager         = levelManager_arg;
     highscoreManager     = highscoreManager_arg;
     malusBar             = malusBar_arg;
-    player               = player_arg;
     playResult           = GAME_PLAYING;
     launchBubblePosition = START_LAUNCH_DIRECTION;
     readyToFire          = false;
     swapPressed          = false;
+
+    if (input_arg != null) {
+      player   = input_arg.playerID;
+      isRemote = input_arg.isRemote;
+    }
+    else {
+      player   = VirtualInput.PLAYER1;
+      isRemote = false;
+    }
 
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
       pauseButtonSprite = new ImageSprite(new Rect(167, 444, 32, 32),
@@ -276,7 +290,7 @@ public class FrozenGame extends GameScreen {
          targetedBubbles_arg, bubbleBlink_arg, gameWon_arg, gameLost_arg,
          gamePaused_arg, hurry_arg, null, null, penguins_arg, compressorHead_arg,
          compressor_arg, null, launcher_arg, soundManager_arg,
-         levelManager_arg, highscoreManager_arg, 1);
+         levelManager_arg, highscoreManager_arg, null);
   }
 
   public void saveState(Bundle map) {
@@ -768,10 +782,26 @@ public class FrozenGame extends GameScreen {
    * in randomly selected "lanes" from the 15 available.
    */
   private void releaseBubbles() {
-    if ((malusBar != null) && (malusBar.getBubbles() > 0)) {
-      final int[] columnX = { 190, 206, 232, 248, 264,
-                              280, 296, 312, 328, 344,
-                              360, 376, 392, 408, 424 };
+    if (malusBar == null)
+      return;
+
+    if (isRemote) {
+      for (int i = 0; i < 15; i++) {
+        if (malusBar.attackBubbles[i] >= 0) {
+          int color = malusBar.attackBubbles[i];
+          BubbleSprite malusBubble = new BubbleSprite(
+            new Rect(columnX[i], 44+15*28, 32, 32),
+            START_LAUNCH_DIRECTION,
+            color, bubbles[color], bubblesBlind[color],
+            frozenBubbles[color], targetedBubbles, bubbleBlink,
+            bubbleManager, soundManager, this);
+          goingUp.add(malusBubble);
+          this.addSprite(malusBubble);
+        }
+      }
+      malusBar.clearAttackBubbles();
+    }
+    else if (malusBar.getBubbles() > 0) {
       boolean[] lanes = new boolean[15];
       int malusBalls = malusBar.removeLine();
       int pos;
@@ -986,7 +1016,7 @@ public class FrozenGame extends GameScreen {
         }
       }
       if (malusBar != null) {
-        if (malusBar.releaseTime > RELEASE_TIME) {
+        if ((malusBar.releaseTime > RELEASE_TIME) || isRemote) {
           releaseBubbles();
           malusBar.releaseTime = 0;
         }
