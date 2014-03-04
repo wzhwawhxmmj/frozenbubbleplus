@@ -804,9 +804,14 @@ class MultiplayerGameView extends SurfaceView implements
      */
     boolean doTouchEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
+        double x_offset;
         double x = xFromScr(event.getX());
         double y = yFromScr(event.getY());
 
+        if (mLocalInput.playerID == VirtualInput.PLAYER1)
+          x_offset = 0;
+        else
+          x_offset = -mPlayer2DX;
         /*
          * Check for a pause button sprite press.  This will toggle the
          * pause button sprite between paused and unpaused.  If the game
@@ -838,7 +843,7 @@ class MultiplayerGameView extends SurfaceView implements
         /*
          * Process the screen touch event.
          */
-        return mLocalInput.setTouchEvent(event.getAction(), x, y);
+        return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
       }
     }
 
@@ -1573,7 +1578,10 @@ class MultiplayerGameView extends SurfaceView implements
         mOpponent.stopThread();
         mOpponent = null;
       }
-      mOpponent = new ComputerAI(mFrozenGame2, mPlayer2);
+      if (mRemoteInput.playerID == VirtualInput.PLAYER2)
+        mOpponent = new ComputerAI(mFrozenGame2, mRemoteInput);
+      else
+        mOpponent = new ComputerAI(mFrozenGame1, mRemoteInput);
       mOpponent.start();
     }
 
