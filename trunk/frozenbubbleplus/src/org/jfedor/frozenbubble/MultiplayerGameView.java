@@ -106,11 +106,6 @@ import com.efortin.frozenbubble.VirtualInput;
 class MultiplayerGameView extends SurfaceView implements
   SurfaceHolder.Callback, NetworkListener {
 
-  public static final byte PLAYER0                  = 0;
-  public static final byte PLAYER1                  = 1;
-  public static final byte PLAYER2                  = 2;
-  public static final int  PLAYER_CPU               = 0;
-  public static final int  PLAYER_HUMAN             = 1;
   public static final int  GAMEFIELD_WIDTH          = 320;
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
@@ -120,16 +115,11 @@ class MultiplayerGameView extends SurfaceView implements
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
   private ComputerAI            mOpponent;
-  private PlayerInput           mLocalInput;
-  private PlayerInput           mRemoteInput;
+  private VirtualInput          mLocalInput;
+  private VirtualInput          mRemoteInput;
   private PlayerInput           mPlayer1;
   private PlayerInput           mPlayer2;
-  /*
-   * TODO: initialize my player ID based on whether this player is
-   *       providing input locally or remotely over the network.
-   */
-  private byte                  myPlayerID     = PLAYER1;
-  private int                   opponentType   = PLAYER_HUMAN;
+  private boolean               isServer       = false;
   private boolean               muteKeyToggle  = false;
   private boolean               pauseKeyToggle = false;
   //**********************************************************
@@ -190,11 +180,17 @@ class MultiplayerGameView extends SurfaceView implements
     private double  mTouchDxATS    = 0;
     private double  mTouchLastX    = 0;
     private FrozenGame mGameRef    = null;
-    public  boolean isLocalInput;
 
-    public PlayerInput(boolean isLocalInput) {
+    /**
+     * Construct and configure this player input instance.
+     * @param id - the player ID, e.g., <code>VirtualInput.PLAYER1</code>.
+     * @param type - <code>true</code> if the player is a CPU simulation.
+     * @param source - <code>true</code> if the input is a remote machine.
+     * @see VirtualInput
+     */
+    public PlayerInput(int id, boolean type, boolean source) {
       init();
-      this.isLocalInput = isLocalInput;
+      configure(id, type, source);
     }
 
     /**
@@ -453,7 +449,8 @@ class MultiplayerGameView extends SurfaceView implements
     if (mGameThread != null)
       mGameThread.updateStateOnEvent(null);
 
-    if ((newAction.playerID == PLAYER1) && (mPlayer1.mGameRef != null)) {
+    if ((newAction.playerID == VirtualInput.PLAYER1) &&
+        (mPlayer1.mGameRef != null)) {
       mPlayer1.mGameRef.setPosition(newAction.aimPosition);
       // Don't permit a simultaneous swap and launch.
       if (newAction.launchBubble)
@@ -461,7 +458,8 @@ class MultiplayerGameView extends SurfaceView implements
       else if (newAction.swapBubble)
         mPlayer1.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
     }
-    else if ((newAction.playerID == PLAYER2) && (mPlayer2.mGameRef != null)) {
+    else if ((newAction.playerID == VirtualInput.PLAYER2) &&
+             (mPlayer2.mGameRef != null)) {
       mPlayer2.mGameRef.setPosition(newAction.aimPosition);
       // Don't permit a simultaneous swap and launch.
       if (newAction.launchBubble)
@@ -1307,7 +1305,7 @@ class MultiplayerGameView extends SurfaceView implements
                                       mCompressorHead, mCompressor,
                                       malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager, 1);
+                                      mHighscoreManager, mPlayer1);
         mPlayer1.setGameRef(mFrozenGame1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
@@ -1316,7 +1314,8 @@ class MultiplayerGameView extends SurfaceView implements
                                       null, null, mPenguins2,
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
-                                      mSoundManager, mLevelManager, null, 2);
+                                      mSoundManager, mLevelManager,
+                                      null, mPlayer2);
         mPlayer2.setGameRef(mFrozenGame2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
@@ -1568,10 +1567,8 @@ class MultiplayerGameView extends SurfaceView implements
 
     /**
      * Create a CPU opponent object (if necessary) and start the thread.
-     * <p>Calling this function set the opponent type to CPU as well.
      */
     public void startOpponent() {
-      opponentType = PLAYER_CPU;
       if (mOpponent != null) {
         mOpponent.stopThread();
         mOpponent = null;
@@ -1678,7 +1675,7 @@ class MultiplayerGameView extends SurfaceView implements
 
     private synchronized void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
-          ((mOpponent == null) && (opponentType == PLAYER_CPU)) ||
+          ((mOpponent == null) && mRemoteInput.isCPU) ||
           (mHighscoreManager == null))
         return;
 
@@ -1754,7 +1751,7 @@ class MultiplayerGameView extends SurfaceView implements
         pause();
         newGame();
 
-        if (opponentType == PLAYER_CPU)
+        if (mRemoteInput.isCPU)
           startOpponent();
       }
     }
@@ -1791,8 +1788,8 @@ class MultiplayerGameView extends SurfaceView implements
     numPlayer2GamesWon = 0;
 
     // TODO: for now, the local and remote player IDs are fixed.
-    mPlayer1 = new PlayerInput(true);
-    mPlayer2 = new PlayerInput(false);
+    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
+    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
     mGameThread = new MultiplayerGameThread(holder);

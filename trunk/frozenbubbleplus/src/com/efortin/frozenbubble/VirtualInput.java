@@ -60,6 +60,16 @@ import android.view.KeyEvent;
  * @author Eric Fortin
  */
 public abstract class VirtualInput {
+  /*
+   * Player ID definitions.
+   */
+  public static final byte PLAYER0 = 0;
+  public static final byte PLAYER1 = 1;
+  public static final byte PLAYER2 = 2;
+
+  public    int     playerID   = PLAYER1;
+  public    boolean isCPU      = false;
+  public    boolean isRemote   = false;
   protected boolean mWasCenter = false;
   protected boolean mWasDown   = false;
   protected boolean mWasLeft   = false;
@@ -76,6 +86,28 @@ public abstract class VirtualInput {
   public abstract boolean actionLeft();
   public abstract boolean actionRight();
   public abstract boolean actionUp();
+
+  /* The following are abstract methods that must be implemented by
+   * descendants to handle all the various input events.
+   */
+  public abstract boolean checkNewActionKeyPress(int keyCode);
+  public abstract boolean setKeyDown(int keyCode);
+  public abstract boolean setKeyUp(int keyCode);
+  public abstract boolean setTouchEvent(int event, double x, double y);
+  public abstract void    setTrackBallDx(double trackBallDX);
+
+  /**
+   * Configure this player input instance.
+   * @param id - the player ID, e.g., <code>PLAYER1</code>.
+   * @param type - <code>true</code> if the player is a CPU simulation.
+   * @param source - <code>true</code> if the input is a remote machine.
+   * @see VirtualInput
+   */
+  protected final void configure(int id, boolean type, boolean source) {
+    playerID = id;
+    isCPU    = type;
+    isRemote = source;
+  }
 
   /**
    * Initialize class variables to defaults.
