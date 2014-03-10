@@ -559,12 +559,12 @@ public class HomeScreen extends Activity {
    * Start the game with the specified number of players in the
    * specified locale.  A 1 player game can only be played locally.
    * @param numPlayers - the number of players (1 or 2)
-   * @param locale - the location of the opponent.  A local opponent
-   * will be played by the CPU.  A LAN opponent will be played over
-   * the network using multicasting, and an internet opponent will
-   * be played using TCP.
+   * @param gameLocale - the location of the opponent.  A local opponent
+   * will be played by the CPU.  A LAN opponent will be played over the
+   * network using multicasting, and an internet opponent will be played
+   * using TCP.
    */
-  private void startFrozenBubble(int numPlayers, int locale) {
+  private void startFrozenBubble(int numPlayers, int gameLocale) {
     //
     // Since the default game activity creates its own player,
     // destroy the current player.
@@ -577,7 +577,7 @@ public class HomeScreen extends Activity {
     //
     Intent intent = new Intent(this, FrozenBubble.class);
     intent.putExtra("numPlayers", (int)numPlayers);
-    intent.putExtra("locale", (int)locale );
+    intent.putExtra("gameLocale", (int)gameLocale );
     startActivity(intent);
     //
     // Terminate the splash screen activity.

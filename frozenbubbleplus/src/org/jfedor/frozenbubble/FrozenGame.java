@@ -137,7 +137,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
-  boolean isRemote;
+  boolean isNetGame;
   boolean readyToFire;
   boolean swapPressed;
   int fixedBubbles;
@@ -193,12 +193,12 @@ public class FrozenGame extends GameScreen {
     swapPressed          = false;
 
     if (input_arg != null) {
-      player   = input_arg.playerID;
-      isRemote = input_arg.isRemote;
+      player    = input_arg.playerID;
+      isNetGame = input_arg.isNetGame;
     }
     else {
-      player   = VirtualInput.PLAYER1;
-      isRemote = false;
+      player    = VirtualInput.PLAYER1;
+      isNetGame = false;
     }
 
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
@@ -785,7 +785,7 @@ public class FrozenGame extends GameScreen {
     if (malusBar == null)
       return;
 
-    if (isRemote) {
+    if (isNetGame) {
       for (int i = 0; i < 15; i++) {
         if (malusBar.attackBubbles[i] >= 0) {
           int color = malusBar.attackBubbles[i];
@@ -1016,7 +1016,7 @@ public class FrozenGame extends GameScreen {
         }
       }
       if (malusBar != null) {
-        if ((malusBar.releaseTime > RELEASE_TIME) || isRemote) {
+        if ((malusBar.releaseTime > RELEASE_TIME) || isNetGame) {
           releaseBubbles();
           malusBar.releaseTime = 0;
         }

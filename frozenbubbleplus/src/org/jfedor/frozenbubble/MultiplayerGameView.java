@@ -119,7 +119,6 @@ class MultiplayerGameView extends SurfaceView implements
   private VirtualInput          mRemoteInput;
   private PlayerInput           mPlayer1;
   private PlayerInput           mPlayer2;
-  private boolean               isServer       = false;
   private boolean               muteKeyToggle  = false;
   private boolean               pauseKeyToggle = false;
   //**********************************************************
@@ -1782,7 +1781,7 @@ class MultiplayerGameView extends SurfaceView implements
     }
   }
 
-  public MultiplayerGameView(Context context, int numPlayers) {
+  public MultiplayerGameView(Context context, int numPlayers, int gameLocale) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
 
