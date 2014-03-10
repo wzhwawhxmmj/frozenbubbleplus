@@ -110,11 +110,10 @@ public class FrozenBubble extends Activity
   implements GameView.GameListener,
              MultiplayerGameView.GameListener,
              AccelerometerManager.AccelerometerListener {
-  //
-  // The following screen orientation definitions were added to
-  // ActivityInfo in API level 9.
-  //
-  //
+  /*
+   * The following screen orientation definitions were added to
+   * ActivityInfo in API level 9.
+   */
   public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
   public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
   public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
@@ -237,7 +236,9 @@ public class FrozenBubble extends Activity
     if (myOrientationEventListener.canDetectOrientation())
       myOrientationEventListener.enable();
 
-    // Allow editor functionalities.
+    /*
+     * Allow editor functionalities.
+     */
     Intent intent = getIntent();
     try {
       if ((null == intent) || (null == intent.getExtras()) ||
@@ -354,21 +355,24 @@ public class FrozenBubble extends Activity
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
+      /*
+       * The current game was exited, so reset the static game state
+       * variables.
+       */
       numPlayers = 0;
-      //
-      // Preserve game information and perform activity cleanup.
-      //
-      //
+      gameLocale = LOCALE_LOCAL;
+      /*
+       * Preserve game information and perform activity cleanup.
+       */
       pause();
       if (mGameView != null)
         mGameView.getThread().setRunning(false);
       if (mMultiplayerGameView != null)
         mMultiplayerGameView.getThread().setRunning(false);
       cleanUp();
-      //
-      // Create an intent to launch the home screen.
-      //
-      //
+      /*
+       * Create an intent to launch the home screen.
+       */
       Intent intent = new Intent(this, HomeScreen.class);
       intent.putExtra("startHomeScreen", true);
       startActivity(intent);
@@ -397,6 +401,7 @@ public class FrozenBubble extends Activity
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
     numPlayers = 0;
+    gameLocale = LOCALE_LOCAL;
     cleanUp();
   }
 
@@ -410,7 +415,9 @@ public class FrozenBubble extends Activity
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     //Log.i(TAG, "FrozenBubble.onSaveInstanceState()");
-    // Just have the View's thread save its state into our Bundle.
+    /*
+     * Just have the View's thread save its state into our Bundle.
+     */
     super.onSaveInstanceState(outState);
     saveState();
 
@@ -467,35 +474,32 @@ public class FrozenBubble extends Activity
   }
 
   private int getScreenOrientation() {
-    //
-    // The method getOrientation() was deprecated in API level 8.
-    //
-    // For API level 8 or greater, use getRotation().
-    //
-    //
+    /*
+     * The method getOrientation() was deprecated in API level 8.
+     *
+     * For API level 8 or greater, use getRotation().
+     */
     int rotation = getWindowManager().getDefaultDisplay().getOrientation();
     DisplayMetrics dm = new DisplayMetrics();
     getWindowManager().getDefaultDisplay().getMetrics(dm);
     int width  = dm.widthPixels;
     int height = dm.heightPixels;
     int orientation;
-    //
-    // The orientation determination is based on the natural orienation
-    // mode of the device, which can be either portrait, landscape, or
-    // square.
-    //
-    // After the natural orientation is determined, convert the device
-    // rotation into a fully qualified orientation.
-    //
-    //
+    /*
+     * The orientation determination is based on the natural orienation
+     * mode of the device, which can be either portrait, landscape, or
+     * square.
+     *
+     * After the natural orientation is determined, convert the device
+     * rotation into a fully qualified orientation.
+     */
     if ((((rotation == Surface.ROTATION_0  ) ||
           (rotation == Surface.ROTATION_180)) && (height > width)) ||
         (((rotation == Surface.ROTATION_90 ) ||
           (rotation == Surface.ROTATION_270)) && (width  > height))) {
-      //
-      // Natural orientation is portrait.
-      //
-      //
+      /*
+       * Natural orientation is portrait.
+       */
       switch(rotation) {
         case Surface.ROTATION_0:
           orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
@@ -515,10 +519,9 @@ public class FrozenBubble extends Activity
       }
     }
     else {
-      //
-      // Natural orientation is landscape or square.
-      //
-      //
+      /*
+       * Natural orientation is landscape or square.
+       */
       switch(rotation) {
         case Surface.ROTATION_0:
           orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
@@ -543,12 +546,13 @@ public class FrozenBubble extends Activity
 
   private void newGameDialog() {
     AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    //
-    // Set the dialog title.
-    //
-    //
+    /*
+     * Set the dialog title.
+     */
     builder.setTitle(R.string.menu_new_game)
-    // Set the action buttons
+    /*
+     * Set the action buttons.
+     */
     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int id) {
@@ -580,7 +584,9 @@ public class FrozenBubble extends Activity
   private void startCustomGame(Intent intent) {
     activityCustomStarted = true;
     numPlayers = 1;
-    // Get custom level last played.
+    /*
+     * Get custom level last played.
+     */
     SharedPreferences sp = getSharedPreferences(PREFS_NAME,
                                                 Context.MODE_PRIVATE);
     int startingLevel       = sp    .getInt     ("levelCustom",    0);
@@ -599,8 +605,9 @@ public class FrozenBubble extends Activity
   }
 
   /**
-   * Method to start a game using default levels, if puzzle game mode
-   * was selected.
+   * Method to start a game using default levels, if single player game
+   * mode was selected.
+   * <p>This method is also used to start a multi-player game.
    * 
    * @param intent
    *        - The intent used to start this activity.
@@ -608,24 +615,44 @@ public class FrozenBubble extends Activity
    *        - the bundle of saved state information.
    */
   private void startDefaultGame(Intent intent, Bundle savedInstanceState) {
-    // Default levels.
+    /*
+     * Initialize the flag to denote this game uses default levels.
+     */
     activityCustomStarted = false;
-    // Check if this is a single player or multiplayer game.
+    /*
+     * Check if this is a single player or multi-player game.
+     */
     numPlayers = 1;
+    gameLocale = LOCALE_LOCAL;
     if (intent != null) {
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
+      /*
+       * If this game would load a bundle to restore the game state from
+       * a previous game, then force this game to be a local game. 
+       * Network games cannot be restored, so if a bundle was saved from
+       * a 2 player network game, the other player will be the CPU.
+       */
+      if (savedInstanceState != null)
+        gameLocale = LOCALE_LOCAL;
+      else if (intent.hasExtra("gameLocale"))
+        gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
     }
-
+    /*
+     * If there is more than one player, launch a multi-player game.
+     * Otherwise start a single player game.
+     */
     if (numPlayers > 1) {
-      mMultiplayerGameView = new MultiplayerGameView(this, numPlayers);
+      mMultiplayerGameView =
+          new MultiplayerGameView(this, numPlayers, gameLocale);
       setContentView(mMultiplayerGameView);
       mMultiplayerGameView.setGameListener(this);
       mMultiplayerGameThread = mMultiplayerGameView.getThread();
       if (savedInstanceState != null) {
         int savedPlayers = savedInstanceState.getInt("numPlayers");
-        if (savedPlayers == 2)
+        if (savedPlayers == 2) {
           mMultiplayerGameThread.restoreState(savedInstanceState);
+        }
       }
       mMultiplayerGameThread.startOpponent();
       mMultiplayerGameView.requestFocus();
@@ -640,7 +667,6 @@ public class FrozenBubble extends Activity
         if (savedPlayers == 1)
           mGameThread.restoreState(savedInstanceState);
       }
-
       mGameView.requestFocus();
     }
     setFullscreen();
@@ -671,17 +697,15 @@ public class FrozenBubble extends Activity
     boolean isCheckedItem[] = {getSoundOn(), getMusicOn()};
 
     AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    //
-    // Set the dialog title.
-    //
-    //
+    /*
+     * Set the dialog title.
+     */
     builder.setTitle(R.string.menu_sound_options)
-    //
-    // Specify the list array, the items to be selected by default
-    // (null for none), and the listener through which to receive
-    // callbacks when items are selected.
-    //
-    //
+    /*
+     * Specify the list array, the items to be selected by default (null
+     * for none), and the listener through which to receive callbacks
+     * when items are selected.
+     */
     .setMultiChoiceItems(R.array.sound_options_array, isCheckedItem,
                          new DialogInterface.OnMultiChoiceClickListener() {
       @Override
@@ -707,7 +731,9 @@ public class FrozenBubble extends Activity
         }
       }
     })
-    // Set the action buttons
+    /*
+     * Set the action buttons.
+     */
     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int id) {
@@ -720,17 +746,15 @@ public class FrozenBubble extends Activity
 
   private void targetOptionsDialog() {
     AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    //
-    // Set the dialog title.
-    //
-    //
+    /*
+     * Set the dialog title.
+     */
     builder.setTitle(R.string.menu_target_mode)
-    //
-    // Specify the list array, the item to be selected by default,
-    // and the listener through which to receive callbacks when the
-    // item is selected.
-    //
-    //
+    /*
+     * Specify the list array, the item to be selected by default, and
+     * the listener through which to receive callbacks when the item is
+     * selected.
+     */
     .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
                           new DialogInterface.OnClickListener() {
       @Override
@@ -749,7 +773,9 @@ public class FrozenBubble extends Activity
         setTargetModeOrientation();
       }
     })
-    // Set the action buttons
+    /*
+     * Set the action buttons.
+     */
     .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface builder, int id) {
@@ -846,20 +872,20 @@ public class FrozenBubble extends Activity
     if ((targetMode == ROTATE_TO_SHOOT) &&
         AccelerometerManager.isSupported(getApplicationContext())) {
       AccelerometerManager.startListening(getApplicationContext(),this);
-      //
-      // In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT was added
-      // to ActivityInfo.  This mode was actually supported by earlier
-      // APIs, but a definition was not yet explicity defined.
-      //
-      // This mode allows the device to display the screen in either
-      // normal or reverse portrait mode based on the device
-      // orientation reported by the accelerometer hardware.
-      //
-      //
+      /*
+       * In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT was added to
+       * ActivityInfo.  This mode was actually supported by earlier
+       * APIs, but a definition was not yet explicity defined.
+       *
+       * This mode allows the device to display the screen in either
+       * normal or reverse portrait mode based on the device orientation
+       * reported by the accelerometer hardware.
+       */
       setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
     }
 
-    if ((targetMode != ROTATE_TO_SHOOT) && AccelerometerManager.isListening()) {
+    if ((targetMode != ROTATE_TO_SHOOT) &&
+        AccelerometerManager.isListening()) {
       AccelerometerManager.stopListening();
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
     }
@@ -949,30 +975,27 @@ public class FrozenBubble extends Activity
       case GameView.EVENT_LEVEL_START:
         if ((mGameView != null) &&
             (mGameView.getThread().getCurrentLevelIndex() == 0)) {
-          //
-          // Destroy the current music player, which will free audio
-          // stream resources and allow the system to use them.
-          //
-          //
+          /*
+           * Destroy the current music player, which will free audio
+           * stream resources and allow the system to use them.
+           */
           if (myModPlayer != null)
             myModPlayer.destroyMusicPlayer();
           myModPlayer = null;
-          //
-          // Clear the game screen and suspend input processing for
-          // three seconds.
-          //
-          // Afterwards,  the "About" screen will be displayed as a
-          // backup just in case anything goes awry with displaying
-          // the end-of-game credits.  It will be displayed after the
-          // user touches the screen when the credits are finished.
-          //
-          //
+          /*
+           * Clear the game screen and suspend input processing for
+           * three seconds.
+           *
+           * Afterwards,  the "About" screen will be displayed as a
+           * backup just in case anything goes awry with displaying
+           * the end-of-game credits.  It will be displayed after the
+           * user touches the screen when the credits are finished.
+           */
           mGameView.clearGameScreen(true, 3000);
-          //
-          // Create an intent to launch the activity to display the
-          // credits screen.
-          //
-          //
+          /*
+           * Create an intent to launch the activity to display the
+           * credits screen.
+           */
           Intent intent = new Intent(this, ScrollingCredits.class);
           startActivity(intent);
         }
@@ -995,7 +1018,9 @@ public class FrozenBubble extends Activity
     if (mMultiplayerGameView != null)
       mMultiplayerGameView.getThread().pause();
 
-    // Pause the MOD player.
+    /*
+     * Pause the MOD player.
+     */
     if (myModPlayer != null)
       myModPlayer.pausePlay();
   }
@@ -1013,7 +1038,9 @@ public class FrozenBubble extends Activity
   private void playMusic(boolean startPlaying)
   {
     int modNow;
-    // Ascertain which song to play.
+    /*
+     * Ascertain which song to play.
+     */
     if (mGameView != null)
       modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
     else
@@ -1021,7 +1048,9 @@ public class FrozenBubble extends Activity
       Random rand = new Random();
       modNow = rand.nextInt(MODlist.length - 1);
     }
-    // Determine whether to create a music player or load the song.
+    /*
+     * Determine whether to create a music player or load the song.
+     */
     if (myModPlayer == null)
       myModPlayer = new ModPlayer(this, MODlist[modNow],
                                   getMusicOn(), !startPlaying);
@@ -1035,17 +1064,24 @@ public class FrozenBubble extends Activity
    */
   public void saveState() {
     if (mGameView != null) {
-      // Allow editor functionalities.
+      /*
+       * Allow level editor functionalities.
+       */
       SharedPreferences sp = getSharedPreferences(PREFS_NAME,
                                                   Context.MODE_PRIVATE);
       SharedPreferences.Editor editor = sp.edit();
-      // If I didn't run game from editor, save last played level.
+      /*
+       * If the game wasn't launched from the level editor, save the
+       * last level played.
+       */
       Intent i = getIntent();
       if ((null == i) || !activityCustomStarted) {
         editor.putInt("level", mGameThread.getCurrentLevelIndex());
       }
       else {
-        // Editor's intent is running.
+        /*
+         * The level editor's intent is running.
+         */
         editor.putInt("levelCustom", mGameThread.getCurrentLevelIndex());
       }
       editor.commit();
@@ -1057,21 +1093,28 @@ public class FrozenBubble extends Activity
    */
   private void startEditor() {
     Intent i = new Intent();
-    // First try to run the plus version of Editor.
+    /*
+     * First try to run the plus version of the level editor.
+     */
     i.setClassName("sk.halmi.fbeditplus", 
                    "sk.halmi.fbeditplus.EditorActivity");
     try {
       startActivity(i);
       finish();
     } catch (ActivityNotFoundException e) {
-      // If not found, try to run the normal version.
+      /*
+       * If not found, try to run the normal version.
+       */
       i.setClassName("sk.halmi.fbedit", 
                      "sk.halmi.fbedit.EditorActivity");
       try {
         startActivity(i);
         finish();
       } catch (ActivityNotFoundException ex) {
-        // If user doesnt have Frozen Bubble Editor take him to market.
+        /*
+         * If the user doesn't have the Frozen Bubble Level Editor, take
+         * him to the application market.
+         */
         try {
           Toast.makeText(getApplicationContext(), 
                          R.string.install_editor, Toast.LENGTH_SHORT).show();
@@ -1080,7 +1123,9 @@ public class FrozenBubble extends Activity
                          "market://search?q=frozen bubble level editor"));
           startActivity(i);
         } catch (Exception exc) {
-          // Damn you don't have market?
+          /*
+           * Damn, you don't have market?
+           */
           Toast.makeText(getApplicationContext(), 
                          R.string.market_missing, Toast.LENGTH_SHORT).show();
         }
