@@ -139,9 +139,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   public NetworkGameManager(Context myContext) {
     init();
     /*
-     * Create the player action array.  The actions are inserted
-     * chronologically, independent of which player the action
-     * originated from.
+     * Create the remote player action array.  The actions are inserted
+     * chronologically based on message receipt order, but are extracted
+     * based on consecutive action ID.
      */
     actionList = new ArrayList<PlayerAction>();
     /*
@@ -166,11 +166,17 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     actionIndex = -1;
   }
 
-  /**
-   * Clear the player action list.
-   */
-  public void close() {
-    actionList.clear();
+  private void cleanUp() {
+    running = false;
+    mNetworkListener = null;
+
+    if (actionList != null)
+      actionList.clear();
+    actionList = null;
+
+    if (session != null)
+      session.stopMulticast();
+    session = null;
   }
 
   public synchronized void addAction(PlayerAction newAction) {
@@ -250,9 +256,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * Interrupt the thread when it is suspended via <code>wait()</code>.
    */
   public void stopThread() {
-    running = false;
-    mNetworkListener = null;
-    close();
+    cleanUp();
 
     synchronized(this) {
       this.notify();
