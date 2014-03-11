@@ -99,6 +99,7 @@ import android.view.SurfaceView;
 import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
+import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
@@ -1781,7 +1782,8 @@ class MultiplayerGameView extends SurfaceView implements
     }
   }
 
-  public MultiplayerGameView(Context context, int numPlayers, int gameLocale) {
+  public MultiplayerGameView(Context context, int numPlayers, int gameLocale,
+                             NetworkGameManager networkManager) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
 

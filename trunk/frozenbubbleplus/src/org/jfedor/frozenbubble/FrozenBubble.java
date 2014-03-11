@@ -103,6 +103,7 @@ import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.ModPlayer;
+import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.HomeScreen;
 
@@ -179,6 +180,7 @@ public class FrozenBubble extends Activity
   private MultiplayerGameThread mMultiplayerGameThread = null;
   private GameView mGameView = null;
   private MultiplayerGameView mMultiplayerGameView = null;
+  private NetworkGameManager mNetworkGameManager = null;
   private OrientationEventListener myOrientationEventListener = null;
   private ModPlayer myModPlayer = null;
 
@@ -435,6 +437,7 @@ public class FrozenBubble extends Activity
   protected void onNewIntent(Intent intent) {
     if (null != intent) {
       if (EDITORACTION.equals(intent.getAction())) {
+        cleanUpNetworkManager();
         cleanUpGameView();
         startCustomGame(intent);
       }
@@ -442,6 +445,7 @@ public class FrozenBubble extends Activity
         int newNumPlayers = intent.getIntExtra("numPlayers", 1);
 
         if (newNumPlayers != numPlayers) {
+          cleanUpNetworkManager();
           cleanUpGameView();
           startDefaultGame(intent, null);
         }
@@ -643,8 +647,12 @@ public class FrozenBubble extends Activity
      * Otherwise start a single player game.
      */
     if (numPlayers > 1) {
-      mMultiplayerGameView =
-          new MultiplayerGameView(this, numPlayers, gameLocale);
+      if (gameLocale == LOCALE_LAN)
+        mNetworkGameManager = new NetworkGameManager(getApplicationContext());
+      mMultiplayerGameView = new MultiplayerGameView(this,
+                                                     numPlayers,
+                                                     gameLocale,
+                                                     mNetworkGameManager);
       setContentView(mMultiplayerGameView);
       mMultiplayerGameView.setGameListener(this);
       mMultiplayerGameThread = mMultiplayerGameView.getThread();
@@ -900,6 +908,7 @@ public class FrozenBubble extends Activity
       myOrientationEventListener = null;
     }
 
+    cleanUpNetworkManager();
     cleanUpGameView();
 
     if (myModPlayer != null)
@@ -917,6 +926,12 @@ public class FrozenBubble extends Activity
       mMultiplayerGameView.cleanUp();
     mMultiplayerGameView   = null;
     mMultiplayerGameThread = null;
+  }
+
+  private void cleanUpNetworkManager() {
+    if (mNetworkGameManager != null)
+      mNetworkGameManager.stopThread();
+    mNetworkGameManager = null;
   }
 
   /**
