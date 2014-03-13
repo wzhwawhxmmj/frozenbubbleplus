@@ -611,7 +611,7 @@ public class FrozenBubble extends Activity
   /**
    * Method to start a game using default levels, if single player game
    * mode was selected.
-   * <p>This method is also used to start a multi-player game.
+   * <p>This method is also used to start a multiplayer game.
    * 
    * @param intent
    *        - The intent used to start this activity.
@@ -624,26 +624,18 @@ public class FrozenBubble extends Activity
      */
     activityCustomStarted = false;
     /*
-     * Check if this is a single player or multi-player game.
+     * Check if this is a single player or multiplayer game.
      */
     numPlayers = 1;
     gameLocale = LOCALE_LOCAL;
     if (intent != null) {
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
-      /*
-       * If this game would load a bundle to restore the game state from
-       * a previous game, then force this game to be a local game. 
-       * Network games cannot be restored, so if a bundle was saved from
-       * a 2 player network game, the other player will be the CPU.
-       */
-      if (savedInstanceState != null)
-        gameLocale = LOCALE_LOCAL;
-      else if (intent.hasExtra("gameLocale"))
+      if (intent.hasExtra("gameLocale"))
         gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
     }
     /*
-     * If there is more than one player, launch a multi-player game.
+     * If there is more than one player, launch a multiplayer game.
      * Otherwise start a single player game.
      */
     if (numPlayers > 1) {
@@ -656,7 +648,10 @@ public class FrozenBubble extends Activity
       setContentView(mMultiplayerGameView);
       mMultiplayerGameView.setGameListener(this);
       mMultiplayerGameThread = mMultiplayerGameView.getThread();
-      if (savedInstanceState != null) {
+      /*
+       * Only restore the bundle for a multiplayer game if it was local.
+       */
+      if ((savedInstanceState != null) && (gameLocale == LOCALE_LOCAL)) {
         int savedPlayers = savedInstanceState.getInt("numPlayers");
         if (savedPlayers == 2) {
           mMultiplayerGameThread.restoreState(savedInstanceState);

@@ -1578,11 +1578,13 @@ class MultiplayerGameView extends SurfaceView implements
         mOpponent.stopThread();
         mOpponent = null;
       }
-      if (mRemoteInput.playerID == VirtualInput.PLAYER2)
-        mOpponent = new ComputerAI(mFrozenGame2, mRemoteInput);
-      else
-        mOpponent = new ComputerAI(mFrozenGame1, mRemoteInput);
-      mOpponent.start();
+      if (mRemoteInput.isCPU) {
+        if (mRemoteInput.playerID == VirtualInput.PLAYER2)
+          mOpponent = new ComputerAI(mFrozenGame2, mRemoteInput);
+        else
+          mOpponent = new ComputerAI(mFrozenGame1, mRemoteInput);
+        mOpponent.start();
+      }
     }
 
     public boolean surfaceOK() {
@@ -1796,7 +1798,8 @@ class MultiplayerGameView extends SurfaceView implements
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    // TODO: for now, the local and remote player IDs are fixed.
+    // TODO: for now, the local and remote player IDs are fixed, as is
+    //       the player type and the game location.
     mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
     mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
     mLocalInput = mPlayer1;
