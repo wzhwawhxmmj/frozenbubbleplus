@@ -62,8 +62,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   /*
    * Following are variables used to keep track of game actions.
    */
-  private short actionID;
-  private int actionIndex;
+  private short localActionID;
+  private short remoteActionID;
+  private int remoteActionIndex;
   /* Thread running flag */
   private boolean running;
   private MulticastManager session = null;
@@ -98,6 +99,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      *                launch bubble.
      */
     public boolean launchBubble;
+    public byte    launchBubbleColor;
+    public byte    nextBubbleColor;
+    public byte    attackBubbles[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     public boolean swapBubble;
     /*
      * The following are distance values associated with player actions.
@@ -162,8 +166,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    */
   public void init() {
     running = true;
-    actionID = 0;
-    actionIndex = -1;
+    localActionID = 0;
+    remoteActionID = 0;
+    remoteActionIndex = -1;
   }
 
   private void cleanUp() {
@@ -179,17 +184,17 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     session = null;
   }
 
-  public synchronized void addAction(PlayerAction newAction) {
+  private synchronized void addAction(PlayerAction newAction) {
     if (running)
       actionList.add(newAction);
   }
 
-  public synchronized PlayerAction getCurrentAction() {
+  private synchronized PlayerAction getCurrentAction() {
     int listSize = actionList.size();
 
-    for (actionIndex = 0; actionIndex < listSize; actionIndex++) {
-      if (actionList.get(actionIndex).actionID == actionID) {
-        return actionList.get(actionIndex);
+    for (remoteActionIndex = 0; remoteActionIndex < listSize; remoteActionIndex++) {
+      if (actionList.get(remoteActionIndex).actionID == remoteActionID) {
+        return actionList.get(remoteActionIndex);
       }
     }
     /*
@@ -201,7 +206,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     /*
      * Reset the current action index.
      */
-    actionIndex = -1;
+    remoteActionIndex = -1;
     return null;
   }
 
@@ -209,20 +214,20 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * This must be called after getCurrentAction(), in order to
    * properly initialize the current action index.
    */
-  public synchronized void removeCurrentAction() {
-    if (actionIndex == -1) {
+  private synchronized void removeCurrentAction() {
+    if (remoteActionIndex == -1) {
       return;
     }
 
-    if (actionList.size() > actionIndex) {
+    if (actionList.size() > remoteActionIndex) {
       try {
-          actionList.remove(actionIndex);
+          actionList.remove(remoteActionIndex);
       } catch (IndexOutOfBoundsException ioobe) {
         // TODO - auto-generated exception handler stub.
         //e.printStackTrace();
       }
-      actionID++;
-      actionIndex = -1;
+      remoteActionID++;
+      remoteActionIndex = -1;
     }
   }
 
@@ -251,6 +256,21 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
+   * Send the local player swap action to the remote network player.
+   * @param ID - the player ID associated with this action.
+   * @param launchColor - the pre-swap launch bubble color.
+   * @param nextColor - the pre-swap next bubble color.
+   */
+  public void sendSwapAction(byte ID, byte launchColor, byte nextColor){
+    localActionID++;
+    PlayerAction newPlayerAction = new PlayerAction(ID, localActionID);
+    newPlayerAction.swapBubble = true;
+    newPlayerAction.launchBubbleColor = launchColor;
+    newPlayerAction.nextBubbleColor = nextColor;
+    transmitAction(newPlayerAction);
+  }
+
+  /**
    * Stop the thread <code>run()</code> execution.
    * <p>
    * Interrupt the thread when it is suspended via <code>wait()</code>.
@@ -261,5 +281,18 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     synchronized(this) {
       this.notify();
     }
+  }
+
+  /**
+   * Transmit the local player action to the remote player via the
+   * network interface
+   * @param action - the player action to transmit.
+   */
+  private void transmitAction(PlayerAction action){
+    /*
+     * TODO: Send the player action via the multicast manager.
+     * TODO: Either parse it into a string or a byte array.
+     */
+    //session.transmit(actionString);
   }
 }

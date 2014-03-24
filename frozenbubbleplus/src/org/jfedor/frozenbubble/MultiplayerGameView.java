@@ -115,6 +115,7 @@ class MultiplayerGameView extends SurfaceView implements
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
+  private NetworkGameManager    mNetworkGameManager;
   private ComputerAI            mOpponent;
   private VirtualInput          mLocalInput;
   private VirtualInput          mRemoteInput;
@@ -1794,6 +1795,7 @@ class MultiplayerGameView extends SurfaceView implements
     holder.addCallback(this);
 
     mOpponent = null;
+    mNetworkGameManager = networkManager;
     // TODO: save and restore the number of games won.
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
