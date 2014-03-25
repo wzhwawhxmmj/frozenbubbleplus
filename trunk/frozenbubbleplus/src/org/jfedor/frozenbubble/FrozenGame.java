@@ -786,8 +786,10 @@ public class FrozenGame extends GameScreen {
       return;
 
     if (isNetGame) {
+      int numBubblesLaunched = 0;
       for (int i = 0; i < 15; i++) {
         if (malusBar.attackBubbles[i] >= 0) {
+          numBubblesLaunched++;
           int color = malusBar.attackBubbles[i];
           BubbleSprite malusBubble = new BubbleSprite(
             new Rect(columnX[i], 44+15*28, 32, 32),
@@ -799,7 +801,7 @@ public class FrozenGame extends GameScreen {
           this.addSprite(malusBubble);
         }
       }
-      malusBar.clearAttackBubbles();
+      malusBar.clearAttackBubbles(numBubblesLaunched);
     }
     else if (malusBar.getBubbles() > 0) {
       boolean[] lanes = new boolean[15];
