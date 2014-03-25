@@ -130,13 +130,20 @@ public class MalusBar extends Sprite {
   }
 
   /**
-   * Set the total number of attack bubbles stored in the attack bar.
-   * @param numBubbles - the total number of attack bubbles.
+   * Clear the attack bubbles stored in the attack bubble array.  The
+   * number of attack bubbles will be decremented by the supplied number
+   * of bubbles, which is the number of attack bubbles that were
+   * previously launched.
+   * @param numBubblesLaunched - the number of attack bubbles launched.
    */
-  public void clearAttackBubbles() {
-    for (int i = 0; i < 15; i++) {
+  public void clearAttackBubbles(int numBubblesLaunched) {
+    nbMalus -= numBubblesLaunched;
+
+    if (nbMalus < 0)
+      nbMalus = 0;
+
+    for (int i = 0; i < 15; i++)
       this.attackBubbles[i] = -1;
-    }
   }
 
   public int getBubbles() {

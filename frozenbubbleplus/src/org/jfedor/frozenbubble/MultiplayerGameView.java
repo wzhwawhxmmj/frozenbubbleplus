@@ -1806,6 +1806,8 @@ class MultiplayerGameView extends SurfaceView implements
     mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
+    if (mNetworkGameManager != null)
+      mNetworkGameManager.registerPlayers(mLocalInput, mRemoteInput);
     mGameThread = new MultiplayerGameThread(holder);
 
     /*

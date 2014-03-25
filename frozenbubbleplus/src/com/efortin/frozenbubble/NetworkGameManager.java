@@ -58,7 +58,21 @@ import android.content.Context;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
 
+/**
+ * This class manages the actions in a network multiplayer game, by
+ * sending the local actions to the remote player, and queueing the
+ * incoming remote player actions for enactment on the local machine.
+ * <p>
+ * The thread created by this class runs automatically upon object
+ * creation.  <code>VirtualInput</code> objects must be subsequently
+ * attached via <code>registerPlayers()</code> for all the local and
+ * remote players.
+ * @author Eric Fortin
+ *
+ */
 public class NetworkGameManager implements MulticastListener, Runnable {
+  private VirtualInput localPlayer = null;
+  private VirtualInput remotePlayer = null;
   /*
    * Following are variables used to keep track of game actions.
    */
@@ -68,7 +82,11 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   /* Thread running flag */
   private boolean running;
   private MulticastManager session = null;
-  private ArrayList<PlayerAction> actionList = null;
+  /*
+   * TODO: keep a local action list for action retransmission requests.
+   */
+  private ArrayList<PlayerAction> localActionList = null;
+  private ArrayList<PlayerAction> remoteActionList = null;
   private NetworkListener mNetworkListener = null;
 
   public interface NetworkListener {
@@ -90,40 +108,49 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     /*
      * The following are flags associated with player actions.
      * 
-     * launchBubble - this flag indicates that the player desires a bubble
-     *                launch to occur.  This flag must be set with a valid
-     *                aimPosition value.
+     * launchAttackBubbles -
+     *   This flag indicates that attack bubbles are to be launched.
+     *   totalAttackBubbles and attackBubbles[] must be set accordingly.
      * 
-     * swapBubble   - this flag indicates that the player desires that the
-     *                current launch bubble be swapped with the next
-     *                launch bubble.
+     * launchBubble -
+     *   This flag indicates that the player desires a bubble launch to
+     *   occur.  This flag must be set with a valid aimPosition value,
+     *   as well as valid values for launchBubbleColor and
+     *   nextBubbleColor.
+     * 
+     * swapBubble -
+     *   This flag indicates that the player desires that the current
+     *   launch bubble be swapped with the next launch bubble.  This
+     *   flag must be set with a valid aimPosition value, as well as
+     *   valid values for launchBubbleColor and nextBubbleColor.
      */
+    public boolean launchAttackBubbles;
     public boolean launchBubble;
+    public boolean swapBubble;
     public byte    launchBubbleColor;
     public byte    nextBubbleColor;
-    public byte    attackBubbles[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    public boolean swapBubble;
-    /*
-     * The following are distance values associated with player actions.
-     * 
-     * aimPosition - this is the bubble launch position.
-     */
-    public double aimPosition;
+    public byte    newNextBubbleColor;
+    public byte    attackBubbles[] = { -1, -1, -1, -1, -1,
+                                       -1, -1, -1, -1, -1,
+                                       -1, -1, -1, -1, -1 };
+    public short   totalAttackBubbles;
+    public double  aimPosition;
 
     /**
      * Class constructor.
      * @param playerID - the player ID associated with this action.
      */
     public PlayerAction(byte playerID, short actionID) {
-      this.playerID = playerID;
-      this.actionID = actionID;
-      initialize();
-    }
-
-    private void initialize() {
-      launchBubble = false;
-      swapBubble   = false;
-      aimPosition  = 0.0f;
+      this.playerID       = playerID;
+      this.actionID       = actionID;
+      launchAttackBubbles = false;
+      launchBubble        = false;
+      swapBubble          = false;
+      launchBubbleColor   = -1;
+      nextBubbleColor     = -1;
+      newNextBubbleColor  = -1;
+      totalAttackBubbles  = 0; 
+      aimPosition         = 0.0d;
     }
   }
 
@@ -147,7 +174,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * chronologically based on message receipt order, but are extracted
      * based on consecutive action ID.
      */
-    actionList = new ArrayList<PlayerAction>();
+    remoteActionList = new ArrayList<PlayerAction>();
     /*
      * Start an internet multicast session.
      */
@@ -165,6 +192,8 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * Initialize all variables to game start values.
    */
   public void init() {
+    localPlayer = null;
+    remotePlayer = null;
     running = true;
     localActionID = 0;
     remoteActionID = 0;
@@ -172,12 +201,18 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   private void cleanUp() {
+    localPlayer = null;
+    remotePlayer = null;
     running = false;
     mNetworkListener = null;
 
-    if (actionList != null)
-      actionList.clear();
-    actionList = null;
+    if (localActionList != null)
+      localActionList.clear();
+    localActionList = null;
+
+    if (remoteActionList != null)
+      remoteActionList.clear();
+    remoteActionList = null;
 
     if (session != null)
       session.stopMulticast();
@@ -185,16 +220,20 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   private synchronized void addAction(PlayerAction newAction) {
-    if (running)
-      actionList.add(newAction);
+    if (running && (localPlayer != null) && (remotePlayer != null)) {
+      if (newAction.playerID == localPlayer.playerID)
+        localActionList.add(newAction);
+      else if (newAction.playerID == remotePlayer.playerID)
+        remoteActionList.add(newAction);
+    }
   }
 
-  private synchronized PlayerAction getCurrentAction() {
-    int listSize = actionList.size();
+  private synchronized PlayerAction getCurrentRemoteAction() {
+    int listSize = remoteActionList.size();
 
     for (remoteActionIndex = 0; remoteActionIndex < listSize; remoteActionIndex++) {
-      if (actionList.get(remoteActionIndex).actionID == remoteActionID) {
-        return actionList.get(remoteActionIndex);
+      if (remoteActionList.get(remoteActionIndex).actionID == remoteActionID) {
+        return remoteActionList.get(remoteActionIndex);
       }
     }
     /*
@@ -211,17 +250,17 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
-   * This must be called after getCurrentAction(), in order to
+   * This must be called after getCurrentRemoteAction(), in order to
    * properly initialize the current action index.
    */
-  private synchronized void removeCurrentAction() {
+  private synchronized void removeCurrentRemoteAction() {
     if (remoteActionIndex == -1) {
       return;
     }
 
-    if (actionList.size() > remoteActionIndex) {
+    if (remoteActionList.size() > remoteActionIndex) {
       try {
-          actionList.remove(remoteActionIndex);
+          remoteActionList.remove(remoteActionIndex);
       } catch (IndexOutOfBoundsException ioobe) {
         // TODO - auto-generated exception handler stub.
         //e.printStackTrace();
@@ -229,6 +268,12 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       remoteActionID++;
       remoteActionIndex = -1;
     }
+  }
+
+  public void registerPlayers(VirtualInput localPlayer,
+                              VirtualInput remotePlayer) {
+    this.localPlayer = localPlayer;
+    this.remotePlayer = remotePlayer;
   }
 
   public void run() {
@@ -245,29 +290,60 @@ public class NetworkGameManager implements MulticastListener, Runnable {
 
     if (running) {
       /*
-       * Extract the current action in the action queue.
+       * Extract the current remote player action in the action queue.
        */
-      PlayerAction currentAction = getCurrentAction();
+      PlayerAction currentAction = getCurrentRemoteAction();
       if (currentAction != null) {
         mNetworkListener.onNetworkEvent(currentAction);
-        removeCurrentAction();
+        removeCurrentRemoteAction();
       }
     }
   }
 
   /**
-   * Send the local player swap action to the remote network player.
-   * @param ID - the player ID associated with this action.
-   * @param launchColor - the pre-swap launch bubble color.
-   * @param nextColor - the pre-swap next bubble color.
+   * Transmit the local player action to the remote player.  The action
+   * counter identifier is incremented automatically.
+   * @param ID - the local player ID.
+   * @param sendAttack - set <code>true</code> to launch attack bubbles.
+   * @param launch - set <code>true</code> to launch a bubble.
+   * @param swap - set <code>true</code> to swap the launch bubble with
+   *   the next bubble.
+   * @param launchColor - the launch bubble color.
+   * @param nextColor - the next bubble color.
+   * @param newNextColor - when a bubble is launched, this is the new
+   *   next bubble color.  The prior next color is promoted to the
+   *   launch bubble color.
+   * @param totalAttackBubbles - the number of attack bubbles stored on
+   *   the attack bar.
+   * @param attackBubbles - the array of attack bubble colors.  A value
+   *   of -1 denotes no color, and thus no attack bubble at that column.
+   * @param aimPosition - the launcher aim aimPosition.
    */
-  public void sendSwapAction(byte ID, byte launchColor, byte nextColor){
+  public void sendLocalPlayerAction(byte ID,
+                                    boolean sendAttack,
+                                    boolean launch,
+                                    boolean swap,
+                                    byte launchColor,
+                                    byte nextColor,
+                                    byte newNextColor,
+                                    byte totalAttackBubbles,
+                                    byte attackBubbles[],
+                                    double aimPosition) {
     localActionID++;
     PlayerAction newPlayerAction = new PlayerAction(ID, localActionID);
-    newPlayerAction.swapBubble = true;
+    newPlayerAction.launchAttackBubbles = sendAttack;
+    newPlayerAction.launchBubble = launch;
+    newPlayerAction.swapBubble = swap;
     newPlayerAction.launchBubbleColor = launchColor;
     newPlayerAction.nextBubbleColor = nextColor;
+    newPlayerAction.newNextBubbleColor = newNextColor;
+    newPlayerAction.totalAttackBubbles = totalAttackBubbles;
+    if (attackBubbles != null)
+      for (int index = 0;index < 15; index++)
+        newPlayerAction.attackBubbles[index] = attackBubbles[index];
+    newPlayerAction.aimPosition = aimPosition;
     transmitAction(newPlayerAction);
+    
   }
 
   /**
@@ -288,7 +364,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * network interface
    * @param action - the player action to transmit.
    */
-  private void transmitAction(PlayerAction action){
+  private void transmitAction(PlayerAction action) {
     /*
      * TODO: Send the player action via the multicast manager.
      * TODO: Either parse it into a string or a byte array.
