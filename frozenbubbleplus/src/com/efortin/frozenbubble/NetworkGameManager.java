@@ -78,15 +78,17 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    */
   private short localActionID;
   private short remoteActionID;
-  private int remoteActionIndex;
   /* Thread running flag */
   private boolean running;
   private MulticastManager session = null;
   /*
-   * TODO: keep a local action list for action retransmission requests.
+   * Keep action lists for action retransmission requests and game
+   * access.
    */
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
+  private PlayerAction remoteAction = null;
+  private GameFieldData remoteGameField;
   private NetworkListener mNetworkListener = null;
 
   public interface NetworkListener {
@@ -103,6 +105,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * @author Eric Fortin
    */
   public class PlayerAction {
+    public byte  messageId;
     public byte  playerID;  // the player ID associated with this action.
     public short actionID;  // the ID of this particular action 
     /*
@@ -141,6 +144,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * @param playerID - the player ID associated with this action.
      */
     public PlayerAction(byte playerID, short actionID) {
+      messageId           = 0;
       this.playerID       = playerID;
       this.actionID       = actionID;
       launchAttackBubbles = false;
@@ -154,11 +158,35 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
   }
 
+  public class GameFieldData {
+    public byte     messageId          = 15;
+    public byte     playerID           = -1;
+    public short    actionID           = -1;
+    public byte     launchBubbleColor  = -1;
+    public byte     nextBubbleColor    = -1;
+    public byte     newNextBubbleColor = -1;
+    /*
+     * The game field is represented by a 2-dimensional array, with 8
+     * rows and 12 columns.  This is displayed on the screen as 12 rows
+     * with 8 columns.
+     */
+    public byte[][] gameField =
+      {{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }};
+  }
+
   @Override
   public void onMulticastEvent(int type, String string) {
     /*
      * TODO: process the multicast message.
      */
+    byte[] tempArray = string.getBytes();
     /*
      * Wake up the thread.
      */
@@ -194,10 +222,10 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   public void init() {
     localPlayer = null;
     remotePlayer = null;
-    running = true;
+    remoteAction = null;
     localActionID = 0;
     remoteActionID = 0;
-    remoteActionIndex = -1;
+    running = true;
   }
 
   private void cleanUp() {
@@ -228,12 +256,21 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
   }
 
-  private synchronized PlayerAction getCurrentRemoteAction() {
+  private synchronized boolean checkRemoteActionAvailable() {
     int listSize = remoteActionList.size();
 
-    for (remoteActionIndex = 0; remoteActionIndex < listSize; remoteActionIndex++) {
-      if (remoteActionList.get(remoteActionIndex).actionID == remoteActionID) {
-        return remoteActionList.get(remoteActionIndex);
+    remoteAction = null;
+
+    for (int index = 0; index < listSize; index++) {
+      if (remoteActionList.get(index).actionID == remoteActionID) {
+        remoteAction = remoteActionList.get(index);
+        try {
+            remoteActionList.remove(index);
+        } catch (IndexOutOfBoundsException ioobe) {
+          // TODO - auto-generated exception handler stub.
+          //e.printStackTrace();
+        }
+        remoteActionID++;
       }
     }
     /*
@@ -242,32 +279,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * a re-issue of the appropriate action.  This can only occur upon
      * message loss from a remote player.
      */
-    /*
-     * Reset the current action index.
-     */
-    remoteActionIndex = -1;
-    return null;
-  }
-
-  /**
-   * This must be called after getCurrentRemoteAction(), in order to
-   * properly initialize the current action index.
-   */
-  private synchronized void removeCurrentRemoteAction() {
-    if (remoteActionIndex == -1) {
-      return;
-    }
-
-    if (remoteActionList.size() > remoteActionIndex) {
-      try {
-          remoteActionList.remove(remoteActionIndex);
-      } catch (IndexOutOfBoundsException ioobe) {
-        // TODO - auto-generated exception handler stub.
-        //e.printStackTrace();
-      }
-      remoteActionID++;
-      remoteActionIndex = -1;
-    }
+    return (remoteAction != null);
   }
 
   public void registerPlayers(VirtualInput localPlayer,
@@ -292,10 +304,11 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       /*
        * Extract the current remote player action in the action queue.
        */
-      PlayerAction currentAction = getCurrentRemoteAction();
-      if (currentAction != null) {
-        mNetworkListener.onNetworkEvent(currentAction);
-        removeCurrentRemoteAction();
+      /*
+       * TODO: check for game field synchronization.
+       */
+      if (checkRemoteActionAvailable()) {
+        mNetworkListener.onNetworkEvent(remoteAction);
       }
     }
   }
@@ -343,7 +356,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         newPlayerAction.attackBubbles[index] = attackBubbles[index];
     newPlayerAction.aimPosition = aimPosition;
     transmitAction(newPlayerAction);
-    
   }
 
   /**
