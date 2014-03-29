@@ -100,6 +100,7 @@ import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
+import com.efortin.frozenbubble.NetworkGameManager.NetworkInterface;
 import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
@@ -155,8 +156,11 @@ class MultiplayerGameView extends SurfaceView implements
   public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
   @Override
-  public void onNetworkEvent(PlayerAction action) {
-    setPlayerAction(action);
+  public void onNetworkEvent(NetworkInterface datagram) {
+    /*
+     * TODO: process game field synchronization data.
+     */
+    setPlayerAction(datagram.playerAction);
   }
 
   /**
@@ -447,6 +451,9 @@ class MultiplayerGameView extends SurfaceView implements
    * @param newAction - the object containing the remote input info.
    */
   public synchronized void setPlayerAction(PlayerAction newAction) {
+    if (newAction == null)
+      return;
+
     if (mGameThread != null)
       mGameThread.updateStateOnEvent(null);
 
