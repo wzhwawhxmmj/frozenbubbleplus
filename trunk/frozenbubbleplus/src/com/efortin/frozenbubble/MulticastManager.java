@@ -583,7 +583,7 @@ public class MulticastManager {
    * @param string
    *        - the string to transmit.
    */
-  public void transmit(String string) {
+  public void transmit(byte[] buffer) {
     if ((mTXBuffer != null) || (requestTX)) {
       if (mMulticastListener != null) {
         mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
@@ -591,7 +591,7 @@ public class MulticastManager {
     }
 
     synchronized(mTXLock) {
-      mTXBuffer = string.getBytes();
+      mTXBuffer = buffer.clone();
       requestTX = true;
     }
   }
