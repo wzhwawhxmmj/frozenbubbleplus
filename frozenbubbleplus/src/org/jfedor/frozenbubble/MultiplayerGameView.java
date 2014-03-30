@@ -168,7 +168,6 @@ class MultiplayerGameView extends SurfaceView implements
    * <p>This is to provide a common interface to the game independent
    * of the input source.
    * @author Eric Fortin
-   *
    */
   class PlayerInput extends VirtualInput {
     private boolean mCenter        = false;
