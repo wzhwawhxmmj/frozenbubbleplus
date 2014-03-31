@@ -189,12 +189,13 @@ class MultiplayerGameView extends SurfaceView implements
      * Construct and configure this player input instance.
      * @param id - the player ID, e.g., <code>VirtualInput.PLAYER1</code>.
      * @param type - <code>true</code> if the player is a CPU simulation.
-     * @param source - <code>true</code> if the input is a remote machine.
+     * @param local - <code>true</code> if this player is a local player,
+     * <code>false</code> if the player is a remote player.
      * @see VirtualInput
      */
-    public PlayerInput(int id, boolean type, boolean source) {
+    public PlayerInput(int id, boolean type, boolean local) {
       init();
-      configure(id, type, source);
+      configure(id, type, local);
     }
 
     /**
@@ -1317,7 +1318,8 @@ class MultiplayerGameView extends SurfaceView implements
                                       mCompressorHead, mCompressor,
                                       malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager, mPlayer1);
+                                      mHighscoreManager, mNetworkGameManager,
+                                      mPlayer1);
         mPlayer1.setGameRef(mFrozenGame1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
@@ -1327,7 +1329,8 @@ class MultiplayerGameView extends SurfaceView implements
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      null, mPlayer2);
+                                      null, mNetworkGameManager,
+                                      mPlayer2);
         mPlayer2.setGameRef(mFrozenGame2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
       }
@@ -1730,8 +1733,8 @@ class MultiplayerGameView extends SurfaceView implements
       int game2_result = mFrozenGame2.getGameResult();
 
       /*
-       * When one player wins or loses, the other player is designated the an
-       * automatic loss or win, respectively.
+       * When one player wins or loses, the other player is
+       * automatically designated the loser or winner, respectively.
        */
       if (game1_result != FrozenGame.GAME_PLAYING) {
         if ((game1_result == FrozenGame.GAME_WON) ||
@@ -1808,8 +1811,8 @@ class MultiplayerGameView extends SurfaceView implements
 
     // TODO: for now, the local and remote player IDs are fixed, as is
     //       the player type and the game location.
-    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
-    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
+    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, true);
+    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  true);
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
     if (mNetworkGameManager != null)

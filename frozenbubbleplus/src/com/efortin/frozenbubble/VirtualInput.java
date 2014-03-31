@@ -69,7 +69,7 @@ public abstract class VirtualInput {
 
   public    int     playerID   = PLAYER1;
   public    boolean isCPU      = false;
-  public    boolean isNetGame  = false;
+  public    boolean isLocal    = true;
   protected boolean mWasCenter = false;
   protected boolean mWasDown   = false;
   protected boolean mWasLeft   = false;
@@ -100,13 +100,14 @@ public abstract class VirtualInput {
    * Configure this player input instance.
    * @param id - this player ID, e.g., <code>PLAYER1</code>.
    * @param type - <code>true</code> if this player is a CPU simulation.
-   * @param net - <code>true</code> if the game is played via network.
+   * @param local - <code>true</code> if this player is a local player,
+   * <code>false</code> if the player is a remote player.
    * @see VirtualInput
    */
-  protected final void configure(int id, boolean type, boolean net) {
+  protected final void configure(int id, boolean type, boolean local) {
     playerID  = id;
     isCPU     = type;
-    isNetGame = net;
+    isLocal   = local;
   }
 
   /**
