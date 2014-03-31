@@ -75,11 +75,12 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   /*
    * Message identifier definitions.
    */
-  public static final int MSG_ID_JOIN_GAME   = 1;
-  public static final int MSG_ID_BEGIN_GAME  = 2;
-  public static final int MSG_ID_REBROADCAST = 3;
-  public static final int MSG_ID_ACTION      = 4;
-  public static final int MSG_ID_FIELD_SYNC  = 5;
+  public static final byte MSG_ID_JOIN_GAME   = 1;
+  public static final byte MSG_ID_SET_OPTIONS = 2;
+  public static final byte MSG_ID_BEGIN_GAME  = 3;
+  public static final byte MSG_ID_REBROADCAST = 4;
+  public static final byte MSG_ID_ACTION      = 5;
+  public static final byte MSG_ID_FIELD_SYNC  = 6;
 
   private VirtualInput localPlayer = null;
   private VirtualInput remotePlayer = null;
@@ -153,6 +154,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     public PlayerAction(PlayerAction action) {
       copyFromAction(action);
+    }
+
+    /**
+     * Class constructor.
+     * @param buffer - buffer contents to copy to this instance.
+     */
+    public PlayerAction(byte[] buffer, int startIndex) {
+      copyFromBuffer(buffer, startIndex);
     }
 
     /**
@@ -293,6 +302,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
 
     /**
+     * Class constructor.
+     * @param buffer - buffer contents to copy to this instance.
+     */
+    public GameFieldData(byte[] buffer, int startIndex) {
+      copyFromBuffer(buffer, startIndex);
+    }
+
+    /**
      * Copy the contents of the supplied field data to this field data.
      * @param action - the action to copy
      */
@@ -319,7 +336,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     public void copyFromBuffer(byte[] buffer, int startIndex) {
       byte[] shortBytes  = new byte[2];
-      byte[] doubleBytes = new byte[8];
 
       if (buffer != null) {
         this.playerID            = buffer[startIndex++];
@@ -345,7 +361,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     public void copyToBuffer(byte[] buffer, int startIndex) {
       byte[] shortBytes  = new byte[2];
-      byte[] doubleBytes = new byte[8];
 
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
@@ -387,12 +402,16 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   @Override
-  public void onMulticastEvent(int type, String string) {
+  public void onMulticastEvent(int type, byte[] buffer, int length) {
     /*
-     * TODO: process the multicast message.
+     * Process the multicast message.
      */
-    byte[] buffer = string.getBytes();
-    
+    byte msgId = buffer[0];
+
+    if (msgId == MSG_ID_ACTION) {
+      addAction(new PlayerAction(buffer, 1));
+    }
+
     /*
      * Wake up the thread.
      */
@@ -454,12 +473,41 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     session = null;
   }
 
+  /**
+   * Add a player action to the appropriate action list.  Do not allow
+   * duplicate actions to populate the lists.
+   * @param newAction
+   */
   private synchronized void addAction(PlayerAction newAction) {
     if (running && (localPlayer != null) && (remotePlayer != null)) {
-      if (newAction.playerID == localPlayer.playerID)
+      if (newAction.playerID == localPlayer.playerID) {
+        int listSize = localActionList.size();
+
+        for (int index = 0; index < listSize; index++) {
+          /*
+           * If a match is found, return from this function without
+           * adding the action to the list since it is a duplicate.
+           */
+          if (localActionList.get(index).actionID == newAction.actionID) {
+            return;
+          }
+        }
         localActionList.add(newAction);
-      else if (newAction.playerID == remotePlayer.playerID)
+      }
+      else if (newAction.playerID == remotePlayer.playerID) {
+        int listSize = remoteActionList.size();
+
+        for (int index = 0; index < listSize; index++) {
+          /*
+           * If a match is found, return from this function without
+           * adding the action to the list since it is a duplicate.
+           */
+          if (remoteActionList.get(index).actionID == newAction.actionID) {
+            return;
+          }
+        }
         remoteActionList.add(newAction);
+      }
     }
   }
 
@@ -469,6 +517,10 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     remoteNetworkInterface.playerAction = null;
 
     for (int index = 0; index < listSize; index++) {
+      /*
+       * When a match is found, copy the necessary element from the
+       * list, remove it, and exit the loop.
+       */
       if (remoteActionList.get(index).actionID == remoteActionID) {
         remoteNetworkInterface.playerAction =
             new PlayerAction(remoteActionList.get(index));
@@ -479,6 +531,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
           //e.printStackTrace();
         }
         remoteActionID++;
+        break;
       }
     }
     /*
@@ -562,6 +615,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       for (int index = 0;index < 15; index++)
         tempAction.attackBubbles[index] = attackBubbles[index];
     tempAction.aimPosition = aimPosition;
+    addAction(tempAction);
     transmitAction(tempAction);
   }
 

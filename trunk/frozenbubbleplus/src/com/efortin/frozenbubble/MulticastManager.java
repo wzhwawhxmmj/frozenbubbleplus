@@ -122,7 +122,7 @@ public class MulticastManager {
   public static final int EVENT_THREAD_STOPPED = 6;
 
   public interface MulticastListener {
-    public abstract void onMulticastEvent(int type, String string);
+    public abstract void onMulticastEvent(int type, byte[] buffer, int length);
   }
 
   private MulticastListener mMulticastListener = null;
@@ -295,7 +295,7 @@ public class MulticastManager {
       } catch (SocketException se) {
         se.printStackTrace();
         if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
         }
       } catch (IOException ioe) {
         ioe.printStackTrace();
@@ -316,7 +316,7 @@ public class MulticastManager {
       } catch (SocketException se) {
         se.printStackTrace();
         if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
         }
       } catch (IOException ioe) {
         ioe.printStackTrace();
@@ -382,27 +382,28 @@ public class MulticastManager {
                                                  mRXBuffer.length,
                                                  mInetAddress, mPort);
         mMulticastSocket.receive(dpRX);
-        String str = new String(dpRX.getData(),0,dpRX.getLength());
+        byte[] buffer = dpRX.getData();
+        int    size = dpRX.getLength();
 
-        if ((str != null) && (mMulticastListener != null)) {
-          mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, str);
+        if ((buffer != null) && (size != 0) && (mMulticastListener != null)) {
+          mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, buffer, size);
         }
       } catch (SocketException se) {
         se.printStackTrace();
         if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
         }
       } catch (InterruptedIOException iioe) {
         // Receive timeout.  This is expected behavior.
       } catch (NullPointerException npe) {
         npe.printStackTrace();
         if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
+          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
         }
       } catch (IOException ioe) {
         ioe.printStackTrace();
         if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null);
+          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
         }
       }
     }
@@ -472,7 +473,7 @@ public class MulticastManager {
       }
 
       if (mMulticastListener != null) {
-        mMulticastListener.onMulticastEvent(EVENT_THREAD_STOPPED, null);
+        mMulticastListener.onMulticastEvent(EVENT_THREAD_STOPPED, null, 0);
       }
     }
 
@@ -498,17 +499,17 @@ public class MulticastManager {
         } catch (SocketException se) {
           se.printStackTrace();
           if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null);
+            mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
           }
         } catch (NullPointerException npe) {
           npe.printStackTrace();
           if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
+            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
           }
         } catch (IOException ioe) {
           ioe.printStackTrace();
           if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null);
+            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
           }
         }
       }
@@ -586,7 +587,7 @@ public class MulticastManager {
   public void transmit(byte[] buffer) {
     if ((mTXBuffer != null) || (requestTX)) {
       if (mMulticastListener != null) {
-        mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null);
+        mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null, 0);
       }
     }
 
