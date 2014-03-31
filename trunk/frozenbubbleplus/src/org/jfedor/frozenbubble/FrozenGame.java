@@ -65,6 +65,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.efortin.frozenbubble.HighscoreManager;
+import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenGame extends GameScreen {
@@ -114,6 +115,7 @@ public class FrozenGame extends GameScreen {
   LevelManager levelManager;
   MalusBar malusBar;
   HighscoreManager highscoreManager;
+  NetworkGameManager networkManager;
 
   Vector<Sprite> falling;
   Vector<Sprite> goingUp;
@@ -137,7 +139,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
-  boolean isNetGame;
+  boolean isLocal;
   boolean readyToFire;
   boolean swapPressed;
   int fixedBubbles;
@@ -171,6 +173,7 @@ public class FrozenGame extends GameScreen {
                     SoundManager soundManager_arg,
                     LevelManager levelManager_arg,
                     HighscoreManager highscoreManager_arg,
+                    NetworkGameManager networkManager_arg,
                     VirtualInput input_arg) {
     random               = new Random(System.currentTimeMillis());
     launcher             = launcher_arg;
@@ -186,6 +189,7 @@ public class FrozenGame extends GameScreen {
     soundManager         = soundManager_arg;
     levelManager         = levelManager_arg;
     highscoreManager     = highscoreManager_arg;
+    networkManager       = networkManager_arg;
     malusBar             = malusBar_arg;
     playResult           = GAME_PLAYING;
     launchBubblePosition = START_LAUNCH_DIRECTION;
@@ -193,12 +197,12 @@ public class FrozenGame extends GameScreen {
     swapPressed          = false;
 
     if (input_arg != null) {
-      player    = input_arg.playerID;
-      isNetGame = input_arg.isNetGame;
+      player  = input_arg.playerID;
+      isLocal = input_arg.isLocal;
     }
     else {
-      player    = VirtualInput.PLAYER1;
-      isNetGame = false;
+      player  = VirtualInput.PLAYER1;
+      isLocal = true;
     }
 
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
@@ -290,7 +294,7 @@ public class FrozenGame extends GameScreen {
          targetedBubbles_arg, bubbleBlink_arg, gameWon_arg, gameLost_arg,
          gamePaused_arg, hurry_arg, null, null, penguins_arg, compressorHead_arg,
          compressor_arg, null, launcher_arg, soundManager_arg,
-         levelManager_arg, highscoreManager_arg, null);
+         levelManager_arg, highscoreManager_arg, null, null);
   }
 
   public void saveState(Bundle map) {
@@ -785,7 +789,13 @@ public class FrozenGame extends GameScreen {
     if (malusBar == null)
       return;
 
-    if (isNetGame) {
+    /*
+     * If this game represents a remote player, the the attack bubbles
+     * are calculated on the remote machine and sent over the network.
+     * Simply use the supplied attack bubble buffer to initiate attack
+     * bubble launches. 
+     */
+    if (!isLocal) {
       int numBubblesLaunched = 0;
       for (int i = 0; i < 15; i++) {
         if (malusBar.attackBubbles[i] >= 0) {
@@ -862,6 +872,11 @@ public class FrozenGame extends GameScreen {
                   double trackball_dx,
                   boolean touch_fire, double touch_x, double touch_y,
                   boolean ats_touch_fire, double ats_touch_dx) {
+    /*
+     * Preserve the current and next launch bubble colors.
+     */
+    int currentColorWas = currentColor;
+    int nextColorWas = nextColor;
     boolean ats = FrozenBubble.getAimThenShoot();
 
     if ((ats && ats_touch_fire) || (!ats && touch_fire)) {
@@ -1018,7 +1033,7 @@ public class FrozenGame extends GameScreen {
         }
       }
       if (malusBar != null) {
-        if ((malusBar.releaseTime > RELEASE_TIME) || isNetGame) {
+        if ((malusBar.releaseTime > RELEASE_TIME) || !isLocal) {
           releaseBubbles();
           malusBar.releaseTime = 0;
         }
@@ -1063,6 +1078,15 @@ public class FrozenGame extends GameScreen {
     }
 
     synchronizeBubbleManager();
+
+    /*
+     * If this player is the local player and is participating in a
+     * network game, transmit the local player action to the remote
+     * player if an action occurred.
+     */
+    if ((networkManager != null) && isLocal) {
+
+    }
 
     return GAME_PLAYING;
   }

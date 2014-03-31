@@ -615,7 +615,10 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       for (int index = 0;index < 15; index++)
         tempAction.attackBubbles[index] = attackBubbles[index];
     tempAction.aimPosition = aimPosition;
-    addAction(tempAction);
+    /*
+     * TODO: manage the local player action list.
+     */
+    //addAction(tempAction);
     transmitAction(tempAction);
   }
 
