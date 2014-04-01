@@ -118,15 +118,11 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     public byte  playerID;  // the player ID associated with this action.
     public short actionID;  // the ID of this particular action 
     /*
-     * The following four booleans are flags associated with player
+     * The following three booleans are flags associated with player
      * actions.
      * 
      * compress -
      *   This flag indicates whether to lower the game field compressor.
-     * 
-     * launchAttackBubbles -
-     *   This flag indicates that attack bubbles are to be launched.
-     *   totalAttackBubbles and attackBubbles[] must be set accordingly.
      * 
      * launchBubble -
      *   This flag indicates that the player desires a bubble launch to
@@ -141,7 +137,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      *   valid values for launchBubbleColor and nextBubbleColor.
      */
     public boolean compress;
-    public boolean launchAttackBubbles;
     public boolean launchBubble;
     public boolean swapBubble;
     public byte    launchBubbleColor;
@@ -179,7 +174,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         this.playerID            = action.playerID;
         this.actionID            = action.actionID;
         this.compress            = action.compress;
-        this.launchAttackBubbles = action.launchAttackBubbles;
         this.launchBubble        = action.launchBubble;
         this.swapBubble          = action.swapBubble;
         this.launchBubbleColor   = action.launchBubbleColor;
@@ -211,7 +205,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         shortBytes[1]            = buffer[startIndex++];
         this.actionID            = toShort(shortBytes);
         this.compress            = buffer[startIndex++] == 1;
-        this.launchAttackBubbles = buffer[startIndex++] == 1;
         this.launchBubble        = buffer[startIndex++] == 1;
         this.swapBubble          = buffer[startIndex++] == 1;
         this.launchBubbleColor   = buffer[startIndex++];
@@ -251,7 +244,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
         buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
-        buffer[startIndex++] = (byte) ((this.launchAttackBubbles == true)?1:0);
         buffer[startIndex++] = (byte) ((this.launchBubble == true)?1:0);
         buffer[startIndex++] = (byte) ((this.swapBubble == true)?1:0);
         buffer[startIndex++] = this.launchBubbleColor;
@@ -282,7 +274,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * this class.
      */
     public int sizeInBytes() {
-      return (37);
+      return (36);
     }
   };
 
@@ -609,7 +601,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * counter identifier is incremented automatically.
    * @param playerId - the local player ID.
    * @param compress - set <code>true</code> to lower the compressor.
-   * @param sendAttack - set <code>true</code> to launch attack bubbles.
    * @param launch - set <code>true</code> to launch a bubble.
    * @param swap - set <code>true</code> to swap the launch bubble with
    *   the next bubble.
@@ -632,7 +623,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    */
   public void sendLocalPlayerAction(int playerId,
                                     boolean compress,
-                                    boolean sendAttack,
                                     boolean launch,
                                     boolean swap,
                                     int launchColor,
@@ -646,7 +636,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     tempAction.playerID = (byte) playerId;
     tempAction.actionID = ++localActionID;
     tempAction.compress = compress;
-    tempAction.launchAttackBubbles = sendAttack;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
     tempAction.launchBubbleColor = (byte) launchColor;
