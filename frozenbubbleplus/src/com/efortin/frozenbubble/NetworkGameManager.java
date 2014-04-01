@@ -118,8 +118,11 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     public byte  playerID;  // the player ID associated with this action.
     public short actionID;  // the ID of this particular action 
     /*
-     * The following three booleans are flags associated with player
+     * The following four booleans are flags associated with player
      * actions.
+     * 
+     * compress -
+     *   This flag indicates whether to lower the game field compressor.
      * 
      * launchAttackBubbles -
      *   This flag indicates that attack bubbles are to be launched.
@@ -137,6 +140,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      *   flag must be set with a valid aimPosition value, as well as
      *   valid values for launchBubbleColor and nextBubbleColor.
      */
+    public boolean compress;
     public boolean launchAttackBubbles;
     public boolean launchBubble;
     public boolean swapBubble;
@@ -174,6 +178,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       if (action != null) {
         this.playerID            = action.playerID;
         this.actionID            = action.actionID;
+        this.compress            = action.compress;
         this.launchAttackBubbles = action.launchAttackBubbles;
         this.launchBubble        = action.launchBubble;
         this.swapBubble          = action.swapBubble;
@@ -205,6 +210,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         shortBytes[0]            = buffer[startIndex++];
         shortBytes[1]            = buffer[startIndex++];
         this.actionID            = toShort(shortBytes);
+        this.compress            = buffer[startIndex++] == 1;
         this.launchAttackBubbles = buffer[startIndex++] == 1;
         this.launchBubble        = buffer[startIndex++] == 1;
         this.swapBubble          = buffer[startIndex++] == 1;
@@ -244,6 +250,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         toByteArray(this.actionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
+        buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
         buffer[startIndex++] = (byte) ((this.launchAttackBubbles == true)?1:0);
         buffer[startIndex++] = (byte) ((this.launchBubble == true)?1:0);
         buffer[startIndex++] = (byte) ((this.swapBubble == true)?1:0);
@@ -275,9 +282,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * this class.
      */
     public int sizeInBytes() {
-      return (36);
+      return (37);
     }
-  }
+  };
 
   /**
    * This class represents the current state of an individual player
@@ -289,6 +296,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   public class GameFieldData {
     public byte     playerID           = -1;
     public short    actionID           = -1;
+    public byte     compressorSteps    = 0;
     public byte     launchBubbleColor  = -1;
     public byte     nextBubbleColor    = -1;
     public byte     newNextBubbleColor = -1;
@@ -332,6 +340,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       if (fieldData != null) {
         this.playerID            = fieldData.playerID;
         this.actionID            = fieldData.actionID;
+        this.compressorSteps     = fieldData.compressorSteps;
         this.launchBubbleColor   = fieldData.launchBubbleColor;
         this.nextBubbleColor     = fieldData.nextBubbleColor;
         this.newNextBubbleColor  = fieldData.newNextBubbleColor;
@@ -358,6 +367,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         shortBytes[0]            = buffer[startIndex++];
         shortBytes[1]            = buffer[startIndex++];
         this.actionID            = toShort(shortBytes);
+        this.compressorSteps     = buffer[startIndex++];
         this.launchBubbleColor   = buffer[startIndex++];
         this.nextBubbleColor     = buffer[startIndex++];
         this.newNextBubbleColor  = buffer[startIndex++];
@@ -386,6 +396,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         toByteArray(this.actionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
+        buffer[startIndex++] = this.compressorSteps;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
@@ -407,9 +418,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * this class.
      */
     public int sizeInBytes() {
-      return (104);
+      return (105);
     }
-  }
+  };
 
   public class NetworkInterface {
     public byte          messageId;
@@ -421,7 +432,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
       playerAction = null;
       gameFieldData = null;
     }
-  }
+  };
 
   @Override
   public void onMulticastEvent(int type, byte[] buffer, int length) {
@@ -597,6 +608,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * Transmit the local player action to the remote player.  The action
    * counter identifier is incremented automatically.
    * @param playerId - the local player ID.
+   * @param compress - set <code>true</code> to lower the compressor.
    * @param sendAttack - set <code>true</code> to launch attack bubbles.
    * @param launch - set <code>true</code> to launch a bubble.
    * @param swap - set <code>true</code> to swap the launch bubble with
@@ -619,6 +631,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * @param aimPosition - the launcher aim aimPosition.
    */
   public void sendLocalPlayerAction(byte playerID,
+                                    boolean compress,
                                     boolean sendAttack,
                                     boolean launch,
                                     boolean swap,
@@ -630,9 +643,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
-    localActionID++;
     tempAction.playerID = playerID;
-    tempAction.actionID = localActionID;
+    tempAction.actionID = ++localActionID;
+    tempAction.compress = compress;
     tempAction.launchAttackBubbles = sendAttack;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
@@ -718,4 +731,4 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     session.transmit(buffer);
   }
-}
+};
