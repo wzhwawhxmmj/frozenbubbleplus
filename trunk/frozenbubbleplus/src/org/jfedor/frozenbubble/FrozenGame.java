@@ -139,7 +139,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
-  boolean isLocal;
+  boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
   int fixedBubbles;
@@ -197,12 +197,12 @@ public class FrozenGame extends GameScreen {
     swapPressed          = false;
 
     if (input_arg != null) {
-      player  = input_arg.playerID;
-      isLocal = input_arg.isLocal;
+      player   = input_arg.playerID;
+      isRemote = input_arg.isRemote;
     }
     else {
-      player  = VirtualInput.PLAYER1;
-      isLocal = true;
+      player   = VirtualInput.PLAYER1;
+      isRemote = false;
     }
 
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
@@ -795,7 +795,7 @@ public class FrozenGame extends GameScreen {
      * Simply use the supplied attack bubble buffer to initiate attack
      * bubble launches. 
      */
-    if (!isLocal) {
+    if (isRemote) {
       int numBubblesLaunched = 0;
       for (int i = 0; i < 15; i++) {
         if (malusBar.attackBubbles[i] >= 0) {

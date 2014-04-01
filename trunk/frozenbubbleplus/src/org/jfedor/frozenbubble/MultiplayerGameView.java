@@ -1811,8 +1811,8 @@ class MultiplayerGameView extends SurfaceView implements
 
     // TODO: for now, the local and remote player IDs are fixed, as is
     //       the player type and the game location.
-    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, true);
-    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  true);
+    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
+    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
     if (mNetworkGameManager != null)
