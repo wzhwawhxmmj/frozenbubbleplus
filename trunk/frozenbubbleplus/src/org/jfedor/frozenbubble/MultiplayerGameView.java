@@ -467,10 +467,17 @@ class MultiplayerGameView extends SurfaceView implements
       mGameThread.updateStateOnEvent(null);
 
     /*
+     * The the launcher bubble colors.
+     */
+    playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
+                                             newAction.nextBubbleColor,
+                                             newAction.newNextBubbleColor);
+
+    /*
      * Set the launcher aim position.
      */
     if (playerRef.mGameRef != null) {
-      mPlayer1.mGameRef.setPosition(newAction.aimPosition);
+      playerRef.mGameRef.setPosition(newAction.aimPosition);
     }
 
     /*
