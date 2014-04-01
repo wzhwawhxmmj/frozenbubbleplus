@@ -630,30 +630,30 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    *   of -1 denotes no color, and thus no attack bubble at that column.
    * @param aimPosition - the launcher aim aimPosition.
    */
-  public void sendLocalPlayerAction(byte playerID,
+  public void sendLocalPlayerAction(int playerId,
                                     boolean compress,
                                     boolean sendAttack,
                                     boolean launch,
                                     boolean swap,
-                                    byte launchColor,
-                                    byte nextColor,
-                                    byte newNextColor,
-                                    byte addAttackBubbles,
-                                    short totalAttackBubbles,
+                                    int launchColor,
+                                    int nextColor,
+                                    int newNextColor,
+                                    int addAttackBubbles,
+                                    int totalAttackBubbles,
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
-    tempAction.playerID = playerID;
+    tempAction.playerID = (byte) playerId;
     tempAction.actionID = ++localActionID;
     tempAction.compress = compress;
     tempAction.launchAttackBubbles = sendAttack;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
-    tempAction.launchBubbleColor = launchColor;
-    tempAction.nextBubbleColor = nextColor;
-    tempAction.newNextBubbleColor = newNextColor;
-    tempAction.addAttackBubbles = addAttackBubbles;
-    tempAction.totalAttackBubbles = totalAttackBubbles;
+    tempAction.launchBubbleColor = (byte) launchColor;
+    tempAction.nextBubbleColor = (byte) nextColor;
+    tempAction.newNextBubbleColor = (byte) newNextColor;
+    tempAction.addAttackBubbles = (short) addAttackBubbles;
+    tempAction.totalAttackBubbles = (short) totalAttackBubbles;
     if (attackBubbles != null)
       for (int index = 0;index < 15; index++)
         tempAction.attackBubbles[index] = attackBubbles[index];

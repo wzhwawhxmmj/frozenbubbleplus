@@ -108,7 +108,7 @@ public class FrozenGame extends GameScreen {
   Compressor compressor;
 
   ImageSprite nextBubble;
-  int currentColor, nextColor;
+  int currentColor, nextColor, newNextColor;
 
   BubbleSprite movingBubble;
   BubbleManager bubbleManager;
@@ -255,6 +255,7 @@ public class FrozenGame extends GameScreen {
 
     currentColor = bubbleManager.nextBubbleIndex(random);
     nextColor    = bubbleManager.nextBubbleIndex(random);
+    newNextColor = bubbleManager.nextBubbleIndex(random);
 
     if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
       nextBubble = new ImageSprite(new Rect(302, 440, 302 + 32, 440 + 32),
@@ -346,6 +347,7 @@ public class FrozenGame extends GameScreen {
                nextBubble.getSavedId());
     map.putInt(String.format("%d-currentColor", player), currentColor);
     map.putInt(String.format("%d-nextColor", player), nextColor);
+    map.putInt(String.format("%d-newNextColor", player), newNextColor);
     if (movingBubble != null) {
       movingBubble.saveState(map, savedSprites, player);
       map.putInt(String.format("%d-movingBubbleId", player),
@@ -529,6 +531,7 @@ public class FrozenGame extends GameScreen {
     nextBubble = (ImageSprite)savedSprites.elementAt(nextBubbleId);
     currentColor = map.getInt(String.format("%d-currentColor", player));
     nextColor = map.getInt(String.format("%d-nextColor", player));
+    newNextColor = map.getInt(String.format("%d-newNextColor", player));
     int movingBubbleId =
         map.getInt(String.format("%d-movingBubbleId", player));
     if (movingBubbleId == -1) {
@@ -784,10 +787,13 @@ public class FrozenGame extends GameScreen {
    * There are 15 distinct positions ("lanes") for bubbles to occupy
    * between two consecutive rows.  Thus we send up a maximum 7 bubbles
    * in randomly selected "lanes" from the 15 available.
+   * @return The number of attack bubbles launched.
    */
-  private void releaseBubbles() {
+  private int releaseBubbles() {
     if (malusBar == null)
-      return;
+      return (0);
+
+    int numBubblesLaunched = 0;
 
     /*
      * If this game represents a remote player, the the attack bubbles
@@ -796,7 +802,6 @@ public class FrozenGame extends GameScreen {
      * bubble launches. 
      */
     if (isRemote) {
-      int numBubblesLaunched = 0;
       for (int i = 0; i < 15; i++) {
         if (malusBar.attackBubbles[i] >= 0) {
           numBubblesLaunched++;
@@ -826,9 +831,13 @@ public class FrozenGame extends GameScreen {
         }
       }
 
+      malusBar.clearAttackBubbles(0);
+
       for (int i = 0; i < 15; i++) {
         if (lanes[i]) {
+          numBubblesLaunched++;
           int color = random.nextInt(FrozenBubble.getDifficulty());
+          malusBar.setAttackBubble(i, color);
           BubbleSprite malusBubble = new BubbleSprite(
             new Rect(columnX[i], 44+15*28, 32, 32),
             START_LAUNCH_DIRECTION,
@@ -840,6 +849,8 @@ public class FrozenGame extends GameScreen {
         }
       }
     }
+
+    return (numBubblesLaunched);
   }
 
   private void sendBubblesDown() {
@@ -872,18 +883,22 @@ public class FrozenGame extends GameScreen {
                   double trackball_dx,
                   boolean touch_fire, double touch_x, double touch_y,
                   boolean ats_touch_fire, double ats_touch_dx) {
-    int currentColorWas = currentColor;
-    int nextColorWas = nextColor;
     boolean ats = FrozenBubble.getAimThenShoot();
-    boolean attackBubblesLaunched = false;
     boolean bubbleLaunched = false;
     boolean compressed = false;
+    int     attackBarBubbles = 0;
+    int     currentColorWas = currentColor;
+    int[]   move = new int[2];
+    int     nextColorWas = nextColor;
+    int     numAttackBubbles = 0;
+
+    if (malusBar != null) {
+      attackBarBubbles = malusBar.getBubbles();
+    }
 
     if ((ats && ats_touch_fire) || (!ats && touch_fire)) {
       key_fire = true;
     }
-
-    int[] move = new int[2];
 
     if (key_left && !key_right) {
       move[HORIZONTAL_MOVE] = KEY_LEFT;
@@ -955,7 +970,6 @@ public class FrozenGame extends GameScreen {
       if ((move[FIRE] == KEY_UP) || (hurryTime > HURRY_ME_TIME)) {
         if (getOkToFire()) {
           nbBubbles++;
-
           movingBubble = new BubbleSprite(new Rect(302, 390, 32, 32),
                                           launchBubblePosition,
                                           currentColor,
@@ -965,9 +979,10 @@ public class FrozenGame extends GameScreen {
                                           targetedBubbles, bubbleBlink,
                                           bubbleManager, soundManager, this);
           this.addSprite(movingBubble);
-
+          bubbleLaunched = true;
           currentColor = nextColor;
-          nextColor = bubbleManager.nextBubbleIndex(random);
+          nextColor = newNextColor;
+          newNextColor = bubbleManager.nextBubbleIndex(random);
 
           if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
             nextBubble.changeImage(bubbles[nextColor]);
@@ -975,13 +990,16 @@ public class FrozenGame extends GameScreen {
           else {
             nextBubble.changeImage(bubblesBlind[nextColor]);
           }
+
           launchBubble.changeColor(currentColor);
           penguin.updateState(PenguinSprite.STATE_FIRE);
           soundManager.playSound(FrozenBubble.SOUND_LAUNCH);
           readyToFire = false;
           hurryTime = 0;
+
           if (malusBar != null)
             malusBar.releaseTime = RELEASE_TIME;
+
           removeSprite(hurrySprite);
         }
         else {
@@ -1008,6 +1026,7 @@ public class FrozenGame extends GameScreen {
     }
 
     sendToOpponent = 0;
+
     /*
      * The moving bubble is moved twice, which produces smoother
      * animation. Thus the moving bubble effectively moves at twice the
@@ -1017,7 +1036,7 @@ public class FrozenGame extends GameScreen {
     compressed  = manageMovingBubble();
     compressed |= manageMovingBubble();
 
-    if (movingBubble == null && !endOfGame) {
+    if ((movingBubble == null) && !endOfGame) {
       hurryTime++;
       if (malusBar != null)
         malusBar.releaseTime++;
@@ -1038,8 +1057,9 @@ public class FrozenGame extends GameScreen {
         }
       }
       if (malusBar != null) {
-        if ((malusBar.releaseTime > RELEASE_TIME) || isRemote) {
-          releaseBubbles();
+        if (getOkToFire() && (attackBarBubbles > 0) &&
+            ((malusBar.releaseTime > RELEASE_TIME) || isRemote)) {
+          numAttackBubbles = releaseBubbles();
           malusBar.releaseTime = 0;
         }
 
@@ -1089,8 +1109,22 @@ public class FrozenGame extends GameScreen {
      * network game, transmit the local player action to the remote
      * player if an action occurred.
      */
-    if ((networkManager != null) && !isRemote) {
-
+    if ((networkManager != null) && !isRemote && (malusBar != null)) {
+      if (bubbleLaunched || compressed || swapPressed ||
+          (numAttackBubbles > 0) || (sendToOpponent > 0)) {
+        networkManager.sendLocalPlayerAction(player,
+                                             compressed,
+                                             numAttackBubbles > 0,
+                                             bubbleLaunched,
+                                             swapPressed,
+                                             currentColorWas,
+                                             nextColorWas,
+                                             newNextColor,
+                                             sendToOpponent,
+                                             attackBarBubbles,
+                                             malusBar.attackBubbles,
+                                             launchBubblePosition);
+      }
     }
 
     return GAME_PLAYING;
@@ -1211,6 +1245,18 @@ public class FrozenGame extends GameScreen {
     }
   }
 
+  public void setLaunchBubbleColors(int current, int next, int newNext) {
+    currentColor = current;
+    nextColor    = next;
+    newNextColor = newNext;
+    launchBubble.changeColor(currentColor);
+
+    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL)
+      nextBubble.changeImage(bubbles[nextColor]);
+    else
+      nextBubble.changeImage(bubblesBlind[nextColor]);
+  }
+
   public void setPosition(double value) {
     if (!endOfGame) {
       double dx = value - launchBubblePosition;
@@ -1235,7 +1281,6 @@ public class FrozenGame extends GameScreen {
       int tempColor = currentColor;
       currentColor  = nextColor;
       nextColor     = tempColor;
-
       launchBubble.changeColor(currentColor);
 
       if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL)

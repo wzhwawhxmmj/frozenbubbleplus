@@ -134,10 +134,11 @@ public class MalusBar extends Sprite {
    * number of attack bubbles will be decremented by the supplied number
    * of bubbles, which is the number of attack bubbles that were
    * previously launched.
-   * @param numBubblesLaunched - the number of attack bubbles launched.
+   * @param remove - the number of attack bubbles to remove from the
+   * total number of attack bubbles.
    */
-  public void clearAttackBubbles(int numBubblesLaunched) {
-    nbMalus -= numBubblesLaunched;
+  public void clearAttackBubbles(int remove) {
+    nbMalus -= remove;
 
     if (nbMalus < 0)
       nbMalus = 0;
@@ -171,6 +172,15 @@ public class MalusBar extends Sprite {
   }
 
   /**
+   * Set the value of an attack bubble color in the attack bubble array.
+   * @param bubbleIndex - the update index of the attack bubble array.
+   * @param bubbleColor - the attack bubble color.
+   */
+  public void setAttackBubble(int bubbleIndex, int bubbleColor) {
+    this.attackBubbles[bubbleIndex] = (byte) bubbleColor;
+  }
+
+  /** 
    * Set the total number of attack bubbles stored in the attack bar,
    * as well as the array of current attack bubbles.
    * @param numBubbles - the total number of attack bubbles.
