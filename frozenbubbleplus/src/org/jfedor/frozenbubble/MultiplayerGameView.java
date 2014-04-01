@@ -476,20 +476,34 @@ class MultiplayerGameView extends SurfaceView implements
     /*
      * Process a compressor lower request.
      */
-    if (newAction.compress)
+    if (newAction.compress) {
       playerRef.mGameRef.lowerCompressor();
+    }
 
     /*
      * Process a bubble launch request.
      */
-    if (newAction.launchBubble)
+    if (newAction.launchBubble) {
       playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP);
+    }
 
     /*
      * Process a bubble swap request.
      */
-    if (newAction.swapBubble)
+    if (newAction.swapBubble) {
       playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
+    }
+
+    /*
+     * Set the current value of the attack bar.
+     */
+    playerRef.mGameRef.malusBar.setAttackBubbles(newAction.totalAttackBubbles,
+                                                 newAction.attackBubbles);
+
+    /*
+     * Set the number of bubbles to add to the attack bar.
+     */
+    playerRef.mGameRef.setSendToOpponent(newAction.addAttackBubbles);
   }
 
   class MultiplayerGameThread extends Thread {

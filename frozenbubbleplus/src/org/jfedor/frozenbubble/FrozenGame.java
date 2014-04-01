@@ -1126,7 +1126,6 @@ public class FrozenGame extends GameScreen {
           (numAttackBubbles > 0) || (sendToOpponent > 0)) {
         networkManager.sendLocalPlayerAction(player,
                                              compressed,
-                                             numAttackBubbles > 0,
                                              bubbleLaunched,
                                              swapPressed,
                                              currentColorWas,
