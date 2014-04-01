@@ -118,7 +118,8 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     public byte  playerID;  // the player ID associated with this action.
     public short actionID;  // the ID of this particular action 
     /*
-     * The following are flags associated with player actions.
+     * The following three booleans are flags associated with player
+     * actions.
      * 
      * launchAttackBubbles -
      *   This flag indicates that attack bubbles are to be launched.
@@ -142,10 +143,11 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     public byte    launchBubbleColor;
     public byte    nextBubbleColor;
     public byte    newNextBubbleColor;
+    public short   addAttackBubbles;
+    public short   totalAttackBubbles;
     public byte    attackBubbles[] = { -1, -1, -1, -1, -1,
                                        -1, -1, -1, -1, -1,
                                        -1, -1, -1, -1, -1 };
-    public short   totalAttackBubbles;
     public double  aimPosition;
 
     /**
@@ -178,12 +180,13 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         this.launchBubbleColor   = action.launchBubbleColor;
         this.nextBubbleColor     = action.nextBubbleColor;
         this.newNextBubbleColor  = action.newNextBubbleColor;
+        this.addAttackBubbles    = action.addAttackBubbles;
+        this.totalAttackBubbles  = action.totalAttackBubbles;
 
         for (int index = 0; index < 15; index++) {
           this.attackBubbles[index] = action.attackBubbles[index];
         }
 
-        this.totalAttackBubbles  = action.totalAttackBubbles;
         this.aimPosition         = action.aimPosition;
       }
     }
@@ -208,14 +211,16 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         this.launchBubbleColor   = buffer[startIndex++];
         this.nextBubbleColor     = buffer[startIndex++];
         this.newNextBubbleColor  = buffer[startIndex++];
+        shortBytes[0]            = buffer[startIndex++];
+        shortBytes[1]            = buffer[startIndex++];
+        this.addAttackBubbles    = toShort(shortBytes);
+        shortBytes[0]            = buffer[startIndex++];
+        shortBytes[1]            = buffer[startIndex++];
+        this.totalAttackBubbles  = toShort(shortBytes);
 
         for (int index = 0; index < 15; index++) {
           this.attackBubbles[index] = buffer[startIndex++];
         }
-
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.totalAttackBubbles  = toShort(shortBytes);
 
         for (int index = 0; index < 8; index++) {
           doubleBytes[index] = buffer[startIndex++];
@@ -245,14 +250,16 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
+        toByteArray(this.addAttackBubbles, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        toByteArray(this.totalAttackBubbles, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
 
         for (int index = 0; index < 15; index++) {
           buffer[startIndex++] = this.attackBubbles[index];
         }
-
-        toByteArray(this.totalAttackBubbles, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
 
         toByteArray(this.aimPosition, doubleBytes);
 
@@ -268,16 +275,24 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * this class.
      */
     public int sizeInBytes() {
-      return (20);
+      return (36);
     }
   }
 
+  /**
+   * This class represents the current state of an individual player
+   * game field.  The game field consists of the launcher bubbles, the
+   * bubbles fixed to the game field, and the the attack bar.
+   * @author Eric Fortin
+   *
+   */
   public class GameFieldData {
     public byte     playerID           = -1;
     public short    actionID           = -1;
     public byte     launchBubbleColor  = -1;
     public byte     nextBubbleColor    = -1;
     public byte     newNextBubbleColor = -1;
+    public short    totalAttackBubbles = 0;
     /*
      * The game field is represented by a 2-dimensional array, with 8
      * rows and 12 columns.  This is displayed on the screen as 12 rows
@@ -320,6 +335,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         this.launchBubbleColor   = fieldData.launchBubbleColor;
         this.nextBubbleColor     = fieldData.nextBubbleColor;
         this.newNextBubbleColor  = fieldData.newNextBubbleColor;
+        this.totalAttackBubbles  = fieldData.totalAttackBubbles;
 
         for (int x = 0; x < 8; x++) {
           for (int y = 0; y < 15; y++) {
@@ -345,6 +361,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         this.launchBubbleColor   = buffer[startIndex++];
         this.nextBubbleColor     = buffer[startIndex++];
         this.newNextBubbleColor  = buffer[startIndex++];
+        shortBytes[0]            = buffer[startIndex++];
+        shortBytes[1]            = buffer[startIndex++];
+        this.totalAttackBubbles  = toShort(shortBytes);
 
         for (int x = 0; x < 8; x++) {
           for (int y = 0; y < 15; y++) {
@@ -370,6 +389,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
+        toByteArray(this.totalAttackBubbles, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
 
         for (int x = 0; x < 8; x++) {
           for (int y = 0; y < 15; y++) {
@@ -385,7 +407,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * this class.
      */
     public int sizeInBytes() {
-      return (126);
+      return (104);
     }
   }
 
@@ -584,8 +606,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * @param newNextColor - when a bubble is launched, this is the new
    *   next bubble color.  The prior next color is promoted to the
    *   launch bubble color.
+   * @param addAttackBubbles - the number of attack bubbles to add to
+   *   the opponent's attack bar.  Note this value may be set by either
+   *   player, but is only set by the remote player with respect to the
+   *   local player when a bubble superposition was prevented.  A
+   *   superposition is detected when an attack bubble attempts to
+   *   occupy an already occupied grid location.
    * @param totalAttackBubbles - the number of attack bubbles stored on
-   *   the attack bar.
+   *   the attack bar prior to adding <code>addAttackBubbles</code>.
    * @param attackBubbles - the array of attack bubble colors.  A value
    *   of -1 denotes no color, and thus no attack bubble at that column.
    * @param aimPosition - the launcher aim aimPosition.
@@ -597,7 +625,8 @@ public class NetworkGameManager implements MulticastListener, Runnable {
                                     byte launchColor,
                                     byte nextColor,
                                     byte newNextColor,
-                                    byte totalAttackBubbles,
+                                    byte addAttackBubbles,
+                                    short totalAttackBubbles,
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
@@ -610,6 +639,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     tempAction.launchBubbleColor = launchColor;
     tempAction.nextBubbleColor = nextColor;
     tempAction.newNextBubbleColor = newNextColor;
+    tempAction.addAttackBubbles = addAttackBubbles;
     tempAction.totalAttackBubbles = totalAttackBubbles;
     if (attackBubbles != null)
       for (int index = 0;index < 15; index++)
