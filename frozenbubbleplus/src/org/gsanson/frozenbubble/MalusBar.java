@@ -173,7 +173,7 @@ public class MalusBar extends Sprite {
 
   /**
    * Set the value of an attack bubble color in the attack bubble array.
-   * @param bubbleIndex - the update index of the attack bubble array.
+   * @param bubbleIndex - the update index in the attack bubble array.
    * @param bubbleColor - the attack bubble color.
    */
   public void setAttackBubble(int bubbleIndex, int bubbleColor) {
