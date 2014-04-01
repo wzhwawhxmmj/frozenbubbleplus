@@ -66,12 +66,8 @@ public class Compressor {
     this.steps = 0;
   }
 
-  public void saveState(Bundle map, int id) {
-    map.putInt(String.format("%d-compressor-steps", id), steps);
-  }
-
-  public void restoreState(Bundle map, int id) {
-    steps = map.getInt(String.format("%d-compressor-steps", id));
+  public int getSteps() {
+    return steps;
   }
 
   public void moveDown() {
@@ -90,5 +86,13 @@ public class Compressor {
     c.drawBitmap(compressorHead.bmp,
                  (float)(160 * scale + dx),
                  (float)((-7 + 28 * steps) * scale + dy), null);
+  }
+
+  public void restoreState(Bundle map, int id) {
+    steps = map.getInt(String.format("%d-compressor-steps", id));
+  }
+
+  public void saveState(Bundle map, int id) {
+    map.putInt(String.format("%d-compressor-steps", id), steps);
   }
 };

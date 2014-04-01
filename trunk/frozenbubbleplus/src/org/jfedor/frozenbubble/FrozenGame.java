@@ -872,12 +872,12 @@ public class FrozenGame extends GameScreen {
                   double trackball_dx,
                   boolean touch_fire, double touch_x, double touch_y,
                   boolean ats_touch_fire, double ats_touch_dx) {
-    /*
-     * Preserve the current and next launch bubble colors.
-     */
     int currentColorWas = currentColor;
     int nextColorWas = nextColor;
     boolean ats = FrozenBubble.getAimThenShoot();
+    boolean attackBubblesLaunched = false;
+    boolean bubbleLaunched = false;
+    boolean compressed = false;
 
     if ((ats && ats_touch_fire) || (!ats && touch_fire)) {
       key_fire = true;
@@ -923,7 +923,12 @@ public class FrozenGame extends GameScreen {
       readyToFire = true;
     }
 
-    if (FrozenBubble.getDontRushMe()) {
+    /*
+     * If the option to rush the player is disabled or this game
+     * represents the remote player in a network game, initialize
+     * hurryTime to disable automatic bubbles launches.
+     */
+    if (FrozenBubble.getDontRushMe() || isRemote) {
       hurryTime = 1;
     }
 
@@ -948,7 +953,7 @@ public class FrozenGame extends GameScreen {
     }
     else {
       if ((move[FIRE] == KEY_UP) || (hurryTime > HURRY_ME_TIME)) {
-        if ((movingBubble == null) && readyToFire) {
+        if (getOkToFire()) {
           nbBubbles++;
 
           movingBubble = new BubbleSprite(new Rect(302, 390, 32, 32),
@@ -1009,8 +1014,8 @@ public class FrozenGame extends GameScreen {
      * animation speed with respect to other bubbles that are only
      * moved once per iteration.
      */
-    manageMovingBubble();
-    manageMovingBubble();
+    compressed  = manageMovingBubble();
+    compressed |= manageMovingBubble();
 
     if (movingBubble == null && !endOfGame) {
       hurryTime++;
@@ -1033,7 +1038,7 @@ public class FrozenGame extends GameScreen {
         }
       }
       if (malusBar != null) {
-        if ((malusBar.releaseTime > RELEASE_TIME) || !isLocal) {
+        if ((malusBar.releaseTime > RELEASE_TIME) || isRemote) {
           releaseBubbles();
           malusBar.releaseTime = 0;
         }
@@ -1084,7 +1089,7 @@ public class FrozenGame extends GameScreen {
      * network game, transmit the local player action to the remote
      * player if an action occurred.
      */
-    if ((networkManager != null) && isLocal) {
+    if ((networkManager != null) && !isRemote) {
 
     }
 
@@ -1120,14 +1125,25 @@ public class FrozenGame extends GameScreen {
 
   public boolean getOkToFire() {
     return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
-            readyToFire);
+            readyToFire && (goingUp.size() == 0));
   }
 
   public double getPosition() {
     return launchBubblePosition;
   }
 
-  public void manageMovingBubble() {
+  public void lowerCompressor() {
+    fixedBubbles = 0;
+    sendBubblesDown();
+  }
+
+  /**
+   * 
+   * @return <code>true</code> if the compressor was lowered.
+   */
+  public boolean manageMovingBubble() {
+    boolean compressed = false;
+
     if (movingBubble != null) {
       movingBubble.move();
       if (movingBubble.fixed()) {
@@ -1147,15 +1163,17 @@ public class FrozenGame extends GameScreen {
             fixedBubbles++;
             blinkDelay = 0;
 
-            if (fixedBubbles == 8) {
+            if ((fixedBubbles == 8) && !isRemote) {
               fixedBubbles = 0;
               sendBubblesDown();
+              compressed = true;
             }
           }
         }
         movingBubble = null;
       }
     }
+    return (compressed);
   }
 
   /**
@@ -1210,7 +1228,7 @@ public class FrozenGame extends GameScreen {
 
   public void setSendToOpponent(int numAttackBubbles) {
     sendToOpponent = numAttackBubbles;
- }
+  }
 
   public void swapNextLaunchBubble() {
     if (currentColor != nextColor) {
