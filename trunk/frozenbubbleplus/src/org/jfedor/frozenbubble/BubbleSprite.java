@@ -477,8 +477,7 @@ public class BubbleSprite extends Sprite {
 
       if (checkJump.size() >= 3) {
         released = true;
-        frozen.setSendToOpponent(frozen.getSendToOpponent() +
-                                 checkJump.size() - 3);
+        frozen.addSendToOpponent(checkJump.size() - 3);
 
         for (int i=0 ; i<checkJump.size() ; i++) {
           BubbleSprite current = (BubbleSprite)checkJump.elementAt(i);

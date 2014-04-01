@@ -454,27 +454,42 @@ class MultiplayerGameView extends SurfaceView implements
     if (newAction == null)
       return;
 
-    if (mGameThread != null)
+    PlayerInput playerRef = null;
+
+    if (newAction.playerID == VirtualInput.PLAYER1)
+      playerRef = mPlayer1;
+    else if (newAction.playerID == VirtualInput.PLAYER2)
+      playerRef = mPlayer2;
+
+    if (playerRef == null)
+      return;
+    else if (mGameThread != null)
       mGameThread.updateStateOnEvent(null);
 
-    if ((newAction.playerID == VirtualInput.PLAYER1) &&
-        (mPlayer1.mGameRef != null)) {
+    /*
+     * Set the launcher aim position.
+     */
+    if (playerRef.mGameRef != null) {
       mPlayer1.mGameRef.setPosition(newAction.aimPosition);
-      // Don't permit a simultaneous swap and launch.
-      if (newAction.launchBubble)
-        mPlayer1.setAction(KeyEvent.KEYCODE_DPAD_UP);
-      else if (newAction.swapBubble)
-        mPlayer1.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
     }
-    else if ((newAction.playerID == VirtualInput.PLAYER2) &&
-             (mPlayer2.mGameRef != null)) {
-      mPlayer2.mGameRef.setPosition(newAction.aimPosition);
-      // Don't permit a simultaneous swap and launch.
-      if (newAction.launchBubble)
-        mPlayer2.setAction(KeyEvent.KEYCODE_DPAD_UP);
-      else if (newAction.swapBubble)
-        mPlayer2.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
-    }
+
+    /*
+     * Process a compressor lower request.
+     */
+    if (newAction.compress)
+      playerRef.mGameRef.lowerCompressor();
+
+    /*
+     * Process a bubble launch request.
+     */
+    if (newAction.launchBubble)
+      playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP);
+
+    /*
+     * Process a bubble swap request.
+     */
+    if (newAction.swapBubble)
+      playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
   }
 
   class MultiplayerGameThread extends Thread {
@@ -1726,8 +1741,8 @@ class MultiplayerGameView extends SurfaceView implements
       if (mOpponent != null)
         mOpponent.clearAction();
 
-      malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
-      malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
+      malusBar1.addBubbles(mFrozenGame1.getAndClearSendToOpponent());
+      malusBar2.addBubbles(mFrozenGame2.getAndClearSendToOpponent());
 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();

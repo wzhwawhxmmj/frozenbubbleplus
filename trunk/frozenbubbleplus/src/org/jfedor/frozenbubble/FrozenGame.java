@@ -272,6 +272,7 @@ public class FrozenGame extends GameScreen {
                                           launcher, bubbles, bubblesBlind);
     this.spriteToBack(launchBubble);
     nbBubbles = 0;
+    sendToOpponent = 0;
   }
 
   public FrozenGame(BmpWrap background_arg,
@@ -627,6 +628,10 @@ public class FrozenGame extends GameScreen {
     jumping.addElement(sprite);
   }
 
+  public void addSendToOpponent(int addToSend) {
+    sendToOpponent += addToSend;
+  }
+
   private void blinkLine(int number) {
     int move = number % 2;
     int column = (number+1) >> 1;
@@ -772,8 +777,17 @@ public class FrozenGame extends GameScreen {
     return random;
   }
 
-  public int getSendToOpponent() {
-     return sendToOpponent;
+  /**
+   * Simultaneously obtain and clear <code>sendToOpponent</code>, which
+   * is the number of attack bubbles to add to the attack bar.
+   * @return The number of attack bubbles to add to the attack bar due
+   * to the opponent's actions.
+   */
+  public int getAndClearSendToOpponent() {
+    int sendCopy = sendToOpponent;
+
+    sendToOpponent = 0;
+    return sendCopy;
   }
 
   /**
@@ -1024,8 +1038,6 @@ public class FrozenGame extends GameScreen {
         updatePenguinState(dx);
       }
     }
-
-    sendToOpponent = 0;
 
     /*
      * The moving bubble is moved twice, which produces smoother
