@@ -168,6 +168,7 @@ class MultiplayerGameView extends SurfaceView implements
    * <p>This is to provide a common interface to the game independent
    * of the input source.
    * @author Eric Fortin
+   *
    */
   class PlayerInput extends VirtualInput {
     private boolean mCenter        = false;
@@ -605,8 +606,6 @@ class MultiplayerGameView extends SurfaceView implements
         // said you have to call recycle() on all the bitmaps and set
         // the pointers to null to facilitate garbage collection.  So I did
         // and the crashes went away.
-        mPlayer1.init();
-        mPlayer2.init();
         mFrozenGame1 = null;
         mFrozenGame2 = null;
         mImagesReady = false;
@@ -784,16 +783,9 @@ class MultiplayerGameView extends SurfaceView implements
     /**
      * Process key presses.  This must be allowed to run regardless of
      * the game state to correctly handle initial game conditions.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * 
-     * @param msg
-     *        - the key action message.
-     * 
-     * @return
-     *        - true if the key action is processed, false if not.
-     * 
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return - <code>true</code> if the key action is processed.
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
@@ -819,15 +811,9 @@ class MultiplayerGameView extends SurfaceView implements
     /**
      * Process key releases.  This must be allowed to run regardless of
      * the game state in order to properly clear key presses.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * 
-     * @param msg
-     *        - the key action message.
-     * 
-     * @return true if the key action is processed, false if not.
-     * 
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return - <code>true</code> if the key action is processed.
      * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
@@ -838,13 +824,11 @@ class MultiplayerGameView extends SurfaceView implements
 
     /**
      * This method handles screen touch motion events.
-     * <p>
-     * This method will be called three times in succession for each
-     * touch, to process ACTION_DOWN, ACTION_UP, and ACTION_MOVE.
-     * 
-     * @param event
-     *        - the motion event
-     * @return True if the event was handled, false otherwise.
+     * <p>This method will be called three times in succession for each
+     * touch, to process <code>ACTION_DOWN</code>,
+     * <code>ACTION_UP</code>, and <code>ACTION_MOVE</code>.
+     * @param event - the motion event
+     * @return <code>true</code> if the event was handled..
      */
     boolean doTouchEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
@@ -893,19 +877,14 @@ class MultiplayerGameView extends SurfaceView implements
 
     /**
      * Process trackball motion events.
-     * <p>
-     * This method only processes trackball motion for the purpose of
+     * <p>This method only processes trackball motion for the purpose of
      * aiming the launcher.  The trackball has no effect on the game
      * state, much like moving a mouse cursor over a screen does not
      * perform any intrinsic actions in most applications.
-     *  
-     * @param event
-     *        - the motion event associated with the trackball.
-     * 
-     * @return This function returns true if the trackball motion was
-     *         processed, which notifies the caller that this method
-     *         handled the motion event and no other handling is
-     *         necessary.
+     * @param event - the motion event associated with the trackball.
+     * @return This function returns <code>true</code> if the trackball
+     * motion was processed, which notifies the caller that this method
+     * handled the motion event and no other handling is necessary.
      */
     boolean doTrackballEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
@@ -984,15 +963,11 @@ class MultiplayerGameView extends SurfaceView implements
 
     /**
      * Draw the high score screen for multiplayer game mode.
-     * <p>
-     * The objective of multiplayer game mode is endurance - fire as
+     * <p>The objective of multiplayer game mode is endurance - fire as
      * many bubbles as possible for as long as possible.  Thus the high
      * score will exhibit the most shots fired during the longest game.
-     * 
-     * @param canvas
-     *        - the drawing canvas to display the scores on.
-     * @param level
-     *        - the level difficulty index.
+     * @param canvas - the drawing canvas to display the scores on.
+     * @param level - the level difficulty index.
      */
     private void drawHighScoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
@@ -1098,12 +1073,11 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     private int getScreenOrientation() {
-      //
-      // The method getOrientation() was deprecated in API level 8.
-      //
-      // For API level 8 or greater, use getRotation().
-      //
-      //
+      /*
+       * The method getOrientation() was deprecated in API level 8.
+       *
+       * For API level 8 or greater, use getRotation().
+       */
       int rotation = ((Activity) mContext).getWindowManager().
         getDefaultDisplay().getOrientation();
       DisplayMetrics dm = new DisplayMetrics();
@@ -1111,23 +1085,21 @@ class MultiplayerGameView extends SurfaceView implements
       int width  = dm.widthPixels;
       int height = dm.heightPixels;
       int orientation;
-      //
-      // The orientation determination is based on the natural orienation
-      // mode of the device, which can be either portrait, landscape, or
-      // square.
-      //
-      // After the natural orientation is determined, convert the device
-      // rotation into a fully qualified orientation.
-      //
-      //
+      /*
+       * The orientation determination is based on the natural orienation
+       * mode of the device, which can be either portrait, landscape, or
+       * square.
+       *
+       * After the natural orientation is determined, convert the device
+       * rotation into a fully qualified orientation.
+       */
       if ((((rotation == Surface.ROTATION_0  ) ||
             (rotation == Surface.ROTATION_180)) && (height > width)) ||
           (((rotation == Surface.ROTATION_90 ) ||
             (rotation == Surface.ROTATION_270)) && (width  > height))) {
-        //
-        // Natural orientation is portrait.
-        //
-        //
+        /*
+         * Natural orientation is portrait.
+         */
         switch(rotation) {
           case Surface.ROTATION_0:
             orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
@@ -1147,10 +1119,9 @@ class MultiplayerGameView extends SurfaceView implements
         }
       }
       else {
-        //
-        // Natural orientation is landscape or square.
-        //
-        //
+        /*
+         * Natural orientation is landscape or square.
+         */
         switch(rotation) {
           case Surface.ROTATION_0:
             orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
@@ -1188,7 +1159,9 @@ class MultiplayerGameView extends SurfaceView implements
 
       BitmapFactory.Options options = new BitmapFactory.Options();
 
-      // The Options.inScaled field is only available starting at API 4.
+      /*
+       * The Options.inScaled field is only available starting at API 4.
+       */
       try {
         Field f = options.getClass().getField("inScaled");
         f.set(options, Boolean.FALSE);
@@ -1503,9 +1476,11 @@ class MultiplayerGameView extends SurfaceView implements
             }
           }
         } finally {
-          // do this in a finally so that if an exception is thrown
-          // during the above, we don't leave the Surface in an
-          // inconsistent state
+          /*
+           * Do this in a finally so that if an exception is thrown
+           * during the above, we don't leave the Surface in an
+           * inconsistent state.
+           */
           if (c != null)
             mSurfaceHolder.unlockCanvasAndPost(c);
         }
@@ -1515,7 +1490,6 @@ class MultiplayerGameView extends SurfaceView implements
     /**
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
-     * 
      * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
@@ -1558,17 +1532,15 @@ class MultiplayerGameView extends SurfaceView implements
 
     public void setState(int mode) {
       synchronized (mSurfaceHolder) {
-        //
-        //   Only update the previous mode storage if the new mode is
-        //   different from the current mode, in case the same mode is
-        //   being set multiple times.
-        //
-        //   The transition from state to state must be preserved in
-        //   case a separate execution thread that checks for state
-        //   transitions does not get a chance to run between calls to
-        //   this method.
-        //
-        //
+        /*
+         * Only update the previous mode storage if the new mode is
+         * different from the current mode, in case the same mode is
+         * being set multiple times.
+         *
+         * The transition from state to state must be preserved in case
+         * a separate execution thread that checks for state transitions
+         * does not get a chance to run between calls to this method.
+         */
         if (mode != mMode)
           mModeWas = mMode;
 
@@ -1683,17 +1655,15 @@ class MultiplayerGameView extends SurfaceView implements
      * processed, this function will return true, otherwise if the
      * calling method should also process the motion event, this
      * function will return false.
-     * 
-     * @param event
-     *        - The MotionEvent to process for the purpose of updating
-     *        the game state.  If this parameter is null, then the
-     *        game state is forced to update if applicable based on
-     *        the current game state.
-     * 
-     * @return This function returns true to inform the calling function
-     *         that the game state has been updated and that no further
-     *         processing is necessary, and false to indicate that the
-     *         caller should continue processing the motion event.
+     * @param event - the MotionEvent to process for the purpose of
+     * updating the game state.  If this parameter is null, then the
+     * game state is forced to update if applicable based on the current
+     * game state.
+     * @return This function returns <code>true</code> to inform the
+     * calling function that the game state has been updated and that no
+     * further processing is necessary, and <code>false</code> to
+     * indicate that the caller should continue processing the motion
+     * event.
      */
     private boolean updateStateOnEvent(MotionEvent event) {
       boolean event_action_down = false;
@@ -1815,11 +1785,8 @@ class MultiplayerGameView extends SurfaceView implements
     /**
      * Use the player 1 offset to calculate the horizontal offset to
      * apply a raw horizontal position to the playfield.
-     * 
-     * @param x
-     *        - the raw horizontal position.
-     * 
-     * @return the adjusted horizontal position.
+     * @param x - the raw horizontal position.
+     * @return The adjusted horizontal position.
      */
     private double xFromScr(float x) {
       return (x - mPlayer1DX) / mDisplayScale;
@@ -1921,9 +1888,19 @@ class MultiplayerGameView extends SurfaceView implements
 
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
-    mOpponent.stopThread();
+    mPlayer1.init();
+    mPlayer2.init();
+
+    if (mNetworkGameManager != null)
+      mNetworkGameManager.stopThread();
+    mNetworkGameManager = null;
+    
+    if (mOpponent != null)
+      mOpponent.stopThread();
     mOpponent = null;
-    mGameThread.cleanUp();
-    mContext = null;
+
+    if (mGameThread != null)
+      mGameThread.cleanUp();
+    mGameThread = null;
   }
 }

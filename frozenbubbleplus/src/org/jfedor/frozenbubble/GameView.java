@@ -541,7 +541,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Dump game state to the provided Bundle. Typically called when the
      * Activity is being suspended.
-     * 
      * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
@@ -560,9 +559,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * Restores game state from the indicated Bundle. Typically called when
      * the Activity is being restored after having been previously
      * destroyed.
-     * 
-     * @param savedState
-     *        - Bundle containing the game state.
+     * @param savedState - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
@@ -579,17 +576,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void setState(int mode) {
       synchronized (mSurfaceHolder) {
-        //
-        //   Only update the previous mode storage if the new mode is
-        //   different from the current mode, in case the same mode is
-        //   being set multiple times.
-        //
-        //   The transition from state to state must be preserved in
-        //   case a separate execution thread that checks for state
-        //   transitions does not get a chance to run between calls to
-        //   this method.
-        //
-        //
+        /*
+         * Only update the previous mode storage if the new mode is
+         * different from the current mode, in case the same mode is
+         * being set multiple times.
+         * 
+         * The transition from state to state must be preserved in
+         * case a separate execution thread that checks for state
+         * transitions does not get a chance to run between calls to
+         * this method.
+         */
         if (mode != mMode)
           mModeWas = mMode;
 
@@ -633,13 +629,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Process key presses.  This must be allowed to run regardless of
      * the game state to correctly handle initial game conditions.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * @param msg
-     *        - the key action message.
-     * @return
-     *        - true if the key action is processed, false if not.
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return <code>true</code> if the key action is processed.
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
@@ -687,15 +679,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     /**
      * Process key releases.  This must be allowed to run regardless of
      * the game state in order to properly clear key presses.
-     * 
-     * @param keyCode
-     *        - the static KeyEvent key identifier.
-     * 
-     * @param msg
-     *        - the key action message.
-     * 
-     * @return true if the key action is processed, false if not.
-     * 
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return <code>true</code> if the key action is processed.
      * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
@@ -726,19 +712,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
      * Process trackball motion events.
-     * <p>
-     * This method only processes trackball motion for the purpose of
+     * <p>This method only processes trackball motion for the purpose of
      * aiming the launcher.  The trackball has no effect on the game
      * state, much like moving a mouse cursor over a screen does not
      * perform any intrinsic actions in most applications.
-     *  
-     * @param event
-     *        - the motion event associated with the trackball.
-     * 
+     * @param event - the motion event associated with the trackball.
      * @return This function returns true if the trackball motion was
-     *         processed, which notifies the caller that this method
-     *         handled the motion event and no other handling is
-     *         necessary.
+     * processed, which notifies the caller that this method handled the
+     * motion event and no other handling is necessary.
      */
     boolean doTrackballEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
@@ -760,20 +741,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       return (y - mDisplayDY) / mDisplayScale;
     }
 
-    //
-    //   doTouchEvent() - Implement this method to handle touch screen
-    //                     motion events.
-    //
-    //   This method will be called three times in succession for each
-    //   touch, to process ACTION_DOWN, ACTION_UP, and ACTION_MOVE.
-    //
-    //   Parameters
-    //      event - The motion event.
-    //
-    //   Returns
-    //      True if the event was handled, false otherwise.
-    //
-    //
+    /**
+     * This method to handles touch screen motion events.
+     * <p>This method will be called three times in succession for each
+     * touch, to process <code>ACTION_DOWN</code>,
+     * <code>ACTION_UP</code>, and <code>ACTION_MOVE</code>.
+     * @param event - the motion event.
+     * @return <code>true</code> if the event was handled.
+     */
     boolean doTouchEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
         if(updateStateOnEvent(event))
@@ -783,7 +758,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
           double x = xFromScr(event.getX());
           double y = yFromScr(event.getY());
 
-          // Set the values used when Point To Shoot is on.
+          /*
+           * Set the values used when Point To Shoot is on.
+           */
           if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (y < TOUCH_FIRE_Y_THRESHOLD) {
               mTouchFire = true;
@@ -794,7 +771,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
               mTouchSwap = true;
           }
 
-          // Set the values used when Aim Then Shoot is on.
+          /*
+           * Set the values used when Aim Then Shoot is on.
+           */
           if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
               mATSTouchFire = true;
@@ -819,18 +798,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * processed, this function will return true, otherwise if the
      * calling method should also process the motion event, this
      * function will return false.
-     * 
-     * @param event
-     *        - The MotionEvent to process for the purpose of updating
-     *        the game state.  If this parameter is null, then the
-     *        game state is forced to update if applicable based on
-     *        the current game state.
-     * 
-     * @return This function returns true to inform the calling
-     *         - Function that the game state has been updated and that
-     *         no further processing is necessary, and false to
-     *         indicate that the caller should continue processing the
-     *         motion event.
+     * @param event - The MotionEvent to process for the purpose of
+     * updating the game state.  If this parameter is null, then the
+     * game state is forced to update if applicable based on the current
+     * game state.
+     * @return This function returns <code>true</code> to inform the
+     * calling function that the game state has been updated and that no
+     * further processing is necessary, and <code>false</code> to
+     * indicate that the caller should continue processing the event.
      */
     private boolean updateStateOnEvent(MotionEvent event) {
       boolean event_action_down = false;
@@ -959,15 +934,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     /**
      * Draw the high score screen for puzzle game mode.
-     * <p>
-     * The objective of puzzle game mode is efficiency - fire as few
+     * <p>The objective of puzzle game mode is efficiency - fire as few
      * bubbles as possible as quickly as possible.  Thus the high score
      * will exhibit the fewest shots fired the quickest.
-     * 
-     * @param canvas
-     *        - the drawing canvas to display the scores on.
-     * @param level
-     *        - the level index.
+     * @param canvas - the drawing canvas to display the scores on.
+     * @param level - the level index.
      */
     private void drawHighScoreScreen(Canvas canvas, int level) {
       canvas.drawRGB(0, 0, 0);
@@ -1074,12 +1045,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void cleanUp() {
       synchronized (mSurfaceHolder) {
-        // I don't really understand why all this is necessary.
-        // I used to get a crash (an out-of-memory error) once every six or
-        // seven times I started the game.  I googled the error and someone
-        // said you have to call recycle() on all the bitmaps and set
-        // the pointers to null to facilitate garbage collection.  So I did
-        // and the crashes went away.
+        /*
+         * I don't really understand why all this is necessary.
+         * I used to get a crash (an out-of-memory error) once every six
+         * or seven times I started the game.  I googled the error and
+         * someone said you have to call recycle() on all the bitmaps
+         * and set the pointers to null to facilitate garbage
+         * collection.  So I did and the crashes went away.
+         */
         mFrozenGame = null;
         mImagesReady = false;
 
@@ -1305,14 +1278,13 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
     mGameThread.cleanUp();
-    mContext = null;
   }
 
   /**
    * This is a class that extends TimerTask to resume displaying the
    * game screen as normal after it has been shown as a blank screen.
-   * 
    * @author Eric Fortin
+   *
    */
   class resumeGameScreenTask extends TimerTask {
     @Override
@@ -1325,13 +1297,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   /**
    * Display a blank screen (black background) for the specified wait
    * interval.
-   * 
-   * @param clearScreen
-   *        - If true, show a blank screen for the specified wait
-   *        interval.  If false, show the normal screen.
-   * 
-   * @param wait
-   *        - The amount of time to display the blank screen.
+   * @param clearScreen - If <code>true</code>, show a blank screen for
+   * the specified wait interval.  If <code>false</code>, show the
+   * normal screen.
+   * @param wait - The amount of time to display the blank screen.
    */
   public void clearGameScreen(boolean clearScreen, int wait) {
     mBlankScreen = clearScreen;

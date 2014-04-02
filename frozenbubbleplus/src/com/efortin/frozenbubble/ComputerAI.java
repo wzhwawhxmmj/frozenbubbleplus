@@ -66,9 +66,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
 
   /**
    * Game AI thread class constructor.
-   * 
-   * @param gameRef
-   *        - reference used to access game information for this player.
+   * @param gameRef - reference used to access game information for
+   * this player.
    */
   public ComputerAI(FrozenGame gameRef, VirtualInput inputRef) {
     myFrozenGame = gameRef;
@@ -120,7 +119,6 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
   /**
    * Return the current state of the opponent action.  When the AI has
    * generated the next action, the action is set to a non-zero value.
-   * 
    * @return returns the value of the CPU opponent action.
    */
   public int getAction() {
@@ -220,8 +218,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
 
   /**
    * Stop the thread <code>run()</code> execution.
-   * <p>
-   * Interrupt the thread when it is suspended via <code>wait()</code>.
+   * <p>Interrupt the thread when it is suspended via
+   * <code>wait()</code>.
    */
   public void stopThread() {
     running = false;

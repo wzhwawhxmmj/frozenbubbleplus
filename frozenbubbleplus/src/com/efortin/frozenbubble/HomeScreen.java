@@ -77,7 +77,7 @@ public class HomeScreen extends Activity {
    * Provide unique IDs for the views associated with the relative
    * layout.  These are used to define relative view layout positions
    * with respect to other views in the layout.
-   * 
+   *
    * These IDs are generated automatically if using an XML layout, but
    * this object implements a RelativeLayout that is constructed purely
    * programmatically.
@@ -104,8 +104,7 @@ public class HomeScreen extends Activity {
    * order to display the background image and various buttons, this
    * function adds the buttons to the layout to provide game options to
    * the player.
-   * <p>
-   * The buttons are defined in relation to one another so that when
+   * <p>The buttons are defined in relation to one another so that when
    * using keys to navigate the buttons, the appropriate button will be
    * highlighted.
    */
@@ -117,7 +116,9 @@ public class HomeScreen extends Activity {
     start2pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN2_ID;
-        // Display the 2 player mode buttons page.
+        /*
+         * Display the 2 player mode buttons page.
+         */
         displayButtonPage(2);
       }
     });
@@ -143,7 +144,9 @@ public class HomeScreen extends Activity {
     myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
     myParams1.topMargin = 15;
     myParams1.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(start2pGameButton, myParams1);
     /*
      * Construct the 1 player game button.
@@ -152,7 +155,9 @@ public class HomeScreen extends Activity {
     start1pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN1_ID;
-        // Process the button tap and start/resume a 1 player game.
+        /*
+         * Process the button tap and start/resume a 1 player game.
+         */
         startFrozenBubble(1, FrozenBubble.LOCALE_LOCAL);
       }
     });
@@ -178,7 +183,9 @@ public class HomeScreen extends Activity {
     myParams2.addRule(RelativeLayout.ABOVE, start2pGameButton.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(start1pGameButton, myParams2);
     /*
      * Construct the options button.
@@ -187,7 +194,9 @@ public class HomeScreen extends Activity {
     optionsButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN3_ID;
-        // Process the button tap and start the preferences activity.
+        /*
+         * Process the button tap and start the preferences activity.
+         */
         startPreferencesScreen();
       }
     });
@@ -213,7 +222,9 @@ public class HomeScreen extends Activity {
     myParams3.addRule(RelativeLayout.BELOW, start2pGameButton.getId());
     myParams3.topMargin = 15;
     myParams3.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(optionsButton, myParams3);
   }
 
@@ -222,8 +233,7 @@ public class HomeScreen extends Activity {
    * order to display the background image and various buttons, this
    * function adds the buttons to the layout to provide multiplayer game
    * options to the player.
-   * <p>
-   * The buttons are defined in relation to one another so that when
+   * <p>The buttons are defined in relation to one another so that when
    * using keys to navigate the buttons, the appropriate button will be
    * highlighted.
    */
@@ -235,7 +245,9 @@ public class HomeScreen extends Activity {
     startLanGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN5_ID;
-        // Process the button tap and start a LAN game.
+        /*
+         * Process the button tap and start a LAN game.
+         */
         //startFrozenBubble(2, FrozenBubble.LOCALE_LAN);
         Toast.makeText(getApplicationContext(),
             "Not available in this version.", Toast.LENGTH_SHORT).show();
@@ -263,7 +275,9 @@ public class HomeScreen extends Activity {
     myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
     myParams1.topMargin = 15;
     myParams1.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(startLanGameButton, myParams1);
     /*
      * Construct the Player vs. CPU game button.
@@ -272,7 +286,9 @@ public class HomeScreen extends Activity {
     startCPUGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN4_ID;
-        // Process the button tap and start a 2 player game.
+        /*
+         * Process the button tap and start a 2 player game.
+         */
         startFrozenBubble(2, FrozenBubble.LOCALE_LOCAL);
       }
     });
@@ -298,7 +314,9 @@ public class HomeScreen extends Activity {
     myParams2.addRule(RelativeLayout.ABOVE, startLanGameButton.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(startCPUGameButton, myParams2);
     /*
      * Construct the Internet game button.
@@ -307,7 +325,9 @@ public class HomeScreen extends Activity {
     startIPGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN6_ID;
-        // Process the button tap and start an internet game.
+        /*
+         * Process the button tap and start an internet game.
+         */
         //startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
         Toast.makeText(getApplicationContext(),
             "Not available in this version.", Toast.LENGTH_SHORT).show();
@@ -335,7 +355,9 @@ public class HomeScreen extends Activity {
     myParams3.addRule(RelativeLayout.BELOW, startLanGameButton.getId());
     myParams3.topMargin = 15;
     myParams3.bottomMargin = 15;
-    // Add view to layout.
+    /*
+     * Add view to layout.
+     */
     myLayout.addView(startIPGameButton, myParams3);
   }
 
@@ -380,7 +402,7 @@ public class HomeScreen extends Activity {
        * back button was pressed, remove the multiplayer buttons and
        * display the home buttons.  The 2 player button becomes selected
        * by default on the home screen.
-       * 
+       *
        * Otherwise if one of the base level buttons was selected, then
        * terminate the home screen activity.
        */
@@ -401,14 +423,15 @@ public class HomeScreen extends Activity {
   /*
    * (non-Javadoc)
    * @see android.app.Activity#onCreate(android.os.Bundle)
-   * 
    * Called when the activity is first created.
    */
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     restoreGamePrefs();
-    // Configure the window presentation and layout.
+    /*
+     * Configure the window presentation and layout.
+     */
     setWindowLayout();
     myLayout = new RelativeLayout(this);
     myLayout.setLayoutParams(new LayoutParams(LayoutParams.FILL_PARENT,
@@ -425,27 +448,28 @@ public class HomeScreen extends Activity {
     else {
       setBackgroundImage(R.drawable.splash);
       setContentView(myLayout);
-      //
-      // Thread for managing the splash screen.
-      //
-      //
+      /*
+       * Thread for managing the splash screen.
+       */
       splashThread = new Thread() {
         @Override
         public void run() {
           try {
             synchronized(this) {
-              //
-              // TODO: The splash screen waits before launching the
-              //       game activity.  Change this so that the game
-              //       activity is started immediately, and notifies
-              //       the splash screen activity when it is done
-              //       loading saved state data and preferences, so the
-              //       splash screen functions as a distraction from
-              //       game loading latency.  There is no advantage in
-              //       doing this right now, because there is no lag.
-              //
-              //
-              wait(3000);  // wait 3 seconds
+              /*
+               * TODO: The splash screen waits before launching the
+               * game activity.  Change this so that the game activity
+               * is started immediately, and notifies the splash screen
+               * activity when it is done loading saved state data and
+               * preferences, so the splash screen functions as a
+               * distraction from game loading latency.  There is no
+               * advantage in doing this right now, because there is no
+               * perceivable lag.
+               */
+              /*
+               * Display the splash screen image for 3 seconds.
+               */
+              wait(3000);
             }
           } catch (InterruptedException e) {
           } finally {
@@ -482,7 +506,6 @@ public class HomeScreen extends Activity {
   /*
    * (non-Javadoc)
    * @see android.app.Activity#onTouchEvent(android.view.MotionEvent)
-   * 
    * Invoked when the screen is touched.
    */
   @Override
@@ -510,7 +533,9 @@ public class HomeScreen extends Activity {
   }
 
   private void selectInitialButton() {
-    // Select the last button that was pressed.
+    /*
+     * Select the last button that was pressed.
+     */
     Button selectedButton = (Button) myLayout.findViewById(buttonSelected);
     selectedButton.requestFocus();
     selectedButton.setSelected(true);
@@ -530,7 +555,6 @@ public class HomeScreen extends Activity {
 
   /**
    * Set the window layout according to the game preferences.
-   *
    * <p>Requesting that the title bar be removed <b>must</b> be
    * performed before setting the view content by applying the XML
    * layout, or it will generate an exception.
@@ -538,9 +562,13 @@ public class HomeScreen extends Activity {
   private void setWindowLayout() {
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
-    // Remove the title bar.
+    /*
+     * Remove the title bar.
+     */
     requestWindowFeature(Window.FEATURE_NO_TITLE);
-    // Set full screen mode based on the game preferences.
+    /*
+     * Set full screen mode based on the game preferences.
+     */
     SharedPreferences mConfig =
       getSharedPreferences(FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
     boolean fullscreen = mConfig.getBoolean("fullscreen", true);
@@ -565,24 +593,21 @@ public class HomeScreen extends Activity {
    * using TCP.
    */
   private void startFrozenBubble(int numPlayers, int gameLocale) {
-    //
-    // Since the default game activity creates its own player,
-    // destroy the current player.
-    //
-    //
+    /*
+     * Since the default game activity creates its own player,
+     * destroy the current player.
+     */
     cleanUp();
-    //
-    // Create an intent to launch the activity to play the game.
-    //
-    //
+    /*
+     * Create an intent to launch the activity to play the game.
+     */
     Intent intent = new Intent(this, FrozenBubble.class);
     intent.putExtra("numPlayers", (int)numPlayers);
     intent.putExtra("gameLocale", (int)gameLocale );
     startActivity(intent);
-    //
-    // Terminate the splash screen activity.
-    //
-    //
+    /*
+     * Terminate the splash screen activity.
+     */
     finish();
   }
 
@@ -600,9 +625,13 @@ public class HomeScreen extends Activity {
       myLayout.setFocusable(true);
       myLayout.setFocusableInTouchMode(true);
       myLayout.requestFocus();
-      // Highlight the appropriate button to show as selected.
+      /*
+       * Highlight the appropriate button to show as selected.
+       */
       selectInitialButton();
-      // Create a new music player to play the home screen music.
+      /*
+       * Create a new music player to play the home screen music.
+       */
       myModPlayer = new ModPlayer(this, R.raw.introzik, musicOn, false);
     }
   }

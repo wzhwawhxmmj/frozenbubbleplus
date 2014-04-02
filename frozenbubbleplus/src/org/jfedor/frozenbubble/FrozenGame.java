@@ -681,16 +681,14 @@ public class FrozenGame extends GameScreen {
    * This function is an unfortunate patch that is necessitated due to
    * the fact that there is as of yet an unfixed bug in the BubbleSprite
    * management code.
-   * <p>
-   * Somewhere amongst goUp() and move() in BubbleSprite.java, a flaw
+   * <p>Somewhere amongst goUp() and move() in BubbleSprite.java, a flaw
    * exists whereby a bubble is added to the bubble manager, and the
    * bubble sprite is added to the game screen, but the entry in the
    * bubblePlay grid was either rendered null or a bubble superposition
    * in the grid occurred.  The former is suspected, because ensuring
    * the grid location is null before assigning a bubble sprite to it is
    * very rigorously enforced.
-   * <p>
-   * <b>TODO</b> - fix the grid entry nullification/superposition bug.
+   * <p><b>TODO</b> - fix the grid entry bug.
    */
   public void synchronizeBubbleManager() {
     int numBubblesManager = bubbleManager.countBubbles();
@@ -744,12 +742,10 @@ public class FrozenGame extends GameScreen {
 
   /**
    * Remove the designated goingUp bubble sprite from the vector of
-   * attack bubbles because it is now fixed to the game grid.  The
+   * attack bubbles because it is now inserted into the game grid.  The
    * sprite is not removed from the vector of all sprites in the game
    * because it has been added to the play field.
-   * 
-   * @param sprite
-   *        - the attack bubble that has become fixed to the game grid.
+   * @param sprite - the attack bubble inserted into the game grid.
    */
   public void deleteGoingUpBubble(BubbleSprite sprite) {
     goingUp.removeElement(sprite);
@@ -793,12 +789,10 @@ public class FrozenGame extends GameScreen {
   /**
    * Populate random columns in a row of attack bubbles to launch onto
    * the game field.
-   * <p>
-   * In an actual play field, the rows alternate between a maximum 7 and
-   * 8 bubbles per row.  Thus 7 bubbles are sent up as that is the
+   * <p>In an actual play field, the rows alternate between a maximum 7
+   * and 8 bubbles per row.  Thus 7 bubbles are sent up as that is the
    * maximum number of bubbles that can fit in each alternating row.
-   * <p>
-   * There are 15 distinct positions ("lanes") for bubbles to occupy
+   * <p>There are 15 distinct positions ("lanes") for bubbles to occupy
    * between two consecutive rows.  Thus we send up a maximum 7 bubbles
    * in randomly selected "lanes" from the 15 available.
    * @return The number of attack bubbles launched.
@@ -1052,10 +1046,12 @@ public class FrozenGame extends GameScreen {
       hurryTime++;
       if (malusBar != null)
         malusBar.releaseTime++;
-      // If hurryTime == 2 (1 + 1) we could be in the "Don't rush me"
-      // mode.  Remove the sprite just in case the user switched
-      // to this mode when the "Hurry" sprite was shown, to make it
-      // disappear.
+      /*
+       * If hurryTime == 2 (1 + 1) we could be in the "Don't rush me"
+       * mode.  Remove the sprite just in case the user switched
+       * to this mode when the "Hurry" sprite was shown, to make it
+       * disappear.
+       */
       if (hurryTime == 2) {
         removeSprite(hurrySprite);
       }
@@ -1183,7 +1179,7 @@ public class FrozenGame extends GameScreen {
   }
 
   /**
-   * 
+   * Move the launched bubble.
    * @return <code>true</code> if the compressor was lowered.
    */
   public boolean manageMovingBubble() {
