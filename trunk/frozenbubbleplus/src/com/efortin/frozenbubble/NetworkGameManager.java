@@ -55,9 +55,13 @@ package com.efortin.frozenbubble;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import org.jfedor.frozenbubble.FrozenBubble;
+
 import android.content.Context;
+import android.content.SharedPreferences;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
+import com.efortin.frozenbubble.PreferencesActivity.Preferences;
 
 /**
  * This class manages the actions in a network multiplayer game, by
@@ -76,12 +80,15 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * Message identifier definitions.
    */
   public static final byte MSG_ID_JOIN_GAME   = 1;
-  public static final byte MSG_ID_SET_OPTIONS = 2;
+  public static final byte MSG_ID_SET_PREFS   = 2;
   public static final byte MSG_ID_BEGIN_GAME  = 3;
   public static final byte MSG_ID_REBROADCAST = 4;
   public static final byte MSG_ID_ACTION      = 5;
   public static final byte MSG_ID_FIELD_SYNC  = 6;
 
+  private Context      mContext;
+  private Preferences  localPrefs;
+  private Preferences  remotePrefs;
   private VirtualInput localPlayer = null;
   private VirtualInput remotePlayer = null;
   /*
@@ -108,175 +115,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   public void setNetworkListener(NetworkListener ml) {
     mNetworkListener = ml;
   }
-
-  /**
-   * This class encapsulates variables used to identify all possible
-   * player actions.
-   * @author Eric Fortin
-   */
-  public class PlayerAction {
-    public byte  playerID;  // the player ID associated with this action.
-    public short actionID;  // the ID of this particular action 
-    /*
-     * The following three booleans are flags associated with player
-     * actions.
-     * 
-     * compress -
-     *   This flag indicates whether to lower the game field compressor.
-     * 
-     * launchBubble -
-     *   This flag indicates that the player desires a bubble launch to
-     *   occur.  This flag must be set with a valid aimPosition value,
-     *   as well as valid values for launchBubbleColor and
-     *   nextBubbleColor.
-     * 
-     * swapBubble -
-     *   This flag indicates that the player desires that the current
-     *   launch bubble be swapped with the next launch bubble.  This
-     *   flag must be set with a valid aimPosition value, as well as
-     *   valid values for launchBubbleColor and nextBubbleColor.
-     */
-    public boolean compress;
-    public boolean launchBubble;
-    public boolean swapBubble;
-    public byte    launchBubbleColor;
-    public byte    nextBubbleColor;
-    public byte    newNextBubbleColor;
-    public short   addAttackBubbles;
-    public short   totalAttackBubbles;
-    public byte    attackBubbles[] = { -1, -1, -1, -1, -1,
-                                       -1, -1, -1, -1, -1,
-                                       -1, -1, -1, -1, -1 };
-    public double  aimPosition;
-
-    /**
-     * Class constructor.
-     * @param action - PlayerAction object to copy to this instance.
-     */
-    public PlayerAction(PlayerAction action) {
-      copyFromAction(action);
-    }
-
-    /**
-     * Class constructor.
-     * @param buffer - buffer contents to copy to this instance.
-     */
-    public PlayerAction(byte[] buffer, int startIndex) {
-      copyFromBuffer(buffer, startIndex);
-    }
-
-    /**
-     * Copy the contents of the supplied action to this action.
-     * @param action - the action to copy
-     */
-    public void copyFromAction(PlayerAction action) {
-      if (action != null) {
-        this.playerID            = action.playerID;
-        this.actionID            = action.actionID;
-        this.compress            = action.compress;
-        this.launchBubble        = action.launchBubble;
-        this.swapBubble          = action.swapBubble;
-        this.launchBubbleColor   = action.launchBubbleColor;
-        this.nextBubbleColor     = action.nextBubbleColor;
-        this.newNextBubbleColor  = action.newNextBubbleColor;
-        this.addAttackBubbles    = action.addAttackBubbles;
-        this.totalAttackBubbles  = action.totalAttackBubbles;
-
-        for (int index = 0; index < 15; index++) {
-          this.attackBubbles[index] = action.attackBubbles[index];
-        }
-
-        this.aimPosition         = action.aimPosition;
-      }
-    }
-
-    /**
-     * Copy the contents of the buffer to this action.
-     * @param buffer - the buffer to convert and copy
-     * @param startIndex - the start of the data to convert
-     */
-    public void copyFromBuffer(byte[] buffer, int startIndex) {
-      byte[] shortBytes  = new byte[2];
-      byte[] doubleBytes = new byte[8];
-
-      if (buffer != null) {
-        this.playerID            = buffer[startIndex++];
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.actionID            = toShort(shortBytes);
-        this.compress            = buffer[startIndex++] == 1;
-        this.launchBubble        = buffer[startIndex++] == 1;
-        this.swapBubble          = buffer[startIndex++] == 1;
-        this.launchBubbleColor   = buffer[startIndex++];
-        this.nextBubbleColor     = buffer[startIndex++];
-        this.newNextBubbleColor  = buffer[startIndex++];
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.addAttackBubbles    = toShort(shortBytes);
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.totalAttackBubbles  = toShort(shortBytes);
-
-        for (int index = 0; index < 15; index++) {
-          this.attackBubbles[index] = buffer[startIndex++];
-        }
-
-        for (int index = 0; index < 8; index++) {
-          doubleBytes[index] = buffer[startIndex++];
-        }
-
-        this.aimPosition         = toDouble(doubleBytes);
-      }
-    }
-
-    /**
-     * Copy the contents of this action to the buffer.
-     * @param buffer - the buffer to copy to
-     * @param startIndex - the start location to copy to
-     */
-    public void copyToBuffer(byte[] buffer, int startIndex) {
-      byte[] shortBytes  = new byte[2];
-      byte[] doubleBytes = new byte[8];
-
-      if (buffer != null) {
-        buffer[startIndex++] = this.playerID;
-        toByteArray(this.actionID, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
-        buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
-        buffer[startIndex++] = (byte) ((this.launchBubble == true)?1:0);
-        buffer[startIndex++] = (byte) ((this.swapBubble == true)?1:0);
-        buffer[startIndex++] = this.launchBubbleColor;
-        buffer[startIndex++] = this.nextBubbleColor;
-        buffer[startIndex++] = this.newNextBubbleColor;
-        toByteArray(this.addAttackBubbles, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
-        toByteArray(this.totalAttackBubbles, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
-
-        for (int index = 0; index < 15; index++) {
-          buffer[startIndex++] = this.attackBubbles[index];
-        }
-
-        toByteArray(this.aimPosition, doubleBytes);
-
-        for (int index = 0; index < 8; index++) {
-          buffer[startIndex++] = doubleBytes[index];
-        }
-      }
-    }
-
-    /**
-     * This method gives the number of bytes of data in this class.
-     * @return The number of bytes of data it takes to store the data in
-     * this class.
-     */
-    public int sizeInBytes() {
-      return (36);
-    }
-  };
 
   /**
    * This class represents the current state of an individual player
@@ -414,6 +252,176 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
   };
 
+  /**
+   * This class encapsulates variables used to identify all possible
+   * player actions.
+   * @author Eric Fortin
+   *
+   */
+  public class PlayerAction {
+    public byte  playerID;  // the player ID associated with this action.
+    public short actionID;  // the ID of this particular action 
+    /*
+     * The following three booleans are flags associated with player
+     * actions.
+     * 
+     * compress -
+     *   This flag indicates whether to lower the game field compressor.
+     * 
+     * launchBubble -
+     *   This flag indicates that the player desires a bubble launch to
+     *   occur.  This flag must be set with a valid aimPosition value,
+     *   as well as valid values for launchBubbleColor and
+     *   nextBubbleColor.
+     * 
+     * swapBubble -
+     *   This flag indicates that the player desires that the current
+     *   launch bubble be swapped with the next launch bubble.  This
+     *   flag must be set with a valid aimPosition value, as well as
+     *   valid values for launchBubbleColor and nextBubbleColor.
+     */
+    public boolean compress;
+    public boolean launchBubble;
+    public boolean swapBubble;
+    public byte    launchBubbleColor;
+    public byte    nextBubbleColor;
+    public byte    newNextBubbleColor;
+    public short   addAttackBubbles;
+    public short   totalAttackBubbles;
+    public byte    attackBubbles[] = { -1, -1, -1, -1, -1,
+                                       -1, -1, -1, -1, -1,
+                                       -1, -1, -1, -1, -1 };
+    public double  aimPosition;
+
+    /**
+     * Class constructor.
+     * @param action - PlayerAction object to copy to this instance.
+     */
+    public PlayerAction(PlayerAction action) {
+      copyFromAction(action);
+    }
+
+    /**
+     * Class constructor.
+     * @param buffer - buffer contents to copy to this instance.
+     */
+    public PlayerAction(byte[] buffer, int startIndex) {
+      copyFromBuffer(buffer, startIndex);
+    }
+
+    /**
+     * Copy the contents of the supplied action to this action.
+     * @param action - the action to copy.
+     */
+    public void copyFromAction(PlayerAction action) {
+      if (action != null) {
+        this.playerID           = action.playerID;
+        this.actionID           = action.actionID;
+        this.compress           = action.compress;
+        this.launchBubble       = action.launchBubble;
+        this.swapBubble         = action.swapBubble;
+        this.launchBubbleColor  = action.launchBubbleColor;
+        this.nextBubbleColor    = action.nextBubbleColor;
+        this.newNextBubbleColor = action.newNextBubbleColor;
+        this.addAttackBubbles   = action.addAttackBubbles;
+        this.totalAttackBubbles = action.totalAttackBubbles;
+
+        for (int index = 0; index < 15; index++) {
+          this.attackBubbles[index] = action.attackBubbles[index];
+        }
+
+        this.aimPosition        = action.aimPosition;
+      }
+    }
+
+    /**
+     * Copy the contents of the buffer to this action.
+     * @param buffer - the buffer to convert and copy.
+     * @param startIndex - the start of the data to convert.
+     */
+    public void copyFromBuffer(byte[] buffer, int startIndex) {
+      byte[] shortBytes  = new byte[2];
+      byte[] doubleBytes = new byte[8];
+
+      if (buffer != null) {
+        this.playerID           = buffer[startIndex++];
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.actionID           = toShort(shortBytes);
+        this.compress           = buffer[startIndex++] == 1;
+        this.launchBubble       = buffer[startIndex++] == 1;
+        this.swapBubble         = buffer[startIndex++] == 1;
+        this.launchBubbleColor  = buffer[startIndex++];
+        this.nextBubbleColor    = buffer[startIndex++];
+        this.newNextBubbleColor = buffer[startIndex++];
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.addAttackBubbles   = toShort(shortBytes);
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.totalAttackBubbles = toShort(shortBytes);
+
+        for (int index = 0; index < 15; index++) {
+          this.attackBubbles[index] = buffer[startIndex++];
+        }
+
+        for (int index = 0; index < 8; index++) {
+          doubleBytes[index] = buffer[startIndex++];
+        }
+
+        this.aimPosition        = toDouble(doubleBytes);
+      }
+    }
+
+    /**
+     * Copy the contents of this action to the buffer.
+     * @param buffer - the buffer to copy to.
+     * @param startIndex - the start location to copy to.
+     */
+    public void copyToBuffer(byte[] buffer, int startIndex) {
+      byte[] shortBytes  = new byte[2];
+      byte[] doubleBytes = new byte[8];
+
+      if (buffer != null) {
+        buffer[startIndex++] = this.playerID;
+        toByteArray(this.actionID, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.launchBubble == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.swapBubble == true)?1:0);
+        buffer[startIndex++] = this.launchBubbleColor;
+        buffer[startIndex++] = this.nextBubbleColor;
+        buffer[startIndex++] = this.newNextBubbleColor;
+        toByteArray(this.addAttackBubbles, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        toByteArray(this.totalAttackBubbles, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+
+        for (int index = 0; index < 15; index++) {
+          buffer[startIndex++] = this.attackBubbles[index];
+        }
+
+        toByteArray(this.aimPosition, doubleBytes);
+
+        for (int index = 0; index < 8; index++) {
+          buffer[startIndex++] = doubleBytes[index];
+        }
+      }
+    }
+
+    /**
+     * This method gives the number of bytes of data in this class.
+     * @return The number of bytes of data it takes to store the data in
+     * this class.
+     */
+    public int sizeInBytes() {
+      return (36);
+    }
+  };
+
   public class NetworkInterface {
     public byte          messageId;
     public PlayerAction  playerAction;
@@ -433,6 +441,19 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     byte msgId = buffer[0];
 
+    /*
+     * If the message contains game preferences, then the remote player
+     * is player 1.  The game options are set according to player 1.
+     */
+    if (msgId == MSG_ID_SET_PREFS) {
+      copyPrefsFromBuffer(remotePrefs, buffer, 1);
+      PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
+    }
+
+    /*
+     * If the message contains a game action, add it to the appropriate
+     * action list.
+     */
     if (msgId == MSG_ID_ACTION) {
       addAction(new PlayerAction(buffer, 1));
     }
@@ -446,7 +467,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   public NetworkGameManager(Context myContext) {
-    init();
+    init(myContext);
     /*
      * Create the remote player action array.  The actions are inserted
      * chronologically based on message receipt order, but are extracted
@@ -467,41 +488,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
-   * Initialize all variables to game start values.
-   */
-  public void init() {
-    localPlayer = null;
-    remotePlayer = null;
-    localActionID = 0;
-    remoteActionID = 0;
-    remoteNetworkInterface.init();
-    running = true;
-  }
-
-  private void cleanUp() {
-    localPlayer = null;
-    remotePlayer = null;
-    remoteNetworkInterface.init();
-    running = false;
-    mNetworkListener = null;
-
-    if (localActionList != null)
-      localActionList.clear();
-    localActionList = null;
-
-    if (remoteActionList != null)
-      remoteActionList.clear();
-    remoteActionList = null;
-
-    if (session != null)
-      session.stopMulticast();
-    session = null;
-  }
-
-  /**
    * Add a player action to the appropriate action list.  Do not allow
    * duplicate actions to populate the lists.
-   * @param newAction
+   * @param newAction - the action to add to the appropriate list.
    */
   private synchronized void addAction(PlayerAction newAction) {
     if (running && (localPlayer != null) && (remotePlayer != null)) {
@@ -533,6 +522,102 @@ public class NetworkGameManager implements MulticastListener, Runnable {
         }
         remoteActionList.add(newAction);
       }
+    }
+  }
+
+  private void cleanUp() {
+    localPlayer = null;
+    remotePlayer = null;
+    remoteNetworkInterface.init();
+
+    if (localActionList != null)
+      localActionList.clear();
+    localActionList = null;
+
+    if (remoteActionList != null)
+      remoteActionList.clear();
+    remoteActionList = null;
+
+    if (session != null)
+      session.stopMulticast();
+    session = null;
+  }
+
+  /**
+   * Copy the contents of the buffer to the designated preferences.
+   * @param buffer - the buffer to convert and copy.
+   * @param startIndex - the start of the data to convert.
+   */
+  private void copyPrefsFromBuffer(Preferences prefs,
+                                   byte[] buffer,
+                                   int startIndex) {
+    byte[] intBytes = new byte[4];
+
+    if (buffer != null) {
+      intBytes[0]      = buffer[startIndex++];
+      intBytes[1]      = buffer[startIndex++];
+      intBytes[2]      = buffer[startIndex++];
+      intBytes[3]      = buffer[startIndex++];
+      prefs.collision  = toInt(intBytes);
+      prefs.compressor = buffer[startIndex++] == 1;
+      intBytes[0]      = buffer[startIndex++];
+      intBytes[1]      = buffer[startIndex++];
+      intBytes[2]      = buffer[startIndex++];
+      intBytes[3]      = buffer[startIndex++];
+      prefs.difficulty = toInt(intBytes);
+      prefs.dontRushMe = buffer[startIndex++] == 1;
+      prefs.fullscreen = buffer[startIndex++] == 1;
+      intBytes[0]      = buffer[startIndex++];
+      intBytes[1]      = buffer[startIndex++];
+      intBytes[2]      = buffer[startIndex++];
+      intBytes[3]      = buffer[startIndex++];
+      prefs.gameMode   = toInt(intBytes);
+      prefs.musicOn    = buffer[startIndex++] == 1;
+      prefs.soundOn    = buffer[startIndex++] == 1;
+      intBytes[0]      = buffer[startIndex++];
+      intBytes[1]      = buffer[startIndex++];
+      intBytes[2]      = buffer[startIndex++];
+      intBytes[3]      = buffer[startIndex++];
+      prefs.gameMode   = toInt(intBytes);
+    }
+  }
+
+  /**
+   * Copy the contents of this preferences object to the buffer.
+   * @param buffer - the buffer to copy to.
+   * @param startIndex - the start location to copy to.
+   */
+  private void copyPrefsToBuffer(Preferences prefs,
+                                 byte[] buffer,
+                                 int startIndex) {
+    byte[] intBytes = new byte[4];
+
+    if (buffer != null) {
+      toByteArray(prefs.collision, intBytes);
+      buffer[startIndex++] = intBytes[0];
+      buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[3];
+      buffer[startIndex++] = intBytes[4];
+      buffer[startIndex++] = (byte) ((prefs.compressor == true)?1:0);
+      toByteArray(prefs.difficulty, intBytes);
+      buffer[startIndex++] = intBytes[0];
+      buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[3];
+      buffer[startIndex++] = intBytes[4];
+      buffer[startIndex++] = (byte) ((prefs.dontRushMe == true)?1:0);
+      buffer[startIndex++] = (byte) ((prefs.fullscreen == true)?1:0);
+      toByteArray(prefs.gameMode, intBytes);
+      buffer[startIndex++] = intBytes[0];
+      buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[3];
+      buffer[startIndex++] = intBytes[4];
+      buffer[startIndex++] = (byte) ((prefs.musicOn == true)?1:0);
+      buffer[startIndex++] = (byte) ((prefs.soundOn == true)?1:0);
+      toByteArray(prefs.targetMode, intBytes);
+      buffer[startIndex++] = intBytes[0];
+      buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[3];
+      buffer[startIndex++] = intBytes[4];
     }
   }
 
@@ -568,6 +653,23 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     return (remoteNetworkInterface.playerAction);
   }
 
+  /**
+   * Initialize all variables to game start values.
+   */
+  public void init(Context myContext) {
+    mContext = myContext;
+    localPlayer = null;
+    remotePlayer = null;
+    SharedPreferences sp =
+        myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                       Context.MODE_PRIVATE);
+    PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
+    localActionID = 0;
+    remoteActionID = 0;
+    remoteNetworkInterface.init();
+    running = true;
+  }
+
   public void registerPlayers(VirtualInput localPlayer,
                               VirtualInput remotePlayer) {
     this.localPlayer = localPlayer;
@@ -578,22 +680,23 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     while (running) {
       try {
         synchronized(this) {
-          wait(100);
+          wait();
         }
       } catch (InterruptedException e) {
         // TODO - auto-generated exception handler stub.
         //e.printStackTrace();
       }
-    }
 
-    if (running) {
-      /*
-       * TODO: check for game field synchronization.
-       */
-      if (getRemoteAction() != null) {
-        mNetworkListener.onNetworkEvent(remoteNetworkInterface);
+      if (running) {
+        /*
+         * TODO: check for game field synchronization.
+         */
+        if (getRemoteAction() != null) {
+          mNetworkListener.onNetworkEvent(remoteNetworkInterface);
+        }
       }
     }
+    cleanUp();
   }
 
   /**
@@ -603,22 +706,22 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    * @param compress - set <code>true</code> to lower the compressor.
    * @param launch - set <code>true</code> to launch a bubble.
    * @param swap - set <code>true</code> to swap the launch bubble with
-   *   the next bubble.
+   * the next bubble.
    * @param launchColor - the launch bubble color.
    * @param nextColor - the next bubble color.
    * @param newNextColor - when a bubble is launched, this is the new
-   *   next bubble color.  The prior next color is promoted to the
-   *   launch bubble color.
+   * next bubble color.  The prior next color is promoted to the
+   * launch bubble color.
    * @param addAttackBubbles - the number of attack bubbles to add to
-   *   the opponent's attack bar.  Note this value may be set by either
-   *   player, but is only set by the remote player with respect to the
-   *   local player when a bubble superposition was prevented.  A
-   *   superposition is detected when an attack bubble attempts to
-   *   occupy an already occupied grid location.
+   * the opponent's attack bar.  Note this value may be set by either
+   * player, but is only set by the remote player with respect to the
+   * local player when a bubble superposition was prevented.  A
+   * superposition is detected when an attack bubble attempts to
+   * occupy an already occupied grid location.
    * @param totalAttackBubbles - the number of attack bubbles stored on
-   *   the attack bar prior to adding <code>addAttackBubbles</code>.
+   * the attack bar prior to adding <code>addAttackBubbles</code>.
    * @param attackBubbles - the array of attack bubble colors.  A value
-   *   of -1 denotes no color, and thus no attack bubble at that column.
+   * of -1 denotes no color, and thus no attack bubble at that column.
    * @param aimPosition - the launcher aim aimPosition.
    */
   public void sendLocalPlayerAction(int playerId,
@@ -656,11 +759,20 @@ public class NetworkGameManager implements MulticastListener, Runnable {
 
   /**
    * Stop the thread <code>run()</code> execution.
-   * <p>
-   * Interrupt the thread when it is suspended via <code>wait()</code>.
+   * <p>Interrupt the thread when it is suspended via
+   * <code>wait()</code> so it may terminate.
    */
   public void stopThread() {
-    cleanUp();
+    running = false;
+    mNetworkListener = null;
+    /*
+     * Restore the local game preferences in the event that they were
+     * overwritten by the remote player's preferences.
+     */
+    SharedPreferences sp =
+        mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                      Context.MODE_PRIVATE);
+    PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
 
     synchronized(this) {
       this.notify();
@@ -678,6 +790,16 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
+   * Populate a byte array with the byte representation of an integer.
+   * The byte array must consist of at least 4 bytes.
+   * @param value - the integer to convert to a byte array.
+   * @param array - the byte array where the converted int is placed.
+   */
+  public static void toByteArray(int value, byte[] array) {
+    ByteBuffer.wrap(array).putInt(value);
+  }
+
+  /**
    * Populate a byte array with the byte representation of a double.
    * The byte array must consist of at least 8 bytes.
    * @param value - the double to convert to a byte array.
@@ -688,18 +810,8 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
-   * Convert a byte array into a short value.
-   * @param bytes - the byte array to convert into a short
-   * @return The short representation of the supplied byte array.
-   */
-  public static short toShort(byte[] bytes) {
-    return ByteBuffer.wrap(bytes).getShort();
-  }
-
-
-  /**
    * Convert a byte array into a double value.
-   * @param bytes - the byte array to convert into a double
+   * @param bytes - the byte array to convert into a double.
    * @return The double representation of the supplied byte array.
    */
   public static double toDouble(byte[] bytes) {
@@ -707,8 +819,26 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   /**
+   * Convert a byte array into an integer value.
+   * @param bytes - the byte array to convert into an integer.
+   * @return The double representation of the supplied byte array.
+   */
+  public static int toInt(byte[] bytes) {
+    return ByteBuffer.wrap(bytes).getInt();
+  }
+
+  /**
+   * Convert a byte array into a short value.
+   * @param bytes - the byte array to convert into a short.
+   * @return The short representation of the supplied byte array.
+   */
+  public static short toShort(byte[] bytes) {
+    return ByteBuffer.wrap(bytes).getShort();
+  }
+
+  /**
    * Transmit the local player action to the remote player via the
-   * network interface
+   * network interface.
    * @param action - the player action to transmit.
    */
   private void transmitAction(PlayerAction action) {
@@ -716,7 +846,21 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     buffer[0] = MSG_ID_ACTION;
     action.copyToBuffer(buffer, 1);
     /*
-     * Send the player action via the multicast manager.
+     * Send the datagram via the multicast manager.
+     */
+    session.transmit(buffer);
+  }
+
+  /**
+   * Transmit the local player preferences to the remote player via the
+   * network interface.
+   */
+  private void transmitPrefs() {
+    byte[] buffer = new byte[localPrefs.sizeInBytes() + 1];
+    buffer[0] = MSG_ID_SET_PREFS;
+    copyPrefsToBuffer(localPrefs, buffer, 1);
+    /*
+     * Send the datagram via the multicast manager.
      */
     session.transmit(buffer);
   }

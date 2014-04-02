@@ -104,7 +104,7 @@ import android.net.wifi.WifiManager;
  * <code>getBaseContext()</code> if operating within a nested context.
  *
  * @author Eric Fortin, Wednesday, May 8, 2013
- * 
+ *
  */
 public class MulticastManager {
   /*
@@ -148,21 +148,17 @@ public class MulticastManager {
 
   /**
    * Multicast manager class constructor.
-   * <p>
-   * When created, this class instantiates a thread to send and receive
-   * WiFi multicast messages.
-   * <p>
-   * In order for the multicast manager to actually send and receive
+   * <p>When created, this class instantiates a thread to send and
+   * receive WiFi multicast messages.
+   * <p>In order for the multicast manager to actually send and receive
    * WiFi multicast messages, <code>configureMulticast()</code> must be
    * called to configure the multicast socket settings prior to
    * <code>start()</code>ing the thread.
-   * <p>
-   * Furthermore, multicast host addresses must be in the IPv4 class
+   * <p>Furthermore, multicast host addresses must be in the IPv4 class
    * D address range, with the leftmost octect being within the 224 to
    * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
    * multicast host address.
-   * <p>
-   * A typical implementation looks like this:<br>
+   * <p> A typical implementation looks like this:<br>
    * <code>
    * MulticastManager session = <br>
    * new MulticastManager(this.getContext());<br>
@@ -170,17 +166,14 @@ public class MulticastManager {
    * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
    * <br>session.start();
    * </code>
-   * <p>
-   * The context will have to be provided based on the desired context -
-   * either the view context for the current activity only via
+   * <p>The context will have to be provided based on the desired
+   * context - either the view context for the current activity only via
    * <code>getContext()</code>, the application context to ensure the
    * multicast manager lifecycle is tied to the entire application
    * lifecycle via <code>getApplicationContext()</code>, or via
    * <code>getBaseContext()</code> if operating within a nested context.
-   * 
-   * @param context
-   *        - the context defining the lifecycle of the multicast
-   *        manager for the purpose of obtaining WiFi service access.
+   * @param context - the context defining the lifecycle of the
+   * multicast manager for the purpose of obtaining WiFi service access.
    */
   public MulticastManager(Context context) {
     mPaused            = false;
@@ -224,10 +217,8 @@ public class MulticastManager {
    * Remove this socket from the multicast group and close the socket.
    * This is particularly useful if there was a socket failure and it is
    * desirable to create a new socket.
-   * <p>
-   * Call <code>configureMulticast()</code> to create a new multicast
+   * <p>Call <code>configureMulticast()</code> to create a new multicast
    * socket.
-   * 
    * @see <code>configureMulticast()</code>
    */
   public void closeSocket() {
@@ -248,31 +239,19 @@ public class MulticastManager {
 
   /**
    * Configure the multicast socket settings.
-   * 
-   * <p>
-   * This must be called before <code>start()</code>ing the thread.
-   * 
-   * @param hostName
-   *        - the host string name given by either the machine name or
-   *        IP dotted string address.  Multicast addresses must be in
-   *        the IPv4 class D address range, with the leftmost octect
-   *        being within the 224 to 239 range.
-   * 
-   * @param port
-   *        - the port on the host to bind the multicast socket to.
-   * 
-   * @param timeout
-   *        - the receive blocking timeout.  If zero, receive() blocks
-   *        the rest of the thread from executing forever (or until a
-   *        datagram is received).
-   * 
-   * @param broadcast
-   *        - if true, then transmitted messages are sent to every peer
-   *        on the network, instead of just to the multicast group.
-   * 
-   * @param loopbackDisable
-   *        - if false, locally transmitted messages will be received on
-   *        the local socket.
+   * <p>This must be called before <code>start()</code>ing the thread.
+   * @param hostName - the host string name given by either the machine
+   * name or IP dotted string address.  Multicast addresses must be in
+   * the IPv4 class D address range, with the leftmost octect being
+   * within the 224 to 239 range.
+   * @param port - the port on the host to bind the multicast socket to.
+   * @param timeout - the receive blocking timeout.  If zero, receive()
+   * blocks the rest of the thread from executing forever (or until a
+   * datagram is received).
+   * @param broadcast - if true, then transmitted messages are sent to
+   * every peer on the network, instead of just to the multicast group.
+   * @param loopbackDisable - if false, locally transmitted messages
+   * will be received on the local socket.
    */
   public void configureMulticast(String hostName,
                                  int port,
@@ -327,9 +306,8 @@ public class MulticastManager {
   /**
    * Determine whether the multicast socket manager is functioning
    * correctly.  If not, creating a new instance is required.
-   * 
    * @return true if this instance has the necessary objects to run
-   *         correctly, false if it is not operational.
+   * orrectly, false if it is not operational.
    */
   public boolean isMulticastValid() {
     if ((mMulticastSocket != null) && (mMulticastThread != null) && !mStopped)
@@ -340,26 +318,21 @@ public class MulticastManager {
 
   /**
    * This is the multicast thread declaration.
-   * <p>
-   * To support being able to send and receive packets in the same
+   * <p>To support being able to send and receive packets in the same
    * thread, a nonzero socket read timeout must be set, because
    * <code>MulticastSocket.receive()</code> blocks until a packet is
    * received or the socket times out.  Thus, if a timeout of zero is
    * set (which is the default, and denotes that the socket will never
    * time out), a datagram will never be sent unless one has just been
    * received.
-   * 
    * @author Eric Fortin, Wednesday, May 8, 2013
-   * 
    * @see <code>MulticastManager.configureMulticast()</code>
    */
   class MulticastThread extends Thread {
     /**
      * This pauses the multicast thread.
-     * <p>
-     * The thread must have been initially started with
+     * <p>The thread must have been initially started with
      * <code>Thread.start()</code>.
-     * 
      * @see <code>MulticastThread.run()</code>
      */
     public void pauseThread() {
@@ -370,10 +343,9 @@ public class MulticastManager {
 
     /**
      * Receive a multicast datagram.
-     * <p>
-     * Given a nonzero socket timeout, it is expected behavior for this
-     * method to catch an <code>InterruptedIOException</code>.  This
-     * method posts an <code>EVENT_PACKET_RX</code> event to the
+     * <p>Given a nonzero socket timeout, it is expected behavior for
+     * this method to catch an <code>InterruptedIOException</code>.
+     * This method posts an <code>EVENT_PACKET_RX</code> event to the
      * registered listener upon datagram receipt.
      */
     private void receiveDatagram() {
@@ -410,10 +382,8 @@ public class MulticastManager {
 
     /**
      * This resumes the multicast thread after it has been paused.
-     * <p>
-     * The thread must have been initially started with
+     * <p>The thread must have been initially started with
      * <code>Thread.start()</code>.
-     * 
      * @see <code>MulticastThread.run()</code>
      */
     public void resumeThread() {
@@ -427,19 +397,16 @@ public class MulticastManager {
 
     /**
      * This is the thread's <code>run()</code> call.
-     * <p>
-     * Send multicast UDP messages, and read multicast datagrams from
+     * <p>Send multicast UDP messages, and read multicast datagrams from
      * other clients.
-     * <p>
-     * To support being able to send and receive packets in the same
+     * <p>To support being able to send and receive packets in the same
      * thread, a nonzero socket read timeout must be set, because
      * <code>MulticastSocket.receive()</code> blocks until a packet is
      * received or the socket times out.  Thus, if a timeout of zero is
      * set (which is the default, and denotes that the socket will never
      * time out), a datagram will never be sent unless one has just been
      * received.
-     * <p>
-     * Thus the maximum time between datagram transmissions is the
+     * <p>Thus the maximum time between datagram transmissions is the
      * socket timeout if no datagrams are being recieved.  If messages
      * are being received, available TX throughput will be increased.
      */
@@ -454,12 +421,18 @@ public class MulticastManager {
               wait();
             }
           } catch (IllegalMonitorStateException imse) {
-            // Object must be locked by thread before wait().
+            /*
+             * Object must be locked by thread before calling wait().
+             */
             imse.printStackTrace();
           } catch (InterruptedException ie) {
-            // wait() was interrupted.  This is expected behavior.
+            /*
+             * wait() was interrupted.  This is expected behavior.
+             */
           } catch (NullPointerException npe) {
-            // Notify was called from within this thread.
+            /*
+             * Notify was called from within this thread.
+             */
             npe.printStackTrace();
           }
         }
@@ -479,10 +452,9 @@ public class MulticastManager {
 
     /**
      * Send a multicast datagram.
-     * <p>
-     * If the transmission fails, calling this method again will attempt
-     * to resend the same datagram.  Calling this method when the
-     * <code>requestTX</code> flag is false does nothing.
+     * <p>If the transmission fails, calling this method again will
+     * attempt to resend the same datagram.  Calling this method when
+     * the <code>requestTX</code> flag is false does nothing.
      */
     private void sendDatagram() {
       if (requestTX)
@@ -517,12 +489,13 @@ public class MulticastManager {
 
     /**
      * This stops the thread.
-     * 
      * @see <code>MulticastThread.run()</code>
      */
     public void stopThread() {
       mStopped = true;
-      // Notify the thread to wake it up if paused.
+      /*
+       * Notify the thread to wake it up if paused.
+       */
       synchronized(this) {
         this.notify();
       }
@@ -560,14 +533,18 @@ public class MulticastManager {
     if (mMulticastThread != null)
     {
       boolean retry = true;
-      // Close and join() the multicast thread.
+      /*
+       * Close and join() the multicast thread.
+       */
       mMulticastThread.stopThread();
       while (retry) {
         try {
           mMulticastThread.join();
           retry = false;
         } catch (InterruptedException e) {
-          // Keep trying to close the multicast thread.
+          /*
+           * Keep trying to close the multicast thread.
+           */
         }
       }
     }
@@ -576,13 +553,10 @@ public class MulticastManager {
 
   /**
    * Send the desired string as a multicast datagram packet.
-   * <p>
-   * If a transmission is already pending when this method is called,
+   * <p>If a transmission is already pending when this method is called,
    * the prior message will be superceded by the current message.  An
    * EVENT_TX_FLOOD event is posted if this occurs.
-   * 
-   * @param string
-   *        - the string to transmit.
+   * @param string - the string to transmit.
    */
   public void transmit(byte[] buffer) {
     if ((mTXBuffer != null) || (requestTX)) {

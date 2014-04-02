@@ -82,20 +82,11 @@ public class MalusBar extends Sprite {
 
   /**
    * Manages a malus bar (bananas & tomatoes).
-   * 
-   * @param coordX
-   *        - X-coord of game facade.
-   * @param coordY
-   *        - Y-coord of game facade.
-   * 
-   * @param leftSide
-   *        - if on left side (false => right side).
-   * 
-   * @param tomato
-   *        - image resource for a tomato.
-   * 
-   * @param banana
-   *        - image resource for a banana.
+   * @param coordX - X-coord of game facade.
+   * @param coordY - Y-coord of game facade.
+   * @param leftSide - if on left side (false => right side).
+   * @param tomato - image resource for a tomato.
+   * @param banana - image resource for a banana.
    */
   public MalusBar(int coordX, int coordY, BmpWrap banana, BmpWrap tomato) {
     super(new Rect(coordX, coordY, coordX + 33, coordY + 354));

@@ -571,13 +571,10 @@ public class BubbleSprite extends Sprite {
 
   /**
    * Adds a bubble to the fixed grid.
-   * 
-   * @param grid
-   *        - the array of fixed bubbles.
-   * @param position
-   *        - the position in the grid to check for occupancy.
+   * @param grid - the array of fixed bubbles.
+   * @param position - the position in the grid to check for occupancy.
    * @return true if the bubble becomes registered in the grid (false if
-   *         another bubble already occupies the same position).
+   * another bubble already occupies the same position).
    */
   public boolean register(BubbleSprite[][] grid, Point position) {
     boolean register = grid[position.x][position.y] == null;

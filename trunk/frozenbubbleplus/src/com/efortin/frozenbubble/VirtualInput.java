@@ -58,6 +58,7 @@ import android.view.KeyEvent;
  * This class encapsulates variables used to interface all possible
  * virtual player actions.
  * @author Eric Fortin
+ *
  */
 public abstract class VirtualInput {
   /*

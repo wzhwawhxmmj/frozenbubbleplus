@@ -207,7 +207,6 @@ public class FrozenBubble extends Activity
   /*
    * (non-Javadoc)
    * @see android.app.Activity#onCreate(android.os.Bundle)
-   * 
    * This method is called when the activity is started.  The activity
    * may have been reconfigured or the system may have killed the
    * process, after which it regained focus to invoke this method.
@@ -410,9 +409,8 @@ public class FrozenBubble extends Activity
   /**
    * Notification that something is about to happen, to give the
    * Activity a chance to save state.
-   * 
-   * @param outState
-   *        - A Bundle into which this Activity should save its state.
+   * @param outState - A Bundle into which this Activity should save its
+   * state.
    */
   @Override
   protected void onSaveInstanceState(Bundle outState) {
@@ -576,14 +574,11 @@ public class FrozenBubble extends Activity
 
   /**
    * Method to start a game using levels from the level editor.
-   * <p>
-   * If the level isn't specified from the editor, then the player
+   * <p>If the level isn't specified from the editor, then the player
    * selected the option to continue playing from the last level
    * played, so use the last level played instead.
-   * 
-   * @param intent
-   *        - The intent from the level editor used to start this
-   *        activity, which contains the custom level data.
+   * @param intent - The intent from the level editor used to start this
+   * activity, which contains the custom level data.
    */
   private void startCustomGame(Intent intent) {
     activityCustomStarted = true;
@@ -612,11 +607,8 @@ public class FrozenBubble extends Activity
    * Method to start a game using default levels, if single player game
    * mode was selected.
    * <p>This method is also used to start a multiplayer game.
-   * 
-   * @param intent
-   *        - The intent used to start this activity.
-   * @param savedInstanceState
-   *        - the bundle of saved state information.
+   * @param intent - The intent used to start this activity.
+   * @param savedInstanceState - the bundle of saved state information.
    */
   private void startDefaultGame(Intent intent, Bundle savedInstanceState) {
     /*
@@ -1040,10 +1032,9 @@ public class FrozenBubble extends Activity
    * be created or if one already exists.  Then, based on the current
    * level, the song to play is calculated and loaded.  If desired, the
    * song will start playing immediately, or it can remain paused.
-   * 
-   * @param startPlaying
-   *        - If true, the song starts playing immediately.  Otherwise
-   *        it is paused and must be unpaused to start playing.
+   * @param startPlaying - If <code>true</code>, the song starts playing
+   * immediately.  Otherwise it is paused and must be unpaused to start
+   * playing.
    */
   private void playMusic(boolean startPlaying)
   {
