@@ -64,7 +64,6 @@ public abstract class VirtualInput {
   /*
    * Player ID definitions.
    */
-  public static final byte PLAYER0 = 0;
   public static final byte PLAYER1 = 1;
   public static final byte PLAYER2 = 2;
 

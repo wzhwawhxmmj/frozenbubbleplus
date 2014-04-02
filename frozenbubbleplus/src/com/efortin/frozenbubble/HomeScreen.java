@@ -89,6 +89,8 @@ public class HomeScreen extends Activity {
   private final static int BTN4_ID   = 104;
   private final static int BTN5_ID   = 105;
   private final static int BTN6_ID   = 106;
+  private final static int BTN7_ID   = 107;
+  private final static int BTN8_ID   = 108;
 
   private static int buttonSelected = BTN1_ID;
 
@@ -158,7 +160,7 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start/resume a 1 player game.
          */
-        startFrozenBubble(1, FrozenBubble.LOCALE_LOCAL);
+        startFrozenBubble(VirtualInput.PLAYER1, 1, FrozenBubble.LOCALE_LOCAL);
       }
     });
     start1pGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -246,11 +248,9 @@ public class HomeScreen extends Activity {
       public void onClick(View v){
         buttonSelected = BTN5_ID;
         /*
-         * Process the button tap and start a LAN game.
+         * Display the player ID buttons page.
          */
-        //startFrozenBubble(2, FrozenBubble.LOCALE_LAN);
-        Toast.makeText(getApplicationContext(),
-            "Not available in this version.", Toast.LENGTH_SHORT).show();
+        displayButtonPage(3);
       }
     });
     startLanGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -289,7 +289,7 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start a 2 player game.
          */
-        startFrozenBubble(2, FrozenBubble.LOCALE_LOCAL);
+        startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LOCAL);
       }
     });
     startCPUGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -361,6 +361,96 @@ public class HomeScreen extends Activity {
     myLayout.addView(startIPGameButton, myParams3);
   }
 
+  /**
+   * Given that we are using a relative layout for the home screen in
+   * order to display the background image and various buttons, this
+   * function adds the buttons to the layout to provide player ID
+   * selection options to the player.
+   * <p>The buttons are defined in relation to one another so that when
+   * using keys to navigate the buttons, the appropriate button will be
+   * highlighted.
+   */
+  private void addPlayerSelectButtons() {
+    /*
+     * Construct the player 2 button.
+     */
+    Button player2Button = new Button(this);
+    player2Button.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        buttonSelected = BTN8_ID;
+        /*
+         * Process the button tap and start a 2 player game.
+         */
+        startFrozenBubble(VirtualInput.PLAYER2, 2, FrozenBubble.LOCALE_LAN);
+      }
+    });
+    player2Button.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    player2Button.setText("Player 2");
+    player2Button.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    player2Button.setWidth((int) (player2Button.getTextSize() * 10));
+    player2Button.setHorizontalFadingEdgeEnabled(true);
+    player2Button.setFadingEdgeLength(5);
+    player2Button.setShadowLayer(5, 5, 5, R.color.black);
+    player2Button.setId(BTN8_ID);
+    player2Button.setFocusable(true);
+    player2Button.setFocusableInTouchMode(true);
+    LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.topMargin = 15;
+    myParams1.bottomMargin = 15;
+    /*
+     * Add view to layout.
+     */
+    myLayout.addView(player2Button, myParams1);
+    /*
+     * Construct the player 1 button.
+     */
+    Button player1Button = new Button(this);
+    player1Button.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        buttonSelected = BTN7_ID;
+        /*
+         * Process the button tap and start a 2 player game.
+         */
+        startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LAN);
+      }
+    });
+    player1Button.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    player1Button.setText("Player 1");
+    player1Button.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
+    player1Button.setWidth((int) (player1Button.getTextSize() * 10));
+    player1Button.setHorizontalFadingEdgeEnabled(true);
+    player1Button.setFadingEdgeLength(5);
+    player1Button.setShadowLayer(5, 5, 5, R.color.black);
+    player1Button.setId(BTN7_ID);
+    player1Button.setFocusable(true);
+    player1Button.setFocusableInTouchMode(true);
+    LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                              LayoutParams.WRAP_CONTENT);
+    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.ABOVE, player2Button.getId());
+    myParams2.topMargin = 15;
+    myParams2.bottomMargin = 15;
+    /*
+     * Add view to layout.
+     */
+    myLayout.addView(player1Button, myParams2);
+  }
+
   private void cleanUp() {
     if (myModPlayer != null) {
       myModPlayer.destroyMusicPlayer();
@@ -381,6 +471,8 @@ public class HomeScreen extends Activity {
       removeViewByID(BTN4_ID);
       removeViewByID(BTN5_ID);
       removeViewByID(BTN6_ID);
+      removeViewByID(BTN7_ID);
+      removeViewByID(BTN8_ID);
       addHomeButtons();
       selectInitialButton();
     }
@@ -389,7 +481,20 @@ public class HomeScreen extends Activity {
       removeViewByID(BTN1_ID);
       removeViewByID(BTN2_ID);
       removeViewByID(BTN3_ID);
+      removeViewByID(BTN7_ID);
+      removeViewByID(BTN8_ID);
       addMultiplayerButtons();
+      selectInitialButton();
+    }
+    else if (pageID == 3) {
+      buttonSelected = BTN7_ID;
+      removeViewByID(BTN1_ID);
+      removeViewByID(BTN2_ID);
+      removeViewByID(BTN3_ID);
+      removeViewByID(BTN4_ID);
+      removeViewByID(BTN5_ID);
+      removeViewByID(BTN6_ID);
+      addPlayerSelectButtons();
       selectInitialButton();
     }
   }
@@ -410,6 +515,10 @@ public class HomeScreen extends Activity {
           (buttonSelected == BTN5_ID) ||
           (buttonSelected == BTN6_ID)) {
         displayButtonPage(1);
+      }
+      else if ((buttonSelected == BTN7_ID) ||
+               (buttonSelected == BTN8_ID)) {
+        displayButtonPage(2);
       }
       else {
         cleanUp();
@@ -439,7 +548,9 @@ public class HomeScreen extends Activity {
     myImageView = new ImageView(this);
 
     if (FrozenBubble.numPlayers != 0)
-      startFrozenBubble(FrozenBubble.numPlayers, FrozenBubble.gameLocale);
+      startFrozenBubble(FrozenBubble.myPlayerId,
+                        FrozenBubble.numPlayers,
+                        FrozenBubble.gameLocale);
     else if (getIntent().hasExtra("startHomeScreen")) {
       setBackgroundImage(R.drawable.home_screen);
       setContentView(myLayout);
@@ -586,13 +697,16 @@ public class HomeScreen extends Activity {
   /**
    * Start the game with the specified number of players in the
    * specified locale.  A 1 player game can only be played locally.
+   * @param myPlayerId - the local player ID.
    * @param numPlayers - the number of players (1 or 2)
    * @param gameLocale - the location of the opponent.  A local opponent
    * will be played by the CPU.  A LAN opponent will be played over the
    * network using multicasting, and an internet opponent will be played
    * using TCP.
    */
-  private void startFrozenBubble(int numPlayers, int gameLocale) {
+  private void startFrozenBubble(int myPlayerId,
+                                 int numPlayers,
+                                 int gameLocale) {
     /*
      * Since the default game activity creates its own player,
      * destroy the current player.
@@ -602,8 +716,9 @@ public class HomeScreen extends Activity {
      * Create an intent to launch the activity to play the game.
      */
     Intent intent = new Intent(this, FrozenBubble.class);
+    intent.putExtra("myPlayerId", (int)myPlayerId);
     intent.putExtra("numPlayers", (int)numPlayers);
-    intent.putExtra("gameLocale", (int)gameLocale );
+    intent.putExtra("gameLocale", (int)gameLocale);
     startActivity(intent);
     /*
      * Terminate the splash screen activity.
@@ -619,8 +734,12 @@ public class HomeScreen extends Activity {
           (buttonSelected == BTN2_ID) ||
           (buttonSelected == BTN3_ID))
         addHomeButtons();
-      else
+      else if ((buttonSelected == BTN4_ID) ||
+               (buttonSelected == BTN5_ID) ||
+               (buttonSelected == BTN6_ID))
         addMultiplayerButtons();
+      else
+        addPlayerSelectButtons();
       setContentView(myLayout);
       myLayout.setFocusable(true);
       myLayout.setFocusableInTouchMode(true);

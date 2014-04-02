@@ -68,22 +68,9 @@ public class PreferencesActivity extends PreferenceActivity{
 
   private Preferences mPrefs;
 
-  public class Preferences {
-    int     collision  = BubbleSprite.MIN_PIX;
-    boolean compressor = false;
-    int     difficulty = LevelManager.MODERATE;
-    boolean dontRushMe = false;
-    boolean fullscreen = true;
-    boolean colorMode  = false;
-    int     gameMode   = FrozenBubble.GAME_NORMAL;
-    boolean musicOn    = true;
-    boolean soundOn    = true;
-    int     targetMode = FrozenBubble.POINT_TO_SHOOT;
-
-    public int sizeInBytes() {
-      return (22);
-    }
-  };
+  private void cleanUp() {
+    mPrefs = null;
+  }
 
   public static void getFrozenBubblePrefs(Preferences prefs, SharedPreferences sp) {
     prefs.collision  = sp.getInt    ("collision",  BubbleSprite.MIN_PIX       );
@@ -106,8 +93,14 @@ public class PreferencesActivity extends PreferenceActivity{
   protected void onCreate(Bundle savedInstanceState) {
      super.onCreate(savedInstanceState);
 
+     mPrefs = new Preferences();
      setDefaultPreferences();
      addPreferencesFromResource(R.layout.activity_preferences_screen);
+  }
+
+  @Override
+  protected void onDestroy() {
+    cleanUp();
   }
 
   @Override

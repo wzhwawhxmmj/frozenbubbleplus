@@ -1871,7 +1871,7 @@ class MultiplayerGameView extends SurfaceView implements
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                              int height) {
+                             int height) {
     //Log.i("frozen-bubble", "GameView.surfaceChanged");
     mGameThread.setSurfaceSize(width, height);
   }
@@ -1899,8 +1899,6 @@ class MultiplayerGameView extends SurfaceView implements
       mOpponent.stopThread();
     mOpponent = null;
 
-    if (mGameThread != null)
-      mGameThread.cleanUp();
-    mGameThread = null;
+    mGameThread.cleanUp();
   }
 }
