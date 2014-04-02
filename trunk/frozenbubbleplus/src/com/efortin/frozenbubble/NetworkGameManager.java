@@ -61,7 +61,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
-import com.efortin.frozenbubble.PreferencesActivity.Preferences;
 
 /**
  * This class manages the actions in a network multiplayer game, by
@@ -427,10 +426,15 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     public PlayerAction  playerAction;
     public GameFieldData gameFieldData;
 
-    public void init() {
-      messageId = -1;
+    public void cleanUp() {
       playerAction = null;
       gameFieldData = null;
+    }
+
+    public NetworkInterface() {
+      messageId = -1;
+      playerAction = new PlayerAction(null);
+      gameFieldData = new GameFieldData(null);
     }
   };
 
@@ -439,30 +443,33 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     /*
      * Process the multicast message.
      */
-    byte msgId = buffer[0];
-
-    /*
-     * If the message contains game preferences, then the remote player
-     * is player 1.  The game options are set according to player 1.
-     */
-    if (msgId == MSG_ID_SET_PREFS) {
-      copyPrefsFromBuffer(remotePrefs, buffer, 1);
-      PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
-    }
-
-    /*
-     * If the message contains a game action, add it to the appropriate
-     * action list.
-     */
-    if (msgId == MSG_ID_ACTION) {
-      addAction(new PlayerAction(buffer, 1));
-    }
-
-    /*
-     * Wake up the thread.
-     */
-    synchronized (this) {
-      notify();
+    if ((type == MulticastManager.EVENT_PACKET_RX) &&
+        (buffer != null)) {
+      byte msgId = buffer[0];
+  
+      /*
+       * If the message contains game preferences, then the remote
+       * player is player 1.  The game preferences are set per player 1.
+       */
+      if (msgId == MSG_ID_SET_PREFS) {
+        copyPrefsFromBuffer(remotePrefs, buffer, 1);
+        PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
+      }
+  
+      /*
+       * If the message contains a game action, add it to the
+       * appropriate action list.
+       */
+      if (msgId == MSG_ID_ACTION) {
+        addAction(new PlayerAction(buffer, 1));
+      }
+  
+      /*
+       * Wake up the thread.
+       */
+      synchronized (this) {
+        notify();
+      }
     }
   }
 
@@ -526,9 +533,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   }
 
   private void cleanUp() {
+    localPrefs = null;
+    remotePrefs = null;
     localPlayer = null;
     remotePlayer = null;
-    remoteNetworkInterface.init();
+
+    if (remoteNetworkInterface != null)
+      remoteNetworkInterface.cleanUp();
+    remoteNetworkInterface = null;
 
     if (localActionList != null)
       localActionList.clear();
@@ -658,6 +670,8 @@ public class NetworkGameManager implements MulticastListener, Runnable {
    */
   public void init(Context myContext) {
     mContext = myContext;
+    localPrefs = new Preferences();
+    remotePrefs = new Preferences();
     localPlayer = null;
     remotePlayer = null;
     SharedPreferences sp =
@@ -666,7 +680,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
     localActionID = 0;
     remoteActionID = 0;
-    remoteNetworkInterface.init();
+    remoteNetworkInterface = new NetworkInterface();
     running = true;
   }
 

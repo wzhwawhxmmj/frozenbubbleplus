@@ -106,6 +106,7 @@ import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.HomeScreen;
+import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
@@ -155,8 +156,9 @@ public class FrozenBubble extends Activity
   public final static int LOCALE_LAN      = 1;
   public final static int LOCALE_INTERNET = 2;
 
-  public static int numPlayers = 0;
   public static int gameLocale = LOCALE_LOCAL;
+  public static int myPlayerId = VirtualInput.PLAYER1; 
+  public static int numPlayers = 0;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
