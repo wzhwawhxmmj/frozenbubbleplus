@@ -427,6 +427,12 @@ class MultiplayerGameView extends SurfaceView implements
     }
   }
 
+  private boolean checkImmediateAction() {
+    boolean actNow = false;
+
+    return (actNow);
+  }
+
   private void monitorRemotePlayer() {
     if (mNetworkManager != null) {
       NetworkInterface monitor =
