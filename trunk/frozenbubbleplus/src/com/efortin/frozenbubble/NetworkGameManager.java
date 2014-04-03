@@ -633,6 +633,23 @@ public class NetworkGameManager implements MulticastListener {
     }
   }
 
+  public synchronized PlayerAction getRemoteActionPreview() {
+    PlayerAction tempAction = null;
+    int listSize = remoteActionList.size();
+
+    for (int index = 0; index < listSize; index++) {
+      /*
+       * When a match is found, return a reference to it.
+       */
+      if (remoteActionList.get(index).actionID == remoteActionID) {
+        tempAction = remoteActionList.get(index);
+        break;
+      }
+    }
+
+    return (tempAction);
+  }
+
   private synchronized boolean getRemoteAction() {
     boolean gotAction = false;
     int listSize = remoteActionList.size();
@@ -677,8 +694,15 @@ public class NetworkGameManager implements MulticastListener {
         myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                        Context.MODE_PRIVATE);
     PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
+    /*
+     * Initialize the local action ID to zero, as it is pre-incremented
+     * for every action transmitted to the remote player.
+     * 
+     * Initialize the remote action ID to 1, as it must be the first
+     * action ID received from the remote player.
+     */
     localActionID = 0;
-    remoteActionID = 0;
+    remoteActionID = 1;
     remoteNetworkInterface = new NetworkInterface();
     running = true;
   }
