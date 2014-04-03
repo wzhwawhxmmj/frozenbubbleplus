@@ -101,12 +101,11 @@ import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.NetworkGameManager.NetworkInterface;
-import com.efortin.frozenbubble.NetworkGameManager.NetworkListener;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
 
 class MultiplayerGameView extends SurfaceView implements
-  SurfaceHolder.Callback, NetworkListener {
+  SurfaceHolder.Callback {
 
   public static final int  GAMEFIELD_WIDTH          = 320;
   public static final int  GAMEFIELD_HEIGHT         = 480;
@@ -116,7 +115,7 @@ class MultiplayerGameView extends SurfaceView implements
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
-  private NetworkGameManager    mNetworkGameManager;
+  private NetworkGameManager    mNetworkManager;
   private ComputerAI            mOpponent;
   private VirtualInput          mLocalInput;
   private VirtualInput          mRemoteInput;
@@ -145,23 +144,14 @@ class MultiplayerGameView extends SurfaceView implements
     mGameListener = gl;
   }
 
-  //
-  // The following screen orientation definitions were added to
-  // ActivityInfo in API level 9.
-  //
-  //
+  /*
+   * The following screen orientation definitions were added to
+   * ActivityInfo in API level 9.
+   */
   public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
   public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
   public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
   public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
-
-  @Override
-  public void onNetworkEvent(NetworkInterface datagram) {
-    /*
-     * TODO: process game field synchronization data.
-     */
-    setPlayerAction(datagram.playerAction);
-  }
 
   /**
    * This class encapsulates player input action variables and methods.
@@ -184,7 +174,6 @@ class MultiplayerGameView extends SurfaceView implements
     private boolean mTouchFireATS  = false;
     private double  mTouchDxATS    = 0;
     private double  mTouchLastX    = 0;
-    private FrozenGame mGameRef    = null;
 
     /**
      * Construct and configure this player input instance.
@@ -334,14 +323,6 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     /**
-     * Set the game reference for this player.
-     * @param gameRef - the reference to this player's game object.
-     */
-    public void setGameRef(FrozenGame gameRef) {
-      mGameRef = gameRef;
-    }
-
-    /**
      * Process key presses.
      * @param keyCode
      * @return True if the key press was processed, false if not.
@@ -446,12 +427,27 @@ class MultiplayerGameView extends SurfaceView implements
     }
   }
 
+  private void monitorRemotePlayer() {
+    if (mNetworkManager != null) {
+      NetworkInterface monitor =
+          mNetworkManager.monitorNetwork(mRemoteInput.mGameRef.getOkToFire());
+
+      if (monitor.gotAction) {
+        setPlayerAction(monitor.playerAction);
+      }
+
+      /*
+       * TODO: need to monitor the game field for updates.
+       */
+    }
+  }
+
   /**
    * Set the player action for a remote player - as in a person playing
    * via a client device over a network.
    * @param newAction - the object containing the remote input info.
    */
-  public synchronized void setPlayerAction(PlayerAction newAction) {
+  private synchronized void setPlayerAction(PlayerAction newAction) {
     if (newAction == null)
       return;
 
@@ -468,7 +464,7 @@ class MultiplayerGameView extends SurfaceView implements
       mGameThread.updateStateOnEvent(null);
 
     /*
-     * The the launcher bubble colors.
+     * Set the launcher bubble colors.
      */
     playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
                                              newAction.nextBubbleColor,
@@ -1327,7 +1323,7 @@ class MultiplayerGameView extends SurfaceView implements
                                       mCompressorHead, mCompressor,
                                       malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager, mNetworkGameManager,
+                                      mHighscoreManager, mNetworkManager,
                                       mPlayer1);
         mPlayer1.setGameRef(mFrozenGame1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
@@ -1338,7 +1334,7 @@ class MultiplayerGameView extends SurfaceView implements
                                       mCompressorHead, mCompressor,
                                       malusBar1, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      null, mNetworkGameManager,
+                                      null, mNetworkManager,
                                       mPlayer2);
         mPlayer2.setGameRef(mFrozenGame2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
@@ -1705,6 +1701,7 @@ class MultiplayerGameView extends SurfaceView implements
           (mHighscoreManager == null))
         return;
 
+      monitorRemotePlayer();
       int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
                                           mPlayer1.actionRight(),
                                           mPlayer1.actionUp(),
@@ -1807,7 +1804,7 @@ class MultiplayerGameView extends SurfaceView implements
     holder.addCallback(this);
 
     mOpponent = null;
-    mNetworkGameManager = networkManager;
+    mNetworkManager = networkManager;
     // TODO: save and restore the number of games won.
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
@@ -1818,8 +1815,8 @@ class MultiplayerGameView extends SurfaceView implements
     mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
     mLocalInput = mPlayer1;
     mRemoteInput = mPlayer2;
-    if (mNetworkGameManager != null)
-      mNetworkGameManager.registerPlayers(mLocalInput, mRemoteInput);
+    if (mNetworkManager != null)
+      mNetworkManager.registerPlayers(mLocalInput, mRemoteInput);
     mGameThread = new MultiplayerGameThread(holder);
 
     /*
@@ -1891,9 +1888,9 @@ class MultiplayerGameView extends SurfaceView implements
     mPlayer1.init();
     mPlayer2.init();
 
-    if (mNetworkGameManager != null)
-      mNetworkGameManager.stopThread();
-    mNetworkGameManager = null;
+    if (mNetworkManager != null)
+      mNetworkManager.cleanUp();
+    mNetworkManager = null;
     
     if (mOpponent != null)
       mOpponent.stopThread();
