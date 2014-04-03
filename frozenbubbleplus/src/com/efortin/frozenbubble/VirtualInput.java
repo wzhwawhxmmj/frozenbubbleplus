@@ -52,6 +52,8 @@
 
 package com.efortin.frozenbubble;
 
+import org.jfedor.frozenbubble.FrozenGame;
+
 import android.view.KeyEvent;
 
 /**
@@ -67,14 +69,15 @@ public abstract class VirtualInput {
   public static final byte PLAYER1 = 1;
   public static final byte PLAYER2 = 2;
 
-  public    int     playerID   = PLAYER1;
-  public    boolean isCPU      = false;
-  public    boolean isRemote   = false;
-  protected boolean mWasCenter = false;
-  protected boolean mWasDown   = false;
-  protected boolean mWasLeft   = false;
-  protected boolean mWasRight  = false;
-  protected boolean mWasUp     = false;
+  public    int        playerID   = PLAYER1;
+  public    boolean    isCPU      = false;
+  public    boolean    isRemote   = false;
+  public    FrozenGame mGameRef   = null;
+  protected boolean    mWasCenter = false;
+  protected boolean    mWasDown   = false;
+  protected boolean    mWasLeft   = false;
+  protected boolean    mWasRight  = false;
+  protected boolean    mWasUp     = false;
 
   /*
    * The following are abstract methods that must be implemented by
@@ -143,5 +146,13 @@ public abstract class VirtualInput {
     else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
       mWasUp = true;
     }
+  }
+
+  /**
+   * Set the game reference for this player.
+   * @param gameRef - the reference to this player's game object.
+   */
+  public final void setGameRef(FrozenGame gameRef) {
+    mGameRef = gameRef;
   }
 }

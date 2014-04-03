@@ -74,16 +74,16 @@ import com.efortin.frozenbubble.MulticastManager.MulticastListener;
  * @author Eric Fortin
  *
  */
-public class NetworkGameManager implements MulticastListener, Runnable {
+public class NetworkGameManager implements MulticastListener {
   /*
    * Message identifier definitions.
    */
   public static final byte MSG_ID_JOIN_GAME   = 1;
   public static final byte MSG_ID_SET_PREFS   = 2;
-  public static final byte MSG_ID_BEGIN_GAME  = 3;
+  public static final byte MSG_ID_START_GAME  = 3;
   public static final byte MSG_ID_REBROADCAST = 4;
   public static final byte MSG_ID_ACTION      = 5;
-  public static final byte MSG_ID_FIELD_SYNC  = 6;
+  public static final byte MSG_ID_GAME_FIELD  = 6;
 
   private Context      mContext;
   private Preferences  localPrefs;
@@ -105,15 +105,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
   private NetworkInterface remoteNetworkInterface;
-  private NetworkListener mNetworkListener = null;
-
-  public interface NetworkListener {
-    public abstract void onNetworkEvent(NetworkInterface datagram);
-  }
-
-  public void setNetworkListener(NetworkListener ml) {
-    mNetworkListener = ml;
-  }
 
   /**
    * This class represents the current state of an individual player
@@ -423,10 +414,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
 
   public class NetworkInterface {
     public byte          messageId;
+    public boolean       gotAction;
+    public boolean       gotFieldData;
     public PlayerAction  playerAction;
     public GameFieldData gameFieldData;
 
     public void cleanUp() {
+      gotAction = false;
+      gotFieldData = false;
       playerAction = null;
       gameFieldData = null;
     }
@@ -488,10 +483,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     session.setMulticastListener(this);
     session.configureMulticast("239.168.0.1", 5500, 20, false, true);
     session.start();
-    /*
-     * Start the network game manager thread.
-     */
-    new Thread(this).start();
   }
 
   /**
@@ -532,7 +523,16 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
   }
 
-  private void cleanUp() {
+  public void cleanUp() {
+    /*
+     * Restore the local game preferences in the event that they were
+     * overwritten by the remote player's preferences.
+     */
+    SharedPreferences sp =
+        mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                      Context.MODE_PRIVATE);
+    PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
+
     localPrefs = null;
     remotePrefs = null;
     localPlayer = null;
@@ -633,10 +633,9 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     }
   }
 
-  private synchronized PlayerAction getRemoteAction() {
+  private synchronized boolean getRemoteAction() {
+    boolean gotAction = false;
     int listSize = remoteActionList.size();
-
-    remoteNetworkInterface.playerAction = null;
 
     for (int index = 0; index < listSize; index++) {
       /*
@@ -644,14 +643,14 @@ public class NetworkGameManager implements MulticastListener, Runnable {
        * list, remove it, and exit the loop.
        */
       if (remoteActionList.get(index).actionID == remoteActionID) {
-        remoteNetworkInterface.playerAction =
-            new PlayerAction(remoteActionList.get(index));
+        remoteNetworkInterface.playerAction.copyFromAction(remoteActionList.get(index));
         try {
             remoteActionList.remove(index);
         } catch (IndexOutOfBoundsException ioobe) {
           // TODO - auto-generated exception handler stub.
           //e.printStackTrace();
         }
+        gotAction = true;
         remoteActionID++;
         break;
       }
@@ -662,7 +661,7 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      * a re-issue of the appropriate action.  This can only occur upon
      * message loss from a remote player.
      */
-    return (remoteNetworkInterface.playerAction);
+    return (gotAction);
   }
 
   /**
@@ -684,33 +683,21 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     running = true;
   }
 
+  public NetworkInterface monitorNetwork(boolean getAction) {
+    remoteNetworkInterface.gotAction = false;
+    remoteNetworkInterface.gotFieldData = false;
+
+    if (getAction) {
+      remoteNetworkInterface.gotAction = getRemoteAction();
+    }
+
+    return (remoteNetworkInterface);
+  }
+
   public void registerPlayers(VirtualInput localPlayer,
                               VirtualInput remotePlayer) {
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
-  }
-
-  public void run() {
-    while (running) {
-      try {
-        synchronized(this) {
-          wait();
-        }
-      } catch (InterruptedException e) {
-        // TODO - auto-generated exception handler stub.
-        //e.printStackTrace();
-      }
-
-      if (running) {
-        /*
-         * TODO: check for game field synchronization.
-         */
-        if (getRemoteAction() != null) {
-          mNetworkListener.onNetworkEvent(remoteNetworkInterface);
-        }
-      }
-    }
-    cleanUp();
   }
 
   /**
@@ -769,28 +756,6 @@ public class NetworkGameManager implements MulticastListener, Runnable {
      */
     //addAction(tempAction);
     transmitAction(tempAction);
-  }
-
-  /**
-   * Stop the thread <code>run()</code> execution.
-   * <p>Interrupt the thread when it is suspended via
-   * <code>wait()</code> so it may terminate.
-   */
-  public void stopThread() {
-    running = false;
-    mNetworkListener = null;
-    /*
-     * Restore the local game preferences in the event that they were
-     * overwritten by the remote player's preferences.
-     */
-    SharedPreferences sp =
-        mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                      Context.MODE_PRIVATE);
-    PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
-
-    synchronized(this) {
-      this.notify();
-    }
   }
 
   /**
@@ -859,6 +824,21 @@ public class NetworkGameManager implements MulticastListener, Runnable {
     byte[] buffer = new byte[action.sizeInBytes() + 1];
     buffer[0] = MSG_ID_ACTION;
     action.copyToBuffer(buffer, 1);
+    /*
+     * Send the datagram via the multicast manager.
+     */
+    session.transmit(buffer);
+  }
+
+  /**
+   * Transmit the local player game field to the remote player via the
+   * network interface.
+   * @param gameField - the player game field data to transmit.
+   */
+  private void transmitGameField(GameFieldData gameField) {
+    byte[] buffer = new byte[gameField.sizeInBytes() + 1];
+    buffer[0] = MSG_ID_GAME_FIELD;
+    gameField.copyToBuffer(buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */

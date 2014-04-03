@@ -919,7 +919,7 @@ public class FrozenBubble extends Activity
 
   private void cleanUpNetworkManager() {
     if (mNetworkGameManager != null)
-      mNetworkGameManager.stopThread();
+      mNetworkGameManager.cleanUp();
     mNetworkGameManager = null;
   }
 
