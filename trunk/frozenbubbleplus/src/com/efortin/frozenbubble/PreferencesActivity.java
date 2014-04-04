@@ -100,6 +100,8 @@ public class PreferencesActivity extends PreferenceActivity{
 
   @Override
   protected void onDestroy() {
+    super.onDestroy();
+
     cleanUp();
   }
 

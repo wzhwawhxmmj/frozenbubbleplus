@@ -79,24 +79,25 @@ public class NetworkGameManager implements MulticastListener {
    * Message identifier definitions.
    */
   public static final byte MSG_ID_JOIN_GAME   = 1;
-  public static final byte MSG_ID_SET_PREFS   = 2;
-  public static final byte MSG_ID_START_GAME  = 3;
+  public static final byte MSG_ID_REQUEST     = 2;
+  public static final byte MSG_ID_PREFS       = 3;
   public static final byte MSG_ID_REBROADCAST = 4;
   public static final byte MSG_ID_ACTION      = 5;
   public static final byte MSG_ID_GAME_FIELD  = 6;
 
-  private Context      mContext;
-  private Preferences  localPrefs;
-  private Preferences  remotePrefs;
-  private VirtualInput localPlayer = null;
-  private VirtualInput remotePlayer = null;
-  /*
-   * Following are variables used to keep track of game actions.
-   */
-  private short localActionID;
-  private short remoteActionID;
-  /* Thread running flag */
-  private boolean running;
+  private boolean          join_rx;
+  private boolean          join_tx;
+  private boolean          prefs_rx;
+  private boolean          prefs_tx;
+  private boolean          field_rx;
+  private boolean          field_tx;
+  private short            localActionID;
+  private short            remoteActionID;
+  private Context          mContext;
+  private Preferences      localPrefs;
+  private Preferences      remotePrefs;
+  private VirtualInput     localPlayer = null;
+  private VirtualInput     remotePlayer = null;
   private MulticastManager session = null;
   /*
    * Keep action lists for action retransmission requests and game
@@ -446,9 +447,10 @@ public class NetworkGameManager implements MulticastListener {
        * If the message contains game preferences, then the remote
        * player is player 1.  The game preferences are set per player 1.
        */
-      if (msgId == MSG_ID_SET_PREFS) {
+      if (msgId == MSG_ID_PREFS) {
         copyPrefsFromBuffer(remotePrefs, buffer, 1);
         PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
+        prefs_rx = true;
       }
   
       /*
@@ -491,7 +493,7 @@ public class NetworkGameManager implements MulticastListener {
    * @param newAction - the action to add to the appropriate list.
    */
   private synchronized void addAction(PlayerAction newAction) {
-    if (running && (localPlayer != null) && (remotePlayer != null)) {
+    if ((localPlayer != null) && (remotePlayer != null)) {
       if (newAction.playerID == localPlayer.playerID) {
         int listSize = localActionList.size();
 
@@ -528,10 +530,12 @@ public class NetworkGameManager implements MulticastListener {
      * Restore the local game preferences in the event that they were
      * overwritten by the remote player's preferences.
      */
-    SharedPreferences sp =
-        mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                      Context.MODE_PRIVATE);
-    PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
+    if (localPrefs != null) {
+      SharedPreferences sp =
+          mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                        Context.MODE_PRIVATE);
+      PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
+    }
 
     localPrefs = null;
     remotePrefs = null;
@@ -685,6 +689,12 @@ public class NetworkGameManager implements MulticastListener {
    * Initialize all variables to game start values.
    */
   public void init(Context myContext) {
+    join_rx = false;
+    join_tx = false;
+    prefs_rx = false;
+    prefs_tx = false;
+    field_rx = false;
+    field_tx = false;
     mContext = myContext;
     localPrefs = new Preferences();
     remotePrefs = new Preferences();
@@ -704,7 +714,6 @@ public class NetworkGameManager implements MulticastListener {
     localActionID = 0;
     remoteActionID = 1;
     remoteNetworkInterface = new NetworkInterface();
-    running = true;
   }
 
   public NetworkInterface monitorNetwork() {
@@ -715,10 +724,12 @@ public class NetworkGameManager implements MulticastListener {
     return (remoteNetworkInterface);
   }
 
-  public void registerPlayers(VirtualInput localPlayer,
-                              VirtualInput remotePlayer) {
+  public void startNetworkGame(VirtualInput localPlayer,
+                               VirtualInput remotePlayer) {
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
+
+    transmitJoinGame();
   }
 
   /**
@@ -864,6 +875,22 @@ public class NetworkGameManager implements MulticastListener {
      * Send the datagram via the multicast manager.
      */
     session.transmit(buffer);
+    field_tx = true;
+  }
+
+  /**
+   * Transmit the message to indicate the local player is ready to join
+   * a game.
+   */
+  private void transmitJoinGame() {
+    byte[] buffer = new byte[2];
+    buffer[0] = MSG_ID_JOIN_GAME;
+    buffer[1] = (byte) localPlayer.playerID;
+    /*
+     * Send the datagram via the multicast manager.
+     */
+    session.transmit(buffer);
+    join_tx = true;
   }
 
   /**
@@ -872,11 +899,12 @@ public class NetworkGameManager implements MulticastListener {
    */
   private void transmitPrefs() {
     byte[] buffer = new byte[localPrefs.sizeInBytes() + 1];
-    buffer[0] = MSG_ID_SET_PREFS;
+    buffer[0] = MSG_ID_PREFS;
     copyPrefsToBuffer(localPrefs, buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */
     session.transmit(buffer);
+    prefs_tx = true;
   }
 };

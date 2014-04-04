@@ -623,6 +623,8 @@ public class FrozenBubble extends Activity
     numPlayers = 1;
     gameLocale = LOCALE_LOCAL;
     if (intent != null) {
+      if (intent.hasExtra("myPlayerId"))
+        myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
       if (intent.hasExtra("gameLocale"))
@@ -636,6 +638,7 @@ public class FrozenBubble extends Activity
       if (gameLocale == LOCALE_LAN)
         mNetworkGameManager = new NetworkGameManager(getApplicationContext());
       mMultiplayerGameView = new MultiplayerGameView(this,
+                                                     myPlayerId,
                                                      numPlayers,
                                                      gameLocale,
                                                      mNetworkGameManager);

@@ -104,7 +104,7 @@ public abstract class VirtualInput {
    * @param id - this player ID, e.g., <code>PLAYER1</code>.
    * @param type - <code>true</code> if this player is a CPU simulation.
    * @param remote - <code>true</code> if this player is playing on a
-   * remote machine, and is managed locally via network interface.
+   * remote machine, <code>false</code> if this player is local.
    * @see VirtualInput
    */
   protected final void configure(int id, boolean type, boolean remote) {
