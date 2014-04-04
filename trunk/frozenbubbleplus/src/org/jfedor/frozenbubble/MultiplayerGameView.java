@@ -435,11 +435,29 @@ class MultiplayerGameView extends SurfaceView implements
 
   private void monitorRemotePlayer() {
     if (mNetworkManager != null) {
-      NetworkInterface monitor =
-          mNetworkManager.monitorNetwork(mRemoteInput.mGameRef.getOkToFire());
+      boolean actNow = false;
+      /*
+       * Preview the current action if one is available to see if it
+       * contains an asynchronous action (e.g., launch bubble swap).
+       */
+      PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
 
-      if (monitor.gotAction) {
-        setPlayerAction(monitor.playerAction);
+      if (previewAction != null) {
+        actNow = previewAction.swapBubble ||
+                (previewAction.addAttackBubbles > 0);
+      }
+
+      /*
+       * If this is an asynchronous action or it is appropriate to
+       * perform a synchronous action, retrieve and clear the current
+       * available action from the action queue.
+       */
+      if (actNow || mRemoteInput.mGameRef.getOkToFire()) {
+        NetworkInterface monitor = mNetworkManager.monitorNetwork();
+
+        if (monitor.gotAction) {
+          setPlayerAction(monitor.playerAction);
+        }
       }
 
       /*

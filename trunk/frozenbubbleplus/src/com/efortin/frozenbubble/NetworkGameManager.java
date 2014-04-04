@@ -707,13 +707,10 @@ public class NetworkGameManager implements MulticastListener {
     running = true;
   }
 
-  public NetworkInterface monitorNetwork(boolean getAction) {
+  public NetworkInterface monitorNetwork() {
     remoteNetworkInterface.gotAction = false;
     remoteNetworkInterface.gotFieldData = false;
-
-    if (getAction) {
-      remoteNetworkInterface.gotAction = getRemoteAction();
-    }
+    remoteNetworkInterface.gotAction = getRemoteAction();
 
     return (remoteNetworkInterface);
   }
