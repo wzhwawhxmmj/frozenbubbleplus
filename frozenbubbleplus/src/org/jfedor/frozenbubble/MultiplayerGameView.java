@@ -177,15 +177,16 @@ class MultiplayerGameView extends SurfaceView implements
 
     /**
      * Construct and configure this player input instance.
-     * @param id - the player ID, e.g., <code>VirtualInput.PLAYER1</code>.
-     * @param type - <code>true</code> if the player is a CPU simulation.
-     * @param local - <code>true</code> if this player is a local player,
-     * <code>false</code> if the player is a remote player.
+     * @param id - the player ID, e.g.,
+     * <code>VirtualInput.PLAYER1</code>.
+     * @param type - <code>true</code> if the player is a simulation.
+     * @param remote - <code>true</code> if this player is playing on a
+     * remote machine, <code>false</code> if this player is local.
      * @see VirtualInput
      */
-    public PlayerInput(int id, boolean type, boolean local) {
+    public PlayerInput(int id, boolean type, boolean remote) {
       init();
-      configure(id, type, local);
+      configure(id, type, remote);
     }
 
     /**
@@ -429,30 +430,28 @@ class MultiplayerGameView extends SurfaceView implements
 
   private boolean checkImmediateAction() {
     boolean actNow = false;
+    /*
+     * Preview the current action if one is available to see if it
+     * contains an asynchronous action (e.g., launch bubble swap).
+     */
+    PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
+
+    if (previewAction != null) {
+      actNow = previewAction.swapBubble ||
+              (previewAction.addAttackBubbles > 0);
+    }
 
     return (actNow);
   }
 
   private void monitorRemotePlayer() {
     if (mNetworkManager != null) {
-      boolean actNow = false;
-      /*
-       * Preview the current action if one is available to see if it
-       * contains an asynchronous action (e.g., launch bubble swap).
-       */
-      PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
-
-      if (previewAction != null) {
-        actNow = previewAction.swapBubble ||
-                (previewAction.addAttackBubbles > 0);
-      }
-
       /*
        * If this is an asynchronous action or it is appropriate to
        * perform a synchronous action, retrieve and clear the current
        * available action from the action queue.
        */
-      if (actNow || mRemoteInput.mGameRef.getOkToFire()) {
+      if (checkImmediateAction() || mRemoteInput.mGameRef.getOkToFire()) {
         NetworkInterface monitor = mNetworkManager.monitorNetwork();
 
         if (monitor.gotAction) {
@@ -1818,30 +1817,62 @@ class MultiplayerGameView extends SurfaceView implements
     }
   }
 
-  public MultiplayerGameView(Context context, int numPlayers, int gameLocale,
+  /**
+   * <code>MultiplayerGameView</code> class constructor.
+   * @param context - the application context.
+   * @param myPlayerId - the local player ID (1 or 2).
+   * @param numPlayers - reserved for future development.
+   * @param gameLocale - the game topology, which can be either local,
+   * or distributed over various network types.
+   * @param networkManager - a reference to the network game manager.
+   */
+  public MultiplayerGameView(Context context,
+                             int myPlayerId,
+                             int numPlayers,
+                             int gameLocale,
                              NetworkGameManager networkManager) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
-
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
-
     mOpponent = null;
     mNetworkManager = networkManager;
-    // TODO: save and restore the number of games won.
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    // TODO: for now, the local and remote player IDs are fixed, as is
-    //       the player type and the game location.
-    mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
-    mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, true,  false);
-    mLocalInput = mPlayer1;
-    mRemoteInput = mPlayer2;
-    if (mNetworkManager != null)
-      mNetworkManager.registerPlayers(mLocalInput, mRemoteInput);
-    mGameThread = new MultiplayerGameThread(holder);
+    /*
+     * If this game is being played purely locally, then the opponent is
+     * CPU controlled.  Otherwise the opponent is a remote player.
+     *
+     * TODO: add the ability to support multiple local players via
+     * multi-touch, and the ability to specify any player as CPU
+     * controlled.
+     */
+    boolean isCPU;
+    boolean isRemote;
+
+    if (gameLocale == FrozenBubble.LOCALE_LOCAL) {
+      isCPU = true;
+      isRemote = false;
+    }
+    else {
+      isCPU = false;
+      isRemote = true;
+    }
+
+    if (myPlayerId == VirtualInput.PLAYER1) {
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, isCPU, isRemote);
+      mLocalInput = mPlayer1;
+      mRemoteInput = mPlayer2;
+    }
+    else {
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, isCPU, isRemote);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, false, false);
+      mLocalInput = mPlayer2;
+      mRemoteInput = mPlayer1;
+    }
 
     /*
      * Give this view focus-ability for improved compatibility with
@@ -1850,8 +1881,15 @@ class MultiplayerGameView extends SurfaceView implements
     setFocusable(true);
     setFocusableInTouchMode(true);
 
+    /*
+     * Create and start the game thread.
+     */
+    mGameThread = new MultiplayerGameThread(holder);
     mGameThread.setRunning(true);
     mGameThread.start();
+
+    if (mNetworkManager != null)
+      mNetworkManager.startNetworkGame(mLocalInput, mRemoteInput);
   }
 
   public MultiplayerGameThread getThread() {
@@ -1912,10 +1950,8 @@ class MultiplayerGameView extends SurfaceView implements
     mPlayer1.init();
     mPlayer2.init();
 
-    if (mNetworkManager != null)
-      mNetworkManager.cleanUp();
     mNetworkManager = null;
-    
+
     if (mOpponent != null)
       mOpponent.stopThread();
     mOpponent = null;

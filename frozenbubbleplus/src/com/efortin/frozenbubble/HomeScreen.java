@@ -93,6 +93,9 @@ public class HomeScreen extends Activity {
   private final static int BTN8_ID   = 108;
 
   private static int buttonSelected = BTN1_ID;
+  private static int buttonSelPage1 = BTN1_ID;
+  private static int buttonSelPage2 = BTN4_ID;
+  private static int buttonSelPage3 = BTN7_ID;
 
   private Boolean homeShown       = false;
   private Boolean musicOn         = true;
@@ -118,6 +121,7 @@ public class HomeScreen extends Activity {
     start2pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN2_ID;
+        buttonSelPage1 = BTN2_ID;
         /*
          * Display the 2 player mode buttons page.
          */
@@ -157,6 +161,7 @@ public class HomeScreen extends Activity {
     start1pGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN1_ID;
+        buttonSelPage1 = BTN1_ID;
         /*
          * Process the button tap and start/resume a 1 player game.
          */
@@ -196,6 +201,7 @@ public class HomeScreen extends Activity {
     optionsButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN3_ID;
+        buttonSelPage1 = BTN3_ID;
         /*
          * Process the button tap and start the preferences activity.
          */
@@ -247,6 +253,7 @@ public class HomeScreen extends Activity {
     startLanGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN5_ID;
+        buttonSelPage2 = BTN5_ID;
         /*
          * Display the player ID buttons page.
          */
@@ -286,6 +293,7 @@ public class HomeScreen extends Activity {
     startCPUGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN4_ID;
+        buttonSelPage2 = BTN4_ID;
         /*
          * Process the button tap and start a 2 player game.
          */
@@ -325,6 +333,7 @@ public class HomeScreen extends Activity {
     startIPGameButton.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN6_ID;
+        buttonSelPage2 = BTN6_ID;
         /*
          * Process the button tap and start an internet game.
          */
@@ -378,6 +387,7 @@ public class HomeScreen extends Activity {
     player2Button.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN8_ID;
+        buttonSelPage3 = BTN8_ID;
         /*
          * Process the button tap and start a 2 player game.
          */
@@ -417,6 +427,7 @@ public class HomeScreen extends Activity {
     player1Button.setOnClickListener(new Button.OnClickListener(){
       public void onClick(View v){
         buttonSelected = BTN7_ID;
+        buttonSelPage3 = BTN7_ID;
         /*
          * Process the button tap and start a 2 player game.
          */
@@ -467,7 +478,7 @@ public class HomeScreen extends Activity {
    */
   private void displayButtonPage(int pageID) {
     if (pageID == 1) {
-      buttonSelected = BTN2_ID;
+      buttonSelected = buttonSelPage1;
       removeViewByID(BTN4_ID);
       removeViewByID(BTN5_ID);
       removeViewByID(BTN6_ID);
@@ -477,7 +488,7 @@ public class HomeScreen extends Activity {
       selectInitialButton();
     }
     else if (pageID == 2) {
-      buttonSelected = BTN4_ID;
+      buttonSelected = buttonSelPage2;
       removeViewByID(BTN1_ID);
       removeViewByID(BTN2_ID);
       removeViewByID(BTN3_ID);
@@ -487,7 +498,7 @@ public class HomeScreen extends Activity {
       selectInitialButton();
     }
     else if (pageID == 3) {
-      buttonSelected = BTN7_ID;
+      buttonSelected = buttonSelPage3;
       removeViewByID(BTN1_ID);
       removeViewByID(BTN2_ID);
       removeViewByID(BTN3_ID);
