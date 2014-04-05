@@ -57,16 +57,16 @@ import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.LevelManager;
 
 public class Preferences {
-  int     collision;
-  boolean colorMode;
-  boolean compressor;
-  int     difficulty;
-  boolean dontRushMe;
-  boolean fullscreen;
-  int     gameMode;
-  boolean musicOn;
-  boolean soundOn;
-  int     targetMode;
+  int     collision  = BubbleSprite.MIN_PIX;
+  boolean colorMode  = false;
+  boolean compressor = false;
+  int     difficulty = LevelManager.MODERATE;
+  boolean dontRushMe = true;
+  boolean fullscreen = true;
+  int     gameMode   = FrozenBubble.GAME_NORMAL;
+  boolean musicOn    = true;
+  boolean soundOn    = true;
+  int     targetMode = FrozenBubble.POINT_TO_SHOOT;
 
   /**
    * <code>Preferences</code> class constructor.  Variables are
@@ -88,8 +88,17 @@ public class Preferences {
   /**
    * <code>Preferences</code> class constructor.
    * @param prefs - object reference used to initialize this object.
+   * Pass <code>null</code> to create a default instance.
    */
   public Preferences(Preferences prefs) {
+    copy(prefs);
+  }
+
+  /**
+   * Copy the values of the supplied object to this object.
+   * @param prefs - the object to copy to this object.
+   */
+  public void copy(Preferences prefs) {
     if (prefs != null) {
       this.collision = prefs.collision;
       this.colorMode = prefs.colorMode;
@@ -104,6 +113,10 @@ public class Preferences {
     }
   }
 
+  /**
+   * Obtain the number of bytes of data contained in this class.
+   * @return - the number of bytes of data contained in this class.
+   */
   public int sizeInBytes() {
     return (22);
   }
