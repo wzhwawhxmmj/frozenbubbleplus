@@ -139,6 +139,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
+  boolean isNetGame;
   boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
@@ -197,12 +198,14 @@ public class FrozenGame extends GameScreen {
     swapPressed          = false;
 
     if (input_arg != null) {
-      player   = input_arg.playerID;
-      isRemote = input_arg.isRemote;
+      player    = input_arg.playerID;
+      isNetGame = input_arg.isNetGame;
+      isRemote  = input_arg.isRemote;
     }
     else {
-      player   = VirtualInput.PLAYER1;
-      isRemote = false;
+      player    = VirtualInput.PLAYER1;
+      isNetGame = false;
+      isRemote  = false;
     }
 
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
@@ -775,9 +778,8 @@ public class FrozenGame extends GameScreen {
 
   /**
    * Simultaneously obtain and clear <code>sendToOpponent</code>, which
-   * is the number of attack bubbles to add to the attack bar.
-   * @return The number of attack bubbles to add to the attack bar due
-   * to the opponent's actions.
+   * is the number of attack bubbles to add to the opponent attack bar.
+   * @return The number of attack bubbles to the opponent attack bar.
    */
   public int getAndClearSendToOpponent() {
     int sendCopy = sendToOpponent;
@@ -1166,7 +1168,7 @@ public class FrozenGame extends GameScreen {
 
   public boolean getOkToFire() {
     return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
-            readyToFire && (goingUp.size() == 0));
+            readyToFire && ((goingUp.size() == 0) || !isNetGame));
   }
 
   public double getPosition() {

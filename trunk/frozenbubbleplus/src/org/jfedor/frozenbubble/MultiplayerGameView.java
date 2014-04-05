@@ -180,13 +180,14 @@ class MultiplayerGameView extends SurfaceView implements
      * @param id - the player ID, e.g.,
      * <code>VirtualInput.PLAYER1</code>.
      * @param type - <code>true</code> if the player is a simulation.
+     * @param net - <code>true</code> if this is a network game.
      * @param remote - <code>true</code> if this player is playing on a
      * remote machine, <code>false</code> if this player is local.
      * @see VirtualInput
      */
-    public PlayerInput(int id, boolean type, boolean remote) {
+    public PlayerInput(int id, boolean type, boolean net, boolean remote) {
       init();
-      configure(id, type, remote);
+      configure(id, type, net, remote);
     }
 
     /**
@@ -315,7 +316,6 @@ class MultiplayerGameView extends SurfaceView implements
 
     public void init() {
       this.init_vars();
-      mGameRef      = null;
       mTrackballDx  = 0;
       mTouchFire    = false;
       mTouchSwap    = false;
@@ -437,7 +437,8 @@ class MultiplayerGameView extends SurfaceView implements
     PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
 
     if (previewAction != null) {
-      actNow = previewAction.swapBubble ||
+      actNow = previewAction.compress ||
+               previewAction.swapBubble ||
               (previewAction.addAttackBubbles > 0);
     }
 
@@ -1850,26 +1851,29 @@ class MultiplayerGameView extends SurfaceView implements
      * controlled.
      */
     boolean isCPU;
+    boolean isNet;
     boolean isRemote;
 
     if (gameLocale == FrozenBubble.LOCALE_LOCAL) {
-      isCPU = true;
+      isCPU    = true;
+      isNet    = false;
       isRemote = false;
     }
     else {
-      isCPU = false;
+      isCPU    = false;
+      isNet    = true;
       isRemote = true;
     }
 
     if (myPlayerId == VirtualInput.PLAYER1) {
-      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
-      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, isCPU, isRemote);
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, isNet, false);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, isCPU, isNet, isRemote);
       mLocalInput = mPlayer1;
       mRemoteInput = mPlayer2;
     }
     else {
-      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, isCPU, isRemote);
-      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, false, false);
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, isCPU, isNet, isRemote);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, false, isNet, false);
       mLocalInput = mPlayer2;
       mRemoteInput = mPlayer1;
     }
