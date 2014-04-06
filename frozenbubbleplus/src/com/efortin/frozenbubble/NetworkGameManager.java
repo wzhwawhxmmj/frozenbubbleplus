@@ -105,7 +105,7 @@ public class NetworkGameManager implements MulticastListener {
    */
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
-  private NetworkInterface remoteNetworkInterface;
+  private NetGameInterface remoteNetGameInterface;
 
   /**
    * This class represents the current state of an individual player
@@ -413,7 +413,7 @@ public class NetworkGameManager implements MulticastListener {
     }
   };
 
-  public class NetworkInterface {
+  public class NetGameInterface {
     public byte          messageId;
     public boolean       gotAction;
     public boolean       gotFieldData;
@@ -427,7 +427,7 @@ public class NetworkGameManager implements MulticastListener {
       gameFieldData = null;
     }
 
-    public NetworkInterface() {
+    public NetGameInterface() {
       messageId = -1;
       playerAction = new PlayerAction(null);
       gameFieldData = new GameFieldData(null);
@@ -483,9 +483,6 @@ public class NetworkGameManager implements MulticastListener {
      */
     session = new MulticastManager(myContext.getApplicationContext());
     session.setMulticastListener(this);
-    String ipAddress = session.getMulticastIpAddress();
-    session.configureMulticast(ipAddress, 5500, 20, false, true);
-    session.start();
   }
 
   /**
@@ -543,9 +540,9 @@ public class NetworkGameManager implements MulticastListener {
     localPlayer = null;
     remotePlayer = null;
 
-    if (remoteNetworkInterface != null)
-      remoteNetworkInterface.cleanUp();
-    remoteNetworkInterface = null;
+    if (remoteNetGameInterface != null)
+      remoteNetGameInterface.cleanUp();
+    remoteNetGameInterface = null;
 
     if (localActionList != null)
       localActionList.clear();
@@ -556,7 +553,7 @@ public class NetworkGameManager implements MulticastListener {
     remoteActionList = null;
 
     if (session != null)
-      session.stopMulticast();
+      session.cleanUp();
     session = null;
   }
 
@@ -665,7 +662,7 @@ public class NetworkGameManager implements MulticastListener {
        * list, remove it, and exit the loop.
        */
       if (remoteActionList.get(index).actionID == remoteActionID) {
-        remoteNetworkInterface.playerAction.copyFromAction(remoteActionList.get(index));
+        remoteNetGameInterface.playerAction.copyFromAction(remoteActionList.get(index));
         try {
             remoteActionList.remove(index);
         } catch (IndexOutOfBoundsException ioobe) {
@@ -714,15 +711,15 @@ public class NetworkGameManager implements MulticastListener {
      */
     localActionID = 0;
     remoteActionID = 1;
-    remoteNetworkInterface = new NetworkInterface();
+    remoteNetGameInterface = new NetGameInterface();
   }
 
-  public NetworkInterface monitorNetwork() {
-    remoteNetworkInterface.gotAction = false;
-    remoteNetworkInterface.gotFieldData = false;
-    remoteNetworkInterface.gotAction = getRemoteAction();
+  public NetGameInterface monitorNetwork() {
+    remoteNetGameInterface.gotAction = false;
+    remoteNetGameInterface.gotFieldData = false;
+    remoteNetGameInterface.gotAction = getRemoteAction();
 
-    return (remoteNetworkInterface);
+    return (remoteNetGameInterface);
   }
 
   public void startNetworkGame(VirtualInput localPlayer,
