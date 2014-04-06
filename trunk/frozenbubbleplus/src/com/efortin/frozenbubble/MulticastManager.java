@@ -184,7 +184,7 @@ public class MulticastManager {
     mInetAddress       = null;
     WifiManager wm =
       (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
-    multicastLock    = wm.createMulticastLock("myMulticastLock");
+    multicastLock    = wm.createMulticastLock("multicastLock");
     mMulticastSocket = null;
     mMulticastThread = new MulticastThread();
     mTXLock          = new Object();
