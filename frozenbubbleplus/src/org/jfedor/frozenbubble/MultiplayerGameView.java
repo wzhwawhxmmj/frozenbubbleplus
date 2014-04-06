@@ -1719,7 +1719,7 @@ class MultiplayerGameView extends SurfaceView implements
       return false;
     }
 
-    private synchronized void updateGameState() {
+    private void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
           ((mOpponent == null) && mRemoteInput.isCPU) ||
           (mHighscoreManager == null))
