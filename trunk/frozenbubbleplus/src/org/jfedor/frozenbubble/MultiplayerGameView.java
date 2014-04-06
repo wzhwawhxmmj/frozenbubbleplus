@@ -100,7 +100,7 @@ import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
-import com.efortin.frozenbubble.NetworkGameManager.NetworkInterface;
+import com.efortin.frozenbubble.NetworkGameManager.NetGameInterface;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
 
@@ -453,7 +453,7 @@ class MultiplayerGameView extends SurfaceView implements
        * available action from the action queue.
        */
       if (checkImmediateAction() || mRemoteInput.mGameRef.getOkToFire()) {
-        NetworkInterface monitor = mNetworkManager.monitorNetwork();
+        NetGameInterface monitor = mNetworkManager.monitorNetwork();
 
         if (monitor.gotAction) {
           setPlayerAction(monitor.playerAction);

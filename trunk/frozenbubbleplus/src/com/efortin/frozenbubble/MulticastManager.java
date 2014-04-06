@@ -53,14 +53,18 @@
 package com.efortin.frozenbubble;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
+import java.util.Enumeration;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -118,6 +122,10 @@ public class MulticastManager {
   public static final int EVENT_SOCKET_FAIL    = 5;
   public static final int EVENT_THREAD_STOPPED = 6;
 
+  private static final String LOG_TAG = MulticastManager.class.getSimpleName();
+  private static final String ADDR = "239.168.0.1";
+  private static final int PORT = 2624;
+
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, byte[] buffer, int length);
   }
@@ -130,18 +138,11 @@ public class MulticastManager {
   /*
    * MulticastManager class member variables.
    */
-  private boolean mPaused    = false;
-  private boolean mStopped   = false;
-  private boolean requestTX  = false;
-  private byte[]  mRXBuffer  = null;
   private byte[]  mTXBuffer  = null;
-  private int     mPort      = 0;
-  private Context mContext   = null;
-  private InetAddress mInetAddress = null;
-  private MulticastSocket mMulticastSocket = null;
-  private MulticastThread mMulticastThread = null;
-  private Object mTXLock;
-  private WifiManager.MulticastLock multicastLock;
+  InetAddress     mInetAddress;
+  MulticastSocket receiveSock;
+  DatagramSocket transmitSock;
+  private WifiManager.MulticastLock mLock;
 
   /**
    * Multicast manager class constructor.
@@ -173,269 +174,31 @@ public class MulticastManager {
    * multicast manager for the purpose of obtaining WiFi service access.
    */
   public MulticastManager(Context context) {
-    mPaused            = false;
-    mStopped           = false;
-    requestTX          = false;
     mMulticastListener = null;
-    mRXBuffer          = new byte[256];
     mTXBuffer          = null;
-    mPort              = 0;
-    mContext           = context;
-    mInetAddress       = null;
-    WifiManager wm =
-      (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
-    multicastLock    = wm.createMulticastLock("multicastLock");
-    mMulticastSocket = null;
-    mMulticastThread = new MulticastThread();
-    mTXLock          = new Object();
-  }
-
-  /**
-   * Cancel any pending transmissions.
-   */
-  public void cancelSend() {
-    synchronized(mTXLock) {
-      mTXBuffer = null;
-      requestTX = false;
-    }
-  }
-
-  /**
-   * Clean up the multicast manager by closing the multicast socket and
-   * freeing resources.
-   */
-  private void cleanUp() {
-    closeSocket();
-    mMulticastListener = null;
-    mMulticastThread = null;
-  }
-
-  /**
-   * Remove this socket from the multicast group and close the socket.
-   * This is particularly useful if there was a socket failure and it is
-   * desirable to create a new socket.
-   * <p>Call <code>configureMulticast()</code> to create a new multicast
-   * socket.
-   * @see <code>configureMulticast()</code>
-   */
-  public void closeSocket() {
-    synchronized(this) {
-      try {
-        if (mMulticastSocket != null) {
-          mMulticastSocket.leaveGroup(mInetAddress);
-          mMulticastSocket.close();
-        }
-      } catch (NullPointerException npe) {
-        npe.printStackTrace();
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
-    }
-    mMulticastSocket = null;
-  }
-
-  /**
-   * Configure the multicast socket settings.
-   * <p>This must be called before <code>start()</code>ing the thread.
-   * @param hostName - the host string name given by either the machine
-   * name or IP dotted string address.  Multicast addresses must be in
-   * the IPv4 class D address range, with the first octet being
-   * within the 224 to 239 range.
-   * @param port - the port on the host to bind the multicast socket to.
-   * @param timeout - the receive blocking timeout.  If zero, receive()
-   * blocks the rest of the thread from executing forever (or until a
-   * datagram is received).
-   * @param broadcast - if true, then transmitted messages are sent to
-   * every peer on the network, instead of just to the multicast group.
-   * @param loopbackDisable - if false, locally transmitted messages
-   * will be received on the local socket.
-   */
-  public void configureMulticast(String hostName,
-                                 int port,
-                                 int timeout,
-                                 boolean broadcast,
-                                 boolean loopbackDisable) {
-    mPort = port;
-
     try {
-      mInetAddress = InetAddress.getByName(hostName);
-    } catch (UnknownHostException uhe) {
-      uhe.printStackTrace();
-      mInetAddress = null;
-    }
+      transmitSock = new DatagramSocket();
+      WifiManager wifi =
+          (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+      mLock = wifi.createMulticastLock("pseudo-ssdp");
+      mLock.acquire();
+      receiveSock = makeMulticastListenSocket();
+      receiveSock.joinGroup(mInetAddress);
+      Thread t = new Thread(new ReceiveTask(), "multicast listener");
+      t.start();
 
-    if (mMulticastSocket == null)
-    {
-      try {
-        mMulticastSocket = new MulticastSocket(port);
-      } catch (SocketException se) {
-        se.printStackTrace();
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
-        }
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
-    }
-
-    if (mMulticastSocket != null)
-    {
-      try {
-        mMulticastSocket.setSoTimeout(timeout);
-        mMulticastSocket.setBroadcast(broadcast);
-        mMulticastSocket.setLoopbackMode(loopbackDisable);
-        mMulticastSocket.joinGroup(mInetAddress);
-      } catch (UnknownHostException uhe) {
-        uhe.printStackTrace();
-      } catch (NullPointerException npe) {
-        npe.printStackTrace();
-      } catch (SocketException se) {
-        se.printStackTrace();
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
-        }
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-      }
+    } catch (IOException e) {
+        e.printStackTrace();
     }
   }
 
-  /**
-   * This method obtains the WiFi IP address of this machine, and
-   * replaces the first octet with a multicast address.  Multicast
-   * addresses must be in the IPv4 class D address range, with the first
-   * octet being within the 224 to 239 range.
-   * @return - the converted IPv4 multicast address.
-   */
-  public String getMulticastIpAddress() {
-    String ipAddress = wifiIpAddress(mContext);
-
-    try {
-      InetAddress ip = InetAddress.getByName(ipAddress);
-      byte[] bytes = ip.getAddress();
-      bytes[0] = (byte) 239;
-      ipAddress = getIpv4Address(bytes);
-    } catch (UnknownHostException uhe) {
-      /*
-       * If an exception was thrown, provide an actual multicast
-       * address - but it might not work.
-       */
-      ipAddress = "239.168.0.1";
-    }
-
-    return (ipAddress);
+  private MulticastSocket makeMulticastListenSocket() throws IOException
+  {
+    mInetAddress = InetAddress.getByName(ADDR);
+    return new MulticastSocket(new InetSocketAddress( mInetAddress, PORT));
   }
 
-  /**
-   * Convert raw IPv4 address to string.
-   * @param rawBytes - raw IPv4 address.
-   * @return A string representation of the raw IP address.
-   */
-  protected String getIpv4Address(byte[] rawBytes) {
-    int i = 4;
-    String ipAddress = "";
-
-    for (byte raw : rawBytes) {
-      ipAddress += (raw & 0xFF);
-      if (--i > 0) {
-        ipAddress += ".";
-      }
-    }
-
-    return ipAddress;
-  }
-
-  /**
-   * Determine whether the multicast socket manager is functioning
-   * correctly.  If not, creating a new instance is required.
-   * @return true if this instance has the necessary objects to run
-   * orrectly, false if it is not operational.
-   */
-  public boolean isMulticastValid() {
-    if ((mMulticastSocket != null) && (mMulticastThread != null) && !mStopped)
-      return true;
-    else
-      return false;
-  }
-
-  /**
-   * This is the multicast thread declaration.
-   * <p>To support being able to send and receive packets in the same
-   * thread, a nonzero socket read timeout must be set, because
-   * <code>MulticastSocket.receive()</code> blocks until a packet is
-   * received or the socket times out.  Thus, if a timeout of zero is
-   * set (which is the default, and denotes that the socket will never
-   * time out), a datagram will never be sent unless one has just been
-   * received.
-   * @author Eric Fortin, Wednesday, May 8, 2013
-   * @see <code>MulticastManager.configureMulticast()</code>
-   */
-  class MulticastThread extends Thread {
-    /**
-     * This pauses the multicast thread.
-     * <p>The thread must have been initially started with
-     * <code>Thread.start()</code>.
-     * @see <code>MulticastThread.run()</code>
-     */
-    public void pauseThread() {
-      synchronized(this) {
-        mPaused = true;
-      }
-    }
-
-    /**
-     * Receive a multicast datagram.
-     * <p>Given a nonzero socket timeout, it is expected behavior for
-     * this method to catch an <code>InterruptedIOException</code>.
-     * This method posts an <code>EVENT_PACKET_RX</code> event to the
-     * registered listener upon datagram receipt.
-     */
-    private void receiveDatagram() {
-      try {
-        DatagramPacket dpRX = new DatagramPacket(mRXBuffer,
-                                                 mRXBuffer.length,
-                                                 mInetAddress, mPort);
-        mMulticastSocket.receive(dpRX);
-        byte[] buffer = dpRX.getData();
-        int    size = dpRX.getLength();
-
-        if ((buffer != null) && (size != 0) && (mMulticastListener != null)) {
-          mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, buffer, size);
-        }
-      } catch (SocketException se) {
-        se.printStackTrace();
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
-        }
-      } catch (InterruptedIOException iioe) {
-        // Receive timeout.  This is expected behavior.
-      } catch (NullPointerException npe) {
-        npe.printStackTrace();
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
-        }
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
-        if (mMulticastListener != null) {
-          mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
-        }
-      }
-    }
-
-    /**
-     * This resumes the multicast thread after it has been paused.
-     * <p>The thread must have been initially started with
-     * <code>Thread.start()</code>.
-     * @see <code>MulticastThread.run()</code>
-     */
-    public void resumeThread() {
-      synchronized(this) {
-        if (mPaused) {
-          mPaused = false;
-          this.notify();
-        }
-      }
-    }
+  private class ReceiveTask implements Runnable {
 
     /**
      * This is the thread's <code>run()</code> call.
@@ -454,143 +217,27 @@ public class MulticastManager {
      */
     @Override
     public void run() {
-      while (!mStopped)
-      {
-        if (mPaused)
-        {
-          try {
-            synchronized (this) {
-              wait();
+      Log.d(LOG_TAG, "listening for packets");
+      
+      byte[] buffer = new byte[1<<8];
+      DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
+
+      try {
+        while (true) {
+          receiveSock .receive(pkt);
+
+          if (pkt.getLength() != 0) {
+            if (mMulticastListener != null) {
+              mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, pkt.getData(), pkt.getLength());
             }
-          } catch (IllegalMonitorStateException imse) {
-            /*
-             * Object must be locked by thread before calling wait().
-             */
-            imse.printStackTrace();
-          } catch (InterruptedException ie) {
-            /*
-             * wait() was interrupted.  This is expected behavior.
-             */
-          } catch (NullPointerException npe) {
-            /*
-             * Notify was called from within this thread.
-             */
-            npe.printStackTrace();
           }
-        }
 
-        if ((mMulticastSocket != null) && !mPaused) {
-          multicastLock.acquire();
-          sendDatagram();
-          receiveDatagram();
-          multicastLock.release();
+          Log.d(LOG_TAG, "received "+pkt.getLength()+" bytes");
         }
-      }
-
-      if (mMulticastListener != null) {
-        mMulticastListener.onMulticastEvent(EVENT_THREAD_STOPPED, null, 0);
+      } catch (Exception e) {
+          Log.w(LOG_TAG, "multicast receive thread malfunction", e);
       }
     }
-
-    /**
-     * Send a multicast datagram.
-     * <p>If the transmission fails, calling this method again will
-     * attempt to resend the same datagram.  Calling this method when
-     * the <code>requestTX</code> flag is false does nothing.
-     */
-    private void sendDatagram() {
-      if (requestTX)
-      {
-        try {
-          synchronized(mTXLock) {
-            DatagramPacket dpTX = new DatagramPacket(mTXBuffer,
-                                                     mTXBuffer.length,
-                                                     mInetAddress, mPort);
-            mMulticastSocket.send(dpTX);
-            mTXBuffer = null;
-            requestTX = false;
-          }
-        } catch (SocketException se) {
-          se.printStackTrace();
-          if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_SOCKET_FAIL, null, 0);
-          }
-        } catch (NullPointerException npe) {
-          npe.printStackTrace();
-          if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
-          }
-        } catch (IOException ioe) {
-          ioe.printStackTrace();
-          if (mMulticastListener != null) {
-            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
-          }
-        }
-      }
-    }
-
-    /**
-     * This stops the thread.
-     * @see <code>MulticastThread.run()</code>
-     */
-    public void stopThread() {
-      mStopped = true;
-      /*
-       * Notify the thread to wake it up if paused.
-       */
-      synchronized(this) {
-        this.notify();
-      }
-    }
-  }
-
-  /**
-   * This pauses the multicast manager.
-   */
-  public void pauseMulticast() {
-    if (mMulticastThread != null)
-      mMulticastThread.pauseThread();
-  }
-
-  /**
-   * This resumes the multicast manager after it has been paused.
-   */
-  public void resumeMulticast() {
-    if (mMulticastThread != null)
-      mMulticastThread.resumeThread();
-  }
-
-  /**
-   * Start the thread.  This must only be called once per instance.
-   */
-  public void start() {
-    if (mMulticastThread != null)
-      mMulticastThread.start();
-  }
-
-  /**
-   * Stop and <code>join()</code> the multicast thread.
-   */
-  public void stopMulticast() {
-    if (mMulticastThread != null)
-    {
-      boolean retry = true;
-      /*
-       * Close and join() the multicast thread.
-       */
-      mMulticastThread.stopThread();
-      while (retry) {
-        try {
-          mMulticastThread.join();
-          retry = false;
-        } catch (InterruptedException e) {
-          /*
-           * Keep trying to close the multicast thread.
-           */
-        }
-      }
-    }
-    cleanUp();
   }
 
   /**
@@ -601,16 +248,31 @@ public class MulticastManager {
    * @param string - the string to transmit.
    */
   public void transmit(byte[] buffer) {
-    if ((mTXBuffer != null) || (requestTX)) {
-      if (mMulticastListener != null) {
-        mMulticastListener.onMulticastEvent(EVENT_TX_FLOOD, null, 0);
-      }
-    }
+    mTXBuffer = buffer;
+    transmitPacket();
+  }
 
-    synchronized(mTXLock) {
-      mTXBuffer = buffer.clone();
-      requestTX = true;
-    }
+  public void transmitPacket() {
+    Runnable r = new Runnable() {
+
+      public void run() {
+        try {
+          byte[] bytes = mTXBuffer.clone();
+          transmitSock.send(new DatagramPacket(bytes, bytes.length, mInetAddress, PORT));
+          Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
+        } catch (IOException e) {
+          Log.w(LOG_TAG, "", e);
+        }
+      }
+    };
+
+    new Thread(r, "transmit").start();
+  }
+
+  public void cleanUp() {
+    receiveSock.close();
+    transmitSock.close();
+    mLock.release();
   }
 
   /**
