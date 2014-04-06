@@ -937,7 +937,7 @@ public class FrozenGame extends GameScreen {
       swapPressed = false;
     }
 
-    if (!ats && touch_fire && movingBubble == null) {
+    if (!ats && touch_fire && !isRemote && (movingBubble == null)) {
       double xx = touch_x - 318;
       double yy = 406 - touch_y;
       launchBubblePosition = (Math.PI - Math.atan2(yy, xx)) * 40.0 / Math.PI;

@@ -74,6 +74,7 @@ public abstract class VirtualInput {
   public    boolean    isNetGame  = false;
   public    boolean    isRemote   = false;
   public    FrozenGame mGameRef   = null;
+  protected boolean    mTouchFire = false;
   protected boolean    mWasCenter = false;
   protected boolean    mWasDown   = false;
   protected boolean    mWasLeft   = false;
@@ -124,6 +125,7 @@ public abstract class VirtualInput {
    */
   public final void init_vars() {
     mGameRef   = null;
+    mTouchFire = false;
     mWasCenter = false;
     mWasDown   = false;
     mWasLeft   = false;
@@ -137,7 +139,7 @@ public abstract class VirtualInput {
    * that inherit this class.
    * @param keyCode
    */
-  public final void setAction(int keyCode) {
+  public final void setAction(int keyCode, boolean touch) {
     if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
       mWasCenter = true;
     }
@@ -151,7 +153,12 @@ public abstract class VirtualInput {
       mWasRight = true;
     }
     else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-      mWasUp = true;
+      if (touch) {
+        mTouchFire = true;
+      }
+      else {
+        mWasUp = true;
+      }
     }
   }
 
