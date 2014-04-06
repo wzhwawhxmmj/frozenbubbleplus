@@ -53,18 +53,12 @@
 package com.efortin.frozenbubble;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteOrder;
-import java.util.Enumeration;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -123,8 +117,8 @@ public class MulticastManager {
   public static final int EVENT_THREAD_STOPPED = 6;
 
   private static final String LOG_TAG = MulticastManager.class.getSimpleName();
-  private static final String ADDR = "239.168.0.1";
   private static final int PORT = 2624;
+  private static final String MULTICAST_IP_ADDR = "239.168.0.1";
 
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, byte[] buffer, int length);
@@ -135,13 +129,16 @@ public class MulticastManager {
   public void setMulticastListener(MulticastListener ml) {
     mMulticastListener = ml;
   }
+
   /*
    * MulticastManager class member variables.
    */
-  private byte[]  mTXBuffer  = null;
+  private byte[]  mTXBuffer = null;
+  private boolean rxRunning;
   InetAddress     mInetAddress;
   MulticastSocket receiveSock;
-  DatagramSocket transmitSock;
+  DatagramSocket  transmitSock;
+  Thread          rxThread;
   private WifiManager.MulticastLock mLock;
 
   /**
@@ -176,26 +173,47 @@ public class MulticastManager {
   public MulticastManager(Context context) {
     mMulticastListener = null;
     mTXBuffer          = null;
+    rxRunning          = false;
+
     try {
+      mInetAddress = InetAddress.getByName(MULTICAST_IP_ADDR);
       transmitSock = new DatagramSocket();
       WifiManager wifi =
           (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-      mLock = wifi.createMulticastLock("pseudo-ssdp");
+      mLock = wifi.createMulticastLock("mLock");
       mLock.acquire();
-      receiveSock = makeMulticastListenSocket();
+      receiveSock = getMulticastSocket();
+      receiveSock.setLoopbackMode(true);
       receiveSock.joinGroup(mInetAddress);
-      Thread t = new Thread(new ReceiveTask(), "multicast listener");
-      t.start();
-
-    } catch (IOException e) {
-        e.printStackTrace();
+      Thread rxThread = new Thread(new ReceiveTask(), "multicast listener");
+      rxThread.start();
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
     }
   }
 
-  private MulticastSocket makeMulticastListenSocket() throws IOException
+  /**
+   * Convert raw IPv4 address to string.
+   * @param rawBytes - raw IPv4 address.
+   * @return A string representation of the raw IP address.
+   */
+  protected String getIpv4Address(byte[] rawBytes) {
+    int i = 4;
+    String ipAddress = "";
+
+    for (byte raw : rawBytes) {
+      ipAddress += (raw & 0xFF);
+      if (--i > 0) {
+        ipAddress += ".";
+      }
+    }
+
+    return ipAddress;
+  }
+
+  private MulticastSocket getMulticastSocket() throws IOException
   {
-    mInetAddress = InetAddress.getByName(ADDR);
-    return new MulticastSocket(new InetSocketAddress( mInetAddress, PORT));
+    return new MulticastSocket(new InetSocketAddress(mInetAddress, PORT));
   }
 
   private class ReceiveTask implements Runnable {
@@ -217,25 +235,47 @@ public class MulticastManager {
      */
     @Override
     public void run() {
-      Log.d(LOG_TAG, "listening for packets");
-      
-      byte[] buffer = new byte[1<<8];
+      rxRunning = true;
+      byte[] buffer = new byte[256];
       DatagramPacket pkt = new DatagramPacket(buffer, buffer.length);
-
-      try {
-        while (true) {
-          receiveSock .receive(pkt);
-
+  
+      while (rxRunning) {
+        try {
+          receiveSock.receive(pkt);
+  
           if (pkt.getLength() != 0) {
             if (mMulticastListener != null) {
               mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, pkt.getData(), pkt.getLength());
             }
           }
-
           Log.d(LOG_TAG, "received "+pkt.getLength()+" bytes");
-        }
-      } catch (Exception e) {
+        } catch (IOException ioe) {
+          Log.w(LOG_TAG, "multicast receive thread malfunction", ioe);
+        } catch (Exception e) {
           Log.w(LOG_TAG, "multicast receive thread malfunction", e);
+        }
+      }
+    }
+  }
+
+  /**
+   * This stops the receive task.
+   * @see <code>ReceiveTask.run()</code>
+   */
+  public void stopRxThread() {
+    rxRunning = false;
+    boolean retry = true;
+    /*
+     * Now join() the receive thread.
+     */
+    while (retry && (rxThread != null)) {
+      try {
+        rxThread.join();
+        retry = false;
+      } catch (InterruptedException ie) {
+        /*
+         * Keep trying to close the receive thread.
+         */
       }
     }
   }
@@ -260,8 +300,8 @@ public class MulticastManager {
           byte[] bytes = mTXBuffer.clone();
           transmitSock.send(new DatagramPacket(bytes, bytes.length, mInetAddress, PORT));
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
-        } catch (IOException e) {
-          Log.w(LOG_TAG, "", e);
+        } catch (IOException ioe) {
+          Log.w(LOG_TAG, "", ioe);
         }
       }
     };
@@ -270,38 +310,9 @@ public class MulticastManager {
   }
 
   public void cleanUp() {
+    stopRxThread();
     receiveSock.close();
     transmitSock.close();
     mLock.release();
-  }
-
-  /**
-   * Obtain the WiFi IP address of this machine.
-   * @param context - the application context.
-   * @return The <code>String</code> representation of the IP address.
-   */
-  protected String wifiIpAddress(Context context) {
-    WifiManager wifiManager =
-        (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-    int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
-
-    /*
-     *  Convert little-endian to big-endian if needed.
-     */
-    if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
-      ipAddress = Integer.reverseBytes(ipAddress);
-    }
-
-    byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
-
-    String ipAddressString;
-    try {
-      ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
-    } catch (UnknownHostException ex) {
-      Log.e("WIFIIP", "Unable to get host address.");
-      ipAddressString = null;
-    }
-
-    return ipAddressString;
   }
 }
