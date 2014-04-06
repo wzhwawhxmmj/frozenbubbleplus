@@ -118,7 +118,9 @@ public class MulticastManager {
 
   private static final String LOG_TAG = MulticastManager.class.getSimpleName();
   private static final int PORT = 2624;
-  private static final String MULTICAST_IP_ADDR = "239.168.0.1";
+  private static final String MCAST_STRING_ADDR = "239.168.0.1";
+  private static final byte[] MCAST_BYTE_ADDR =
+    { (byte) 239, (byte) 168, 0, 1 };
 
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, byte[] buffer, int length);
@@ -135,7 +137,7 @@ public class MulticastManager {
    */
   private byte[]  mTXBuffer = null;
   private boolean rxRunning;
-  InetAddress     mInetAddress;
+  InetAddress     myInetAddress;
   MulticastSocket receiveSock;
   DatagramSocket  transmitSock;
   Thread          rxThread;
@@ -176,7 +178,8 @@ public class MulticastManager {
     rxRunning          = false;
 
     try {
-      mInetAddress = InetAddress.getByName(MULTICAST_IP_ADDR);
+      myInetAddress = InetAddress.getByAddress(MCAST_STRING_ADDR,
+                                               MCAST_BYTE_ADDR);
       transmitSock = new DatagramSocket();
       WifiManager wifi =
           (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
@@ -184,7 +187,7 @@ public class MulticastManager {
       mLock.acquire();
       receiveSock = getMulticastSocket();
       receiveSock.setLoopbackMode(true);
-      receiveSock.joinGroup(mInetAddress);
+      receiveSock.joinGroup(myInetAddress);
       Thread rxThread = new Thread(new ReceiveTask(), "multicast listener");
       rxThread.start();
     } catch (IOException ioe) {
@@ -213,7 +216,7 @@ public class MulticastManager {
 
   private MulticastSocket getMulticastSocket() throws IOException
   {
-    return new MulticastSocket(new InetSocketAddress(mInetAddress, PORT));
+    return new MulticastSocket(new InetSocketAddress(myInetAddress, PORT));
   }
 
   private class ReceiveTask implements Runnable {
@@ -245,7 +248,9 @@ public class MulticastManager {
   
           if (pkt.getLength() != 0) {
             if (mMulticastListener != null) {
-              mMulticastListener.onMulticastEvent(EVENT_PACKET_RX, pkt.getData(), pkt.getLength());
+              mMulticastListener.onMulticastEvent(EVENT_PACKET_RX,
+                                                  pkt.getData(),
+                                                  pkt.getLength());
             }
           }
           Log.d(LOG_TAG, "received "+pkt.getLength()+" bytes");
@@ -298,7 +303,10 @@ public class MulticastManager {
       public void run() {
         try {
           byte[] bytes = mTXBuffer.clone();
-          transmitSock.send(new DatagramPacket(bytes, bytes.length, mInetAddress, PORT));
+          transmitSock.send(new DatagramPacket(bytes,
+                                               bytes.length,
+                                               myInetAddress,
+                                               PORT));
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
         } catch (IOException ioe) {
           Log.w(LOG_TAG, "", ioe);

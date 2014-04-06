@@ -184,7 +184,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
 
             if (actionNew != KeyEvent.KEYCODE_DPAD_UP) {
               action = actionNew;
-              myPlayerInput.setAction(action);
+              myPlayerInput.setAction(action, false);
             }
 
             synchronized(this) {
@@ -200,7 +200,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
             myFrozenGame.setPosition(convertAngleToPosition(
               cpuOpponent.getExactDirection(0)));
             action = actionNew;
-            myPlayerInput.setAction(action);
+            myPlayerInput.setAction(action, false);
           }
         }
 

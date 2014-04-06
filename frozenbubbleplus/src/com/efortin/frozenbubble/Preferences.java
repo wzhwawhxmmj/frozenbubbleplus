@@ -57,6 +57,8 @@ import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.LevelManager;
 
 public class Preferences {
+  public static final int PREFS_BYTES = 22;
+
   int     collision  = BubbleSprite.MIN_PIX;
   boolean colorMode  = false;
   boolean compressor = false;
@@ -111,13 +113,5 @@ public class Preferences {
       this.soundOn = prefs.soundOn;
       this.targetMode = prefs.targetMode;
     }
-  }
-
-  /**
-   * Obtain the number of bytes of data contained in this class.
-   * @return - the number of bytes of data contained in this class.
-   */
-  public int sizeInBytes() {
-    return (22);
   }
 };

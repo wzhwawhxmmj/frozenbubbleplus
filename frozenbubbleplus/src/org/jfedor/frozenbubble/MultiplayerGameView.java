@@ -167,7 +167,6 @@ class MultiplayerGameView extends SurfaceView implements
     private boolean mRight         = false;
     private boolean mUp            = false;
     private double  mTrackballDx   = 0;
-    private boolean mTouchFire     = false;
     private boolean mTouchSwap     = false;
     private double  mTouchX;
     private double  mTouchY;
@@ -395,7 +394,7 @@ class MultiplayerGameView extends SurfaceView implements
             mTouchX = x;
             mTouchY = y;
           }
-          else if (Math.abs(x - GAMEFIELD_WIDTH) <=
+          else if (Math.abs(x - 318) <=
                    MultiplayerGameThread.TOUCH_SWAP_X_THRESHOLD)
             mTouchSwap = true;
         }
@@ -517,14 +516,14 @@ class MultiplayerGameView extends SurfaceView implements
      * Process a bubble launch request.
      */
     if (newAction.launchBubble) {
-      playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP);
+      playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP, true);
     }
 
     /*
      * Process a bubble swap request.
      */
     if (newAction.swapBubble) {
-      playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN);
+      playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN, false);
     }
 
     /*
@@ -864,7 +863,7 @@ class MultiplayerGameView extends SurfaceView implements
         if (mLocalInput.playerID == VirtualInput.PLAYER1)
           x_offset = 0;
         else
-          x_offset = -GAMEFIELD_WIDTH;
+          x_offset = -318;
         /*
          * Check for a pause button sprite press.  This will toggle the
          * pause button sprite between paused and unpaused.  If the game

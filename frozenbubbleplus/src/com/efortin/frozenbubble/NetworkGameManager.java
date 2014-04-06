@@ -84,6 +84,8 @@ public class NetworkGameManager implements MulticastListener {
   public static final byte MSG_ID_REBROADCAST = 4;
   public static final byte MSG_ID_ACTION      = 5;
   public static final byte MSG_ID_GAME_FIELD  = 6;
+  public static final int  GAMEFIELD_BYTES    = 105;
+  public static final int  ACTION_BYTES       = 36;
 
   private boolean          join_rx;
   private boolean          join_tx;
@@ -231,15 +233,6 @@ public class NetworkGameManager implements MulticastListener {
           }
         }
       }
-    }
-
-    /**
-     * This method gives the number of bytes of data in this class.
-     * @return The number of bytes of data it takes to store the data in
-     * this class.
-     */
-    public int sizeInBytes() {
-      return (105);
     }
   };
 
@@ -402,15 +395,6 @@ public class NetworkGameManager implements MulticastListener {
         }
       }
     }
-
-    /**
-     * This method gives the number of bytes of data in this class.
-     * @return The number of bytes of data it takes to store the data in
-     * this class.
-     */
-    public int sizeInBytes() {
-      return (36);
-    }
   };
 
   public class NetGameInterface {
@@ -442,25 +426,25 @@ public class NetworkGameManager implements MulticastListener {
     if ((type == MulticastManager.EVENT_PACKET_RX) &&
         (buffer != null)) {
       byte msgId = buffer[0];
-  
+
       /*
        * If the message contains game preferences, then the remote
        * player is player 1.  The game preferences are set per player 1.
        */
-      if (msgId == MSG_ID_PREFS) {
+      if ((msgId == MSG_ID_PREFS) && (length > Preferences.PREFS_BYTES)) {
         copyPrefsFromBuffer(remotePrefs, buffer, 1);
         PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
         prefs_rx = true;
       }
-  
+
       /*
        * If the message contains a game action, add it to the
        * appropriate action list.
        */
-      if (msgId == MSG_ID_ACTION) {
+      if ((msgId == MSG_ID_ACTION) && (length > ACTION_BYTES)) {
         addAction(new PlayerAction(buffer, 1));
       }
-  
+
       /*
        * Wake up the thread.
        */
@@ -473,16 +457,12 @@ public class NetworkGameManager implements MulticastListener {
   public NetworkGameManager(Context myContext) {
     init(myContext);
     /*
-     * Create the remote player action array.  The actions are inserted
+     * Create the player action arrays.  The actions are inserted
      * chronologically based on message receipt order, but are extracted
      * based on consecutive action ID.
      */
+    localActionList  = new ArrayList<PlayerAction>();
     remoteActionList = new ArrayList<PlayerAction>();
-    /*
-     * Start an internet multicast session.
-     */
-    session = new MulticastManager(myContext.getApplicationContext());
-    session.setMulticastListener(this);
   }
 
   /**
@@ -727,6 +707,12 @@ public class NetworkGameManager implements MulticastListener {
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
 
+    /*
+     * Start an internet multicast session.
+     */
+    session = new MulticastManager(mContext.getApplicationContext());
+    session.setMulticastListener(this);
+
     transmitJoinGame();
   }
 
@@ -851,7 +837,7 @@ public class NetworkGameManager implements MulticastListener {
    * @param action - the player action to transmit.
    */
   private void transmitAction(PlayerAction action) {
-    byte[] buffer = new byte[action.sizeInBytes() + 1];
+    byte[] buffer = new byte[ACTION_BYTES + 1];
     buffer[0] = MSG_ID_ACTION;
     action.copyToBuffer(buffer, 1);
     /*
@@ -866,7 +852,7 @@ public class NetworkGameManager implements MulticastListener {
    * @param gameField - the player game field data to transmit.
    */
   private void transmitGameField(GameFieldData gameField) {
-    byte[] buffer = new byte[gameField.sizeInBytes() + 1];
+    byte[] buffer = new byte[GAMEFIELD_BYTES + 1];
     buffer[0] = MSG_ID_GAME_FIELD;
     gameField.copyToBuffer(buffer, 1);
     /*
@@ -896,7 +882,7 @@ public class NetworkGameManager implements MulticastListener {
    * network interface.
    */
   private void transmitPrefs() {
-    byte[] buffer = new byte[localPrefs.sizeInBytes() + 1];
+    byte[] buffer = new byte[Preferences.PREFS_BYTES + 1];
     buffer[0] = MSG_ID_PREFS;
     copyPrefsToBuffer(localPrefs, buffer, 1);
     /*
