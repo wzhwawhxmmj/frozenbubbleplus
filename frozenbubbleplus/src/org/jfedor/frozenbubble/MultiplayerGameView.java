@@ -395,7 +395,7 @@ class MultiplayerGameView extends SurfaceView implements
             mTouchX = x;
             mTouchY = y;
           }
-          else if (Math.abs(x - 318) <=
+          else if (Math.abs(x - GAMEFIELD_WIDTH) <=
                    MultiplayerGameThread.TOUCH_SWAP_X_THRESHOLD)
             mTouchSwap = true;
         }
@@ -859,7 +859,7 @@ class MultiplayerGameView extends SurfaceView implements
         if (mLocalInput.playerID == VirtualInput.PLAYER1)
           x_offset = 0;
         else
-          x_offset = -mPlayer2DX;
+          x_offset = -GAMEFIELD_WIDTH;
         /*
          * Check for a pause button sprite press.  This will toggle the
          * pause button sprite between paused and unpaused.  If the game

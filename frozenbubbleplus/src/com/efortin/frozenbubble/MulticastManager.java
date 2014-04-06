@@ -54,55 +54,52 @@ package com.efortin.frozenbubble;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.ByteOrder;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
+import android.util.Log;
 
 /**
  * Multicast manager class.
- * <p>
- * To perform multicast networking in Android, the project manifest must
- * have the following permissions added to it:<br>
- * INTERNET<br>
- * CHANGE_WIFI_MULTICAST_STATE
- * <p>
- * This class instantiates a thread to send and receive WiFi multicast
- * datagrams via UDP.  UDP multicasting requires a WiFi access point -
- * i.e., a router, so multicasting does not perform like WiFi P2P
- * direct, where no access point is required.
- * <p>
- * In order for the multicast manager to actually send and receive WiFi
- * multicast messages, <code>configureMulticast()</code> must be called
- * to configure the multicast socket settings prior to <br><code>start()
- * </code>ing the thread.
- * <p>
- * Furthermore, multicast host addresses must be in the IPv4 class
- * D address range, with the leftmost octet being within the 224 to
- * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
- * multicast host address.
- * <p>
- * A typical implementation looks like this:<br>
+ * <p>To perform multicast networking in Android, the project manifest
+ * must have the following permissions added to it:<br>
+ * ACCESS_WIFI_STATE<br>
+ * CHANGE_WIFI_MULTICAST_STATE<br>
+ * INTERNET
+ * <p>This class instantiates a thread to send and receive WiFi
+ * multicast datagrams via UDP.  UDP multicasting requires a WiFi access
+ * point - i.e., a router, so multicasting does not perform like WiFi
+ * P2P direct, where no access point is required.
+ * <p>In order for the multicast manager to actually send and receive
+ * WiFi multicast messages, <code>configureMulticast()</code> must be
+ * called to configure the multicast socket settings prior to <br>
+ * <code>start()</code>ing the thread.
+ * <p>Furthermore, multicast host addresses must be in the IPv4 class D
+ * address range, with the first octet being within the 224 to 239
+ * range.  For example, <code>"239.168.0.1"</code> is a multicast host
+ * address.
+ * <p>A typical implementation looks like this:<br>
  * <code>
  * MulticastManager session = <br>
  * new MulticastManager(this.getContext());<br>
  * session.setMulticastListener(this);<br>
- * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
- * <br>session.start();
+ * session.configureMulticast("239.168.0.1", 5500, 20, false, true);<br>
+ * session.start();
  * </code>
- * <p>
- * The context will have to be provided when instantiating a
+ * <p>The context will have to be provided when instantiating a
  * MulticastManager object based on the desired context - either via the
  * view context for the current activity with <code>getContext()</code>,
  * or via the application context to ensure the multicast manager
  * lifecycle is tied to the entire application lifecycle with
  * <code>getApplicationContext()</code>, or via
  * <code>getBaseContext()</code> if operating within a nested context.
- *
  * @author Eric Fortin, Wednesday, May 8, 2013
  *
  */
@@ -155,8 +152,8 @@ public class MulticastManager {
    * called to configure the multicast socket settings prior to
    * <code>start()</code>ing the thread.
    * <p>Furthermore, multicast host addresses must be in the IPv4 class
-   * D address range, with the leftmost octect being within the 224 to
-   * 239 range.  For example, <code>"239.168.0.1"</code> is an actual
+   * D address range, with the first octet being within the 224 to 239
+   * range.  For example, <code>"239.168.0.1"</code> is an actual
    * multicast host address.
    * <p> A typical implementation looks like this:<br>
    * <code>
@@ -242,7 +239,7 @@ public class MulticastManager {
    * <p>This must be called before <code>start()</code>ing the thread.
    * @param hostName - the host string name given by either the machine
    * name or IP dotted string address.  Multicast addresses must be in
-   * the IPv4 class D address range, with the leftmost octect being
+   * the IPv4 class D address range, with the first octet being
    * within the 224 to 239 range.
    * @param port - the port on the host to bind the multicast socket to.
    * @param timeout - the receive blocking timeout.  If zero, receive()
@@ -301,6 +298,51 @@ public class MulticastManager {
         ioe.printStackTrace();
       }
     }
+  }
+
+  /**
+   * This method obtains the WiFi IP address of this machine, and
+   * replaces the first octet with a multicast address.  Multicast
+   * addresses must be in the IPv4 class D address range, with the first
+   * octet being within the 224 to 239 range.
+   * @return - the converted IPv4 multicast address.
+   */
+  public String getMulticastIpAddress() {
+    String ipAddress = wifiIpAddress(mContext);
+
+    try {
+      InetAddress ip = InetAddress.getByName(ipAddress);
+      byte[] bytes = ip.getAddress();
+      bytes[0] = (byte) 239;
+      ipAddress = getIpv4Address(bytes);
+    } catch (UnknownHostException uhe) {
+      /*
+       * If an exception was thrown, provide an actual multicast
+       * address - but it might not work.
+       */
+      ipAddress = "239.168.0.1";
+    }
+
+    return (ipAddress);
+  }
+
+  /**
+   * Convert raw IPv4 address to string.
+   * @param rawBytes - raw IPv4 address.
+   * @return A string representation of the raw IP address.
+   */
+  protected String getIpv4Address(byte[] rawBytes) {
+    int i = 4;
+    String ipAddress = "";
+
+    for (byte raw : rawBytes) {
+      ipAddress += (raw & 0xFF);
+      if (--i > 0) {
+        ipAddress += ".";
+      }
+    }
+
+    return ipAddress;
   }
 
   /**
@@ -569,5 +611,35 @@ public class MulticastManager {
       mTXBuffer = buffer.clone();
       requestTX = true;
     }
+  }
+
+  /**
+   * Obtain the WiFi IP address of this machine.
+   * @param context - the application context.
+   * @return The <code>String</code> representation of the IP address.
+   */
+  protected String wifiIpAddress(Context context) {
+    WifiManager wifiManager =
+        (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+    int ipAddress = wifiManager.getConnectionInfo().getIpAddress();
+
+    /*
+     *  Convert little-endian to big-endian if needed.
+     */
+    if (ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN)) {
+      ipAddress = Integer.reverseBytes(ipAddress);
+    }
+
+    byte[] ipByteArray = BigInteger.valueOf(ipAddress).toByteArray();
+
+    String ipAddressString;
+    try {
+      ipAddressString = InetAddress.getByAddress(ipByteArray).getHostAddress();
+    } catch (UnknownHostException ex) {
+      Log.e("WIFIIP", "Unable to get host address.");
+      ipAddressString = null;
+    }
+
+    return ipAddressString;
   }
 }
