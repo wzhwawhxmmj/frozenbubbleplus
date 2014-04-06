@@ -446,13 +446,18 @@ class MultiplayerGameView extends SurfaceView implements
   }
 
   private void monitorRemotePlayer() {
-    if (mNetworkManager != null) {
+    if ((mNetworkManager != null) && (mRemoteInput != null)) {
       /*
+       * If the game thread is not running, then allow the remote player
+       * to update the game thread state.
+       *
        * If this is an asynchronous action or it is appropriate to
        * perform a synchronous action, retrieve and clear the current
        * available action from the action queue.
        */
-      if (checkImmediateAction() || mRemoteInput.mGameRef.getOkToFire()) {
+      if ((mGameThread.mMode != MultiplayerGameThread.STATE_RUNNING) ||
+          checkImmediateAction() ||
+          mRemoteInput.mGameRef.getOkToFire()) {
         NetGameInterface monitor = mNetworkManager.monitorNetwork();
 
         if (monitor.gotAction) {
@@ -1469,6 +1474,7 @@ class MultiplayerGameView extends SurfaceView implements
             if (c != null) {
               synchronized (mSurfaceHolder) {
                 if (mRun) {
+                  monitorRemotePlayer();
                   if (mMode == STATE_ABOUT) {
                     drawAboutScreen(c);
                   }
@@ -1725,7 +1731,6 @@ class MultiplayerGameView extends SurfaceView implements
           (mHighscoreManager == null))
         return;
 
-      monitorRemotePlayer();
       int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
                                           mPlayer1.actionRight(),
                                           mPlayer1.actionUp(),
