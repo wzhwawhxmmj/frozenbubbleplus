@@ -483,7 +483,8 @@ public class NetworkGameManager implements MulticastListener {
      */
     session = new MulticastManager(myContext.getApplicationContext());
     session.setMulticastListener(this);
-    session.configureMulticast("239.168.0.1", 5500, 20, false, true);
+    String ipAddress = session.getMulticastIpAddress();
+    session.configureMulticast(ipAddress, 5500, 20, false, true);
     session.start();
   }
 
