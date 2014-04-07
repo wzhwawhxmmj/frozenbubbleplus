@@ -164,11 +164,11 @@ public class MODResourcePlayer extends PlayerThread {
    */
   public void StopAndClose() {
     PausePlay();
-    boolean retry = true;
+    StopThread();
     /*
      * Now close and join() the MOD player thread.
      */
-    StopThread();
+    boolean retry = true;
     while (retry) {
       try {
         join();
