@@ -59,6 +59,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+
+import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;
@@ -126,13 +129,15 @@ public class MulticastManager {
   /*
    * MulticastManager class member variables.
    */
-  private byte[]  mTXBuffer;
+  private ArrayList<byte[]> txBufferList = null;
+  private WifiManager.MulticastLock mLock;
   private boolean rxRunning;
+  private boolean txRunning;
   InetAddress     myInetAddress;
   MulticastSocket receiveSock;
   DatagramSocket  transmitSock;
   Thread          rxThread;
-  private WifiManager.MulticastLock mLock;
+  Thread          txThread;
 
   /**
    * Multicast manager class constructor.
@@ -159,8 +164,8 @@ public class MulticastManager {
    */
   public MulticastManager(Context context) {
     mMulticastListener = null;
-    mTXBuffer          = null;
     rxRunning          = false;
+    txBufferList       = new ArrayList<byte[]>();
 
     try {
       myInetAddress = InetAddress.getByAddress(MCAST_STRING_ADDR,
@@ -175,9 +180,28 @@ public class MulticastManager {
       receiveSock.joinGroup(myInetAddress);
       rxThread = new Thread(new ReceiveTask(), "rxThread");
       rxThread.start();
+      txThread = new Thread(new TransmitTask(), "txThread");
+      txThread.start();
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
+  }
+
+  /**
+   * Stop the datagram receive and transmit threads, close the receive
+   * and transmit sockets, release the multicast lock to no longer
+   * receive multicast packets, and free all allocated resources.
+   * <p>After this method is called, a new instance of the
+   * <code>MulticastManger</code> must be created to support multicast
+   * datagram transmission and receipt.
+   */
+  public void cleanUp() {
+    stopRxThread();
+    stopTxThread();
+    txBufferList.clear();
+    receiveSock.close();
+    transmitSock.close();
+    mLock.release();
   }
 
   /**
@@ -260,13 +284,40 @@ public class MulticastManager {
    */
   public void stopRxThread() {
     rxRunning = false;
-    boolean retry = true;
     /*
-     * Now join() the receive thread.
+     * Now close and join() the receive thread.
      */
+    boolean retry = true;
     while (retry && (rxThread != null)) {
       try {
         rxThread.join();
+        retry = false;
+      } catch (InterruptedException ie) {
+        /*
+         * Keep trying to close the receive thread.
+         */
+      }
+    }
+  }
+
+  /**
+   * This stops the transmit thread, which was constructed passing a
+   * <code>TransmitTask</code> instance, which implements a
+   * <code>Runnable</code> interface.
+   * @see <code>TransmitTask</code>
+   */
+  public void stopTxThread() {
+    txRunning = false;
+    synchronized(txThread) {
+      txThread.notify();
+    }
+    /*
+     * Now close and join() the receive thread.
+     */
+    boolean retry = true;
+    while (retry && (txThread != null)) {
+      try {
+        txThread.join();
         retry = false;
       } catch (InterruptedException ie) {
         /*
@@ -281,21 +332,44 @@ public class MulticastManager {
    * @param buffer - the byte buffer to transmit.
    */
   public void transmit(byte[] buffer) {
-    mTXBuffer = buffer;
-    transmitPacket();
+    if (txRunning) {
+      txBufferList.add(buffer);
+      synchronized(txThread) {
+        txThread.notify();
+      }
+    }
   }
 
-  public void transmitPacket() {
-    Runnable r = new Runnable() {
-      byte[] bytes = mTXBuffer.clone();
+  /**
+   * This class implements a <code>Runnable</code> interface to transmit
+   * datagrams via the transmit socket.
+   */
+  private class TransmitTask implements Runnable {
 
-      public void run() {
+    @Override
+    public void run() {
+      txRunning = true;
+  
+      while (txRunning) {
+        if (txBufferList.size() == 0) {
+          try {
+            synchronized(this) {
+              wait();
+            }
+          } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+          }
+        }
         try {
-          transmitSock.send(new DatagramPacket(bytes,
-                                               bytes.length,
-                                               myInetAddress,
-                                               PORT));
-          Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
+          if (txBufferList.size() > 0) {
+            byte[] bytes = txBufferList.get(0);
+            transmitSock.send(new DatagramPacket(bytes,
+                                                 bytes.length,
+                                                 myInetAddress,
+                                                 PORT));
+            Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
+            txBufferList.remove(0);
+          }
         } catch (IOException ioe) {
           Log.w(LOG_TAG, "multicast transmit malfunction", ioe);
           if (mMulticastListener != null) {
@@ -303,15 +377,6 @@ public class MulticastManager {
           }
         }
       }
-    };
-
-    new Thread(r, "transmitPacket").start();
-  }
-
-  public void cleanUp() {
-    stopRxThread();
-    receiveSock.close();
-    transmitSock.close();
-    mLock.release();
-  }
+    }
+  };
 };
