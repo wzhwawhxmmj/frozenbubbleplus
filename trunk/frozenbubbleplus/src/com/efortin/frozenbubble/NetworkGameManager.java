@@ -533,7 +533,7 @@ public class NetworkGameManager implements MulticastListener {
     remoteActionList = null;
 
     if (session != null)
-      session.cleanUp();
+      session.stopMulticast();
     session = null;
   }
 
@@ -712,7 +712,8 @@ public class NetworkGameManager implements MulticastListener {
      */
     session = new MulticastManager(mContext.getApplicationContext());
     session.setMulticastListener(this);
-
+    session.configureMulticast("224.0.0.15", 5500, 100, false, true);
+    session.start();
     transmitJoinGame();
   }
 
