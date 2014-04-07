@@ -71,25 +71,19 @@ import android.util.Log;
  * ACCESS_WIFI_STATE<br>
  * CHANGE_WIFI_MULTICAST_STATE<br>
  * INTERNET
- * <p>This class instantiates a thread to send and receive WiFi
+ * <p>This class instantiates a thread to send and receive WiFi IPv4
  * multicast datagrams via UDP.  UDP multicasting requires a WiFi access
  * point - i.e., a router, so multicasting does not perform like WiFi
  * P2P direct, where no access point is required.
- * <p>In order for the multicast manager to actually send and receive
- * WiFi multicast messages, <code>configureMulticast()</code> must be
- * called to configure the multicast socket settings prior to <br>
- * <code>start()</code>ing the thread.
- * <p>Furthermore, multicast host addresses must be in the IPv4 class D
- * address range, with the first octet being within the 224 to 239
- * range.  For example, <code>"239.168.0.1"</code> is a multicast host
+ * <p>IPv4 multicast host addresses must be in the class D address
+ * range, with the first octet being within the 224 to 239 range.  For
+ * example, <code>"239.168.0.15"</code> is an actual IPv4 multicast host
  * address.
- * <p>A typical implementation looks like this:<br>
+ * <p> A typical implementation looks like this:<br>
  * <code>
  * MulticastManager session = <br>
  * new MulticastManager(this.getContext());<br>
  * session.setMulticastListener(this);<br>
- * session.configureMulticast("239.168.0.1", 5500, 20, false, true);<br>
- * session.start();
  * </code>
  * <p>The context will have to be provided when instantiating a
  * MulticastManager object based on the desired context - either via the
@@ -112,15 +106,12 @@ public class MulticastManager {
   public static final int EVENT_PACKET_RX      = 1;
   public static final int EVENT_RX_FAIL        = 2;
   public static final int EVENT_TX_FAIL        = 3;
-  public static final int EVENT_TX_FLOOD       = 4;
-  public static final int EVENT_SOCKET_FAIL    = 5;
-  public static final int EVENT_THREAD_STOPPED = 6;
 
   private static final String LOG_TAG = MulticastManager.class.getSimpleName();
-  private static final int PORT = 2624;
-  private static final String MCAST_STRING_ADDR = "239.168.0.1";
+  private static final int PORT = 5500;
+  private static final String MCAST_STRING_ADDR = "239.168.0.15";
   private static final byte[] MCAST_BYTE_ADDR =
-    { (byte) 239, (byte) 168, 0, 1 };
+    { (byte) 239, (byte) 168, 0, 15 };
 
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, byte[] buffer, int length);
@@ -135,7 +126,7 @@ public class MulticastManager {
   /*
    * MulticastManager class member variables.
    */
-  private byte[]  mTXBuffer = null;
+  private byte[]  mTXBuffer;
   private boolean rxRunning;
   InetAddress     myInetAddress;
   MulticastSocket receiveSock;
@@ -147,21 +138,15 @@ public class MulticastManager {
    * Multicast manager class constructor.
    * <p>When created, this class instantiates a thread to send and
    * receive WiFi multicast messages.
-   * <p>In order for the multicast manager to actually send and receive
-   * WiFi multicast messages, <code>configureMulticast()</code> must be
-   * called to configure the multicast socket settings prior to
-   * <code>start()</code>ing the thread.
-   * <p>Furthermore, multicast host addresses must be in the IPv4 class
-   * D address range, with the first octet being within the 224 to 239
-   * range.  For example, <code>"239.168.0.1"</code> is an actual
-   * multicast host address.
+   * <p>IPv4 multicast host addresses must be in the class D address
+   * range, with the first octet being within the 224 to 239
+   * range.  For example, <code>"239.168.0.15"</code> is an actual
+   * IPv4 multicast host address.
    * <p> A typical implementation looks like this:<br>
    * <code>
    * MulticastManager session = <br>
    * new MulticastManager(this.getContext());<br>
    * session.setMulticastListener(this);<br>
-   * session.configureMulticast("239.168.0.1", 5500, 20, false, true);
-   * <br>session.start();
    * </code>
    * <p>The context will have to be provided based on the desired
    * context - either the view context for the current activity only via
@@ -185,10 +170,10 @@ public class MulticastManager {
           (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
       mLock = wifi.createMulticastLock("mLock");
       mLock.acquire();
-      receiveSock = getMulticastSocket();
+      receiveSock = getMulticastSocket(myInetAddress, PORT);
       receiveSock.setLoopbackMode(true);
       receiveSock.joinGroup(myInetAddress);
-      Thread rxThread = new Thread(new ReceiveTask(), "multicast listener");
+      rxThread = new Thread(new ReceiveTask(), "rxThread");
       rxThread.start();
     } catch (IOException ioe) {
       ioe.printStackTrace();
@@ -200,7 +185,7 @@ public class MulticastManager {
    * @param rawBytes - raw IPv4 address.
    * @return A string representation of the raw IP address.
    */
-  protected String getIpv4Address(byte[] rawBytes) {
+  public static final String getIpv4Address(byte[] rawBytes) {
     int i = 4;
     String ipAddress = "";
 
@@ -214,28 +199,29 @@ public class MulticastManager {
     return ipAddress;
   }
 
-  private MulticastSocket getMulticastSocket() throws IOException
+  private MulticastSocket getMulticastSocket(InetAddress addr, int port)
+      throws IOException
   {
-    return new MulticastSocket(new InetSocketAddress(myInetAddress, PORT));
+    return new MulticastSocket(new InetSocketAddress(addr, port));
   }
 
+  /**
+   * This class implements a <code>Runnable</code> interface to read
+   * multicast datagrams from other clients, and passes received
+   * datagrams on to the registered listener immediately upon receipt.
+   * <p>Note that if it were desirable to support being able to send
+   * and receive multicast datagrams in the same thread, a nonzero
+   * socket read timeout must be set.  This is because
+   * <code>MulticastSocket.receive()</code> blocks until a packet is
+   * received or the socket times out.  Thus, if a timeout of zero is
+   * set (which is the default, and denotes that the socket will never
+   * time out), a datagram will never be sent unless one has just been
+   * received.  Thus the maximum time between datagram transmissions is
+   * the socket timeout if no datagrams are being recieved.  If messages
+   * are being received, available TX throughput will be increased.
+   */
   private class ReceiveTask implements Runnable {
 
-    /**
-     * This is the thread's <code>run()</code> call.
-     * <p>Send multicast UDP messages, and read multicast datagrams from
-     * other clients.
-     * <p>To support being able to send and receive packets in the same
-     * thread, a nonzero socket read timeout must be set, because
-     * <code>MulticastSocket.receive()</code> blocks until a packet is
-     * received or the socket times out.  Thus, if a timeout of zero is
-     * set (which is the default, and denotes that the socket will never
-     * time out), a datagram will never be sent unless one has just been
-     * received.
-     * <p>Thus the maximum time between datagram transmissions is the
-     * socket timeout if no datagrams are being recieved.  If messages
-     * are being received, available TX throughput will be increased.
-     */
     @Override
     public void run() {
       rxRunning = true;
@@ -256,16 +242,21 @@ public class MulticastManager {
           Log.d(LOG_TAG, "received "+pkt.getLength()+" bytes");
         } catch (IOException ioe) {
           Log.w(LOG_TAG, "multicast receive thread malfunction", ioe);
+          if (mMulticastListener != null) {
+            mMulticastListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
+          }
         } catch (Exception e) {
           Log.w(LOG_TAG, "multicast receive thread malfunction", e);
         }
       }
     }
-  }
+  };
 
   /**
-   * This stops the receive task.
-   * @see <code>ReceiveTask.run()</code>
+   * This stops the receive thread, which was constructed passing a
+   * <code>ReceiveTask</code> instance, which implements a
+   * <code>Runnable</code> interface.
+   * @see <code>ReceiveTask</code>
    */
   public void stopRxThread() {
     rxRunning = false;
@@ -286,11 +277,8 @@ public class MulticastManager {
   }
 
   /**
-   * Send the desired string as a multicast datagram packet.
-   * <p>If a transmission is already pending when this method is called,
-   * the prior message will be superceded by the current message.  An
-   * EVENT_TX_FLOOD event is posted if this occurs.
-   * @param string - the string to transmit.
+   * Send the desired byte buffer as a multicast datagram packet.
+   * @param buffer - the byte buffer to transmit.
    */
   public void transmit(byte[] buffer) {
     mTXBuffer = buffer;
@@ -299,22 +287,25 @@ public class MulticastManager {
 
   public void transmitPacket() {
     Runnable r = new Runnable() {
+      byte[] bytes = mTXBuffer.clone();
 
       public void run() {
         try {
-          byte[] bytes = mTXBuffer.clone();
           transmitSock.send(new DatagramPacket(bytes,
                                                bytes.length,
                                                myInetAddress,
                                                PORT));
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
         } catch (IOException ioe) {
-          Log.w(LOG_TAG, "", ioe);
+          Log.w(LOG_TAG, "multicast transmit malfunction", ioe);
+          if (mMulticastListener != null) {
+            mMulticastListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
+          }
         }
       }
     };
 
-    new Thread(r, "transmit").start();
+    new Thread(r, "transmitPacket").start();
   }
 
   public void cleanUp() {
@@ -323,4 +314,4 @@ public class MulticastManager {
     transmitSock.close();
     mLock.release();
   }
-}
+};
