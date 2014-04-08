@@ -896,10 +896,11 @@ public class FrozenGame extends GameScreen {
     boolean ats = FrozenBubble.getAimThenShoot();
     boolean bubbleLaunched = false;
     boolean compressed = false;
+    int[]   move = new int[2];
     int     attackBarBubbles = 0;
     int     currentColorWas = currentColor;
-    int[]   move = new int[2];
     int     nextColorWas = nextColor;
+    int     newNextColorWas = newNextColor;
     int     numAttackBubbles = 0;
 
     if (malusBar != null) {
@@ -1128,7 +1129,7 @@ public class FrozenGame extends GameScreen {
                                              swapPressed,
                                              currentColorWas,
                                              nextColorWas,
-                                             newNextColor,
+                                             newNextColorWas,
                                              sendToOpponent,
                                              attackBarBubbles,
                                              malusBar.attackBubbles,
