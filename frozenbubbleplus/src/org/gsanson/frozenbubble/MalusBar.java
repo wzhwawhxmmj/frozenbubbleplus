@@ -121,19 +121,9 @@ public class MalusBar extends Sprite {
   }
 
   /**
-   * Clear the attack bubbles stored in the attack bubble array.  The
-   * number of attack bubbles will be decremented by the supplied number
-   * of bubbles, which is the number of attack bubbles that were
-   * previously launched.
-   * @param remove - the number of attack bubbles to remove from the
-   * total number of attack bubbles.
+   * Clear the attack bubbles stored in the attack bubble array.
    */
-  public void clearAttackBubbles(int remove) {
-    nbMalus -= remove;
-
-    if (nbMalus < 0)
-      nbMalus = 0;
-
+  public void clearAttackBubbles() {
     for (int i = 0; i < 15; i++)
       this.attackBubbles[i] = -1;
   }
@@ -144,6 +134,20 @@ public class MalusBar extends Sprite {
 
   public int getTypeId() {
     return Sprite.TYPE_IMAGE;
+  }
+
+  /**
+   * The number of attack bubbles will be decremented by the supplied
+   * number of bubbles, which is the number of attack bubbles that were
+   * previously launched.
+   * @param remove - the number of attack bubbles to remove from the
+   * total number of attack bubbles.
+   */
+  public void removeAttackBubbles(int remove) {
+    nbMalus -= remove;
+
+    if (nbMalus < 0)
+      nbMalus = 0;
   }
 
   public int removeLine() {
