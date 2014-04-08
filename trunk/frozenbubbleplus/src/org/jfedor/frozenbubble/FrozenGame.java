@@ -826,7 +826,7 @@ public class FrozenGame extends GameScreen {
           this.addSprite(malusBubble);
         }
       }
-      malusBar.clearAttackBubbles(numBubblesLaunched);
+      malusBar.removeAttackBubbles(numBubblesLaunched);
     }
     else if (malusBar.getBubbles() > 0) {
       boolean[] lanes = new boolean[15];
@@ -840,8 +840,6 @@ public class FrozenGame extends GameScreen {
           malusBalls--;
         }
       }
-
-      malusBar.clearAttackBubbles(0);
 
       for (int i = 0; i < 15; i++) {
         if (lanes[i]) {
@@ -1136,7 +1134,9 @@ public class FrozenGame extends GameScreen {
                                              launchBubblePosition);
       }
     }
-
+    if (malusBar != null) {
+      malusBar.clearAttackBubbles();
+    }
     return GAME_PLAYING;
   }
 
