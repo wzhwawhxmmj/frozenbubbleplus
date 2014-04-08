@@ -63,18 +63,16 @@ import android.content.SharedPreferences;
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
 
 /**
- * This class manages the actions in a network multiplayer game, by
+ * This class manages the actions in a network multiplayer game by
  * sending the local actions to the remote player, and queueing the
  * incoming remote player actions for enactment on the local machine.
- * <p>
- * The thread created by this class runs automatically upon object
- * creation.  <code>VirtualInput</code> objects must be subsequently
- * attached via <code>registerPlayers()</code> for all the local and
- * remote players.
+ * <p>The thread created by this class will not <code>run()</code> until
+ * <code>VirtualInput</code> objects for each player are attached via
+ * <code>startNetworkGame()</code>.
  * @author Eric Fortin
  *
  */
-public class NetworkGameManager implements MulticastListener {
+public class NetworkGameManager extends Thread implements MulticastListener {
   /*
    * Message identifier definitions.
    */
@@ -87,6 +85,7 @@ public class NetworkGameManager implements MulticastListener {
   public static final int  GAMEFIELD_BYTES    = 105;
   public static final int  ACTION_BYTES       = 36;
 
+  private boolean          running;
   private boolean          join_rx;
   private boolean          join_tx;
   private boolean          prefs_rx;
@@ -463,6 +462,11 @@ public class NetworkGameManager implements MulticastListener {
      */
     localActionList  = new ArrayList<PlayerAction>();
     remoteActionList = new ArrayList<PlayerAction>();
+    /*
+     * Start an internet multicast session.
+     */
+    session = new MulticastManager(mContext.getApplicationContext());
+    session.setMulticastListener(this);
   }
 
   /**
@@ -504,6 +508,7 @@ public class NetworkGameManager implements MulticastListener {
   }
 
   public void cleanUp() {
+    stopThread();
     /*
      * Restore the local game preferences in the event that they were
      * overwritten by the remote player's preferences.
@@ -533,7 +538,7 @@ public class NetworkGameManager implements MulticastListener {
     remoteActionList = null;
 
     if (session != null)
-      session.stopMulticast();
+      session.cleanUp();
     session = null;
   }
 
@@ -694,27 +699,63 @@ public class NetworkGameManager implements MulticastListener {
     remoteNetGameInterface = new NetGameInterface();
   }
 
+  /**
+   * This function is called from manager thread's <code>run()</code>
+   * method.  This performs the network handshaking amongst peers to
+   * ensure proper game synchronization and operation.
+   */
+  private void manageNetworkGame() {
+    if (!join_tx) {
+      if (transmitJoinGame()) {
+        join_tx = true;
+      }
+    }
+  }
+
+  /**
+   * This function obtains the remote player actions and returns them
+   * to the caller.  This must be called periodically as it is assumed
+   * that the actions will be performed at the most appropriate time as
+   * determined by the owner that instantiated this object.
+   * @return A network game interface that supplies all possible remote
+   * player actions.
+   */
   public NetGameInterface monitorNetwork() {
     remoteNetGameInterface.gotAction = false;
     remoteNetGameInterface.gotFieldData = false;
     remoteNetGameInterface.gotAction = getRemoteAction();
-
     return (remoteNetGameInterface);
+  }
+
+  /**
+   * This is the network game manager thread's <code>run()</code> call.
+   */
+  @Override
+  public void run() {
+    running = true;
+
+    while (running)
+    {
+      try {
+        synchronized(this) {
+          wait(100);
+        }
+      } catch (InterruptedException ie) {
+        /*
+         * Receive timeout.  This is expected behavior.
+         */
+      }
+      if (running) {
+        manageNetworkGame();
+      }
+    }
   }
 
   public void startNetworkGame(VirtualInput localPlayer,
                                VirtualInput remotePlayer) {
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
-
-    /*
-     * Start an internet multicast session.
-     */
-    session = new MulticastManager(mContext.getApplicationContext());
-    session.setMulticastListener(this);
-    session.configureMulticast("224.0.0.15", 5500, 100, false, true);
-    session.start();
-    transmitJoinGame();
+    start();
   }
 
   /**
@@ -773,6 +814,33 @@ public class NetworkGameManager implements MulticastListener {
      */
     //addAction(tempAction);
     transmitAction(tempAction);
+  }
+
+  /**
+   * Stop and <code>join()</code> the network game manager thread.
+   */
+  private void stopThread() {
+    running = false;
+    /*
+     * Wake up the thread.
+     */
+    synchronized (this) {
+      notify();
+    }
+    /*
+     *  Close and join() the multicast thread.
+     */
+    boolean retry = true;
+    while (retry) {
+      try {
+        join();
+        retry = false;
+      } catch (InterruptedException e) {
+        /*
+         *  Keep trying to close the multicast thread.
+         */
+      }
+    }
   }
 
   /**
@@ -836,60 +904,61 @@ public class NetworkGameManager implements MulticastListener {
    * Transmit the local player action to the remote player via the
    * network interface.
    * @param action - the player action to transmit.
+   * @return <code>true</code> if the transmission was successful.
    */
-  private void transmitAction(PlayerAction action) {
+  private boolean transmitAction(PlayerAction action) {
     byte[] buffer = new byte[ACTION_BYTES + 1];
     buffer[0] = MSG_ID_ACTION;
     action.copyToBuffer(buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */
-    session.transmit(buffer);
+    return session.transmit(buffer);
   }
 
   /**
    * Transmit the local player game field to the remote player via the
    * network interface.
    * @param gameField - the player game field data to transmit.
+   * @return <code>true</code> if the transmission was successful.
    */
-  private void transmitGameField(GameFieldData gameField) {
+  private boolean transmitGameField(GameFieldData gameField) {
     byte[] buffer = new byte[GAMEFIELD_BYTES + 1];
     buffer[0] = MSG_ID_GAME_FIELD;
     gameField.copyToBuffer(buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */
-    session.transmit(buffer);
-    field_tx = true;
+    return session.transmit(buffer);
   }
 
   /**
    * Transmit the message to indicate the local player is ready to join
    * a game.
+   * @return <code>true</code> if the transmission was successful.
    */
-  private void transmitJoinGame() {
+  private boolean transmitJoinGame() {
     byte[] buffer = new byte[2];
     buffer[0] = MSG_ID_JOIN_GAME;
     buffer[1] = (byte) localPlayer.playerID;
     /*
      * Send the datagram via the multicast manager.
      */
-    session.transmit(buffer);
-    join_tx = true;
+    return session.transmit(buffer);
   }
 
   /**
    * Transmit the local player preferences to the remote player via the
    * network interface.
+   * @return <code>true</code> if the transmission was successful.
    */
-  private void transmitPrefs() {
+  private boolean transmitPrefs() {
     byte[] buffer = new byte[Preferences.PREFS_BYTES + 1];
     buffer[0] = MSG_ID_PREFS;
     copyPrefsToBuffer(localPrefs, buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */
-    session.transmit(buffer);
-    prefs_tx = true;
+    return session.transmit(buffer);
   }
 };
