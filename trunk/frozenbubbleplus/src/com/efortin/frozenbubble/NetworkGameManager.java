@@ -76,25 +76,27 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   /*
    * Message identifier definitions.
    */
-  public static final byte MSG_ID_JOIN_GAME   = 1;
-  public static final byte MSG_ID_REQUEST     = 2;
-  public static final byte MSG_ID_PREFS       = 3;
-  public static final byte MSG_ID_REBROADCAST = 4;
-  public static final byte MSG_ID_ACTION      = 5;
-  public static final byte MSG_ID_GAME_FIELD  = 6;
-  public static final int  GAMEFIELD_BYTES    = 105;
-  public static final int  ACTION_BYTES       = 36;
+  public static final byte MSG_ID_STATUS     = 1;
+  public static final byte MSG_ID_PREFS      = 2;
+  public static final byte MSG_ID_ACTION     = 3;
+  public static final byte MSG_ID_GAME_FIELD = 4;
+  /*
+   * Datagram size definitions.
+   */
+  public static final int  ACTION_BYTES    = 36;
+  public static final int  GAMEFIELD_BYTES = 105;
+  public static final int  PREFS_BYTES     = Preferences.PREFS_BYTES;
+  public static final int  STATUS_BYTES    = 7;
+  /*
+   * Player status datagram definitions.
+   */
+  private static final long STATUS_INTERVAL = 1000;
 
   private boolean          running;
-  private boolean          join_rx;
-  private boolean          join_tx;
-  private boolean          prefs_rx;
-  private boolean          prefs_tx;
-  private boolean          field_rx;
-  private boolean          field_tx;
-  private short            localActionID;
-  private short            remoteActionID;
+  private long             statusTxTime;
   private Context          mContext;
+  private PlayerStatus     localStatus;
+  private PlayerStatus     remoteStatus;
   private Preferences      localPrefs;
   private Preferences      remotePrefs;
   private VirtualInput     localPlayer = null;
@@ -106,7 +108,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    */
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
-  private NetGameInterface remoteNetGameInterface;
+  private NetGameInterface remoteInterface;
 
   /**
    * This class represents the current state of an individual player
@@ -396,6 +398,158 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     }
   };
 
+  /**
+   * This class encapsulates variables used to indicate the local game
+   * and player status, and is used to synchronize the exchange of
+   * information over the network.
+   * <p>This data is intended to be send periodically to the remote
+   * player(s) to keep all the players synchronized and informed of
+   * potential network issues with lost datagrams.  This is especially
+   * common with multicasting, which is implemented via the User
+   * Datagram Protocol (UDP), which is unreliable.<br>
+   * Refer to:
+   * <a href="url">http://en.wikipedia.org/wiki/User_Datagram_Protocol</a>
+   * @author Eric Fortin
+   *
+   */
+  public class PlayerStatus {
+    /*
+     * The following ID is the player associated with this status.
+     */
+    public byte  playerID;
+    /*
+     * The following action IDs represent the associated player's
+     * current game state.  localActionID will refer to that player's
+     * last transmitted action identifer, and remoteActionID will refer
+     * to that player's pending action identifier (the action it is 
+     * expecting to receive next).
+     * 
+     * This is useful for noting if a player has missed player action
+     * datagrams from another player, because its remoteActionID will be
+     * less than or equal to the localActionID of the other player if it
+     * has not received all the action transmissions from the other
+     * player(s). 
+     */
+    public short localActionID;
+    public short remoteActionID;
+    /*
+     * The following flags are used to request data from the remote
+     * player(s) - either their game preferences, or game field data.
+     * When one or either of these flags is true, then the other
+     * player(s) shall transmit the appropriate information.
+     */
+    private boolean field_request;
+    private boolean prefs_request;
+
+    /**
+     * Class constructor.
+     * @param id - the player ID associated with this status
+     * @param localActionID - the local last transmitted action ID.
+     * @param remoteActionID - the remote current pending action ID.
+     * @param field - request field data
+     * @param prefs - request preference data
+     */
+    public PlayerStatus(byte id,
+                        short localActionID,
+                        short remoteActionID,
+                        boolean field,
+                        boolean prefs) {
+      init(id, localActionID, remoteActionID, field, prefs);
+    }
+
+    /**
+     * Class constructor.
+     * @param action - PlayerAction object to copy to this instance.
+     */
+    public PlayerStatus(PlayerStatus status) {
+      copyFromStatus(status);
+    }
+
+    /**
+     * Class constructor.
+     * @param buffer - buffer contents to copy to this instance.
+     */
+    public PlayerStatus(byte[] buffer, int startIndex) {
+      copyFromBuffer(buffer, startIndex);
+    }
+
+    /**
+     * Copy the contents of the supplied action to this action.
+     * @param action - the action to copy.
+     */
+    public void copyFromStatus(PlayerStatus status) {
+      if (status != null) {
+        this.playerID       = status.playerID;
+        this.localActionID  = status.localActionID;
+        this.remoteActionID = status.remoteActionID;
+        this.field_request  = status.field_request;
+        this.prefs_request  = status.prefs_request;
+      }
+    }
+
+    /**
+     * Copy the contents of the buffer to this status.
+     * @param buffer - the buffer to convert and copy.
+     * @param startIndex - the start of the data to convert.
+     */
+    public void copyFromBuffer(byte[] buffer, int startIndex) {
+      byte[] shortBytes  = new byte[2];
+
+      if (buffer != null) {
+        this.playerID       = buffer[startIndex++];
+        shortBytes[0]       = buffer[startIndex++];
+        shortBytes[1]       = buffer[startIndex++];
+        this.localActionID  = toShort(shortBytes);
+        shortBytes[0]       = buffer[startIndex++];
+        shortBytes[1]       = buffer[startIndex++];
+        this.remoteActionID = toShort(shortBytes);
+        this.field_request  = buffer[startIndex++] == 1;
+        this.prefs_request  = buffer[startIndex++] == 1;
+      }
+    }
+
+    /**
+     * Copy the contents of this status to the buffer.
+     * @param buffer - the buffer to copy to.
+     * @param startIndex - the start location to copy to.
+     */
+    public void copyToBuffer(byte[] buffer, int startIndex) {
+      byte[] shortBytes  = new byte[2];
+
+      if (buffer != null) {
+        buffer[startIndex++] = this.playerID;
+        toByteArray(this.localActionID, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        toByteArray(this.remoteActionID, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        buffer[startIndex++] = (byte) ((this.field_request == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.prefs_request == true)?1:0);
+      }
+    }
+
+    /**
+     * Initialize this object with the provided data.
+     * @param id - the player ID associated with this status
+     * @param localActionID - the local last transmitted action ID.
+     * @param remoteActionID - the remote current pending action ID.
+     * @param field - request field data
+     * @param prefs - request preference data
+     */
+    public void init(byte id,
+                     short localActionID,
+                     short remoteActionID,
+                     boolean field,
+                     boolean prefs) {
+      this.playerID       = id;
+      this.localActionID  = localActionID;
+      this.remoteActionID = remoteActionID;
+      this.field_request  = field;
+      this.prefs_request  = prefs;
+    }
+  };
+
   public class NetGameInterface {
     public byte          messageId;
     public boolean       gotAction;
@@ -433,7 +587,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if ((msgId == MSG_ID_PREFS) && (length > Preferences.PREFS_BYTES)) {
         copyPrefsFromBuffer(remotePrefs, buffer, 1);
         PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
-        prefs_rx = true;
+        localStatus.prefs_request = false;
       }
 
       /*
@@ -442,6 +596,24 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        */
       if ((msgId == MSG_ID_ACTION) && (length > ACTION_BYTES)) {
         addAction(new PlayerAction(buffer, 1));
+      }
+
+      /*
+       * If the message contains the remote player status, copy it to
+       * the remote player status object.  The remote player status
+       * object will be null until the first remote status datagram is
+       * received.
+       */
+      if ((msgId == MSG_ID_STATUS) && (length > STATUS_BYTES)) {
+        PlayerStatus tempStatus = new PlayerStatus(buffer, 1);
+        if (tempStatus.playerID == remotePlayer.playerID) {
+          if (remoteStatus == null) {
+            remoteStatus = new PlayerStatus(tempStatus);
+          }
+          else {
+            remoteStatus.copyFromStatus(tempStatus);
+          }
+        }
       }
 
       /*
@@ -454,7 +626,19 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   public NetworkGameManager(Context myContext) {
-    init(myContext);
+    mContext = myContext;
+    localPrefs = new Preferences();
+    remotePrefs = new Preferences();
+    localPlayer = null;
+    remotePlayer = null;
+    localStatus = null;
+    remoteStatus = null;
+    statusTxTime = 0;
+    SharedPreferences sp =
+        myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                       Context.MODE_PRIVATE);
+    PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
+    remoteInterface = new NetGameInterface();
     /*
      * Create the player action arrays.  The actions are inserted
      * chronologically based on message receipt order, but are extracted
@@ -525,9 +709,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     localPlayer = null;
     remotePlayer = null;
 
-    if (remoteNetGameInterface != null)
-      remoteNetGameInterface.cleanUp();
-    remoteNetGameInterface = null;
+    if (remoteInterface != null)
+      remoteInterface.cleanUp();
+    remoteInterface = null;
 
     if (localActionList != null)
       localActionList.clear();
@@ -628,7 +812,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       /*
        * When a match is found, return a reference to it.
        */
-      if (remoteActionList.get(index).actionID == remoteActionID) {
+      if (remoteActionList.get(index).actionID == localStatus.remoteActionID) {
         tempAction = remoteActionList.get(index);
         break;
       }
@@ -646,8 +830,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * When a match is found, copy the necessary element from the
        * list, remove it, and exit the loop.
        */
-      if (remoteActionList.get(index).actionID == remoteActionID) {
-        remoteNetGameInterface.playerAction.copyFromAction(remoteActionList.get(index));
+      if (remoteActionList.get(index).actionID == localStatus.remoteActionID) {
+        remoteInterface.playerAction.copyFromAction(remoteActionList.get(index));
         try {
             remoteActionList.remove(index);
         } catch (IndexOutOfBoundsException ioobe) {
@@ -655,7 +839,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
           //e.printStackTrace();
         }
         gotAction = true;
-        remoteActionID++;
+        localStatus.remoteActionID++;
         break;
       }
     }
@@ -669,46 +853,16 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   /**
-   * Initialize all variables to game start values.
-   */
-  public void init(Context myContext) {
-    join_rx = false;
-    join_tx = false;
-    prefs_rx = false;
-    prefs_tx = false;
-    field_rx = false;
-    field_tx = false;
-    mContext = myContext;
-    localPrefs = new Preferences();
-    remotePrefs = new Preferences();
-    localPlayer = null;
-    remotePlayer = null;
-    SharedPreferences sp =
-        myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                       Context.MODE_PRIVATE);
-    PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
-    /*
-     * Initialize the local action ID to zero, as it is pre-incremented
-     * for every action transmitted to the remote player.
-     * 
-     * Initialize the remote action ID to 1, as it must be the first
-     * action ID received from the remote player.
-     */
-    localActionID = 0;
-    remoteActionID = 1;
-    remoteNetGameInterface = new NetGameInterface();
-  }
-
-  /**
    * This function is called from manager thread's <code>run()</code>
    * method.  This performs the network handshaking amongst peers to
    * ensure proper game synchronization and operation.
    */
   private void manageNetworkGame() {
-    if (!join_tx) {
-      if (transmitJoinGame()) {
-        join_tx = true;
-      }
+    long currentTime = System.currentTimeMillis();
+
+    if (currentTime > statusTxTime) {
+      transmitStatus(localStatus);
+      statusTxTime = currentTime + STATUS_INTERVAL;
     }
   }
 
@@ -721,10 +875,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * player actions.
    */
   public NetGameInterface monitorNetwork() {
-    remoteNetGameInterface.gotAction = false;
-    remoteNetGameInterface.gotFieldData = false;
-    remoteNetGameInterface.gotAction = getRemoteAction();
-    return (remoteNetGameInterface);
+    remoteInterface.gotAction = false;
+    remoteInterface.gotFieldData = false;
+    remoteInterface.gotAction = getRemoteAction();
+    return (remoteInterface);
   }
 
   /**
@@ -755,6 +909,29 @@ public class NetworkGameManager extends Thread implements MulticastListener {
                                VirtualInput remotePlayer) {
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
+    /*
+     * Initialize the local status local action ID to zero, as it is
+     * pre-incremented for every action transmitted to the remote
+     * player.
+     * 
+     * Initialize the local status remote action ID to 1, as it must be
+     * the first action ID received from the remote player.
+     * 
+     * Set the field and preference request flags to request the
+     * data from the remote player.  If this player is player 1, then
+     * don't request the preference data, since player 1's preferences
+     * are used as the game preferences for all players.
+     */
+    boolean requestPrefs;
+    if (localPlayer.playerID == VirtualInput.PLAYER1) {
+      requestPrefs = false;
+    }
+    else {
+      requestPrefs = true;
+    }
+    localStatus = new PlayerStatus((byte) localPlayer.playerID,
+                                   (short) 0, (short) 1,
+                                   true, requestPrefs);
     start();
   }
 
@@ -796,7 +973,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
     tempAction.playerID = (byte) playerId;
-    tempAction.actionID = ++localActionID;
+    tempAction.actionID = ++localStatus.localActionID;
     tempAction.compress = compress;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
@@ -933,14 +1110,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   /**
-   * Transmit the message to indicate the local player is ready to join
-   * a game.
+   * Transmit the player status message.
    * @return <code>true</code> if the transmission was successful.
    */
-  private boolean transmitJoinGame() {
-    byte[] buffer = new byte[2];
-    buffer[0] = MSG_ID_JOIN_GAME;
-    buffer[1] = (byte) localPlayer.playerID;
+  private boolean transmitStatus(PlayerStatus status) {
+    byte[] buffer = new byte[STATUS_BYTES + 1];
+    buffer[0] = MSG_ID_STATUS;
+    status.copyToBuffer(buffer, 1);
     /*
      * Send the datagram via the multicast manager.
      */

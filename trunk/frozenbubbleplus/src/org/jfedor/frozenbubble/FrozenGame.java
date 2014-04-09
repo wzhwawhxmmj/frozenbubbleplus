@@ -779,15 +779,13 @@ public class FrozenGame extends GameScreen {
   }
 
   /**
-   * Simultaneously obtain and clear <code>sendToOpponent</code>, which
-   * is the number of attack bubbles to add to the opponent attack bar.
-   * @return The number of attack bubbles to the opponent attack bar.
+   * Obtain this player's <code>sendToOpponent</code> value, which is
+   * the number of attack bubbles to add to the opponent's attack bar.
+   * @return The number of attack bubbles to add to the opponent's
+   * attack bar.
    */
-  public int getAndClearSendToOpponent() {
-    int sendCopy = sendToOpponent;
-
-    sendToOpponent = 0;
-    return sendCopy;
+  public int getSendToOpponent() {
+    return sendToOpponent;
   }
 
   /**
