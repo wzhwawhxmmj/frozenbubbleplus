@@ -115,7 +115,7 @@ public class MalusBar extends Sprite {
   }
 
   public void addBubbles(int toAdd) {
-    if (toAdd > 0)
+    if ((toAdd > 0) && (nbMalus == 0))
       releaseTime = 0;
     nbMalus += toAdd;
   }

@@ -148,6 +148,7 @@ public class FrozenGame extends GameScreen {
   int nbBubbles;
   int player;
   int playResult;
+  int addAttackBubbles;
   int sendToOpponent;
   double moveDown;
 
@@ -275,6 +276,7 @@ public class FrozenGame extends GameScreen {
                                           launcher, bubbles, bubblesBlind);
     this.spriteToBack(launchBubble);
     nbBubbles = 0;
+    addAttackBubbles = 0;
     sendToOpponent = 0;
   }
 
@@ -621,7 +623,7 @@ public class FrozenGame extends GameScreen {
   public void addFallingBubble(BubbleSprite sprite) {
     if (malusBar != null)
       malusBar.releaseTime = 0;
-    sendToOpponent++;
+    addAttackBubbles++;
     spriteToFront(sprite);
     falling.addElement(sprite);
   }
@@ -631,8 +633,8 @@ public class FrozenGame extends GameScreen {
     jumping.addElement(sprite);
   }
 
-  public void addSendToOpponent(int addToSend) {
-    sendToOpponent += addToSend;
+  public void addAttackBubbles(int attackBubbles) {
+    addAttackBubbles += attackBubbles;
   }
 
   private void blinkLine(int number) {
@@ -901,6 +903,8 @@ public class FrozenGame extends GameScreen {
     int     newNextColorWas = newNextColor;
     int     numAttackBubbles = 0;
 
+    addAttackBubbles = 0;
+
     if (malusBar != null) {
       attackBarBubbles = malusBar.getBubbles();
     }
@@ -1120,7 +1124,7 @@ public class FrozenGame extends GameScreen {
      */
     if ((networkManager != null) && !isRemote && (malusBar != null)) {
       if (bubbleLaunched || compressed || swapPressed ||
-          (numAttackBubbles > 0) || (sendToOpponent > 0)) {
+          (numAttackBubbles > 0) || (addAttackBubbles > 0)) {
         networkManager.sendLocalPlayerAction(player,
                                              compressed,
                                              bubbleLaunched,
@@ -1128,11 +1132,14 @@ public class FrozenGame extends GameScreen {
                                              currentColorWas,
                                              nextColorWas,
                                              newNextColorWas,
-                                             sendToOpponent,
+                                             addAttackBubbles,
                                              attackBarBubbles,
                                              malusBar.attackBubbles,
                                              launchBubblePosition);
       }
+    }
+    if (!isNetGame) {
+       sendToOpponent = addAttackBubbles;
     }
     if (malusBar != null) {
       malusBar.clearAttackBubbles();
