@@ -100,6 +100,7 @@ import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
+import com.efortin.frozenbubble.NetworkGameManager.GameFieldData;
 import com.efortin.frozenbubble.NetworkGameManager.NetGameInterface;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
@@ -115,6 +116,7 @@ class MultiplayerGameView extends SurfaceView implements
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
+  private NetGameInterface      remoteInterface;
   private NetworkGameManager    mNetworkManager;
   private ComputerAI            mOpponent;
   private VirtualInput          mLocalInput;
@@ -447,6 +449,13 @@ class MultiplayerGameView extends SurfaceView implements
   private void monitorRemotePlayer() {
     if ((mNetworkManager != null) && (mRemoteInput != null)) {
       /*
+       * Check the remote player interface for game field updates.
+       */
+      if (remoteInterface.gotFieldData) {
+        setPlayerGameField(remoteInterface.gameFieldData);
+      }
+
+      /*
        * If the game thread is not running, then allow the remote player
        * to update the game thread state.
        *
@@ -457,16 +466,16 @@ class MultiplayerGameView extends SurfaceView implements
       if ((mGameThread.mMode != MultiplayerGameThread.STATE_RUNNING) ||
           checkImmediateAction() ||
           mRemoteInput.mGameRef.getOkToFire()) {
-        NetGameInterface monitor = mNetworkManager.monitorNetwork();
-
-        if (monitor.gotAction) {
-          setPlayerAction(monitor.playerAction);
+        if (mNetworkManager.getRemoteAction()) {
+          setPlayerAction(remoteInterface.playerAction);
         }
       }
 
       /*
-       * TODO: need to monitor the game field for updates.
+       * Notify the network game interface that all current information
+       * has been processed.
        */
+      remoteInterface.postProcess();
     }
   }
 
@@ -501,9 +510,7 @@ class MultiplayerGameView extends SurfaceView implements
     /*
      * Set the launcher aim position.
      */
-    if (playerRef.mGameRef != null) {
-      playerRef.mGameRef.setPosition(newAction.aimPosition);
-    }
+    playerRef.mGameRef.setPosition(newAction.aimPosition);
 
     /*
      * Process a compressor lower request.
@@ -536,6 +543,47 @@ class MultiplayerGameView extends SurfaceView implements
      * Set the number of bubbles to add to the attack bar.
      */
     playerRef.mGameRef.setSendToOpponent(newAction.addAttackBubbles);
+  }
+
+  /**
+   * Set the game field for a remote player - as in a person playing
+   * via a client device over a network.
+   * @param newGameField - the object containing the remote field data.
+   */
+  private void setPlayerGameField(GameFieldData newField) {
+    if (newField == null)
+      return;
+
+    PlayerInput playerRef = null;
+
+    if (newField.playerID == VirtualInput.PLAYER1)
+      playerRef = mPlayer1;
+    else if (newField.playerID == VirtualInput.PLAYER2)
+      playerRef = mPlayer2;
+
+    if (playerRef == null)
+      return;
+
+    /*
+     * Set the number of compressor steps.
+     */
+
+    /*
+     * Set the bubble grid.
+     */
+
+    /*
+     * Set the launcher bubble colors.
+     */
+    playerRef.mGameRef.setLaunchBubbleColors(newField.launchBubbleColor,
+                                             newField.nextBubbleColor,
+                                             newField.newNextBubbleColor);
+
+    /*
+     * Set the current value of the attack bar.
+     */
+    playerRef.mGameRef.malusBar.setAttackBubbles(newField.totalAttackBubbles,
+                                                 null);
   }
 
   class MultiplayerGameThread extends Thread {
@@ -1904,8 +1952,10 @@ class MultiplayerGameView extends SurfaceView implements
     mGameThread.setRunning(true);
     mGameThread.start();
 
-    if (mNetworkManager != null)
+    if (mNetworkManager != null) {
+      remoteInterface = mNetworkManager.getRemoteInterface();
       mNetworkManager.startNetworkGame(mLocalInput, mRemoteInput);
+    }
   }
 
   public MultiplayerGameThread getThread() {

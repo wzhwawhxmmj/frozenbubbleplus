@@ -76,17 +76,17 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   /*
    * Message identifier definitions.
    */
-  public static final byte MSG_ID_STATUS     = 1;
-  public static final byte MSG_ID_PREFS      = 2;
-  public static final byte MSG_ID_ACTION     = 3;
-  public static final byte MSG_ID_GAME_FIELD = 4;
+  public static final byte MSG_ID_STATUS = 1;
+  public static final byte MSG_ID_PREFS  = 2;
+  public static final byte MSG_ID_ACTION = 3;
+  public static final byte MSG_ID_FIELD  = 4;
   /*
    * Datagram size definitions.
    */
-  public static final int  ACTION_BYTES    = 36;
-  public static final int  GAMEFIELD_BYTES = 105;
-  public static final int  PREFS_BYTES     = Preferences.PREFS_BYTES;
-  public static final int  STATUS_BYTES    = 7;
+  public static final int  ACTION_BYTES = 36;
+  public static final int  FIELD_BYTES  = 113;
+  public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
+  public static final int  STATUS_BYTES = 7;
   /*
    * Player status datagram definitions.
    */
@@ -127,18 +127,18 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public short    totalAttackBubbles = 0;
     /*
      * The game field is represented by a 2-dimensional array, with 8
-     * rows and 12 columns.  This is displayed on the screen as 12 rows
+     * rows and 13 columns.  This is displayed on the screen as 13 rows
      * with 8 columns.
      */
     public byte[][] gameField =
-      {{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
-       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }};
+      {{ -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+       { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }};
 
     /**
      * Class constructor.
@@ -171,7 +171,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.totalAttackBubbles  = fieldData.totalAttackBubbles;
 
         for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 15; y++) {
+          for (int y = 0; y < 13; y++) {
             this.gameField[x][y] = fieldData.gameField[x][y];
           }
         }
@@ -200,7 +200,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.totalAttackBubbles  = toShort(shortBytes);
 
         for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 15; y++) {
+          for (int y = 0; y < 13; y++) {
             this.gameField[x][y] = buffer[startIndex++];
           }
         }
@@ -229,7 +229,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         buffer[startIndex++] = shortBytes[1];
 
         for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 15; y++) {
+          for (int y = 0; y < 13; y++) {
             buffer[startIndex++] = this.gameField[x][y];
           }
         }
@@ -551,7 +551,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   };
 
   public class NetGameInterface {
-    public byte          messageId;
     public boolean       gotAction;
     public boolean       gotFieldData;
     public PlayerAction  playerAction;
@@ -564,8 +563,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       gameFieldData = null;
     }
 
+    public void postProcess() {
+      gotAction = false;
+      gotFieldData = false;
+    }
+
     public NetGameInterface() {
-      messageId = -1;
       playerAction = new PlayerAction(null);
       gameFieldData = new GameFieldData(null);
     }
@@ -576,27 +579,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     /*
      * Process the multicast message.
      */
-    if ((type == MulticastManager.EVENT_PACKET_RX) &&
-        (buffer != null)) {
+    if ((type == MulticastManager.EVENT_PACKET_RX) && (buffer != null)) {
       byte msgId = buffer[0];
-
-      /*
-       * If the message contains game preferences, then the remote
-       * player is player 1.  The game preferences are set per player 1.
-       */
-      if ((msgId == MSG_ID_PREFS) && (length > Preferences.PREFS_BYTES)) {
-        copyPrefsFromBuffer(remotePrefs, buffer, 1);
-        PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
-        localStatus.prefs_request = false;
-      }
-
-      /*
-       * If the message contains a game action, add it to the
-       * appropriate action list.
-       */
-      if ((msgId == MSG_ID_ACTION) && (length > ACTION_BYTES)) {
-        addAction(new PlayerAction(buffer, 1));
-      }
 
       /*
        * If the message contains the remote player status, copy it to
@@ -604,15 +588,47 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * object will be null until the first remote status datagram is
        * received.
        */
-      if ((msgId == MSG_ID_STATUS) && (length > STATUS_BYTES)) {
-        PlayerStatus tempStatus = new PlayerStatus(buffer, 1);
-        if (tempStatus.playerID == remotePlayer.playerID) {
+      if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 1))) {
+        if (buffer[0] == remotePlayer.playerID) {
           if (remoteStatus == null) {
-            remoteStatus = new PlayerStatus(tempStatus);
+            remoteStatus = new PlayerStatus(buffer, 1);
           }
           else {
-            remoteStatus.copyFromStatus(tempStatus);
+            remoteStatus.copyFromBuffer(buffer, 1);
           }
+        }
+      }
+
+      /*
+       * If the message contains game preferences from player 1, then
+       * update the game preferences.  The game preferences for all
+       * players are set per player 1.
+       */
+      if ((msgId == MSG_ID_PREFS) && (length == (PREFS_BYTES + 2))) {
+        if (buffer[1] == VirtualInput.PLAYER1) {
+          copyPrefsFromBuffer(remotePrefs, buffer, 2);
+          PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
+          localStatus.prefs_request = false;
+        }
+      }
+
+      /*
+       * If the message contains a game action, add it to the
+       * appropriate action list.
+       */
+      if ((msgId == MSG_ID_ACTION) && (length == (ACTION_BYTES + 1))) {
+        addAction(new PlayerAction(buffer, 1));
+      }
+
+      /*
+       * If the message contains the remote player game field, update
+       * the remote player interface game field object.
+       */
+      if ((msgId == MSG_ID_FIELD) && (length == (FIELD_BYTES + 1))) {
+        if (buffer[0] == remotePlayer.playerID) {
+          remoteInterface.gameFieldData.copyFromBuffer(buffer, 1);
+          remoteInterface.gotFieldData = true;
+          localStatus.field_request = false;
         }
       }
 
@@ -687,6 +703,15 @@ public class NetworkGameManager extends Thread implements MulticastListener {
           }
         }
         remoteActionList.add(newAction);
+        /*
+         * If this action is the most current, then we can postpone the
+         * cyclic status message.  This is because we just received the
+         * data that the status message is supposed to prompt the remote
+         * player to send. 
+         */
+        if (newAction.actionID == localStatus.remoteActionID) {
+          statusTxTime = System.currentTimeMillis() + STATUS_INTERVAL;
+        }
       }
     }
   }
@@ -821,9 +846,19 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     return (tempAction);
   }
 
-  private synchronized boolean getRemoteAction() {
-    boolean gotAction = false;
+  /**
+   * This function obtains the expected remote player action (based on
+   * action ID) and places it into the remote player interface.
+   * <p>This function must be called periodically as it is assumed
+   * that the actions will be performed at the most appropriate time as
+   * determined by caller.
+   * @return <code>true</code> if the appropriate remote player action
+   * was retrieved from the remote action list.
+   */
+  public synchronized boolean getRemoteAction() {
     int listSize = remoteActionList.size();
+
+    remoteInterface.gotAction = false;
 
     for (int index = 0; index < listSize; index++) {
       /*
@@ -838,7 +873,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
           // TODO - auto-generated exception handler stub.
           //e.printStackTrace();
         }
-        gotAction = true;
+        remoteInterface.gotAction = true;
         localStatus.remoteActionID++;
         break;
       }
@@ -849,7 +884,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * a re-issue of the appropriate action.  This can only occur upon
      * message loss from a remote player.
      */
-    return (gotAction);
+    return (remoteInterface.gotAction);
   }
 
   /**
@@ -861,23 +896,34 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     long currentTime = System.currentTimeMillis();
 
     if (currentTime > statusTxTime) {
-      transmitStatus(localStatus);
+      if (remoteStatus != null) {
+        if (remoteStatus.prefs_request) {
+          transmitPrefs();
+        }
+        //else if (remoteStatus.field_request) {
+          //GameFieldData tempField = new GameFieldData(null);
+          /*
+           * TODO: populate the temporary game field data.
+           */
+          //transmitGameField(tempField);
+        //}
+        else
+          transmitStatus(localStatus);
+      }
+      else
+        transmitStatus(localStatus);
+
       statusTxTime = currentTime + STATUS_INTERVAL;
     }
   }
 
   /**
-   * This function obtains the remote player actions and returns them
-   * to the caller.  This must be called periodically as it is assumed
-   * that the actions will be performed at the most appropriate time as
-   * determined by the owner that instantiated this object.
-   * @return A network game interface that supplies all possible remote
-   * player actions.
+   * This function obtains the remote player interface and returns a
+   * reference to it to the caller.
+   * @return A reference to the remote player network game interface
+   * which provides all necessary remote player data.
    */
-  public NetGameInterface monitorNetwork() {
-    remoteInterface.gotAction = false;
-    remoteInterface.gotFieldData = false;
-    remoteInterface.gotAction = getRemoteAction();
+  public NetGameInterface getRemoteInterface() {
     return (remoteInterface);
   }
 
@@ -1100,8 +1146,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * @return <code>true</code> if the transmission was successful.
    */
   private boolean transmitGameField(GameFieldData gameField) {
-    byte[] buffer = new byte[GAMEFIELD_BYTES + 1];
-    buffer[0] = MSG_ID_GAME_FIELD;
+    byte[] buffer = new byte[FIELD_BYTES + 1];
+    buffer[0] = MSG_ID_FIELD;
     gameField.copyToBuffer(buffer, 1);
     /*
      * Send the datagram via the multicast manager.
@@ -1129,9 +1175,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * @return <code>true</code> if the transmission was successful.
    */
   private boolean transmitPrefs() {
-    byte[] buffer = new byte[Preferences.PREFS_BYTES + 1];
+    byte[] buffer = new byte[Preferences.PREFS_BYTES + 2];
     buffer[0] = MSG_ID_PREFS;
-    copyPrefsToBuffer(localPrefs, buffer, 1);
+    buffer[1] = (byte) localPlayer.playerID;
+    copyPrefsToBuffer(localPrefs, buffer, 2);
     /*
      * Send the datagram via the multicast manager.
      */
