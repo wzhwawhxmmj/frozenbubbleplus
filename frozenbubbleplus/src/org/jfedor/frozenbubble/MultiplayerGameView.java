@@ -1757,8 +1757,16 @@ class MultiplayerGameView extends SurfaceView implements
       if (mOpponent != null)
         mOpponent.clearAction();
 
-      malusBar1.addBubbles(mFrozenGame1.getAndClearSendToOpponent());
-      malusBar2.addBubbles(mFrozenGame2.getAndClearSendToOpponent());
+      /*
+       * Obtain the number of attack bubbles to add to each player's
+       * attack bar that are being sent by their respective opponents.
+       * Afterwards, clear the number of attack bubbles being sent by
+       * each player.
+       */
+      malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
+      malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
+      mFrozenGame1.setSendToOpponent(0);
+      mFrozenGame2.setSendToOpponent(0);
 
       int game1_result = mFrozenGame1.getGameResult();
       int game2_result = mFrozenGame2.getGameResult();
