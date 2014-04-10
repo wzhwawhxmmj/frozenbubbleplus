@@ -124,7 +124,6 @@ public class MulticastManager {
   private MulticastListener mListener;
   private MulticastSocket mSocket;
   private Thread mThread;
-  private Object mTXLock;
   private WifiManager.MulticastLock mLock;
 
   /**
@@ -154,7 +153,6 @@ public class MulticastManager {
     mListener = null;
     mContext = context;
     txList = new ArrayList<byte[]>();
-    mTXLock = new Object();
     configureMulticast();
     WifiManager wm =
         (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
@@ -274,10 +272,13 @@ public class MulticastManager {
     private void sendDatagram() {
       try {
         if (running && txList.size() > 0) {
-          byte[] bytes = txList.get(0);
+          byte[] bytes;
+          synchronized(txList) {
+            bytes = txList.get(0);
+          }
           mSocket.send(new DatagramPacket(bytes, bytes.length, mAddress, PORT));
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
-          synchronized(mTXLock) {
+          synchronized(txList) {
             txList.remove(0);
           }
         }
@@ -320,7 +321,7 @@ public class MulticastManager {
    */
   public boolean transmit(byte[] buffer) {
     if ((mThread != null) && running) {
-      synchronized(mTXLock) {
+      synchronized(txList) {
         txList.add(buffer);
       }
       return(true);
