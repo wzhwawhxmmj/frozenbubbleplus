@@ -828,7 +828,7 @@ public class FrozenGame extends GameScreen {
       }
       malusBar.removeAttackBubbles(numBubblesLaunched);
     }
-    else if (malusBar.getBubbles() > 0) {
+    else if (malusBar.getAttackBubbles() > 0) {
       boolean[] lanes = new boolean[15];
       int malusBalls = malusBar.removeLine();
       int pos;
@@ -904,7 +904,7 @@ public class FrozenGame extends GameScreen {
     addAttackBubbles = 0;
 
     if (malusBar != null) {
-      attackBarBubbles = malusBar.getBubbles();
+      attackBarBubbles = malusBar.getAttackBubbles();
     }
 
     if ((ats && ats_touch_fire) || (!ats && touch_fire)) {
@@ -1156,7 +1156,11 @@ public class FrozenGame extends GameScreen {
     super.paint(c, scale, dx, dy);
   }
 
-  public int getCompressorPosition() {
+  public int getAttackBubbles() {
+    return malusBar.getAttackBubbles();
+  }
+
+  public int getCompressorSteps() {
     return compressor.steps;
   }
 
@@ -1166,6 +1170,10 @@ public class FrozenGame extends GameScreen {
 
   public int getGameResult() {
     return playResult;
+  }
+
+  public int getNewNextColor() {
+    return newNextColor;
   }
 
   public int getNextColor() {
