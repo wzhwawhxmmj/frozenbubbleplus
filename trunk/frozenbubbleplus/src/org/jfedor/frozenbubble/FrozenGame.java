@@ -150,7 +150,6 @@ public class FrozenGame extends GameScreen {
   int playResult;
   int addAttackBubbles;
   int sendToOpponent;
-  double moveDown;
 
   Drawable launcher;
   BmpWrap penguins;
@@ -364,7 +363,6 @@ public class FrozenGame extends GameScreen {
     }
     bubbleManager.saveState(map, player);
     map.putInt(String.format("%d-fixedBubbles", player), fixedBubbles);
-    map.putDouble(String.format("%d-moveDown", player), moveDown);
     map.putInt(String.format("%d-nbBubbles", player), nbBubbles);
     map.putInt(String.format("%d-playResult", player), playResult);
     map.putInt(String.format("%d-sendToOpponent", player), sendToOpponent);
@@ -548,7 +546,6 @@ public class FrozenGame extends GameScreen {
     }
     bubbleManager.restoreState(map, player);
     fixedBubbles = map.getInt(String.format("%d-fixedBubbles", player));
-    moveDown = map.getDouble(String.format("%d-moveDown", player));
     nbBubbles = map.getInt(String.format("%d-nbBubbles", player));
     playResult = map.getInt(String.format("%d-playResult", player));
     sendToOpponent = map.getInt(String.format("%d-sendToOpponent", player));
@@ -762,7 +759,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public double getMoveDown() {
-    return moveDown;
+    return compressor.getMoveDown();
   }
 
   private Rect getPenguinRect(int player) {
@@ -882,7 +879,6 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    moveDown += 28.;
     compressor.moveDown();
   }
 

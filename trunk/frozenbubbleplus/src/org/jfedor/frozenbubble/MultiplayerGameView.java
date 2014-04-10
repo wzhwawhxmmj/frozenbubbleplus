@@ -129,11 +129,11 @@ class MultiplayerGameView extends SurfaceView implements
   // Listener interface for various events
   //**********************************************************
   // Event types.
-  public static final int EVENT_GAME_WON    = 2;
-  public static final int EVENT_GAME_LOST   = 3;
-  public static final int EVENT_GAME_PAUSED = 4;
-  public static final int EVENT_GAME_RESUME = 5;
-  public static final int EVENT_LEVEL_START = 6;
+  public static final int EVENT_GAME_WON    = 1;
+  public static final int EVENT_GAME_LOST   = 2;
+  public static final int EVENT_GAME_PAUSED = 3;
+  public static final int EVENT_GAME_RESUME = 4;
+  public static final int EVENT_LEVEL_START = 5;
 
   // Listener user set.
   public interface GameListener {
