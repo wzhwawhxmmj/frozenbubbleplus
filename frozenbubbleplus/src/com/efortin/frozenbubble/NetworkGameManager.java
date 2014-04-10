@@ -912,9 +912,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     long currentTime = System.currentTimeMillis();
 
     if (currentTime > statusTxTime) {
-      GameFieldData tempData = new GameFieldData(null);
-      getGameFieldData(tempData);
-      transmitGameField(tempData);
       if (remoteStatus != null) {
         if (remoteStatus.prefs_request) {
           transmitPrefs();
