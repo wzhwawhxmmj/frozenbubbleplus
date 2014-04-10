@@ -55,6 +55,7 @@ package com.efortin.frozenbubble;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import org.jfedor.frozenbubble.BubbleSprite;
 import org.jfedor.frozenbubble.FrozenBubble;
 
 import android.content.Context;
@@ -84,7 +85,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * Datagram size definitions.
    */
   public static final int  ACTION_BYTES = 36;
-  public static final int  FIELD_BYTES  = 113;
+  public static final int  FIELD_BYTES  = 111;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 7;
   /*
@@ -118,8 +119,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    *
    */
   public class GameFieldData {
-    public byte     playerID           = -1;
-    public short    actionID           = -1;
+    public byte     playerID           = 0;
     public byte     compressorSteps    = 0;
     public byte     launchBubbleColor  = -1;
     public byte     nextBubbleColor    = -1;
@@ -163,7 +163,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public void copyFromFieldData(GameFieldData fieldData) {
       if (fieldData != null) {
         this.playerID            = fieldData.playerID;
-        this.actionID            = fieldData.actionID;
         this.compressorSteps     = fieldData.compressorSteps;
         this.launchBubbleColor   = fieldData.launchBubbleColor;
         this.nextBubbleColor     = fieldData.nextBubbleColor;
@@ -188,9 +187,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
 
       if (buffer != null) {
         this.playerID            = buffer[startIndex++];
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.actionID            = toShort(shortBytes);
         this.compressorSteps     = buffer[startIndex++];
         this.launchBubbleColor   = buffer[startIndex++];
         this.nextBubbleColor     = buffer[startIndex++];
@@ -217,9 +213,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
 
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
-        toByteArray(this.actionID, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
         buffer[startIndex++] = this.compressorSteps;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
@@ -829,6 +822,29 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     }
   }
 
+  private void getGameFieldData(GameFieldData gameData) {
+    gameData.playerID = (byte) localPlayer.playerID;
+    gameData.compressorSteps =
+        (byte) localPlayer.mGameRef.getCompressorSteps();
+    gameData.launchBubbleColor = (byte) localPlayer.mGameRef.getCurrentColor();
+    gameData.nextBubbleColor = (byte) localPlayer.mGameRef.getNextColor();
+    gameData.newNextBubbleColor =
+        (byte) localPlayer.mGameRef.getNewNextColor();
+    gameData.totalAttackBubbles =
+        (short) localPlayer.mGameRef.getAttackBubbles();
+    BubbleSprite[][] bubbleGrid = localPlayer.mGameRef.getGrid();
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 13; j++) {
+        if (bubbleGrid[i][j] != null) {
+          gameData.gameField[i][j] = (byte) bubbleGrid[i][j].getColor();
+        }
+        else {
+          gameData.gameField[i][j] = -1;
+        }
+      }
+    }
+  }
+
   public synchronized PlayerAction getRemoteActionPreview() {
     PlayerAction tempAction = null;
     int listSize = remoteActionList.size();
@@ -896,17 +912,18 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     long currentTime = System.currentTimeMillis();
 
     if (currentTime > statusTxTime) {
+      GameFieldData tempData = new GameFieldData(null);
+      getGameFieldData(tempData);
+      transmitGameField(tempData);
       if (remoteStatus != null) {
         if (remoteStatus.prefs_request) {
           transmitPrefs();
         }
-        //else if (remoteStatus.field_request) {
-          //GameFieldData tempField = new GameFieldData(null);
-          /*
-           * TODO: populate the temporary game field data.
-           */
-          //transmitGameField(tempField);
-        //}
+        else if (remoteStatus.field_request) {
+          GameFieldData tempField = new GameFieldData(null);
+          getGameFieldData(tempField);
+          transmitGameField(tempField);
+        }
         else
           transmitStatus(localStatus);
       }

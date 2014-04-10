@@ -150,7 +150,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
           !cpuOpponent.isComputing())
           cpuOpponent.compute(myFrozenGame.getCurrentColor(),
                               myFrozenGame.getNextColor(),
-                              myFrozenGame.getCompressorPosition());
+                              myFrozenGame.getCompressorSteps());
 
         /*
          * Only fire if the game state permits, and the last virtual
