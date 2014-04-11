@@ -485,19 +485,23 @@ class MultiplayerGameView extends SurfaceView implements
    * @param newAction - the object containing the remote input info.
    */
   private synchronized void setPlayerAction(PlayerAction newAction) {
-    if (newAction == null)
+    if (newAction == null) {
       return;
+    }
 
-    PlayerInput playerRef = null;
+    PlayerInput playerRef;
 
-    if (newAction.playerID == VirtualInput.PLAYER1)
+    if (newAction.playerID == VirtualInput.PLAYER1) {
       playerRef = mPlayer1;
-    else if (newAction.playerID == VirtualInput.PLAYER2)
+    }
+    else if (newAction.playerID == VirtualInput.PLAYER2) {
       playerRef = mPlayer2;
-
-    if (playerRef == null)
+    }
+    else {
       return;
-    else if (mGameThread != null)
+    }
+
+    if (mGameThread != null)
       mGameThread.updateStateOnEvent(null);
 
     /*
@@ -516,7 +520,7 @@ class MultiplayerGameView extends SurfaceView implements
      * Process a compressor lower request.
      */
     if (newAction.compress) {
-      playerRef.mGameRef.lowerCompressor();
+      playerRef.mGameRef.lowerCompressor(true);
     }
 
     /*
@@ -551,26 +555,34 @@ class MultiplayerGameView extends SurfaceView implements
    * @param newGameField - the object containing the remote field data.
    */
   private void setPlayerGameField(GameFieldData newField) {
-    if (newField == null)
+    if (newField == null) {
       return;
+    }
 
-    PlayerInput playerRef = null;
+    PlayerInput playerRef;
 
-    if (newField.playerID == VirtualInput.PLAYER1)
+    if (newField.playerID == VirtualInput.PLAYER1) {
       playerRef = mPlayer1;
-    else if (newField.playerID == VirtualInput.PLAYER2)
+    }
+    else if (newField.playerID == VirtualInput.PLAYER2) {
       playerRef = mPlayer2;
-
-    if (playerRef == null)
+    }
+    else {
       return;
+    }
 
     /*
-     * Set the number of compressor steps.
+     * Set the bubble grid.  Note this must be done before lowering the
+     * compressor, as bubbles will be created using a non-compressed
+     * game field!
      */
+    playerRef.mGameRef.setGrid(newField.gameField);
 
     /*
-     * Set the bubble grid.
+     * Lower the compressor and bubbles in play to the required number
+     * of compressor steps.
      */
+    playerRef.mGameRef.setCompressorSteps(newField.compressorSteps);
 
     /*
      * Set the launcher bubble colors.
