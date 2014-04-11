@@ -582,7 +582,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * received.
        */
       if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 1))) {
-        if (buffer[0] == remotePlayer.playerID) {
+        if (buffer[1] == remotePlayer.playerID) {
           if (remoteStatus == null) {
             remoteStatus = new PlayerStatus(buffer, 1);
           }
@@ -618,7 +618,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * the remote player interface game field object.
        */
       if ((msgId == MSG_ID_FIELD) && (length == (FIELD_BYTES + 1))) {
-        if (buffer[0] == remotePlayer.playerID) {
+        if (buffer[1] == remotePlayer.playerID) {
           remoteInterface.gameFieldData.copyFromBuffer(buffer, 1);
           remoteInterface.gotFieldData = true;
           localStatus.field_request = false;
