@@ -74,6 +74,9 @@ import com.efortin.frozenbubble.MulticastManager.MulticastListener;
  *
  */
 public class NetworkGameManager extends Thread implements MulticastListener {
+  private static final String MCAST_HOST_NAME = "224.0.0.15";
+  private static final byte[] MCAST_BYTE_ADDR = { (byte) 224, 0, 0, 15 };
+  private static final int    PORT            = 5500;
   /*
    * Message identifier definitions.
    */
@@ -444,9 +447,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * When one or either of these flags is true, then the other
      * player(s) shall transmit the appropriate information.
      */
-    public boolean field_request;
-    public boolean prefs_request;
-    public byte    gameStatus;
+    private boolean field_request;
+    private boolean prefs_request;
+    public  byte    gameStatus;
 
     /**
      * Class constructor.
@@ -684,7 +687,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     /*
      * Start an internet multicast session.
      */
-    session = new MulticastManager(mContext.getApplicationContext());
+    session = new MulticastManager(mContext.getApplicationContext(),
+                                   MCAST_HOST_NAME,
+                                   MCAST_BYTE_ADDR,
+                                   PORT);
     session.setMulticastListener(this);
   }
 
@@ -971,8 +977,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         try {
             remoteActionList.remove(index);
         } catch (IndexOutOfBoundsException ioobe) {
-          // TODO - auto-generated exception handler stub.
-          //e.printStackTrace();
+          ioobe.printStackTrace();
         }
         remoteInterface.gotAction = true;
         localStatus.remoteActionID++;

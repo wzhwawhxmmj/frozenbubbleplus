@@ -89,12 +89,7 @@ import android.util.Log;
  * @author Eric Fortin, Wednesday, May 8, 2013
  */
 public class MulticastManager {
-
   private static final String LOG_TAG = MulticastManager.class.getSimpleName();
-  private static final String MCAST_STRING_ADDR = "224.0.0.15";
-  private static final byte[] MCAST_BYTE_ADDR   = { (byte) 224, 0, 0, 15 };
-  private static final int    PORT              = 5500;
-
   /*
    * Listener interface for various multicast management events.
    *
@@ -113,11 +108,11 @@ public class MulticastManager {
   public void setMulticastListener(MulticastListener ml) {
     mListener = ml;
   }
-
   /*
    * MulticastManager class member variables.
    */
   private boolean running;
+  private int mPort;
   private ArrayList<byte[]> txList;
   private Context mContext;
   private InetAddress mAddress;
@@ -148,12 +143,19 @@ public class MulticastManager {
    * <code>getBaseContext()</code> if operating within a nested context.
    * @param context - the context defining the lifecycle of this manager
    * for the purpose of obtaining WiFi service access.
+   * @param hostName - the host name of this multicast session.
+   * @param address - the internet address of this multicast session.
+   * @param port - the port number to use for the multicast socket.
    */
-  public MulticastManager(Context context) {
+  public MulticastManager(Context context,
+                          String hostName,
+                          byte[]address,
+                          int port) {
     mListener = null;
     mContext = context;
+    mPort = port;
     txList = new ArrayList<byte[]>();
-    configureMulticast();
+    configureMulticast(hostName, address, port);
     WifiManager wm =
         (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
     mLock = wm.createMulticastLock("multicastLock");
@@ -177,11 +179,14 @@ public class MulticastManager {
   /**
    * Configure the multicast socket settings.
    * <p>This must be called before <code>start()</code>ing the thread.
+   * @param hostName - the host name of this multicast session.
+   * @param address - the internet address of this multicast session.
+   * @param port - the port number to use for the multicast socket.
    */
-  private void configureMulticast() {
+  private void configureMulticast(String hostName, byte[]address, int port) {
     try {
-      mAddress = InetAddress.getByAddress(MCAST_STRING_ADDR, MCAST_BYTE_ADDR);
-      mSocket = new MulticastSocket(PORT);
+      mAddress = InetAddress.getByAddress(hostName, address);
+      mSocket = new MulticastSocket(port);
       mSocket.setSoTimeout(101);
       mSocket.setBroadcast(false);
       mSocket.setLoopbackMode(true);
@@ -218,7 +223,7 @@ public class MulticastManager {
     private void receiveDatagram() {
       try {
         DatagramPacket dpRX =
-            new DatagramPacket(rxBuffer, rxBuffer.length, mAddress, PORT);
+            new DatagramPacket(rxBuffer, rxBuffer.length, mAddress, mPort);
         mSocket.receive(dpRX);
 
         if (running && (dpRX.getLength() != 0) && (mListener != null)) {
@@ -276,7 +281,10 @@ public class MulticastManager {
           synchronized(txList) {
             bytes = txList.get(0);
           }
-          mSocket.send(new DatagramPacket(bytes, bytes.length, mAddress, PORT));
+          mSocket.send(new DatagramPacket(bytes,
+                                          bytes.length,
+                                          mAddress,
+                                          mPort));
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
           synchronized(txList) {
             txList.remove(0);
