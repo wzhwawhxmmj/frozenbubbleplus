@@ -181,14 +181,13 @@ class MultiplayerGameView extends SurfaceView implements
      * @param id - the player ID, e.g.,
      * <code>VirtualInput.PLAYER1</code>.
      * @param type - <code>true</code> if the player is a simulation.
-     * @param net - <code>true</code> if this is a network game.
      * @param remote - <code>true</code> if this player is playing on a
      * remote machine, <code>false</code> if this player is local.
      * @see VirtualInput
      */
-    public PlayerInput(int id, boolean type, boolean net, boolean remote) {
+    public PlayerInput(int id, boolean type, boolean remote) {
       init();
-      configure(id, type, net, remote);
+      configure(id, type, remote);
     }
 
     /**
@@ -1937,24 +1936,22 @@ class MultiplayerGameView extends SurfaceView implements
 
     if (gameLocale == FrozenBubble.LOCALE_LOCAL) {
       isCPU    = true;
-      isNet    = false;
       isRemote = false;
     }
     else {
       isCPU    = false;
-      isNet    = true;
       isRemote = true;
     }
 
     if (myPlayerId == VirtualInput.PLAYER1) {
-      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, isNet, false);
-      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, isCPU, isNet, isRemote);
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, isCPU, isRemote);
       mLocalInput = mPlayer1;
       mRemoteInput = mPlayer2;
     }
     else {
-      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, isCPU, isNet, isRemote);
-      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, false, isNet, false);
+      mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, isCPU, isRemote);
+      mPlayer2 = new PlayerInput(VirtualInput.PLAYER2, false, false);
       mLocalInput = mPlayer2;
       mRemoteInput = mPlayer1;
     }

@@ -139,7 +139,6 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
-  boolean isNetGame;
   boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
@@ -199,12 +198,10 @@ public class FrozenGame extends GameScreen {
 
     if (input_arg != null) {
       player    = input_arg.playerID;
-      isNetGame = input_arg.isNetGame;
       isRemote  = input_arg.isRemote;
     }
     else {
       player    = VirtualInput.PLAYER1;
-      isNetGame = false;
       isRemote  = false;
     }
 
@@ -568,7 +565,7 @@ public class FrozenGame extends GameScreen {
                                              launchBubblePosition);
       }
     }
-    if (!isNetGame) {
+    if (networkManager == null) {
        sendToOpponent = addAttackBubbles;
     }
     if (malusBar != null) {
@@ -983,7 +980,8 @@ public class FrozenGame extends GameScreen {
 
   public boolean getOkToFire() {
     return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
-            readyToFire && ((goingUp.size() == 0) || !isNetGame));
+            ((goingUp.size() == 0) || (networkManager == null)) &&
+            readyToFire);
   }
 
   private Rect getPenguinRect(int player) {
