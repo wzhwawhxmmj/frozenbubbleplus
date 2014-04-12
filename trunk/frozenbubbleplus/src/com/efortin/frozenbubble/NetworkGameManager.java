@@ -84,7 +84,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   /*
    * Datagram size definitions.
    */
-  public static final int  ACTION_BYTES = 36;
+  public static final int  ACTION_BYTES = 38;
   public static final int  FIELD_BYTES  = 111;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 9;
@@ -241,8 +241,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    *
    */
   public class PlayerAction {
-    public byte  playerID;  // the player ID associated with this action.
-    public short actionID;  // the ID of this particular action 
+    public byte  playerID;        // the player ID associated with this action.
+    public short localActionID;   // the ID of this particular action
+    public short remoteActionID;  // the ID of expected remote player action
     /*
      * The following three booleans are flags associated with player
      * actions.
@@ -298,7 +299,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public void copyFromAction(PlayerAction action) {
       if (action != null) {
         this.playerID           = action.playerID;
-        this.actionID           = action.actionID;
+        this.localActionID      = action.localActionID;
+        this.remoteActionID     = action.remoteActionID;
         this.compress           = action.compress;
         this.launchBubble       = action.launchBubble;
         this.swapBubble         = action.swapBubble;
@@ -329,7 +331,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.playerID           = buffer[startIndex++];
         shortBytes[0]           = buffer[startIndex++];
         shortBytes[1]           = buffer[startIndex++];
-        this.actionID           = toShort(shortBytes);
+        this.localActionID      = toShort(shortBytes);
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.remoteActionID     = toShort(shortBytes);
         this.compress           = buffer[startIndex++] == 1;
         this.launchBubble       = buffer[startIndex++] == 1;
         this.swapBubble         = buffer[startIndex++] == 1;
@@ -355,10 +360,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       }
     }
 
-    private boolean actionTxTimeExpired() {
-      return (System.currentTimeMillis() > actionTxTime);
-    }
-
     /**
      * Copy the contents of this action to the buffer.
      * @param buffer - the buffer to copy to.
@@ -370,7 +371,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
 
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
-        toByteArray(this.actionID, shortBytes);
+        toByteArray(this.localActionID, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        toByteArray(this.remoteActionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
         buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
@@ -684,6 +688,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     session.setMulticastListener(this);
   }
 
+  private boolean actionTxTimeExpired() {
+    return (System.currentTimeMillis() > actionTxTime);
+  }
+
   /**
    * Add a player action to the appropriate action list.  Do not allow
    * duplicate actions to populate the lists.
@@ -691,6 +699,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    */
   private synchronized void addAction(PlayerAction newAction) {
     if ((localPlayer != null) && (remotePlayer != null)) {
+      /*
+       * If an action is a local player action, add it to the action
+       * list if it is not already in the list.
+       *
+       * If it is a remote player action, add it to the action list if
+       * it is not already in the list.
+       */
       if (newAction.playerID == localPlayer.playerID) {
         int listSize = localActionList.size();
 
@@ -699,7 +714,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
            * If a match is found, return from this function without
            * adding the action to the list since it is a duplicate.
            */
-          if (localActionList.get(index).actionID == newAction.actionID) {
+          if (localActionList.get(index).localActionID ==
+              newAction.localActionID) {
             return;
           }
         }
@@ -707,13 +723,25 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       }
       else if (newAction.playerID == remotePlayer.playerID) {
         int listSize = remoteActionList.size();
+        /*
+         * Update the remote player remote action ID to the ID of this
+         * action if it is exactly 1 greater than the local player local
+         * action ID.  This signifies that the remote player has
+         * received all the local player action messages, since they are
+         * expecting an action datagram that has not yet been sent by
+         * the local player because it hasn't occurred.
+         */
+        if (newAction.remoteActionID == localStatus.localActionID + 1) {
+          remoteStatus.remoteActionID = newAction.remoteActionID;
+        }
 
         for (int index = 0; index < listSize; index++) {
           /*
            * If a match is found, return from this function without
            * adding the action to the list since it is a duplicate.
            */
-          if (remoteActionList.get(index).actionID == newAction.actionID) {
+          if (remoteActionList.get(index).localActionID ==
+              newAction.localActionID) {
             return;
           }
         }
@@ -724,7 +752,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
          * data that the status message is supposed to prompt the remote
          * player to send. 
          */
-        if (newAction.actionID == localStatus.remoteActionID) {
+        if (newAction.localActionID == localStatus.remoteActionID) {
           updateStatusTxTime();
         }
       }
@@ -745,11 +773,11 @@ public class NetworkGameManager extends Thread implements MulticastListener {
 
     for (int index = 0; index < listSize; index++) {
       /*
-       * If the action ID in the list is less than the remote player
-       * remote action ID, remove it from the list.  Only one entry
-       * is removed per function call.
+       * If the local action ID in the list is less than the remote
+       * player remote action ID, remove it from the list.  Only one
+       * entry is removed per function call.
        */
-      if (localActionList.get(index).actionID <
+      if (localActionList.get(index).localActionID <
           remoteStatus.remoteActionID) {
         localActionList.remove(index);
         removed = true;
@@ -894,6 +922,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     }
   }
 
+  /**
+   * Peek into the remote action list to see if we have obtained the
+   * current expected remote action.
+   * @return The reference to the current remote action if it exists,
+   * and <code>null</code> if we haven't received it yet.
+   */
   public synchronized PlayerAction getRemoteActionPreview() {
     PlayerAction tempAction = null;
     int listSize = remoteActionList.size();
@@ -902,7 +936,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       /*
        * When a match is found, return a reference to it.
        */
-      if (remoteActionList.get(index).actionID == localStatus.remoteActionID) {
+      if (remoteActionList.get(index).localActionID ==
+          localStatus.remoteActionID) {
         tempAction = remoteActionList.get(index);
         break;
       }
@@ -930,7 +965,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * When a match is found, copy the necessary element from the
        * list, remove it, and exit the loop.
        */
-      if (remoteActionList.get(index).actionID == localStatus.remoteActionID) {
+      if (remoteActionList.get(index).localActionID ==
+          localStatus.remoteActionID) {
         remoteInterface.playerAction.copyFromAction(remoteActionList.get(index));
         try {
             remoteActionList.remove(index);
@@ -964,11 +1000,11 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (localStatus.localActionID >= remoteStatus.remoteActionID) {
         if (!missedAction) {
           missedAction = true;
-          updateStatusTxTime();
+          updateActionTxTime();
         }
-        else if (statusTxTimeExpired()) {
+        else if (actionTxTimeExpired()) {
           sendLocalPlayerAction(remoteStatus.remoteActionID);
-          updateStatusTxTime();
+          updateActionTxTime();
         }
       }
       else {
@@ -978,6 +1014,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       cleanLocalActionList();
     }
 
+    /*
+     * Check whether various datagrams require transmission, such as
+     * player status, game field data, or preferences.
+     */
     if (statusTxTimeExpired()) {
       if (remoteStatus != null) {
         if (remoteStatus.prefs_request) {
@@ -1043,7 +1083,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       /*
        * If a match is found, transmit the action.
        */
-      if (localActionList.get(index).actionID == actionId) {
+      if (localActionList.get(index).localActionID == actionId) {
         transmitAction(localActionList.get(index));
       }
     }
@@ -1087,7 +1127,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
     tempAction.playerID = (byte) playerId;
-    tempAction.actionID = ++localStatus.localActionID;
+    tempAction.localActionID = ++localStatus.localActionID;
+    tempAction.remoteActionID = localStatus.remoteActionID;
     tempAction.compress = compress;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
