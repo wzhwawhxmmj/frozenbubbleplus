@@ -182,7 +182,7 @@ public class MulticastManager {
     try {
       mAddress = InetAddress.getByAddress(MCAST_STRING_ADDR, MCAST_BYTE_ADDR);
       mSocket = new MulticastSocket(PORT);
-      mSocket.setSoTimeout(100);
+      mSocket.setSoTimeout(101);
       mSocket.setBroadcast(false);
       mSocket.setLoopbackMode(true);
       mSocket.joinGroup(mAddress);

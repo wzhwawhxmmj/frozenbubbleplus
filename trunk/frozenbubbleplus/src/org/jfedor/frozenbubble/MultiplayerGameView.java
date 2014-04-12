@@ -265,6 +265,29 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     /**
+     * Based on the provided keypress, check if it corresponds to a new
+     * player action.
+     * @param keyCode
+     * @return True if the current keypress indicates a new player action.
+     */
+    public boolean checkNewActionKeyPress(int keyCode) {
+      return (!mLeft && !mRight && !mCenter && !mUp && !mDown) &&
+             ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
+              (keyCode == KeyEvent.KEYCODE_DPAD_DOWN));
+    }
+
+    public int getGameStatus() {
+      if (mGameThread != null) {
+        return mGameThread.mMode;
+      }
+
+      return MultiplayerGameThread.STATE_INVALID;
+    }
+
+    /**
      * Obtain the ATS (aim-then-shoot) touch horizontal position change.
      * @return The horizontal touch change in position.
      */
@@ -298,21 +321,6 @@ class MultiplayerGameView extends SurfaceView implements
       double tempDx = mTrackballDx;
       mTrackballDx = 0;
       return tempDx;
-    }
-
-    /**
-     * Based on the provided keypress, check if it corresponds to a new
-     * player action.
-     * @param keyCode
-     * @return True if the current keypress indicates a new player action.
-     */
-    public boolean checkNewActionKeyPress(int keyCode) {
-      return (!mLeft && !mRight && !mCenter && !mUp && !mDown) &&
-             ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
-              (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
-              (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
-              (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
-              (keyCode == KeyEvent.KEYCODE_DPAD_DOWN));
     }
 
     public void init() {
@@ -602,9 +610,10 @@ class MultiplayerGameView extends SurfaceView implements
 
     private static final int FRAME_DELAY = 40;
 
+    public static final int STATE_INVALID = 0;
     public static final int STATE_RUNNING = 1;
     public static final int STATE_PAUSE   = 2;
-    public static final int STATE_ABOUT   = 4;
+    public static final int STATE_ABOUT   = 3;
 
     public static final double TRACKBALL_COEFFICIENT      = 5;
     public static final double TOUCH_BUTTON_THRESHOLD     = 16;
