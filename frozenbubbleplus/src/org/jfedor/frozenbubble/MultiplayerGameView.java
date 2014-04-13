@@ -1434,6 +1434,9 @@ class MultiplayerGameView extends SurfaceView implements
                                       mPlayer2);
         mPlayer2.setGameRef(mFrozenGame2);
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
+        if (mNetworkManager != null) {
+          mNetworkManager.newGame();
+        }
       }
     }
 
@@ -1808,16 +1811,17 @@ class MultiplayerGameView extends SurfaceView implements
                                           mPlayer1.getTouchY(),
                                           mPlayer1.actionTouchFireATS(),
                                           mPlayer1.getTouchDxATS());
-      mFrozenGame2.play(mPlayer2.actionLeft(),
-                        mPlayer2.actionRight(),
-                        mPlayer2.actionUp(),
-                        mPlayer2.actionDown(),
-                        mPlayer2.getTrackBallDx(),
-                        mPlayer2.actionTouchFire(),
-                        mPlayer2.getTouchX(),
-                        mPlayer2.getTouchY(),
-                        mPlayer2.actionTouchFireATS(),
-                        mPlayer2.getTouchDxATS());
+
+      int game2_state = mFrozenGame2.play(mPlayer2.actionLeft(),
+                                          mPlayer2.actionRight(),
+                                          mPlayer2.actionUp(),
+                                          mPlayer2.actionDown(),
+                                          mPlayer2.getTrackBallDx(),
+                                          mPlayer2.actionTouchFire(),
+                                          mPlayer2.getTouchX(),
+                                          mPlayer2.getTouchY(),
+                                          mPlayer2.actionTouchFireATS(),
+                                          mPlayer2.getTouchDxATS());
       /*
        * If playing a CPU opponent, notify the computer that the current
        * action has been processed and we are ready for a new action.
@@ -1863,13 +1867,19 @@ class MultiplayerGameView extends SurfaceView implements
       }
 
       /*
-       * Only start a new game when player 1 provides input, because the
-       * CPU is prone to sneaking a launch attempt in after the game is
-       * decided.
+       * Only start a new game when player 1 provides input when the
+       * opponent is the CPU, because the CPU is prone to sneaking a
+       * launch attempt in after the game is decided.
+       *
+       * Otherwise, the first player to provide input.
        */
-      if ((game1_state == FrozenGame.GAME_NEXT_LOST) ||
-          (game1_state == FrozenGame.GAME_NEXT_WON )) {
-        if (game1_state == FrozenGame.GAME_NEXT_WON )
+      if (((game1_state == FrozenGame.GAME_NEXT_LOST) ||
+           (game1_state == FrozenGame.GAME_NEXT_WON)) ||
+          (!mRemoteInput.isCPU &&
+           ((game2_state == FrozenGame.GAME_NEXT_LOST) ||
+            (game2_state == FrozenGame.GAME_NEXT_WON)))){
+        if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
+            (game2_state == FrozenGame.GAME_NEXT_LOST))
           numPlayer1GamesWon++;
         else
           numPlayer2GamesWon++;

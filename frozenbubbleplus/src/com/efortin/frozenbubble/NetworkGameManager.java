@@ -103,6 +103,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   private byte             myGameID;
   private boolean[]        gamesInProgress;
   private boolean          missedAction;
+  private boolean          readyToPlay;
   private boolean          running;
   private long             actionTxTime;
   private long             gameStartTime;
@@ -136,6 +137,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     myGameID = MulticastManager.FILTER_OFF;
     gamesInProgress = new boolean[GAME_ID_MAX];
     missedAction = false;
+    readyToPlay = false;
     mContext = myContext;
     localPrefs = new Preferences();
     remotePrefs = new Preferences();
@@ -476,7 +478,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      */
     public byte    playerID;
     public byte    protocolVersion;
-    public boolean gameStarted;
+    public boolean gameClaimed;
     public byte    gameStatus;
     /*
      * The following action IDs represent the associated player's
@@ -505,19 +507,21 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     /**
      * Class constructor.
      * @param id - the player ID associated with this status
+     * @param claimed - game ID claimed flag.
+     * @param status - the game status (paused, running, etc.).
      * @param localActionID - the local last transmitted action ID.
      * @param remoteActionID - the remote current pending action ID.
      * @param field - request field data
      * @param prefs - request preference data
      */
     public PlayerStatus(byte id,
-                        boolean started,
+                        boolean claimed,
                         byte status,
                         short localActionID,
                         short remoteActionID,
                         boolean field,
                         boolean prefs) {
-      init(id, started, status, localActionID, remoteActionID, field, prefs);
+      init(id, claimed, status, localActionID, remoteActionID, field, prefs);
     }
 
     /**
@@ -544,7 +548,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (status != null) {
         this.playerID        = status.playerID;
         this.protocolVersion = PROTOCOL_VERSION;
-        this.gameStarted     = status.gameStarted;
+        this.gameClaimed     = status.gameClaimed;
         this.gameStatus      = status.gameStatus;
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
@@ -564,7 +568,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (buffer != null) {
         this.playerID        = buffer[startIndex++];
         this.protocolVersion = buffer[startIndex++];
-        this.gameStarted     = buffer[startIndex++] == 1;
+        this.gameClaimed     = buffer[startIndex++] == 1;
         this.gameStatus      = buffer[startIndex++];
         shortBytes[0]        = buffer[startIndex++];
         shortBytes[1]        = buffer[startIndex++];
@@ -588,7 +592,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
         buffer[startIndex++] = this.protocolVersion;
-        buffer[startIndex++] = (byte) ((this.gameStarted == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.gameClaimed == true)?1:0);
         buffer[startIndex++] = this.gameStatus;
         toByteArray(this.localActionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
@@ -604,7 +608,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     /**
      * Initialize this object with the provided data.
      * @param id - the player ID associated with this status
-     * @param started - the game started flag.
+     * @param claimed - the game ID claimed flag.
      * @param status - the game status (paused, running, etc.).
      * @param localActionID - the local last transmitted action ID.
      * @param remoteActionID - the remote current pending action ID.
@@ -612,7 +616,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * @param prefs - request preference data
      */
     public void init(byte id,
-                     boolean started,
+                     boolean claimed,
                      byte status,
                      short localActionID,
                      short remoteActionID,
@@ -620,7 +624,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
                      boolean prefs) {
       this.playerID        = id;
       this.protocolVersion = PROTOCOL_VERSION;
-      this.gameStarted     = started;
+      this.gameClaimed     = claimed;
       this.gameStatus      = status;
       this.localActionID   = localActionID;
       this.remoteActionID  = remoteActionID;
@@ -714,6 +718,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
               return;
             }
           }
+          /*
+           * Clear the list when the first action is received to remove
+           * spurious entries.
+           */
+          if (newAction.localActionID == 1) {
+            remoteActionList.clear();
+          }
           remoteActionList.add(newAction);
         }
         /*
@@ -730,11 +741,11 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   /**
-   * Claim the first available game ID, and update the transport layer
+   * Reserve the first available game ID, and update the transport layer
    * receive message filter to ignore all messages that don't have this
    * game ID.
    */
-  public void claimGameID() {
+  public void reserveGameID() {
     for (byte index = 0;index < GAME_ID_MAX;index++) {
       if (!gamesInProgress[index]) {
         myGameID = index;
@@ -997,13 +1008,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    */
   private void manageNetworkGame() {
     /*
-     * If the game ID has not been set, check the current games in
-     * progress for an available game ID.
+     * If the game ID has not been reserved, check the current games in
+     * progress for an available game ID to reserve before claiming.
      */
     if ((myGameID == MulticastManager.FILTER_OFF) ||
-        !localStatus.gameStarted) {
+        !localStatus.gameClaimed) {
       if (gameStartTimerExpired()) {
-        claimGameID();
+        reserveGameID();
       }
     }
 
@@ -1068,6 +1079,27 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     }
   }
 
+  public void newGame() {
+    readyToPlay = false;
+    if (localStatus != null) {
+      localStatus.field_request = true;
+      localStatus.localActionID = 0;
+      localStatus.remoteActionID = 1;
+    }
+    if (localActionList != null) {
+      synchronized(localActionList) {
+        localActionList.clear();
+      }
+    }
+    if (remoteActionList != null) {
+      synchronized(remoteActionList) {
+        remoteActionList.clear();
+      }
+    }
+    remoteStatus = null;
+    setStatusTimeout(0);
+  }
+
   @Override
   public void onMulticastEvent(int type, byte[] buffer, int length) {
     /*
@@ -1086,20 +1118,25 @@ public class NetworkGameManager extends Thread implements MulticastListener {
        * received.
        */
       if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 2))) {
-        if (!localStatus.gameStarted) {
+        
+        /*
+         * Perform game ID claim checking, otherwise process the remote
+         * player status.
+         */
+        if (!localStatus.gameClaimed) {
           PlayerStatus tempStatus = new PlayerStatus(buffer, 2);
           /*
-           * If a game ID was claimed locally, then by definition we are
-           * filtering all messages that don't possess the same game ID.
-           * Thus the remote player is also starting a game and claimed
-           * the same ID.  If the remote player ID is the expected
-           * remote player ID, start the game.
+           * If the game ID was reserved locally, then by definition we
+           * are filtering all messages that don't possess the same game
+           * ID.  Thus the remote player is also starting a game and
+           * reserved the same ID.  If the remote player ID is the
+           * expected remote player ID, claim the game.
            *
-           * If the received remote status has a game ID but the remote
-           * game has not yet started and has the correct remote player
-           * ID, then we have found a game to join.  Jointly claim the
-           * game ID that was already claimed by the remote player and
-           * start the game.
+           * If the received remote status has a reserved game ID but
+           * the remote game has not yet been claimed and has the
+           * correct remote player ID, then we have found a game to
+           * claim.  Jointly claim the game ID that was already reserved
+           * by the remote player.
            *
            * Otherwise if this status is from a game already in
            * progress, mark it in the game in progress buffer.  This
@@ -1109,10 +1146,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
           if ((playerId == remotePlayer.playerID) &&
               ((myGameID != MulticastManager.FILTER_OFF) ||
                ((gameId != MulticastManager.FILTER_OFF) &&
-                !tempStatus.gameStarted))){
+                !tempStatus.gameClaimed))){
             myGameID = gameId;
             session.setFilter(myGameID);
-            localStatus.gameStarted = true;
+            localStatus.gameClaimed = true;
             if (remoteStatus == null) {
               remoteStatus = new PlayerStatus(tempStatus);
             }
@@ -1123,12 +1160,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
             /*
              * Wake up the thread.
              */
-            synchronized (this) {
+            synchronized(this) {
               notify();
             }
             return;
           }
-          else if (tempStatus.gameStarted && (gameId < GAME_ID_MAX)) {
+          else if (tempStatus.gameClaimed && (gameId < GAME_ID_MAX)) {
             if (gamesInProgress[gameId] == false) {
               gamesInProgress[gameId] = true;
               setGameStartTimeout(GAME_START_TIMEOUT);
@@ -1137,7 +1174,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         }
         else if ((myGameID != MulticastManager.FILTER_OFF) &&
                  (playerId == remotePlayer.playerID)) {
-          localStatus.gameStarted = true;
+          localStatus.gameClaimed = true;
           if (remoteStatus == null) {
             remoteStatus = new PlayerStatus(buffer, 2);
           }
@@ -1180,12 +1217,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
             remoteInterface.gameFieldData.copyFromBuffer(buffer, 2);
             remoteInterface.gotFieldData = true;
             localStatus.field_request = false;
+            readyToPlay = true;
           }
         }
         /*
          * Wake up the thread.
          */
-        synchronized (this) {
+        synchronized(this) {
           notify();
         }
       }
@@ -1359,7 +1397,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     /*
      * Wake up the thread.
      */
-    synchronized (this) {
+    synchronized(this) {
       notify();
     }
     /*
