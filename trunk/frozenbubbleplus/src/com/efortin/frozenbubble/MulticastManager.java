@@ -100,6 +100,10 @@ public class MulticastManager {
   public static final int EVENT_PACKET_RX = 1;
   public static final int EVENT_RX_FAIL   = 2;
   public static final int EVENT_TX_FAIL   = 3;
+  /*
+   * The following value turns of the multicast receive filter.
+   */
+  public static final byte FILTER_OFF = -1;
 
   public interface MulticastListener {
     public abstract void onMulticastEvent(int type, byte[] buffer, int length);
@@ -112,6 +116,7 @@ public class MulticastManager {
    * MulticastManager class member variables.
    */
   private boolean running;
+  private byte filter;
   private int mPort;
   private ArrayList<byte[]> txList;
   private Context mContext;
@@ -151,6 +156,7 @@ public class MulticastManager {
                           String hostName,
                           byte[]address,
                           int port) {
+    filter = FILTER_OFF;
     mListener = null;
     mContext = context;
     mPort = port;
@@ -225,12 +231,15 @@ public class MulticastManager {
         DatagramPacket dpRX =
             new DatagramPacket(rxBuffer, rxBuffer.length, mAddress, mPort);
         mSocket.receive(dpRX);
+        byte[] buffer = dpRX.getData();
 
         if (running && (dpRX.getLength() != 0) && (mListener != null)) {
-          mListener.onMulticastEvent(EVENT_PACKET_RX,
-                                     dpRX.getData(),
-                                     dpRX.getLength());
-          Log.d(LOG_TAG, "received "+dpRX.getLength()+" bytes");
+          if ((filter == FILTER_OFF) || (filter == buffer[0])) {
+            mListener.onMulticastEvent(EVENT_PACKET_RX,
+                                       buffer,
+                                       dpRX.getLength());
+            Log.d(LOG_TAG, "received "+dpRX.getLength()+" bytes");
+          }
         }
       } catch (InterruptedIOException iioe) {
         /*
@@ -297,6 +306,18 @@ public class MulticastManager {
         }
       }
     }
+  }
+
+  /**
+   * Set the software datagram receive filter value.  If the filter
+   * value is FILTER_OFF, then received messages are all passed to the
+   * registered listener(s).  Otherwise, all messages that don't have
+   * the same value as the filter in the first byte of their datagram
+   * payload will be discarded. 
+   * @param newFilter - the new recieve filter value to use.
+   */
+  public void setFilter(byte newFilter) {
+    filter = newFilter;
   }
 
   /**
