@@ -92,10 +92,10 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
   /*
-   * Player status datagram definitions.
+   * Network game management definitions.
    */
   private static final long ACTION_TIMEOUT     = 211L;
-  private static final long GAME_START_TIMEOUT = 103;
+  private static final long GAME_START_TIMEOUT = 509L;
   private static final long STATUS_TIMEOUT     = 503L;
   private static final byte PROTOCOL_VERSION   = 1;
   private static final byte GAME_ID_MAX        = 100;
@@ -105,12 +105,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   private boolean          missedAction;
   private boolean          running;
   private long             actionTxTime;
+  private long             gameStartTime;
   private long             statusTxTime;
-  private Context          mContext;
-  private PlayerStatus     localStatus;
-  private PlayerStatus     remoteStatus;
-  private Preferences      localPrefs;
-  private Preferences      remotePrefs;
+  private Context          mContext = null;
+  private PlayerStatus     localStatus = null;
+  private PlayerStatus     remoteStatus = null;
+  private Preferences      localPrefs = null;
+  private Preferences      remotePrefs = null;
   private VirtualInput     localPlayer = null;
   private VirtualInput     remotePlayer = null;
   private MulticastManager session = null;
@@ -120,12 +121,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    */
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
-  private NetGameInterface remoteInterface;
+  private NetGameInterface remoteInterface = null;
 
   /**
    * Class constructor.
    * @param myContext - the application context to pass to the network
-   * protocol layer to create a socket connection.
+   * transport layer to create a socket connection.
    */
   public NetworkGameManager(Context myContext) {
     /*
@@ -142,8 +143,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     remotePlayer = null;
     localStatus = null;
     remoteStatus = null;
-    actionTxTime = 0L;
-    setStatusTimeout(STATUS_TIMEOUT);
+    setActionTimeout(0);
+    setGameStartTimeout(GAME_START_TIMEOUT);
+    setStatusTimeout(0);
     SharedPreferences sp =
         myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                        Context.MODE_PRIVATE);
@@ -541,9 +543,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public void copyFromStatus(PlayerStatus status) {
       if (status != null) {
         this.playerID        = status.playerID;
+        this.protocolVersion = PROTOCOL_VERSION;
         this.gameStarted     = status.gameStarted;
         this.gameStatus      = status.gameStatus;
-        this.protocolVersion = PROTOCOL_VERSION;
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
         this.field_request   = status.field_request;
@@ -752,7 +754,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * @return <code>true</code> if an entry was removed.
    */
   private boolean cleanLocalActionList() {
-    boolean removed  = false;
+    boolean removed = false;
     synchronized(localActionList) {
       int listSize = localActionList.size();
   
@@ -775,6 +777,11 @@ public class NetworkGameManager extends Thread implements MulticastListener {
 
   public void cleanUp() {
     stopThread();
+
+    if (session != null)
+      session.cleanUp();
+    session = null;
+
     /*
      * Restore the local game preferences in the event that they were
      * overwritten by the remote player's preferences.
@@ -802,10 +809,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     if (remoteActionList != null)
       remoteActionList.clear();
     remoteActionList = null;
-
-    if (session != null)
-      session.cleanUp();
-    session = null;
   }
 
   /**
@@ -861,29 +864,33 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       toByteArray(prefs.collision, intBytes);
       buffer[startIndex++] = intBytes[0];
       buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[2];
       buffer[startIndex++] = intBytes[3];
-      buffer[startIndex++] = intBytes[4];
       buffer[startIndex++] = (byte) ((prefs.compressor == true)?1:0);
       toByteArray(prefs.difficulty, intBytes);
       buffer[startIndex++] = intBytes[0];
       buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[2];
       buffer[startIndex++] = intBytes[3];
-      buffer[startIndex++] = intBytes[4];
       buffer[startIndex++] = (byte) ((prefs.dontRushMe == true)?1:0);
       buffer[startIndex++] = (byte) ((prefs.fullscreen == true)?1:0);
       toByteArray(prefs.gameMode, intBytes);
       buffer[startIndex++] = intBytes[0];
       buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[2];
       buffer[startIndex++] = intBytes[3];
-      buffer[startIndex++] = intBytes[4];
       buffer[startIndex++] = (byte) ((prefs.musicOn == true)?1:0);
       buffer[startIndex++] = (byte) ((prefs.soundOn == true)?1:0);
       toByteArray(prefs.targetMode, intBytes);
       buffer[startIndex++] = intBytes[0];
       buffer[startIndex++] = intBytes[1];
+      buffer[startIndex++] = intBytes[2];
       buffer[startIndex++] = intBytes[3];
-      buffer[startIndex++] = intBytes[4];
     }
+  }
+
+  private boolean gameStartTimerExpired() {
+    return (System.currentTimeMillis() > gameStartTime);
   }
 
   private void getGameFieldData(GameFieldData gameData) {
@@ -927,7 +934,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
          */
         if (remoteActionList.get(index).localActionID ==
             localStatus.remoteActionID) {
-          tempAction = remoteActionList.get(index);
+          tempAction = new PlayerAction(remoteActionList.get(index));
           break;
         }
       }
@@ -995,7 +1002,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      */
     if ((myGameID == MulticastManager.FILTER_OFF) ||
         !localStatus.gameStarted) {
-      if (statusTimerExpired()) {
+      if (gameStartTimerExpired()) {
         claimGameID();
       }
     }
@@ -1033,11 +1040,23 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (remoteStatus != null) {
         if (remoteStatus.prefs_request) {
           transmitPrefs();
+          /*
+           * Clear the remote player preferences request flag to improve
+           * game startup efficiency.  A new remote status will update
+           * it anyways.
+           */
+          remoteStatus.prefs_request = false;
         }
         else if (remoteStatus.field_request) {
           GameFieldData tempField = new GameFieldData(null);
           getGameFieldData(tempField);
           transmitGameField(tempField);
+          /*
+           * Clear the remote player game field request flag to improve
+           * game startup efficiency.  A new remote status will update
+           * it anyways.
+           */
+          remoteStatus.field_request = false;
         }
         else
           transmitStatus(localStatus);
@@ -1070,24 +1089,27 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         if (!localStatus.gameStarted) {
           PlayerStatus tempStatus = new PlayerStatus(buffer, 2);
           /*
-           * If this status is from a game already in progress, mark it
-           * in the buffer.  This buffer is checked in the game
-           * management thread for an available game ID.
-           * 
-           * If this remote status has a game ID but has not yet
-           * started and has a player ID that does not match the local
-           * player ID, then we have found a game to join.  Assume the
-           * game ID immediately that was claimed by the remote player
-           * and get the game started. 
+           * If a game ID was claimed locally, then by definition we are
+           * filtering all messages that don't possess the same game ID.
+           * Thus the remote player is also starting a game and claimed
+           * the same ID.  If the remote player ID is the expected
+           * remote player ID, start the game.
+           *
+           * If the received remote status has a game ID but the remote
+           * game has not yet started and has the correct remote player
+           * ID, then we have found a game to join.  Jointly claim the
+           * game ID that was already claimed by the remote player and
+           * start the game.
+           *
+           * Otherwise if this status is from a game already in
+           * progress, mark it in the game in progress buffer.  This
+           * buffer is checked in the game management thread for an
+           * available game ID.
            */
-          if (tempStatus.gameStarted && (gameId < GAME_ID_MAX)) {
-            if (gamesInProgress[gameId] == false) {
-              gamesInProgress[gameId] = true;
-              setStatusTimeout(GAME_START_TIMEOUT);
-            }
-          }
-          else if ((gameId != MulticastManager.FILTER_OFF) &&
-                   (playerId == remotePlayer.playerID)) {
+          if ((playerId == remotePlayer.playerID) &&
+              ((myGameID != MulticastManager.FILTER_OFF) ||
+               ((gameId != MulticastManager.FILTER_OFF) &&
+                !tempStatus.gameStarted))){
             myGameID = gameId;
             session.setFilter(myGameID);
             localStatus.gameStarted = true;
@@ -1105,6 +1127,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
               notify();
             }
             return;
+          }
+          else if (tempStatus.gameStarted && (gameId < GAME_ID_MAX)) {
+            if (gamesInProgress[gameId] == false) {
+              gamesInProgress[gameId] = true;
+              setGameStartTimeout(GAME_START_TIMEOUT);
+            }
           }
         }
         else if ((myGameID != MulticastManager.FILTER_OFF) &&
@@ -1269,6 +1297,14 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    */
   public void setActionTimeout(long timeout) {
     actionTxTime = System.currentTimeMillis() + timeout;
+  }
+
+  /**
+   * Set the game start timeout.
+   * @param timeout - the timeout expiration interval.
+   */
+  public void setGameStartTimeout(long timeout) {
+    gameStartTime = System.currentTimeMillis() + timeout;
   }
 
   /**
