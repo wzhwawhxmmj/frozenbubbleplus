@@ -196,6 +196,9 @@ public class FrozenGame extends GameScreen {
     readyToFire          = false;
     swapPressed          = false;
 
+    /*
+     * Initialize game modifier variables.
+     */
     if (input_arg != null) {
       player    = input_arg.playerID;
       isRemote  = input_arg.isRemote;
@@ -205,6 +208,9 @@ public class FrozenGame extends GameScreen {
       isRemote  = false;
     }
 
+    /*
+     * Create objects for all the game graphics.
+     */
     if ((pauseButton_arg != null) && (playButton_arg != null)) {
       pauseButtonSprite = new ImageSprite(new Rect(167, 444, 32, 32),
                                           pauseButton_arg);
@@ -232,6 +238,9 @@ public class FrozenGame extends GameScreen {
     bubblePlay    = new BubbleSprite[8][13];
     bubbleManager = new BubbleManager(bubbles);
 
+    /*
+     * Load the current level to the bubble play grid.
+     */
     byte[][] currentLevel = levelManager.getCurrentLevel();
     if (currentLevel == null) {
       //Log.i("frozen-bubble", "Level not available.");
@@ -253,6 +262,9 @@ public class FrozenGame extends GameScreen {
       }
     }
 
+    /*
+     * Initialize the launch bubbles.
+     */
     currentColor = bubbleManager.nextBubbleIndex(random);
     nextColor    = bubbleManager.nextBubbleIndex(random);
     newNextColor = bubbleManager.nextBubbleIndex(random);
@@ -271,9 +283,13 @@ public class FrozenGame extends GameScreen {
                                           launchBubblePosition,
                                           launcher, bubbles, bubblesBlind);
     this.spriteToBack(launchBubble);
-    nbBubbles = 0;
+
+    /*
+     * Initialize game metrics variables.
+     */
+    nbBubbles        = 0;
     addAttackBubbles = 0;
-    sendToOpponent = 0;
+    sendToOpponent   = 0;
   }
 
   public FrozenGame(BmpWrap background_arg,
@@ -1244,7 +1260,6 @@ public class FrozenGame extends GameScreen {
               bubbles[newGrid[i][j]], bubblesBlind[newGrid[i][j]],
               frozenBubbles[newGrid[i][j]], bubbleBlink, bubbleManager,
               soundManager, this);
-          bubblePlay[i][j].addToManager();
           this.addSprite(bubblePlay[i][j]);
         }
       }
