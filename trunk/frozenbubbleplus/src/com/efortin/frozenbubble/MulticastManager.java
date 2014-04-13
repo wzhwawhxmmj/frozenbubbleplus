@@ -241,6 +241,11 @@ public class MulticastManager {
             Log.d(LOG_TAG, "received "+dpRX.getLength()+" bytes");
           }
         }
+      } catch (NullPointerException npe) {
+        npe.printStackTrace();
+        if (mListener != null) {
+          mListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
+        }
       } catch (InterruptedIOException iioe) {
         /*
          * Receive timeout.  This is expected behavior.
