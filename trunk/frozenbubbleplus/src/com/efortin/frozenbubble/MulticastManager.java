@@ -118,13 +118,13 @@ public class MulticastManager {
   private boolean running;
   private byte filter;
   private int mPort;
-  private ArrayList<byte[]> txList;
-  private Context mContext;
-  private InetAddress mAddress;
-  private MulticastListener mListener;
-  private MulticastSocket mSocket;
-  private Thread mThread;
-  private WifiManager.MulticastLock mLock;
+  private ArrayList<byte[]> txList = null;
+  private Context mContext = null;
+  private InetAddress mAddress = null;
+  private MulticastListener mListener = null;
+  private MulticastSocket mSocket = null;
+  private Thread mThread = null;
+  private WifiManager.MulticastLock mLock = null;
 
   /**
    * Multicast manager class constructor.
