@@ -76,6 +76,8 @@ package org.jfedor.frozenbubble;
 
 import java.util.Random;
 
+import org.jfedor.frozenbubble.GameScreen.eventEnum;
+import org.jfedor.frozenbubble.GameScreen.stateEnum;
 import org.jfedor.frozenbubble.GameView.GameThread;
 import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
@@ -102,10 +104,10 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
+import com.efortin.frozenbubble.HomeScreen;
 import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.ScrollingCredits;
-import com.efortin.frozenbubble.HomeScreen;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenBubble extends Activity
@@ -323,10 +325,10 @@ public class FrozenBubble extends Activity
         return true;
       case MENU_ABOUT:
         if (mGameView != null)
-          mGameView.getThread().setState(GameView.GameThread.STATE_ABOUT);
+          mGameView.getThread().setState(stateEnum.ABOUT);
 
         if (mMultiplayerGameView != null)
-          mMultiplayerGameView.getThread().setState(MultiplayerGameView.MultiplayerGameThread.STATE_ABOUT);
+          mMultiplayerGameView.getThread().setState(stateEnum.ABOUT);
         return true;
       case MENU_TARGET_MODE:
         targetOptionsDialog();
@@ -957,29 +959,29 @@ public class FrozenBubble extends Activity
     }
   }
 
-  public void onGameEvent(int event) {
+  public void onGameEvent(eventEnum event) {
     switch (event) {
-      case GameView.EVENT_GAME_WON:
+      case GAME_WON:
         break;
 
-      case GameView.EVENT_GAME_LOST:
+      case GAME_LOST:
         break;
 
-      case GameView.EVENT_GAME_PAUSED:
+      case GAME_PAUSED:
         saveState();
 
         if (myModPlayer != null)
           myModPlayer.pausePlay();
         break;
 
-      case GameView.EVENT_GAME_RESUME:
+      case GAME_RESUME:
         if (myModPlayer == null)
           playMusic(true);
         else if (allowUnpause)
           myModPlayer.unPausePlay();
         break;
 
-      case GameView.EVENT_LEVEL_START:
+      case LEVEL_START:
         if ((mGameView != null) &&
             (mGameView.getThread().getCurrentLevelIndex() == 0)) {
           /*

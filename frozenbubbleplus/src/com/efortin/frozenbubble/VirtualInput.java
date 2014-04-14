@@ -94,12 +94,11 @@ public abstract class VirtualInput {
   /* The following are abstract methods that must be implemented by
    * descendants to handle all the various input events.
    */
-  public abstract boolean checkNewActionKeyPress(int keyCode);
-  public abstract int     getGameStatus();
-  public abstract boolean setKeyDown(int keyCode);
-  public abstract boolean setKeyUp(int keyCode);
-  public abstract boolean setTouchEvent(int event, double x, double y);
-  public abstract void    setTrackBallDx(double trackBallDX);
+  public abstract boolean   checkNewActionKeyPress(int keyCode);
+  public abstract boolean   setKeyDown(int keyCode);
+  public abstract boolean   setKeyUp(int keyCode);
+  public abstract boolean   setTouchEvent(int event, double x, double y);
+  public abstract void      setTrackBallDx(double trackBallDX);
 
   /**
    * Configure this player input instance.

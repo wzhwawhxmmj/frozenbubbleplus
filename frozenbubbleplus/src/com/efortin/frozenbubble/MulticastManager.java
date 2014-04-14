@@ -90,6 +90,21 @@ import android.util.Log;
  */
 public class MulticastManager {
   private static final String LOG_TAG = MulticastManager.class.getSimpleName();
+
+  /*
+   * The following value turns of the multicast receive filter.
+   */
+  public static final byte FILTER_OFF = -1;
+
+  /*
+   * Multicast network transport layer event enumeration.
+   */
+  public static enum eventEnum {
+    PACKET_RX,
+    RX_FAIL,
+    TX_FAIL;
+  }
+
   /*
    * Listener interface for various multicast management events.
    *
@@ -97,21 +112,16 @@ public class MulticastManager {
    * to be instantiated by the registrar, as well as the various
    * events supported by the interface.
    */
-  public static final int EVENT_PACKET_RX = 1;
-  public static final int EVENT_RX_FAIL   = 2;
-  public static final int EVENT_TX_FAIL   = 3;
-  /*
-   * The following value turns of the multicast receive filter.
-   */
-  public static final byte FILTER_OFF = -1;
-
   public interface MulticastListener {
-    public abstract void onMulticastEvent(int type, byte[] buffer, int length);
+    public abstract void onMulticastEvent(eventEnum event,
+                                          byte[] buffer,
+                                          int length);
   }
 
   public void setMulticastListener(MulticastListener ml) {
     mListener = ml;
   }
+
   /*
    * MulticastManager class member variables.
    */
@@ -235,7 +245,7 @@ public class MulticastManager {
 
         if (running && (dpRX.getLength() != 0) && (mListener != null)) {
           if ((filter == FILTER_OFF) || (filter == buffer[0])) {
-            mListener.onMulticastEvent(EVENT_PACKET_RX,
+            mListener.onMulticastEvent(eventEnum.PACKET_RX,
                                        buffer,
                                        dpRX.getLength());
             Log.d(LOG_TAG, "received "+dpRX.getLength()+" bytes");
@@ -244,7 +254,7 @@ public class MulticastManager {
       } catch (NullPointerException npe) {
         npe.printStackTrace();
         if (mListener != null) {
-          mListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
+          mListener.onMulticastEvent(eventEnum.RX_FAIL, null, 0);
         }
       } catch (InterruptedIOException iioe) {
         /*
@@ -253,7 +263,7 @@ public class MulticastManager {
       } catch (IOException ioe) {
         ioe.printStackTrace();
         if (mListener != null) {
-          mListener.onMulticastEvent(EVENT_RX_FAIL, null, 0);
+          mListener.onMulticastEvent(eventEnum.RX_FAIL, null, 0);
         }
       }
     }
@@ -307,7 +317,7 @@ public class MulticastManager {
       } catch (IOException ioe) {
         ioe.printStackTrace();
         if (mListener != null) {
-          mListener.onMulticastEvent(EVENT_TX_FAIL, null, 0);
+          mListener.onMulticastEvent(eventEnum.TX_FAIL, null, 0);
         }
       }
     }

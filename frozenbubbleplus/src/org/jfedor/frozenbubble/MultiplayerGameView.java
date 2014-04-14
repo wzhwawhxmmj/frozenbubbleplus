@@ -79,6 +79,9 @@ import java.util.List;
 import java.util.Vector;
 
 import org.gsanson.frozenbubble.MalusBar;
+import org.jfedor.frozenbubble.GameScreen.eventEnum;
+import org.jfedor.frozenbubble.GameScreen.gameEnum;
+import org.jfedor.frozenbubble.GameScreen.stateEnum;
 
 import android.app.Activity;
 import android.content.Context;
@@ -125,19 +128,16 @@ class MultiplayerGameView extends SurfaceView implements
   private PlayerInput           mPlayer2;
   private boolean               muteKeyToggle  = false;
   private boolean               pauseKeyToggle = false;
-  //**********************************************************
-  // Listener interface for various events
-  //**********************************************************
-  // Event types.
-  public static final int EVENT_GAME_WON    = 1;
-  public static final int EVENT_GAME_LOST   = 2;
-  public static final int EVENT_GAME_PAUSED = 3;
-  public static final int EVENT_GAME_RESUME = 4;
-  public static final int EVENT_LEVEL_START = 5;
 
-  // Listener user set.
+  //********************************************************************
+  // Listener interface for various events
+  //********************************************************************
+
+  /*
+   *  Listener user set.
+   */
   public interface GameListener {
-    public abstract void onGameEvent(int event);
+    public abstract void onGameEvent(eventEnum event);
   }
 
   GameListener mGameListener;
@@ -278,14 +278,6 @@ class MultiplayerGameView extends SurfaceView implements
               (keyCode == KeyEvent.KEYCODE_DPAD_DOWN));
     }
 
-    public int getGameStatus() {
-      if (mGameThread != null) {
-        return mGameThread.mMode;
-      }
-
-      return MultiplayerGameThread.STATE_INVALID;
-    }
-
     /**
      * Obtain the ATS (aim-then-shoot) touch horizontal position change.
      * @return The horizontal touch change in position.
@@ -395,7 +387,7 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     public boolean setTouchEvent(int event, double x, double y) {
-      if (mGameThread.mMode == MultiplayerGameThread.STATE_RUNNING) {
+      if (mGameThread.mMode == stateEnum.RUNNING) {
         // Set the values used when Point To Shoot is on.
         if (event == MotionEvent.ACTION_DOWN) {
           if (y < MultiplayerGameThread.TOUCH_FIRE_Y_THRESHOLD) {
@@ -470,8 +462,7 @@ class MultiplayerGameView extends SurfaceView implements
        * perform a synchronous action, retrieve and clear the current
        * available action from the action queue.
        */
-      if ((mGameThread.mMode != MultiplayerGameThread.STATE_RUNNING) ||
-          checkImmediateAction() ||
+      if ((mGameThread.mMode != stateEnum.RUNNING) || checkImmediateAction() ||
           mRemoteInput.mGameRef.getOkToFire()) {
         if (mNetworkManager.getRemoteAction()) {
           setPlayerAction(remoteInterface.playerAction);
@@ -609,11 +600,6 @@ class MultiplayerGameView extends SurfaceView implements
 
     private static final int FRAME_DELAY = 40;
 
-    public static final int STATE_INVALID = 0;
-    public static final int STATE_RUNNING = 1;
-    public static final int STATE_PAUSE   = 2;
-    public static final int STATE_ABOUT   = 3;
-
     public static final double TRACKBALL_COEFFICIENT      = 5;
     public static final double TOUCH_BUTTON_THRESHOLD     = 16;
     public static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
@@ -630,10 +616,11 @@ class MultiplayerGameView extends SurfaceView implements
     private int    mDisplayDY;
     private double mDisplayScale;
     private long   mLastTime;
-    private int    mMode;
-    private int    mModeWas;
     private int    mPlayer1DX;
     private int    mPlayer2DX;
+
+    private stateEnum mMode;
+    private stateEnum mModeWas;
 
     private Bitmap mBackgroundOrig;
     private Bitmap[] mBubblesOrig;
@@ -957,7 +944,8 @@ class MultiplayerGameView extends SurfaceView implements
          * If the game is running and the pause button sprite was pressed,
          * pause the game.
          */
-        if ((mMode == STATE_RUNNING) && (toggleKeyState(KeyEvent.KEYCODE_P)))
+        if ((mMode == stateEnum.RUNNING) &&
+            (toggleKeyState(KeyEvent.KEYCODE_P)))
           pause();
 
         /*
@@ -980,7 +968,7 @@ class MultiplayerGameView extends SurfaceView implements
      */
     boolean doTrackballEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
+        if (mMode == stateEnum.RUNNING) {
           if (event.getAction() == MotionEvent.ACTION_MOVE) {
             mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             return true;
@@ -1247,7 +1235,7 @@ class MultiplayerGameView extends SurfaceView implements
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
-      setState(STATE_PAUSE);
+      setState(stateEnum.PAUSED);
 
       BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -1442,11 +1430,11 @@ class MultiplayerGameView extends SurfaceView implements
 
     public void pause() {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
-          setState(STATE_PAUSE);
+        if (mMode == stateEnum.RUNNING) {
+          setState(stateEnum.PAUSED);
 
           if (mGameListener != null)
-            mGameListener.onGameEvent(EVENT_GAME_PAUSED);
+            mGameListener.onGameEvent(eventEnum.GAME_PAUSED);
           if (mFrozenGame1 != null)
             mFrozenGame1.pause();
           if (mFrozenGame2 != null)
@@ -1497,16 +1485,14 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     /**
-     * Restores game state from the indicated Bundle. Typically called when
-     * the Activity is being restored after having been previously
+     * Restores game state from the indicated Bundle. Typically called
+     * when the Activity is being restored after having been previously
      * destroyed.
-     * 
-     * @param savedState
-     *        - Bundle containing the game state.
+     * @param savedState - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
-        setState(STATE_PAUSE);
+        setState(stateEnum.PAUSED);
         numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
         numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
         mFrozenGame1     .restoreState(map, mImageList);
@@ -1518,7 +1504,7 @@ class MultiplayerGameView extends SurfaceView implements
 
     public void resumeGame() {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
+        if (mMode == stateEnum.RUNNING) {
           mFrozenGame1     .resume();
           mFrozenGame2     .resume();
           mHighscoreManager.resumeLevel();
@@ -1545,22 +1531,22 @@ class MultiplayerGameView extends SurfaceView implements
               synchronized (mSurfaceHolder) {
                 if (mRun) {
                   monitorRemotePlayer();
-                  if (mMode == STATE_ABOUT) {
+                  if (mMode == stateEnum.ABOUT) {
                     drawAboutScreen(c);
                   }
-                  else if (mMode == STATE_PAUSE) {
+                  else if (mMode == stateEnum.PAUSED) {
                     if (mShowScores)
                       drawHighScoreScreen(c, mHighscoreManager.getLevel());
                     else
                       doDraw(c);
                   }
                   else {
-                    if (mMode == STATE_RUNNING) {
-                      if (mModeWas != STATE_RUNNING)  {
+                    if (mMode == stateEnum.RUNNING) {
+                      if (mModeWas != stateEnum.RUNNING)  {
                         if (mGameListener != null)
-                          mGameListener.onGameEvent(EVENT_GAME_RESUME);
+                          mGameListener.onGameEvent(eventEnum.GAME_RESUME);
 
-                        mModeWas = STATE_RUNNING;
+                        mModeWas = stateEnum.RUNNING;
                         resumeGame();
                       }
                       updateGameState();
@@ -1626,7 +1612,7 @@ class MultiplayerGameView extends SurfaceView implements
       mRun = b;
     }
 
-    public void setState(int mode) {
+    public void setState(stateEnum newMode) {
       synchronized (mSurfaceHolder) {
         /*
          * Only update the previous mode storage if the new mode is
@@ -1637,10 +1623,10 @@ class MultiplayerGameView extends SurfaceView implements
          * a separate execution thread that checks for state transitions
          * does not get a chance to run between calls to this method.
          */
-        if (mode != mMode)
+        if (newMode != mMode)
           mModeWas = mMode;
 
-        mMode = mode;
+        mMode = newMode;
       }
     }
 
@@ -1708,8 +1694,8 @@ class MultiplayerGameView extends SurfaceView implements
     }
 
     /**
-     * Process function key presses.  Function keys toggle features on and
-     * off (e.g., game paused on/off, sound on/off, etc.).
+     * Process function key presses.  Function keys toggle features on
+     * and off (e.g., game paused on/off, sound on/off, etc.).
      * @param keyCode - the key code to process.
      * @param updateNow - if true, apply state changes.
      */
@@ -1725,7 +1711,7 @@ class MultiplayerGameView extends SurfaceView implements
            * If the game is running and the pause button was pressed,
            * pause the game.
            */
-          if (pauseKeyToggle && (mMode == STATE_RUNNING))
+          if (pauseKeyToggle && (mMode == stateEnum.RUNNING))
             pause();
         }
       }
@@ -1771,23 +1757,23 @@ class MultiplayerGameView extends SurfaceView implements
 
       if (event_action_down) {
         switch (mMode) {
-          case STATE_ABOUT:
-            setState(STATE_RUNNING);
+          case ABOUT:
+            setState(stateEnum.RUNNING);
             return true;
 
-          case STATE_PAUSE:
+          case PAUSED:
             if (mShowScores) {
               mShowScores = false;
-              setState(STATE_RUNNING);
+              setState(stateEnum.RUNNING);
               if (mGameListener != null) {
-                mGameListener.onGameEvent(EVENT_LEVEL_START);
+                mGameListener.onGameEvent(eventEnum.LEVEL_START);
               }
               return true;
             }
-            setState(STATE_RUNNING);
+            setState(stateEnum.RUNNING);
             break;
 
-          case STATE_RUNNING:
+          case RUNNING:
           default:
             break;
         }
@@ -1798,36 +1784,39 @@ class MultiplayerGameView extends SurfaceView implements
     private void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
           ((mOpponent == null) && mRemoteInput.isCPU) ||
-          (mHighscoreManager == null))
+          (mHighscoreManager == null)) {
         return;
+      }
 
-      int game1_state = mFrozenGame1.play(mPlayer1.actionLeft(),
-                                          mPlayer1.actionRight(),
-                                          mPlayer1.actionUp(),
-                                          mPlayer1.actionDown(),
-                                          mPlayer1.getTrackBallDx(),
-                                          mPlayer1.actionTouchFire(),
-                                          mPlayer1.getTouchX(),
-                                          mPlayer1.getTouchY(),
-                                          mPlayer1.actionTouchFireATS(),
-                                          mPlayer1.getTouchDxATS());
+      gameEnum game1State = mFrozenGame1.play(mPlayer1.actionLeft(),
+                                              mPlayer1.actionRight(),
+                                              mPlayer1.actionUp(),
+                                              mPlayer1.actionDown(),
+                                              mPlayer1.getTrackBallDx(),
+                                              mPlayer1.actionTouchFire(),
+                                              mPlayer1.getTouchX(),
+                                              mPlayer1.getTouchY(),
+                                              mPlayer1.actionTouchFireATS(),
+                                              mPlayer1.getTouchDxATS());
 
-      int game2_state = mFrozenGame2.play(mPlayer2.actionLeft(),
-                                          mPlayer2.actionRight(),
-                                          mPlayer2.actionUp(),
-                                          mPlayer2.actionDown(),
-                                          mPlayer2.getTrackBallDx(),
-                                          mPlayer2.actionTouchFire(),
-                                          mPlayer2.getTouchX(),
-                                          mPlayer2.getTouchY(),
-                                          mPlayer2.actionTouchFireATS(),
-                                          mPlayer2.getTouchDxATS());
+      gameEnum game2State = mFrozenGame2.play(mPlayer2.actionLeft(),
+                                              mPlayer2.actionRight(),
+                                              mPlayer2.actionUp(),
+                                              mPlayer2.actionDown(),
+                                              mPlayer2.getTrackBallDx(),
+                                              mPlayer2.actionTouchFire(),
+                                              mPlayer2.getTouchX(),
+                                              mPlayer2.getTouchY(),
+                                              mPlayer2.actionTouchFireATS(),
+                                              mPlayer2.getTouchDxATS());
+
       /*
        * If playing a CPU opponent, notify the computer that the current
        * action has been processed and we are ready for a new action.
        */
-      if (mOpponent != null)
+      if (mOpponent != null) {
         mOpponent.clearAction();
+      }
 
       /*
        * Obtain the number of attack bubbles to add to each player's
@@ -1840,29 +1829,31 @@ class MultiplayerGameView extends SurfaceView implements
       mFrozenGame1.setSendToOpponent(0);
       mFrozenGame2.setSendToOpponent(0);
 
-      int game1_result = mFrozenGame1.getGameResult();
-      int game2_result = mFrozenGame2.getGameResult();
+      gameEnum game1Result = mFrozenGame1.getGameResult();
+      gameEnum game2Result = mFrozenGame2.getGameResult();
 
       /*
        * When one player wins or loses, the other player is
        * automatically designated the loser or winner, respectively.
        */
-      if (game1_result != FrozenGame.GAME_PLAYING) {
-        if ((game1_result == FrozenGame.GAME_WON) ||
-            (game1_result == FrozenGame.GAME_NEXT_WON))
-          mFrozenGame2.setGameResult(FrozenGame.GAME_LOST);
-        else
-          mFrozenGame2.setGameResult(FrozenGame.GAME_WON);
+      if (game1Result != gameEnum.PLAYING) {
+        if ((game1Result == gameEnum.WON) ||
+            (game1Result == gameEnum.NEXT_WON)) {
+          mFrozenGame2.setGameResult(gameEnum.LOST);
+        }
+        else {
+          mFrozenGame2.setGameResult(gameEnum.WON);
+        }
       }
-      else if (game2_result != FrozenGame.GAME_PLAYING) {
-        if ((game2_result == FrozenGame.GAME_WON) ||
-            (game2_result == FrozenGame.GAME_NEXT_WON)) {
+      else if (game2Result != gameEnum.PLAYING) {
+        if ((game2Result == gameEnum.WON) ||
+            (game2Result == gameEnum.NEXT_WON)) {
           mHighscoreManager.lostLevel();
-          mFrozenGame1.setGameResult(FrozenGame.GAME_LOST);
+          mFrozenGame1.setGameResult(gameEnum.LOST);
         }
         else {
           mHighscoreManager.endLevel(mFrozenGame1.nbBubbles);
-          mFrozenGame1.setGameResult(FrozenGame.GAME_WON);
+          mFrozenGame1.setGameResult(gameEnum.WON);
         }
       }
 
@@ -1871,25 +1862,29 @@ class MultiplayerGameView extends SurfaceView implements
        * opponent is the CPU, because the CPU is prone to sneaking a
        * launch attempt in after the game is decided.
        *
-       * Otherwise, the first player to provide input.
+       * Otherwise, the first player to provide input initiates the
+       * new game.
        */
-      if (((game1_state == FrozenGame.GAME_NEXT_LOST) ||
-           (game1_state == FrozenGame.GAME_NEXT_WON)) ||
+      if (((game1State == gameEnum.NEXT_LOST) ||
+          (game1State == gameEnum.NEXT_WON)) ||
           (!mRemoteInput.isCPU &&
-           ((game2_state == FrozenGame.GAME_NEXT_LOST) ||
-            (game2_state == FrozenGame.GAME_NEXT_WON)))){
-        if ((game1_state == FrozenGame.GAME_NEXT_WON) ||
-            (game2_state == FrozenGame.GAME_NEXT_LOST))
+           ((game2State == gameEnum.NEXT_LOST) ||
+            (game2State == gameEnum.NEXT_WON)))){
+        if ((game1State == gameEnum.NEXT_WON) ||
+            (game2State == gameEnum.NEXT_LOST)) {
           numPlayer1GamesWon++;
-        else
+        }
+        else {
           numPlayer2GamesWon++;
+        }
 
         mShowScores = true;
         pause();
         newGame();
 
-        if (mRemoteInput.isCPU)
+        if (mRemoteInput.isCPU) {
           startOpponent();
+        }
       }
     }
 
@@ -1941,7 +1936,6 @@ class MultiplayerGameView extends SurfaceView implements
      * controlled.
      */
     boolean isCPU;
-    boolean isNet;
     boolean isRemote;
 
     if (gameLocale == FrozenBubble.LOCALE_LOCAL) {

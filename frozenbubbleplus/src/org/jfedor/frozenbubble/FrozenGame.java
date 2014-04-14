@@ -85,12 +85,6 @@ public class FrozenGame extends GameScreen {
   public final static int KEY_RIGHT = 39;
   public final static int KEY_SHIFT = 16;
 
-  public static final int GAME_PLAYING   = 1;
-  public static final int GAME_LOST      = 2;
-  public static final int GAME_WON       = 3;
-  public static final int GAME_NEXT_LOST = 4;
-  public static final int GAME_NEXT_WON  = 5;
-
   public static final int HURRY_ME_TIME = 480;
   public static final int RELEASE_TIME  = 300;
 
@@ -142,12 +136,12 @@ public class FrozenGame extends GameScreen {
   boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
+  gameEnum playResult;
+  int addAttackBubbles;
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
   int player;
-  int playResult;
-  int addAttackBubbles;
   int sendToOpponent;
 
   Drawable launcher;
@@ -191,7 +185,7 @@ public class FrozenGame extends GameScreen {
     highscoreManager     = highscoreManager_arg;
     networkManager       = networkManager_arg;
     malusBar             = malusBar_arg;
-    playResult           = GAME_PLAYING;
+    playResult           = gameEnum.PLAYING;
     launchBubblePosition = START_LAUNCH_DIRECTION;
     readyToFire          = false;
     swapPressed          = false;
@@ -334,7 +328,7 @@ public class FrozenGame extends GameScreen {
     }
   }
 
-  public int play(boolean key_left, boolean key_right,
+  public gameEnum play(boolean key_left, boolean key_right,
                   boolean key_fire, boolean key_swap,
                   double trackball_dx,
                   boolean touch_fire, double touch_x, double touch_y,
@@ -407,12 +401,12 @@ public class FrozenGame extends GameScreen {
 
     if (endOfGame && readyToFire) {
       if (move[FIRE] == KEY_UP) {
-        if (playResult == GAME_WON) {
+        if (playResult == gameEnum.WON) {
           levelManager.goToNextLevel();
-          playResult = GAME_NEXT_WON;
+          playResult = gameEnum.NEXT_WON;
         }
         else {
-          playResult = GAME_NEXT_LOST;
+          playResult = gameEnum.NEXT_LOST;
         }
         return playResult;
       }
@@ -587,7 +581,7 @@ public class FrozenGame extends GameScreen {
     if (malusBar != null) {
       malusBar.clearAttackBubbles();
     }
-    return GAME_PLAYING;
+    return gameEnum.PLAYING;
   }
 
   public void resume() {
@@ -735,7 +729,6 @@ public class FrozenGame extends GameScreen {
     bubbleManager.restoreState(map, player);
     fixedBubbles = map.getInt(String.format("%d-fixedBubbles", player));
     nbBubbles = map.getInt(String.format("%d-nbBubbles", player));
-    playResult = map.getInt(String.format("%d-playResult", player));
     sendToOpponent = map.getInt(String.format("%d-sendToOpponent", player));
     blinkDelay = map.getInt(String.format("%d-blinkDelay", player));
     int hurryId = map.getInt(String.format("%d-hurryId", player));
@@ -813,7 +806,6 @@ public class FrozenGame extends GameScreen {
     bubbleManager.saveState(map, player);
     map.putInt(String.format("%d-fixedBubbles", player), fixedBubbles);
     map.putInt(String.format("%d-nbBubbles", player), nbBubbles);
-    map.putInt(String.format("%d-playResult", player), playResult);
     map.putInt(String.format("%d-sendToOpponent", player), sendToOpponent);
     map.putInt(String.format("%d-blinkDelay", player), blinkDelay);
     hurrySprite.saveState(map, savedSprites, player);
@@ -885,14 +877,14 @@ public class FrozenGame extends GameScreen {
         penguin.updateState(PenguinSprite.STATE_GAME_LOST);
         if (highscoreManager != null)
           highscoreManager.lostLevel();
-        playResult = GAME_LOST;
+        playResult = gameEnum.LOST;
         endOfGame = true;
         initFrozenify();
         soundManager.playSound(FrozenBubble.SOUND_LOST);
       }
     }
 
-    return (playResult == GAME_LOST);
+    return (playResult == gameEnum.LOST);
   }
 
   public void clampLaunchPosition() {
@@ -974,7 +966,7 @@ public class FrozenGame extends GameScreen {
     return currentColor;
   }
 
-  public int getGameResult() {
+  public gameEnum getGameResult() {
     return playResult;
   }
 
@@ -995,7 +987,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public boolean getOkToFire() {
-    return ((movingBubble == null) && (playResult == GAME_PLAYING) &&
+    return ((movingBubble == null) && (playResult == gameEnum.PLAYING) &&
             ((goingUp.size() == 0) || (networkManager == null)) &&
             readyToFire);
   }
@@ -1061,7 +1053,7 @@ public class FrozenGame extends GameScreen {
             penguin.updateState(PenguinSprite.STATE_GAME_LOST);
             if (highscoreManager != null)
               highscoreManager.lostLevel();
-            playResult = GAME_LOST;
+            playResult = gameEnum.LOST;
             endOfGame = true;
             initFrozenify();
             if (playSound) {
@@ -1093,7 +1085,7 @@ public class FrozenGame extends GameScreen {
                                                     190 + 116), gameWon));
             if (highscoreManager != null)
               highscoreManager.endLevel(nbBubbles);
-            playResult = GAME_WON;
+            playResult = gameEnum.WON;
             endOfGame = true;
             soundManager.playSound(FrozenBubble.SOUND_WON);
           }
@@ -1222,17 +1214,17 @@ public class FrozenGame extends GameScreen {
    * @param result - GAME_WON if this player won the game, GAME_LOST if
    * this player lost the game.
    */
-  public void setGameResult(int result) {
+  public void setGameResult(gameEnum result) {
     if (!endOfGame) {
       playResult = result;
-      if (result == GAME_WON)
+      if (result == gameEnum.WON)
       {
         penguin.updateState(PenguinSprite.STATE_GAME_WON);
         this.addSprite(new ImageSprite(new Rect(152, 190,
                                                 152 + 337,
                                                 190 + 116), gameWon));
       }
-      else if (result == GAME_LOST)
+      else if (result == gameEnum.LOST)
       {
         penguin.updateState(PenguinSprite.STATE_GAME_LOST);
         this.addSprite(new ImageSprite(new Rect(152, 190,
