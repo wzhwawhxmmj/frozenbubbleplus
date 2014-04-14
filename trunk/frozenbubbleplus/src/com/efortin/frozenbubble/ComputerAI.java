@@ -53,7 +53,9 @@
 package com.efortin.frozenbubble;
 
 import org.gsanson.frozenbubble.Freile;
+import org.gsanson.frozenbubble.Freile.eventEnum;
 import org.jfedor.frozenbubble.FrozenGame;
+import org.jfedor.frozenbubble.GameScreen.gameEnum;
 
 import android.view.KeyEvent;
 
@@ -98,22 +100,32 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
     }
   }
 
-  public double convertAngleToPosition(double angle) {
-    double position = (angle - Freile.MIN_LAUNCHER) /
-                      (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER);
-    position = (position * (FrozenGame.MAX_LAUNCH_DIRECTION -
-                            FrozenGame.MIN_LAUNCH_DIRECTION)) +
-               FrozenGame.MIN_LAUNCH_DIRECTION;
-    return position;
-  }
+  /**
+   * Convert the supplied value to a normalized launcher position or
+   * launcher angle as desired.
+   * @param isAngle - if <code>true</code>, convert to position from
+   * angle.  Otherwise convert to angle from position.
+   * @param value - the value to convert.
+   * @return The converted value.
+   */
+  private double convert(boolean isAngle, double value) {
+    double result;
 
-  public double convertPositionToAngle(double position) {
-    double angle = ((double)(position - FrozenGame.MIN_LAUNCH_DIRECTION)) /
-                   ((double)(FrozenGame.MAX_LAUNCH_DIRECTION -
-                             FrozenGame.MIN_LAUNCH_DIRECTION));
-    angle = (angle * (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER)) +
-            Freile.MIN_LAUNCHER;
-    return angle;
+    if (isAngle) {
+        result = (value - Freile.MIN_LAUNCHER) /
+                 (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER);
+        result = FrozenGame.MIN_LAUNCH_DIRECTION +
+                 (result * (FrozenGame.MAX_LAUNCH_DIRECTION -
+                            FrozenGame.MIN_LAUNCH_DIRECTION));
+    }
+    else {
+      result = ((double)(value - FrozenGame.MIN_LAUNCH_DIRECTION)) /
+               ((double)(FrozenGame.MAX_LAUNCH_DIRECTION -
+                         FrozenGame.MIN_LAUNCH_DIRECTION));
+      result = Freile.MIN_LAUNCHER +
+               (result * (Freile.MAX_LAUNCHER - Freile.MIN_LAUNCHER));
+    }
+    return result;
   }
 
   /**
@@ -125,9 +137,9 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
     return action;
   }
 
-  public void onOpponentEvent(int event) {
+  public void onOpponentEvent(eventEnum event) {
     switch (event) {
-      case Freile.EVENT_DONE_COMPUTING:
+      case DONE_COMPUTING:
         synchronized(this) {
           this.notify();
         }
@@ -145,9 +157,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
         /*
          * Compute the next CPU action.
          */
-        if (running && (myFrozenGame != null) &&
-            (myFrozenGame.getGameResult() == FrozenGame.GAME_PLAYING) &&
-          !cpuOpponent.isComputing())
+        if (running && (myFrozenGame != null) && !cpuOpponent.isComputing() &&
+            (myFrozenGame.getGameResult() == gameEnum.PLAYING))
           cpuOpponent.compute(myFrozenGame.getCurrentColor(),
                               myFrozenGame.getNextColor(),
                               myFrozenGame.getCompressorSteps());
@@ -156,8 +167,7 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
          * Only fire if the game state permits, and the last virtual
          * opponent action has been processed.
          */
-        if (running && (myFrozenGame != null) &&
-            myFrozenGame.getOkToFire() &&
+        if (running && (myFrozenGame != null) && myFrozenGame.getOkToFire() &&
             (action != KeyEvent.KEYCODE_DPAD_UP)) {
           while (running && cpuOpponent.isComputing()) {
             synchronized(this) {
@@ -179,8 +189,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
           while (running && (myFrozenGame != null) &&
                  (actionNew != KeyEvent.KEYCODE_DPAD_UP) &&
                  (System.currentTimeMillis() < timeout)) {
-            actionNew = cpuOpponent.getAction(convertPositionToAngle(
-              myFrozenGame.getPosition()));
+            actionNew = cpuOpponent.
+                        getAction(convert(false, myFrozenGame.getPosition()));
 
             if (actionNew != KeyEvent.KEYCODE_DPAD_UP) {
               action = actionNew;
@@ -197,8 +207,8 @@ public class ComputerAI extends Thread implements Freile.OpponentListener {
            */
           if (running && (myFrozenGame != null) &&
               myFrozenGame.getOkToFire()) {
-            myFrozenGame.setPosition(convertAngleToPosition(
-              cpuOpponent.getExactDirection(0)));
+            myFrozenGame.
+            setPosition(convert(true, cpuOpponent.getExactDirection(0)));
             action = actionNew;
             myPlayerInput.setAction(action, false);
           }

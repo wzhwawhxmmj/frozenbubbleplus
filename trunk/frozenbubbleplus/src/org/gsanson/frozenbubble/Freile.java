@@ -83,14 +83,22 @@ public class Freile implements Opponent, Runnable {
    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
    {0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
 
-  //**********************************************************
+  //********************************************************************
   // Listener interface for various opponent events
-  //**********************************************************
-  // Event types.
-  public static final int EVENT_DONE_COMPUTING = 1;
-  // Listener user set.
+  //********************************************************************
+
+  /*
+   * Event types enumeration.
+   */
+  public static enum eventEnum {
+    DONE_COMPUTING;
+  }
+
+  /*
+   * Listener user set.
+   */
   public interface OpponentListener {
-    public abstract void onOpponentEvent(int event);
+    public abstract void onOpponentEvent(eventEnum event);
   }
 
   OpponentListener mOpponentListener;
@@ -190,7 +198,7 @@ public class Freile implements Opponent, Runnable {
       if (computing) {
         computing = false;
         if (mOpponentListener != null)
-          mOpponentListener.onOpponentEvent(EVENT_DONE_COMPUTING);
+          mOpponentListener.onOpponentEvent(eventEnum.DONE_COMPUTING);
       }
 
       while (running && !computing) {

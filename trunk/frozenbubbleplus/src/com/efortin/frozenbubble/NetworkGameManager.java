@@ -62,6 +62,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
+import com.efortin.frozenbubble.MulticastManager.eventEnum;
 
 /**
  * This class manages the actions in a network multiplayer game by
@@ -77,6 +78,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   private static final String MCAST_HOST_NAME = "224.0.0.15";
   private static final byte[] MCAST_BYTE_ADDR = { (byte) 224, 0, 0, 15 };
   private static final int    PORT            = 5500;
+
   /*
    * Message identifier definitions.
    */
@@ -84,6 +86,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   public static final byte MSG_ID_PREFS  = 2;
   public static final byte MSG_ID_ACTION = 3;
   public static final byte MSG_ID_FIELD  = 4;
+
   /*
    * Datagram size definitions.
    */
@@ -91,6 +94,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   public static final int  FIELD_BYTES  = 111;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
+
   /*
    * Network game management definitions.
    */
@@ -103,7 +107,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   private byte             myGameID;
   private boolean[]        gamesInProgress;
   private boolean          missedAction;
-  private boolean          readyToPlay;
   private boolean          running;
   private long             actionTxTime;
   private long             gameStartTime;
@@ -116,6 +119,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   private VirtualInput     localPlayer = null;
   private VirtualInput     remotePlayer = null;
   private MulticastManager session = null;
+
   /*
    * Keep action lists for action retransmission requests and game
    * access.
@@ -137,7 +141,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     myGameID = MulticastManager.FILTER_OFF;
     gamesInProgress = new boolean[GAME_ID_MAX];
     missedAction = false;
-    readyToPlay = false;
     mContext = myContext;
     localPrefs = new Preferences();
     remotePrefs = new Preferences();
@@ -479,7 +482,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public byte    playerID;
     public byte    protocolVersion;
     public boolean gameClaimed;
-    public byte    gameStatus;
+    public boolean readyToPlay;
     /*
      * The following action IDs represent the associated player's
      * current game state.  localActionID will refer to that player's
@@ -508,7 +511,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * Class constructor.
      * @param id - the player ID associated with this status
      * @param claimed - game ID claimed flag.
-     * @param status - the game status (paused, running, etc.).
+     * @param ready - player is ready to play.
      * @param localActionID - the local last transmitted action ID.
      * @param remoteActionID - the remote current pending action ID.
      * @param field - request field data
@@ -516,12 +519,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      */
     public PlayerStatus(byte id,
                         boolean claimed,
-                        byte status,
+                        boolean ready,
                         short localActionID,
                         short remoteActionID,
                         boolean field,
                         boolean prefs) {
-      init(id, claimed, status, localActionID, remoteActionID, field, prefs);
+      init(id, claimed, ready, localActionID, remoteActionID, field, prefs);
     }
 
     /**
@@ -548,8 +551,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       if (status != null) {
         this.playerID        = status.playerID;
         this.protocolVersion = PROTOCOL_VERSION;
+        this.readyToPlay     = status.readyToPlay;
         this.gameClaimed     = status.gameClaimed;
-        this.gameStatus      = status.gameStatus;
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
         this.field_request   = status.field_request;
@@ -569,7 +572,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.playerID        = buffer[startIndex++];
         this.protocolVersion = buffer[startIndex++];
         this.gameClaimed     = buffer[startIndex++] == 1;
-        this.gameStatus      = buffer[startIndex++];
+        this.readyToPlay     = buffer[startIndex++] == 1;
         shortBytes[0]        = buffer[startIndex++];
         shortBytes[1]        = buffer[startIndex++];
         this.localActionID   = toShort(shortBytes);
@@ -593,7 +596,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         buffer[startIndex++] = this.playerID;
         buffer[startIndex++] = this.protocolVersion;
         buffer[startIndex++] = (byte) ((this.gameClaimed == true)?1:0);
-        buffer[startIndex++] = this.gameStatus;
+        buffer[startIndex++] = (byte) ((this.readyToPlay == true)?1:0);
         toByteArray(this.localActionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
@@ -609,7 +612,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * Initialize this object with the provided data.
      * @param id - the player ID associated with this status
      * @param claimed - the game ID claimed flag.
-     * @param status - the game status (paused, running, etc.).
+     * @param ready - player is ready to play.
      * @param localActionID - the local last transmitted action ID.
      * @param remoteActionID - the remote current pending action ID.
      * @param field - request field data
@@ -617,7 +620,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      */
     public void init(byte id,
                      boolean claimed,
-                     byte status,
+                     boolean ready,
                      short localActionID,
                      short remoteActionID,
                      boolean field,
@@ -625,7 +628,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       this.playerID        = id;
       this.protocolVersion = PROTOCOL_VERSION;
       this.gameClaimed     = claimed;
-      this.gameStatus      = status;
+      this.readyToPlay     = ready;
       this.localActionID   = localActionID;
       this.remoteActionID  = remoteActionID;
       this.field_request   = field;
@@ -1080,8 +1083,8 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   public void newGame() {
-    readyToPlay = false;
     if (localStatus != null) {
+      localStatus.readyToPlay = false;
       localStatus.field_request = true;
       localStatus.localActionID = 0;
       localStatus.remoteActionID = 1;
@@ -1096,17 +1099,18 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         remoteActionList.clear();
       }
     }
-    remoteStatus = null;
     setStatusTimeout(0);
   }
 
   @Override
-  public void onMulticastEvent(int type, byte[] buffer, int length) {
+  public void onMulticastEvent(eventEnum event,
+                               byte[] buffer,
+                               int length) {
     /*
      * Process the multicast message.  If the game ID has not yet been
      * set, then only process status messages.
      */
-    if ((type == MulticastManager.EVENT_PACKET_RX) && (buffer != null)) {
+    if ((event == eventEnum.PACKET_RX) && (buffer != null)) {
       byte gameId   = buffer[0];
       byte msgId    = buffer[1];
       byte playerId = buffer[2];
@@ -1217,7 +1221,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
             remoteInterface.gameFieldData.copyFromBuffer(buffer, 2);
             remoteInterface.gotFieldData = true;
             localStatus.field_request = false;
-            readyToPlay = true;
+            localStatus.readyToPlay = true;
           }
         }
         /*
@@ -1378,8 +1382,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       requestPrefs = true;
     }
     localStatus = new PlayerStatus((byte) localPlayer.playerID,
-                                   false,
-                                   (byte) localPlayer.getGameStatus(),
+                                   false, false,
                                    (short) 0, (short) 1,
                                    true, requestPrefs);
     start();

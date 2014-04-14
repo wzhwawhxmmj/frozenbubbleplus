@@ -247,17 +247,24 @@ public class PlayerThread extends Thread {
     return mOwner;
   }
 
-  //*******************************************************************
+  //********************************************************************
   // Listener interface for various events
-  //*******************************************************************
-  // Event types.
-  public static final int EVENT_PLAYER_STARTED = 1;
-  public static final int EVENT_PATTERN_CHANGE = 2;
-  public static final int EVENT_SONG_COMPLETED = 3;
+  //********************************************************************
 
-  // Listener user set.
+  /*
+   *  Event types enumeration.
+   */
+  public static enum eventEnum {
+    PLAYER_STARTED,
+    PATTERN_CHANGE,
+    SONG_COMPLETED;
+  }
+
+  /*
+   *  Listener user set.
+   */
   public interface PlayerListener {
-    public abstract void onPlayerEvent(int type);
+    public abstract void onPlayerEvent(eventEnum event);
   }
 
   private PlayerListener mPlayerListener = null;
@@ -547,7 +554,7 @@ public class PlayerThread extends Thread {
           if (!sPlayerStarted) {
             sPlayerStarted = true;
             if (mPlayerListener != null) {
-              mPlayerListener.onPlayerEvent(EVENT_PLAYER_STARTED);
+              mPlayerListener.onPlayerEvent(eventEnum.PLAYER_STARTED);
             }
           }
         }
@@ -557,7 +564,7 @@ public class PlayerThread extends Thread {
             pattern_change = false;
 
             if (mPlayerListener != null)
-              mPlayerListener.onPlayerEvent(EVENT_PATTERN_CHANGE);
+              mPlayerListener.onPlayerEvent(eventEnum.PATTERN_CHANGE);
           }
         }
 
@@ -569,7 +576,7 @@ public class PlayerThread extends Thread {
 
           if (!songFinished && ((posNow < posWas) || (posNow >= getMaxPos()))) {
             if (mPlayerListener != null)
-              mPlayerListener.onPlayerEvent(EVENT_SONG_COMPLETED);
+              mPlayerListener.onPlayerEvent(eventEnum.SONG_COMPLETED);
 
             songFinished = true;
           }

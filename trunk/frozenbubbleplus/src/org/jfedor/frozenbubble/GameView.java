@@ -82,6 +82,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 
+import org.jfedor.frozenbubble.GameScreen.eventEnum;
+import org.jfedor.frozenbubble.GameScreen.gameEnum;
+import org.jfedor.frozenbubble.GameScreen.stateEnum;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -108,19 +112,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   private boolean    mBlankScreen = false;
   private Context    mContext;
   private GameThread mGameThread;
-  //**********************************************************
-  // Listener interface for various events
-  //**********************************************************
-  // Event types.
-  public static final int EVENT_GAME_WON    = 2;
-  public static final int EVENT_GAME_LOST   = 3;
-  public static final int EVENT_GAME_PAUSED = 4;
-  public static final int EVENT_GAME_RESUME = 5;
-  public static final int EVENT_LEVEL_START = 6;
 
-  // Listener user set.
+  //********************************************************************
+  // Listener interface for various events
+  //********************************************************************
+
+  /*
+   *  Listener user set.
+   */
   public interface GameListener {
-    public abstract void onGameEvent(int event);
+    public abstract void onGameEvent(eventEnum event);
   }
 
   GameListener mGameListener;
@@ -132,10 +133,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   class GameThread extends Thread {
 
     private static final int FRAME_DELAY = 40;
-
-    public static final int STATE_RUNNING = 1;
-    public static final int STATE_PAUSE   = 2;
-    public static final int STATE_ABOUT   = 4;
 
     private static final double TRACKBALL_COEFFICIENT      = 5;
     private static final double TOUCH_FIRE_Y_THRESHOLD     = 380;
@@ -170,8 +167,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     private int    mDisplayDY;
     private double mDisplayScale;
     private long   mLastTime;
-    private int    mMode;
-    private int    mModeWas;
+
+    private stateEnum mMode;
+    private stateEnum mModeWas;
 
     private Bitmap mBackgroundOrig;
     private Bitmap[] mBubblesOrig;
@@ -233,7 +231,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
-      setState(STATE_PAUSE);
+      setState(stateEnum.PAUSED);
 
       BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -448,11 +446,11 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void pause() {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
-          setState(STATE_PAUSE);
+        if (mMode == stateEnum.RUNNING) {
+          setState(stateEnum.PAUSED);
 
           if (mGameListener != null)
-            mGameListener.onGameEvent(EVENT_GAME_PAUSED);
+            mGameListener.onGameEvent(eventEnum.GAME_PAUSED);
           if (mFrozenGame != null)
             mFrozenGame.pause();
           if (mHighscoreManager != null)
@@ -463,7 +461,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     public void resumeGame() {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
+        if (mMode == stateEnum.RUNNING) {
           mFrozenGame      .resume();
           mHighscoreManager.resumeLevel();
         }
@@ -502,22 +500,22 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
             if (c != null) {
               synchronized (mSurfaceHolder) {
                 if (mRun) {
-                  if (mMode == STATE_ABOUT) {
+                  if (mMode == stateEnum.ABOUT) {
                     drawAboutScreen(c);
                   }
-                  else if (mMode == STATE_PAUSE) {
+                  else if (mMode == stateEnum.PAUSED) {
                     if (mShowScores)
                       drawHighScoreScreen(c, mHighscoreManager.getLevel());
                     else
                       doDraw(c);
                   }
                   else {
-                    if (mMode == STATE_RUNNING) {
-                      if (mModeWas != STATE_RUNNING)  {
+                    if (mMode == stateEnum.RUNNING) {
+                      if (mModeWas != stateEnum.RUNNING)  {
                         if (mGameListener != null)
-                          mGameListener.onGameEvent(EVENT_GAME_RESUME);
+                          mGameListener.onGameEvent(eventEnum.GAME_RESUME);
 
-                        mModeWas = STATE_RUNNING;
+                        mModeWas = stateEnum.RUNNING;
                         resumeGame();
                       }
                       updateGameState();
@@ -556,14 +554,14 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     /**
-     * Restores game state from the indicated Bundle. Typically called when
-     * the Activity is being restored after having been previously
+     * Restores game state from the indicated Bundle. Typically called
+     * when the Activity is being restored after having been previously
      * destroyed.
      * @param savedState - Bundle containing the game state.
      */
     public synchronized void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
-        setState(STATE_PAUSE);
+        setState(stateEnum.PAUSED);
         mFrozenGame      .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
         mHighscoreManager.restoreState(map);
@@ -574,7 +572,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       mRun = b;
     }
 
-    public void setState(int mode) {
+    public void setState(stateEnum newMode) {
       synchronized (mSurfaceHolder) {
         /*
          * Only update the previous mode storage if the new mode is
@@ -586,10 +584,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
          * transitions does not get a chance to run between calls to
          * this method.
          */
-        if (mode != mMode)
+        if (newMode != mMode)
           mModeWas = mMode;
 
-        mMode = mode;
+        mMode = newMode;
       }
     }
 
@@ -723,7 +721,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      */
     boolean doTrackballEvent(MotionEvent event) {
       synchronized (mSurfaceHolder) {
-        if (mMode == STATE_RUNNING) {
+        if (mMode == stateEnum.RUNNING) {
           if (event.getAction() == MotionEvent.ACTION_MOVE) {
             mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
             return true;
@@ -754,7 +752,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         if(updateStateOnEvent(event))
           return true;
 
-        if (mMode == STATE_RUNNING) {
+        if (mMode == stateEnum.RUNNING) {
           double x = xFromScr(event.getX());
           double y = yFromScr(event.getY());
 
@@ -817,28 +815,28 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
       if (event_action_down) {
         switch (mMode) {
-          case STATE_ABOUT:
+          case ABOUT:
             if (!mBlankScreen) {
-              setState(STATE_RUNNING);
+              setState(stateEnum.RUNNING);
               return true;
             }
             break;
 
-          case STATE_PAUSE:
+          case PAUSED:
             if (mShowScores) {
               mShowScores = false;
               nextLevel();
               if (getCurrentLevelIndex() != 0)
-                setState(STATE_RUNNING);
+                setState(stateEnum.RUNNING);
               if (mGameListener != null) {
-                mGameListener.onGameEvent(EVENT_LEVEL_START);
+                mGameListener.onGameEvent(eventEnum.LEVEL_START);
               }
               return true;
             }
-            setState(STATE_RUNNING);
+            setState(stateEnum.RUNNING);
             break;
 
-          case STATE_RUNNING:
+          case RUNNING:
           default:
             break;
         }
@@ -997,27 +995,31 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       if ((mFrozenGame == null) || (mHighscoreManager == null))
         return;
 
-      int game_state = mFrozenGame.play(mLeft || mWasLeft,
-                                        mRight || mWasRight,
-                                        mFire || mUp || mWasFire || mWasUp,
-                                        mDown || mWasDown || mTouchSwap,
-                                        mTrackballDX,
-                                        mTouchFire, mTouchX, mTouchY,
-                                        mATSTouchFire, mATSTouchDX);
-      if ((game_state == FrozenGame.GAME_NEXT_LOST) ||
-          (game_state == FrozenGame.GAME_NEXT_WON )) {
-        if (game_state == FrozenGame.GAME_NEXT_WON) {
+      gameEnum gameState = mFrozenGame.play(mLeft || mWasLeft,
+                                            mRight || mWasRight,
+                                            mFire || mUp || mWasFire || mWasUp,
+                                            mDown || mWasDown || mTouchSwap,
+                                            mTrackballDX,
+                                            mTouchFire, mTouchX, mTouchY,
+                                            mATSTouchFire, mATSTouchDX);
+
+      if ((gameState == gameEnum.NEXT_LOST) ||
+          (gameState == gameEnum.NEXT_WON )) {
+        if (gameState == gameEnum.NEXT_WON) {
           mShowScores = true;
           pause();
         }
-        else
+        else {
           nextLevel();
+        }
 
         if (mGameListener != null) {
-          if (game_state == FrozenGame.GAME_NEXT_WON)
-            mGameListener.onGameEvent(EVENT_GAME_WON);
-          else
-            mGameListener.onGameEvent(EVENT_GAME_LOST);
+          if (gameState == gameEnum.NEXT_WON) {
+            mGameListener.onGameEvent(eventEnum.GAME_WON);
+          }
+          else {
+            mGameListener.onGameEvent(eventEnum.GAME_LOST);
+          }
         }
       }
       mWasLeft      = false;
@@ -1306,7 +1308,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     mBlankScreen = clearScreen;
     try {
       if (clearScreen) {
-        mGameThread.setState(GameThread.STATE_ABOUT);
+        mGameThread.setState(stateEnum.ABOUT);
         Timer timer = new Timer();
         timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
       }
