@@ -61,6 +61,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.util.Log;
 
@@ -212,6 +214,26 @@ public class MulticastManager {
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
+  }
+
+  /**
+   * Check with the <code>ConnectivityManager</code> if the device is
+   * connected to the internet.
+   * @return <code>true</code> if the device is connected to the
+   * internet.
+   * @see ConnectivityManager
+   */
+  public boolean hasInternetConnection()
+  {
+    ConnectivityManager cm =
+        (ConnectivityManager) mContext.getSystemService(Context.
+                                                        CONNECTIVITY_SERVICE);
+    NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+    if ((activeNetwork != null) && activeNetwork.isConnected())
+    {
+      return true;
+    }
+    return false;
   }
 
   /**

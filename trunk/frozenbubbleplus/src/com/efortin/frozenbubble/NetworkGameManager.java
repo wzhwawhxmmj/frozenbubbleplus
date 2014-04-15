@@ -58,6 +58,8 @@ import java.util.ArrayList;
 import org.jfedor.frozenbubble.BubbleSprite;
 import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.FrozenGame;
+import org.jfedor.frozenbubble.MultiplayerGameView.NetworkStatus;
+import org.jfedor.frozenbubble.MultiplayerGameView.NetworkStatusInterface;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -75,7 +77,8 @@ import com.efortin.frozenbubble.MulticastManager.eventEnum;
  * @author Eric Fortin
  *
  */
-public class NetworkGameManager extends Thread implements MulticastListener {
+public class NetworkGameManager extends Thread
+  implements MulticastListener, NetworkStatusInterface {
   private static final String MCAST_HOST_NAME = "224.0.0.15";
   private static final byte[] MCAST_BYTE_ADDR = { (byte) 224, 0, 0, 15 };
   private static final int    PORT            = 5500;
@@ -1545,5 +1548,28 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      * Send the datagram via the multicast manager.
      */
     return session.transmit(buffer);
+  }
+
+  public void updateNetworkStatus(NetworkStatus status) {
+    status.localPlayerId  = localPlayer.playerID;
+    status.remotePlayerId = remotePlayer.playerID;
+    if (session != null) {
+    status.isConnected = session.hasInternetConnection();
+    }
+    else {
+      status.isConnected = false;
+    }
+    status.reservedGameId = myGameID != MulticastManager.FILTER_OFF;
+    if (localStatus != null) {
+      status.claimedGameId   = localStatus.gameClaimed;
+      status.needFieldData   = localStatus.field_request;
+      status.needPreferences = localStatus.prefs_request;
+    }
+    else {
+      status.claimedGameId   = false;
+      status.needFieldData   = false;
+      status.needPreferences = false;
+    }
+    status.readyToPlay = gameIsReadyForAction();
   }
 };
