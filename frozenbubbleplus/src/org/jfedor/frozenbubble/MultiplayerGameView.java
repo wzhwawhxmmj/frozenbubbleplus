@@ -108,12 +108,21 @@ import com.efortin.frozenbubble.NetworkGameManager.NetGameInterface;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
 
-class MultiplayerGameView extends SurfaceView implements
-  SurfaceHolder.Callback {
+public class MultiplayerGameView extends SurfaceView
+  implements SurfaceHolder.Callback {
 
   public static final int  GAMEFIELD_WIDTH          = 320;
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
+
+  /*
+   * The following screen orientation definitions were added to
+   * ActivityInfo in API level 9.
+   */
+  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
+  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
+  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
+  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
   private int                   numPlayer1GamesWon;
   private int                   numPlayer2GamesWon;
@@ -133,8 +142,10 @@ class MultiplayerGameView extends SurfaceView implements
   // Listener interface for various events
   //********************************************************************
 
-  /*
-   *  Listener user set.
+  /**
+   * Game event listener user set.
+   * @author Eric Fortin
+   *
    */
   public interface GameListener {
     public abstract void onGameEvent(eventEnum event);
@@ -142,18 +153,35 @@ class MultiplayerGameView extends SurfaceView implements
 
   GameListener mGameListener;
 
-  public void setGameListener (GameListener gl) {
+  public void setGameListener(GameListener gl) {
     mGameListener = gl;
   }
 
-  /*
-   * The following screen orientation definitions were added to
-   * ActivityInfo in API level 9.
+  /**
+   * A class to encapsulate all network status variables used in drawing
+   * the network status screen.
+   * @author efortin
+   *
    */
-  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
-  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
-  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
-  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
+  public class NetworkStatus {
+    public int     localPlayerId;
+    public int     remotePlayerId;
+    public boolean isConnected;
+    public boolean reservedGameId;
+    public boolean claimedGameId;
+    public boolean needFieldData;
+    public boolean needPreferences;
+    public boolean readyToPlay;
+  };
+
+  /**
+   * Network status interface to obtain game synchronization progress.
+   * @author Eric Fortin
+   *
+   */
+  public interface NetworkStatusInterface {
+    public abstract void updateNetworkStatus(NetworkStatus status);
+  }
 
   /**
    * This class encapsulates player input action variables and methods.
@@ -488,7 +516,7 @@ class MultiplayerGameView extends SurfaceView implements
       return;
     }
 
-    PlayerInput playerRef;
+    VirtualInput playerRef;
 
     if (newAction.playerID == VirtualInput.PLAYER1) {
       playerRef = mPlayer1;
@@ -553,7 +581,7 @@ class MultiplayerGameView extends SurfaceView implements
       return;
     }
 
-    PlayerInput playerRef;
+    VirtualInput playerRef;
 
     if (newField.playerID == VirtualInput.PLAYER1) {
       playerRef = mPlayer1;
@@ -603,10 +631,11 @@ class MultiplayerGameView extends SurfaceView implements
     public static final double ATS_TOUCH_COEFFICIENT      = 0.2;
     public static final double ATS_TOUCH_FIRE_Y_THRESHOLD = 350;
 
-    private boolean mImagesReady  = false;
-    private boolean mRun          = false;
-    private boolean mShowScores   = false;
-    private boolean mSurfaceOK    = false;
+    private boolean mImagesReady = false;
+    private boolean mRun         = false;
+    private boolean mShowNetwork = false;
+    private boolean mShowScores  = false;
+    private boolean mSurfaceOK   = false;
 
     private int    mDisplayDX;
     private int    mDisplayDY;
@@ -1090,6 +1119,108 @@ class MultiplayerGameView extends SurfaceView implements
       }
     }
 
+    private void drawNetworkScreen(Canvas canvas) {
+      if (mNetworkManager == null) {
+        mShowNetwork = false;
+        return;
+      }
+
+      canvas.drawRGB(0, 0, 0);
+      int x = 168;
+      int y = 20;
+      int ysp = 26;
+      int orientation = getScreenOrientation();
+
+      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+        x += GAMEFIELD_WIDTH/2;
+      else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+        x -= GAMEFIELD_WIDTH/2;
+
+      NetworkStatus status = new NetworkStatus();
+      mNetworkManager.updateNetworkStatus(status);
+
+      if (status.isConnected) {
+        mFont.print("internet connection status: ]", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+      else {
+        mFont.print("internet connection status: \\", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+
+      if (status.reservedGameId) {
+        mFont.print("checking for games in progress...|", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+      else {
+        mFont.print("checking for games in progress...", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        return;
+      }
+
+      mFont.print("open game slot found", x, y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+
+      if (status.claimedGameId) {
+        mFont.print("waiting for player " + status.remotePlayerId +
+                    " to join...|", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+      else {
+        mFont.print("waiting for player " + status.remotePlayerId +
+                    " to join...", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        return;
+      }
+
+      if (status.localPlayerId == VirtualInput.PLAYER2) {
+        if (status.needPreferences) {
+          mFont.print("waiting for player " + status.remotePlayerId +
+                      " preferences...|", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          y += ysp;
+        }
+        else {
+          mFont.print("waiting for player " + status.remotePlayerId +
+                      " preferences...", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          return;
+        }
+      }
+
+      if (status.needFieldData) {
+        mFont.print("waiting for player " + status.remotePlayerId +
+                    " data...|", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+      else {
+        mFont.print("waiting for player " + status.remotePlayerId +
+                    " data...", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        return;
+      }
+
+      if (status.readyToPlay) {
+        mFont.print("waiting for game to start...|", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+      else {
+        mFont.print("waiting for game to start", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        return;
+      }
+
+      mFont.print("touch screen to begin playing", x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+    }
+
     private void drawWinTotals(Canvas canvas) {
       int y = 433;
       int x = GAMEFIELD_WIDTH - 40;
@@ -1420,6 +1551,7 @@ class MultiplayerGameView extends SurfaceView implements
         mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
         if (mNetworkManager != null) {
           mNetworkManager.newGame();
+          mShowNetwork = true;
         }
       }
     }
@@ -1533,6 +1665,8 @@ class MultiplayerGameView extends SurfaceView implements
                   else if (mMode == stateEnum.PAUSED) {
                     if (mShowScores)
                       drawHighScoreScreen(c, mHighscoreManager.getLevel());
+                    else if (mShowNetwork)
+                      drawNetworkScreen(c);
                     else
                       doDraw(c);
                   }
@@ -1758,6 +1892,22 @@ class MultiplayerGameView extends SurfaceView implements
             return true;
 
           case PAUSED:
+            if (mNetworkManager != null) {
+              if (mShowScores) {
+                mShowScores = false;
+                return true;
+              }
+              if (mShowNetwork) {
+                if (mNetworkManager.gameIsReadyForAction()) {
+                  mShowNetwork = false;
+                  setState(stateEnum.RUNNING);
+                  if (mGameListener != null) {
+                    mGameListener.onGameEvent(eventEnum.LEVEL_START);
+                  }
+                }
+                return true;
+              }
+            }
             if (mShowScores) {
               mShowScores = false;
               setState(stateEnum.RUNNING);
@@ -1902,20 +2052,21 @@ class MultiplayerGameView extends SurfaceView implements
    * @param numPlayers - reserved for future development.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
-   * @param networkManager - a reference to the network game manager.
    */
   public MultiplayerGameView(Context context,
                              int myPlayerId,
                              int numPlayers,
-                             int gameLocale,
-                             NetworkGameManager networkManager) {
+                             int gameLocale) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
     mOpponent = null;
-    mNetworkManager = networkManager;
+    mNetworkManager = null;
+    if (gameLocale == FrozenBubble.LOCALE_LAN) {
+      mNetworkManager = new NetworkGameManager(context);
+    }
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
@@ -2027,15 +2178,21 @@ class MultiplayerGameView extends SurfaceView implements
 
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
+    cleanUpNetworkManager();
+
     mPlayer1.init();
     mPlayer2.init();
-
-    mNetworkManager = null;
 
     if (mOpponent != null)
       mOpponent.stopThread();
     mOpponent = null;
 
     mGameThread.cleanUp();
+  }
+
+  private void cleanUpNetworkManager() {
+    if (mNetworkManager != null)
+      mNetworkManager.cleanUp();
+    mNetworkManager = null;
   }
 }
