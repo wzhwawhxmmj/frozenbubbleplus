@@ -860,7 +860,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       intBytes[1]      = buffer[startIndex++];
       intBytes[2]      = buffer[startIndex++];
       intBytes[3]      = buffer[startIndex++];
-      prefs.gameMode   = toInt(intBytes);
+      prefs.targetMode = toInt(intBytes);
     }
   }
 
