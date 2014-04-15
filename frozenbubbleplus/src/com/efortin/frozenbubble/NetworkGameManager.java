@@ -916,7 +916,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     gameData.newNextBubbleColor =
         (byte) localPlayer.mGameRef.getNewNextColor();
     gameData.totalAttackBubbles =
-        (short) localPlayer.mGameRef.getAttackBubbles();
+        (short) localPlayer.mGameRef.getAttackBarBubbles();
     BubbleSprite[][] bubbleGrid = localPlayer.mGameRef.getGrid();
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {

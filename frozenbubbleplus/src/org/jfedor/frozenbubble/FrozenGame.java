@@ -329,10 +329,10 @@ public class FrozenGame extends GameScreen {
   }
 
   public gameEnum play(boolean key_left, boolean key_right,
-                  boolean key_fire, boolean key_swap,
-                  double trackball_dx,
-                  boolean touch_fire, double touch_x, double touch_y,
-                  boolean ats_touch_fire, double ats_touch_dx) {
+                       boolean key_fire, boolean key_swap,
+                       double trackball_dx,
+                       boolean touch_fire, double touch_x, double touch_y,
+                       boolean ats_touch_fire, double ats_touch_dx) {
     boolean ats = FrozenBubble.getAimThenShoot();
     boolean bubbleLaunched = false;
     boolean compressed = false;
@@ -345,7 +345,7 @@ public class FrozenGame extends GameScreen {
 
     if (malusBar != null) {
       addAttackBubbles = 0;
-      attackBarBubbles = malusBar.getAttackBubbles();
+      attackBarBubbles = malusBar.getAttackBarBubbles();
     }
 
     if ((ats && ats_touch_fire) || (!ats && touch_fire)) {
@@ -954,8 +954,8 @@ public class FrozenGame extends GameScreen {
     this.spriteToBack(launchBubble);
   }
 
-  public int getAttackBubbles() {
-    return malusBar.getAttackBubbles();
+  public int getAttackBarBubbles() {
+    return malusBar.getAttackBarBubbles();
   }
 
   public int getCompressorSteps() {
@@ -1157,7 +1157,7 @@ public class FrozenGame extends GameScreen {
       }
       malusBar.removeAttackBubbles(numBubblesLaunched);
     }
-    else if (malusBar.getAttackBubbles() > 0) {
+    else if (malusBar.getAttackBarBubbles() > 0) {
       boolean[] lanes = new boolean[15];
       int malusBalls = malusBar.removeLine();
       int pos;

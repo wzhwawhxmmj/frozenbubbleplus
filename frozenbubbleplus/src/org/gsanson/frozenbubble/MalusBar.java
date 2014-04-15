@@ -128,7 +128,7 @@ public class MalusBar extends Sprite {
       this.attackBubbles[i] = -1;
   }
 
-  public int getAttackBubbles() {
+  public int getAttackBarBubbles() {
     return nbMalus;
   }
 
