@@ -368,8 +368,8 @@ public class MulticastManager {
       synchronized(txList) {
         txList.add(buffer);
       }
-      return(true);
+      return true;
     }
-    return(false);
+    return false;
   }
 }

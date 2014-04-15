@@ -137,7 +137,6 @@ public class FrozenGame extends GameScreen {
   boolean readyToFire;
   boolean swapPressed;
   gameEnum playResult;
-  int addAttackBubbles;
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
@@ -279,11 +278,10 @@ public class FrozenGame extends GameScreen {
     this.spriteToBack(launchBubble);
 
     /*
-     * Initialize game metrics variables.
+     * Initialize game metrics.
      */
-    nbBubbles        = 0;
-    addAttackBubbles = 0;
-    sendToOpponent   = 0;
+    nbBubbles      = 0;
+    sendToOpponent = 0;
   }
 
   public FrozenGame(BmpWrap background_arg,
@@ -308,6 +306,296 @@ public class FrozenGame extends GameScreen {
          gamePaused_arg, hurry_arg, null, null, penguins_arg, compressorHead_arg,
          compressor_arg, null, launcher_arg, soundManager_arg,
          levelManager_arg, highscoreManager_arg, null, null);
+  }
+
+  public void addAttackBubbles(int attackBubbles) {
+    sendToOpponent += attackBubbles;
+  }
+
+  public void addFallingBubble(BubbleSprite sprite) {
+    if (malusBar != null)
+      malusBar.releaseTime = 0;
+    sendToOpponent++;
+    spriteToFront(sprite);
+    falling.addElement(sprite);
+  }
+
+  public void addJumpingBubble(BubbleSprite sprite) {
+    spriteToFront(sprite);
+    jumping.addElement(sprite);
+  }
+
+  private void blinkLine(int number) {
+    int move = number % 2;
+    int column = (number+1) >> 1;
+
+    for (int i=move ; i<13 ; i++) {
+      if (bubblePlay[column][i] != null) {
+        bubblePlay[column][i].blink();
+      }
+    }
+  }
+
+  private boolean checkLost() {
+    boolean lost = false;
+
+    if (!endOfGame) {
+      if (movingBubble != null) {
+        if (movingBubble.fixed()) {
+          if (movingBubble.getSpritePosition().y>=380 &&
+              !movingBubble.released()) {
+            lost = true;
+          }
+        }
+      }
+  
+      for (int i = 0; i < 8; i++) {
+        if (bubblePlay[i][12 - compressor.steps] != null) {
+          lost = true;
+          break;
+        }
+      }
+  
+      if (lost) {
+        penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+        if (highscoreManager != null)
+          highscoreManager.lostLevel();
+        playResult = gameEnum.LOST;
+        endOfGame = true;
+        initFrozenify();
+        soundManager.playSound(FrozenBubble.SOUND_LOST);
+      }
+    }
+
+    return playResult == gameEnum.LOST;
+  }
+
+  public void clampLaunchPosition() {
+    if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
+      launchBubblePosition = MIN_LAUNCH_DIRECTION;
+    }
+    if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
+      launchBubblePosition = MAX_LAUNCH_DIRECTION;
+    }
+  }
+
+  public void deleteFallingBubble(BubbleSprite sprite) {
+    removeSprite(sprite);
+    falling.removeElement(sprite);
+  }
+
+  /**
+   * Remove the designated goingUp bubble sprite from the vector of
+   * attack bubbles because it is now inserted into the game grid.  The
+   * sprite is not removed from the vector of all sprites in the game
+   * because it has been added to the play field.
+   * @param sprite - the attack bubble inserted into the game grid.
+   */
+  public void deleteGoingUpBubble(BubbleSprite sprite) {
+    goingUp.removeElement(sprite);
+  }
+
+  public void deleteJumpingBubble(BubbleSprite sprite) {
+    removeSprite(sprite);
+    jumping.removeElement(sprite);
+  }
+
+  private void frozenify() {
+    frozenifyX--;
+    if (frozenifyX < 0) {
+      frozenifyX = 7;
+      frozenifyY--;
+
+      if (frozenifyY<0) {
+        frozenify = false;
+        this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
+                                       gameLost));
+        soundManager.playSound(FrozenBubble.SOUND_NOH);
+        return;
+      }
+    }
+
+    while (bubblePlay[frozenifyX][frozenifyY] == null && frozenifyY >=0) {
+      frozenifyX--;
+      if (frozenifyX < 0) {
+        frozenifyX = 7;
+        frozenifyY--;
+
+        if (frozenifyY<0) {
+          frozenify = false;
+          this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
+                                         gameLost));
+          soundManager.playSound(FrozenBubble.SOUND_NOH);
+          return;
+        }
+      }
+    }
+
+    this.spriteToBack(bubblePlay[frozenifyX][frozenifyY]);
+    bubblePlay[frozenifyX][frozenifyY].frozenify();
+
+    this.spriteToBack(launchBubble);
+  }
+
+  public int getAttackBarBubbles() {
+    return malusBar.getAttackBarBubbles();
+  }
+
+  public int getCompressorSteps() {
+    return compressor.steps;
+  }
+
+  public int getCurrentColor() {
+    return currentColor;
+  }
+
+  public gameEnum getGameResult() {
+    return playResult;
+  }
+
+  public BubbleSprite[][] getGrid() {
+    return bubblePlay;
+  }
+
+  public double getMoveDown() {
+    return compressor.getMoveDown();
+  }
+
+  public int getNewNextColor() {
+    return newNextColor;
+  }
+
+  public int getNextColor() {
+    return nextColor;
+  }
+
+  public boolean getOkToFire() {
+    return (movingBubble == null) && (playResult == gameEnum.PLAYING) &&
+           ((goingUp.size() == 0) || (networkManager == null)) && readyToFire;
+  }
+
+  private Rect getPenguinRect(int player) {
+    if (player == 1)
+      return new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
+                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
+    else
+      return new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
+                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
+  }
+
+  public double getPosition() {
+    return launchBubblePosition;
+  }
+
+  public Random getRandom() {
+    return random;
+  }
+
+  /**
+   * Obtain this player's <code>sendToOpponent</code> value, which is
+   * the number of attack bubbles to add to the opponent's attack bar.
+   * @return The number of attack bubbles to add to the opponent's
+   * attack bar.
+   */
+  public int getSendToOpponent() {
+    return sendToOpponent;
+  }
+
+  private void initFrozenify() {
+    ImageSprite freezeLaunchBubble =
+      new ImageSprite(new Rect(301, 389, 34, 42), frozenBubbles[currentColor]);
+    ImageSprite freezeNextBubble =
+      new ImageSprite(new Rect(301, 439, 34, 42), frozenBubbles[nextColor]);
+
+    this.addSprite(freezeLaunchBubble);
+    this.addSprite(freezeNextBubble);
+
+    frozenifyX = 7;
+    frozenifyY = 12;
+    frozenify  = true;
+  }
+
+  /**
+   * Lower the bubbles in play and drop the compressor a step.
+   * @param playSound - <code>true</code> to play the compression sound.
+   */
+  public void lowerCompressor(boolean playSound) {
+    fixedBubbles = 0;
+
+    if (playSound) {
+      soundManager.playSound(FrozenBubble.SOUND_NEWROOT);
+    }
+
+    for (int i=0 ; i<8 ; i++) {
+      for (int j=0 ; j<12 ; j++) {
+        if (bubblePlay[i][j] != null) {
+          bubblePlay[i][j].moveDown();
+
+          if ((bubblePlay[i][j].getSpritePosition().y>=380) && !endOfGame) {
+            penguin.updateState(PenguinSprite.STATE_GAME_LOST);
+            if (highscoreManager != null)
+              highscoreManager.lostLevel();
+            playResult = gameEnum.LOST;
+            endOfGame = true;
+            initFrozenify();
+            if (playSound) {
+              soundManager.playSound(FrozenBubble.SOUND_LOST);
+            }
+          }
+        }
+      }
+    }
+
+    compressor.moveDown();
+  }
+
+  /**
+   * Move the launched bubble.
+   * @return <code>true</code> if the compressor was lowered.
+   */
+  public boolean manageMovingBubble() {
+    boolean compressed = false;
+
+    if (movingBubble != null) {
+      movingBubble.move();
+      if (movingBubble.fixed()) {
+        if (!checkLost()) {
+          if (bubbleManager.countBubbles() == 0) {
+            penguin.updateState(PenguinSprite.STATE_GAME_WON);
+            this.addSprite(new ImageSprite(new Rect(152, 190,
+                                                    152 + 337,
+                                                    190 + 116), gameWon));
+            if (highscoreManager != null)
+              highscoreManager.endLevel(nbBubbles);
+            playResult = gameEnum.WON;
+            endOfGame = true;
+            soundManager.playSound(FrozenBubble.SOUND_WON);
+          }
+          else if ((malusBar == null) || FrozenBubble.getCompressor()) {
+            fixedBubbles++;
+            blinkDelay = 0;
+
+            if ((fixedBubbles == 8) && !isRemote) {
+              lowerCompressor(true);
+              compressed = true;
+            }
+          }
+        }
+        movingBubble = null;
+      }
+    }
+    return compressed;
+  }
+
+  public void paint(Canvas c, double scale, int dx, int dy) {
+    compressor.paint(c, scale, dx, dy);
+    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
+      nextBubble.changeImage(bubbles[nextColor]);
+    }
+    else {
+      nextBubble.changeImage(bubblesBlind[nextColor]);
+    }
+    super.paint(c, scale, dx, dy);
   }
 
   public void pause() {
@@ -344,7 +632,7 @@ public class FrozenGame extends GameScreen {
     int     numAttackBubbles = 0;
 
     if (malusBar != null) {
-      addAttackBubbles = 0;
+      sendToOpponent = 0;
       attackBarBubbles = malusBar.getAttackBarBubbles();
     }
 
@@ -561,7 +849,7 @@ public class FrozenGame extends GameScreen {
      */
     if ((networkManager != null) && !isRemote && (malusBar != null)) {
       if (bubbleLaunched || compressed || swapPressed ||
-          (numAttackBubbles > 0) || (addAttackBubbles > 0)) {
+          (numAttackBubbles > 0)) {
         networkManager.sendLocalPlayerAction(player,
                                              compressed,
                                              bubbleLaunched,
@@ -569,23 +857,91 @@ public class FrozenGame extends GameScreen {
                                              currentColorWas,
                                              nextColorWas,
                                              newNextColorWas,
-                                             addAttackBubbles,
                                              attackBarBubbles,
                                              malusBar.attackBubbles,
                                              launchBubblePosition);
       }
     }
-    if (networkManager == null) {
-       sendToOpponent = addAttackBubbles;
-    }
+
     if (malusBar != null) {
       malusBar.clearAttackBubbles();
     }
+
     return gameEnum.PLAYING;
   }
 
-  public void resume() {
-    this.removeSprite(pausedSprite);
+  /**
+   * Populate random columns in a row of attack bubbles to launch onto
+   * the game field.
+   * <p>In an actual play field, the rows alternate between a maximum 7
+   * and 8 bubbles per row.  Thus 7 bubbles are sent up as that is the
+   * maximum number of bubbles that can fit in each alternating row.
+   * <p>There are 15 distinct positions ("lanes") for bubbles to occupy
+   * between two consecutive rows.  Thus we send up a maximum 7 bubbles
+   * in randomly selected "lanes" from the 15 available.
+   * @return The number of attack bubbles launched.
+   */
+  private int releaseBubbles() {
+    if (malusBar == null) {
+      return 0;
+    }
+
+    int numBubblesLaunched = 0;
+
+    /*
+     * If this game represents a remote player, the the attack bubbles
+     * are calculated on the remote machine and sent over the network.
+     * Simply use the supplied attack bubble buffer to initiate attack
+     * bubble launches. 
+     */
+    if (isRemote) {
+      for (int i = 0; i < 15; i++) {
+        if (malusBar.attackBubbles[i] >= 0) {
+          numBubblesLaunched++;
+          int color = malusBar.attackBubbles[i];
+          BubbleSprite malusBubble = new BubbleSprite(
+            new Rect(columnX[i], 44+15*28, 32, 32),
+            START_LAUNCH_DIRECTION,
+            color, bubbles[color], bubblesBlind[color],
+            frozenBubbles[color], targetedBubbles, bubbleBlink,
+            bubbleManager, soundManager, this);
+          goingUp.add(malusBubble);
+          this.addSprite(malusBubble);
+        }
+      }
+      malusBar.removeAttackBubbles(numBubblesLaunched);
+    }
+    else if (malusBar.getAttackBarBubbles() > 0) {
+      boolean[] lanes = new boolean[15];
+      int malusBalls = malusBar.removeLine();
+      int pos;
+
+      while (malusBalls > 0) {
+        pos = random.nextInt(15);
+        if (!lanes[pos]) {
+          lanes[pos] = true;
+          malusBalls--;
+        }
+      }
+
+      for (int i = 0; i < 15; i++) {
+        if (lanes[i]) {
+          numBubblesLaunched++;
+          int color = random.nextInt(FrozenBubble.getDifficulty());
+          malusBar.setAttackBubble(i, color);
+          BubbleSprite malusBubble = new BubbleSprite(
+            new Rect(columnX[i], 44+15*28, 32, 32),
+            START_LAUNCH_DIRECTION,
+            color, bubbles[color], bubblesBlind[color],
+            frozenBubbles[color], targetedBubbles, bubbleBlink,
+            bubbleManager, soundManager, this);
+          goingUp.add(malusBubble);
+          this.addSprite(malusBubble);
+        }
+      }
+    }
+
+    return numBubblesLaunched;
   }
 
   private Sprite restoreSprite(Bundle map, Vector<BmpWrap> imageList, int i) {
@@ -743,6 +1099,10 @@ public class FrozenGame extends GameScreen {
     frozenifyY = map.getInt(String.format("%d-frozenifyY", player));
   }
 
+  public void resume() {
+    this.removeSprite(pausedSprite);
+  }
+
   public void saveState(Bundle map) {
     Vector<Sprite> savedSprites = new Vector<Sprite>();
 
@@ -823,371 +1183,6 @@ public class FrozenGame extends GameScreen {
     for (int i = 0; i < savedSprites.size(); i++) {
       ((Sprite)savedSprites.elementAt(i)).clearSavedId();
     }
-  }
-
-  public void addAttackBubbles(int attackBubbles) {
-    addAttackBubbles += attackBubbles;
-  }
-
-  public void addFallingBubble(BubbleSprite sprite) {
-    if (malusBar != null)
-      malusBar.releaseTime = 0;
-    addAttackBubbles++;
-    spriteToFront(sprite);
-    falling.addElement(sprite);
-  }
-
-  public void addJumpingBubble(BubbleSprite sprite) {
-    spriteToFront(sprite);
-    jumping.addElement(sprite);
-  }
-
-  private void blinkLine(int number) {
-    int move = number % 2;
-    int column = (number+1) >> 1;
-
-    for (int i=move ; i<13 ; i++) {
-      if (bubblePlay[column][i] != null) {
-        bubblePlay[column][i].blink();
-      }
-    }
-  }
-
-  private boolean checkLost() {
-    boolean lost = false;
-
-    if (!endOfGame) {
-      if (movingBubble != null) {
-        if (movingBubble.fixed()) {
-          if (movingBubble.getSpritePosition().y>=380 &&
-              !movingBubble.released()) {
-            lost = true;
-          }
-        }
-      }
-  
-      for (int i = 0; i < 8; i++) {
-        if (bubblePlay[i][12 - compressor.steps] != null) {
-          lost = true;
-          break;
-        }
-      }
-  
-      if (lost) {
-        penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-        if (highscoreManager != null)
-          highscoreManager.lostLevel();
-        playResult = gameEnum.LOST;
-        endOfGame = true;
-        initFrozenify();
-        soundManager.playSound(FrozenBubble.SOUND_LOST);
-      }
-    }
-
-    return (playResult == gameEnum.LOST);
-  }
-
-  public void clampLaunchPosition() {
-    if (launchBubblePosition < MIN_LAUNCH_DIRECTION) {
-      launchBubblePosition = MIN_LAUNCH_DIRECTION;
-    }
-    if (launchBubblePosition > MAX_LAUNCH_DIRECTION) {
-      launchBubblePosition = MAX_LAUNCH_DIRECTION;
-    }
-  }
-
-  public void deleteFallingBubble(BubbleSprite sprite) {
-    removeSprite(sprite);
-    falling.removeElement(sprite);
-  }
-
-  /**
-   * Remove the designated goingUp bubble sprite from the vector of
-   * attack bubbles because it is now inserted into the game grid.  The
-   * sprite is not removed from the vector of all sprites in the game
-   * because it has been added to the play field.
-   * @param sprite - the attack bubble inserted into the game grid.
-   */
-  public void deleteGoingUpBubble(BubbleSprite sprite) {
-    goingUp.removeElement(sprite);
-  }
-
-  public void deleteJumpingBubble(BubbleSprite sprite) {
-    removeSprite(sprite);
-    jumping.removeElement(sprite);
-  }
-
-  private void frozenify() {
-    frozenifyX--;
-    if (frozenifyX < 0) {
-      frozenifyX = 7;
-      frozenifyY--;
-
-      if (frozenifyY<0) {
-        frozenify = false;
-        this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                       gameLost));
-        soundManager.playSound(FrozenBubble.SOUND_NOH);
-        return;
-      }
-    }
-
-    while (bubblePlay[frozenifyX][frozenifyY] == null && frozenifyY >=0) {
-      frozenifyX--;
-      if (frozenifyX < 0) {
-        frozenifyX = 7;
-        frozenifyY--;
-
-        if (frozenifyY<0) {
-          frozenify = false;
-          this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                         gameLost));
-          soundManager.playSound(FrozenBubble.SOUND_NOH);
-          return;
-        }
-      }
-    }
-
-    this.spriteToBack(bubblePlay[frozenifyX][frozenifyY]);
-    bubblePlay[frozenifyX][frozenifyY].frozenify();
-
-    this.spriteToBack(launchBubble);
-  }
-
-  public int getAttackBarBubbles() {
-    return malusBar.getAttackBarBubbles();
-  }
-
-  public int getCompressorSteps() {
-    return compressor.steps;
-  }
-
-  public int getCurrentColor() {
-    return currentColor;
-  }
-
-  public gameEnum getGameResult() {
-    return playResult;
-  }
-
-  public BubbleSprite[][] getGrid() {
-    return bubblePlay;
-  }
-
-  public double getMoveDown() {
-    return compressor.getMoveDown();
-  }
-
-  public int getNewNextColor() {
-    return newNextColor;
-  }
-
-  public int getNextColor() {
-    return nextColor;
-  }
-
-  public boolean getOkToFire() {
-    return ((movingBubble == null) && (playResult == gameEnum.PLAYING) &&
-            ((goingUp.size() == 0) || (networkManager == null)) &&
-            readyToFire);
-  }
-
-  private Rect getPenguinRect(int player) {
-    if (player == 1)
-      return new Rect(361, 436, 361 + PenguinSprite.PENGUIN_WIDTH - 2,
-                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
-    else
-      return new Rect(221, 436, 221 + PenguinSprite.PENGUIN_WIDTH - 2,
-                      436 + PenguinSprite.PENGUIN_HEIGHT - 2);
-  }
-
-  public double getPosition() {
-    return launchBubblePosition;
-  }
-
-  public Random getRandom() {
-    return random;
-  }
-
-  /**
-   * Obtain this player's <code>sendToOpponent</code> value, which is
-   * the number of attack bubbles to add to the opponent's attack bar.
-   * @return The number of attack bubbles to add to the opponent's
-   * attack bar.
-   */
-  public int getSendToOpponent() {
-    return sendToOpponent;
-  }
-
-  private void initFrozenify() {
-    ImageSprite freezeLaunchBubble =
-      new ImageSprite(new Rect(301, 389, 34, 42), frozenBubbles[currentColor]);
-    ImageSprite freezeNextBubble =
-      new ImageSprite(new Rect(301, 439, 34, 42), frozenBubbles[nextColor]);
-
-    this.addSprite(freezeLaunchBubble);
-    this.addSprite(freezeNextBubble);
-
-    frozenifyX = 7;
-    frozenifyY = 12;
-    frozenify  = true;
-  }
-
-  /**
-   * Lower the bubbles in play and drop the compressor a step.
-   * @param playSound - <code>true</code> to play the compression sound.
-   */
-  public void lowerCompressor(boolean playSound) {
-    fixedBubbles = 0;
-
-    if (playSound) {
-      soundManager.playSound(FrozenBubble.SOUND_NEWROOT);
-    }
-
-    for (int i=0 ; i<8 ; i++) {
-      for (int j=0 ; j<12 ; j++) {
-        if (bubblePlay[i][j] != null) {
-          bubblePlay[i][j].moveDown();
-
-          if ((bubblePlay[i][j].getSpritePosition().y>=380) && !endOfGame) {
-            penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-            if (highscoreManager != null)
-              highscoreManager.lostLevel();
-            playResult = gameEnum.LOST;
-            endOfGame = true;
-            initFrozenify();
-            if (playSound) {
-              soundManager.playSound(FrozenBubble.SOUND_LOST);
-            }
-          }
-        }
-      }
-    }
-
-    compressor.moveDown();
-  }
-
-  /**
-   * Move the launched bubble.
-   * @return <code>true</code> if the compressor was lowered.
-   */
-  public boolean manageMovingBubble() {
-    boolean compressed = false;
-
-    if (movingBubble != null) {
-      movingBubble.move();
-      if (movingBubble.fixed()) {
-        if (!checkLost()) {
-          if (bubbleManager.countBubbles() == 0) {
-            penguin.updateState(PenguinSprite.STATE_GAME_WON);
-            this.addSprite(new ImageSprite(new Rect(152, 190,
-                                                    152 + 337,
-                                                    190 + 116), gameWon));
-            if (highscoreManager != null)
-              highscoreManager.endLevel(nbBubbles);
-            playResult = gameEnum.WON;
-            endOfGame = true;
-            soundManager.playSound(FrozenBubble.SOUND_WON);
-          }
-          else if ((malusBar == null) || FrozenBubble.getCompressor()) {
-            fixedBubbles++;
-            blinkDelay = 0;
-
-            if ((fixedBubbles == 8) && !isRemote) {
-              lowerCompressor(true);
-              compressed = true;
-            }
-          }
-        }
-        movingBubble = null;
-      }
-    }
-    return (compressed);
-  }
-
-  public void paint(Canvas c, double scale, int dx, int dy) {
-    compressor.paint(c, scale, dx, dy);
-    if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
-      nextBubble.changeImage(bubbles[nextColor]);
-    }
-    else {
-      nextBubble.changeImage(bubblesBlind[nextColor]);
-    }
-    super.paint(c, scale, dx, dy);
-  }
-
-  /**
-   * Populate random columns in a row of attack bubbles to launch onto
-   * the game field.
-   * <p>In an actual play field, the rows alternate between a maximum 7
-   * and 8 bubbles per row.  Thus 7 bubbles are sent up as that is the
-   * maximum number of bubbles that can fit in each alternating row.
-   * <p>There are 15 distinct positions ("lanes") for bubbles to occupy
-   * between two consecutive rows.  Thus we send up a maximum 7 bubbles
-   * in randomly selected "lanes" from the 15 available.
-   * @return The number of attack bubbles launched.
-   */
-  private int releaseBubbles() {
-    if (malusBar == null) {
-      return (0);
-    }
-
-    int numBubblesLaunched = 0;
-
-    /*
-     * If this game represents a remote player, the the attack bubbles
-     * are calculated on the remote machine and sent over the network.
-     * Simply use the supplied attack bubble buffer to initiate attack
-     * bubble launches. 
-     */
-    if (isRemote) {
-      for (int i = 0; i < 15; i++) {
-        if (malusBar.attackBubbles[i] >= 0) {
-          numBubblesLaunched++;
-          int color = malusBar.attackBubbles[i];
-          BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+15*28, 32, 32),
-            START_LAUNCH_DIRECTION,
-            color, bubbles[color], bubblesBlind[color],
-            frozenBubbles[color], targetedBubbles, bubbleBlink,
-            bubbleManager, soundManager, this);
-          goingUp.add(malusBubble);
-          this.addSprite(malusBubble);
-        }
-      }
-      malusBar.removeAttackBubbles(numBubblesLaunched);
-    }
-    else if (malusBar.getAttackBarBubbles() > 0) {
-      boolean[] lanes = new boolean[15];
-      int malusBalls = malusBar.removeLine();
-      int pos;
-
-      while (malusBalls > 0) {
-        pos = random.nextInt(15);
-        if (!lanes[pos]) {
-          lanes[pos] = true;
-          malusBalls--;
-        }
-      }
-
-      for (int i = 0; i < 15; i++) {
-        if (lanes[i]) {
-          numBubblesLaunched++;
-          int color = random.nextInt(FrozenBubble.getDifficulty());
-          malusBar.setAttackBubble(i, color);
-          BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+15*28, 32, 32),
-            START_LAUNCH_DIRECTION,
-            color, bubbles[color], bubblesBlind[color],
-            frozenBubbles[color], targetedBubbles, bubbleBlink,
-            bubbleManager, soundManager, this);
-          goingUp.add(malusBubble);
-          this.addSprite(malusBubble);
-        }
-      }
-    }
-
-    return (numBubblesLaunched);
   }
 
   /**
@@ -1283,10 +1278,6 @@ public class FrozenGame extends GameScreen {
       launchBubble.changeDirection(launchBubblePosition);
       updatePenguinState(dx);
     }
-  }
-
-  public void setSendToOpponent(int numAttackBubbles) {
-    sendToOpponent = numAttackBubbles;
   }
 
   public void swapNextLaunchBubble() {

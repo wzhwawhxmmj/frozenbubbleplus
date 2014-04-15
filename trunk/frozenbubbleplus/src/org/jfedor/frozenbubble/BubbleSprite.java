@@ -208,7 +208,7 @@ public class BubbleSprite extends Sprite {
       (sprite.getSpriteArea().top - this.realY) *
       (sprite.getSpriteArea().top - this.realY);
 
-    return (value < minDistance);
+    return value < minDistance;
   }
 
   public boolean checked() {

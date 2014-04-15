@@ -795,7 +795,7 @@ public class FrozenBubble extends Activity
   }
 
   public synchronized static boolean getAimThenShoot() {
-    return ((targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT));
+    return (targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT);
   }
 
   public synchronized static int getCollision() {

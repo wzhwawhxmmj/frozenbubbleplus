@@ -69,12 +69,10 @@ public class MalusBar extends Sprite {
   int nbMalus;
   /* Time to release bubbles */
   public int releaseTime;
-
   /* Banana Image */
   private BmpWrap banana;
   /* Tomato Image */
   private BmpWrap tomato;
-
   /* Attack bubble array */
   public byte[] attackBubbles = { -1, -1, -1, -1, -1,
                                   -1, -1, -1, -1, -1,

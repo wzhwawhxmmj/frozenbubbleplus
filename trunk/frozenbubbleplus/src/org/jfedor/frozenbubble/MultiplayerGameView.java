@@ -438,11 +438,10 @@ class MultiplayerGameView extends SurfaceView implements
 
     if (previewAction != null) {
       actNow = previewAction.compress ||
-               previewAction.swapBubble ||
-              (previewAction.addAttackBubbles > 0);
+               previewAction.swapBubble;
     }
 
-    return (actNow);
+    return actNow;
   }
 
   private void monitorRemotePlayer() {
@@ -538,13 +537,8 @@ class MultiplayerGameView extends SurfaceView implements
     /*
      * Set the current value of the attack bar.
      */
-    playerRef.mGameRef.malusBar.setAttackBubbles(newAction.totalAttackBubbles,
+    playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
                                                  newAction.attackBubbles);
-
-    /*
-     * Set the number of bubbles to add to the attack bar.
-     */
-    playerRef.mGameRef.setSendToOpponent(newAction.addAttackBubbles);
   }
 
   /**
@@ -592,7 +586,7 @@ class MultiplayerGameView extends SurfaceView implements
     /*
      * Set the current value of the attack bar.
      */
-    playerRef.mGameRef.malusBar.setAttackBubbles(newField.totalAttackBubbles,
+    playerRef.mGameRef.malusBar.setAttackBubbles(newField.attackBarBubbles,
                                                  null);
   }
 
@@ -1821,13 +1815,9 @@ class MultiplayerGameView extends SurfaceView implements
       /*
        * Obtain the number of attack bubbles to add to each player's
        * attack bar that are being sent by their respective opponents.
-       * Afterwards, clear the number of attack bubbles being sent by
-       * each player.
        */
       malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
       malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
-      mFrozenGame1.setSendToOpponent(0);
-      mFrozenGame2.setSendToOpponent(0);
 
       gameEnum game1Result = mFrozenGame1.getGameResult();
       gameEnum game2Result = mFrozenGame2.getGameResult();

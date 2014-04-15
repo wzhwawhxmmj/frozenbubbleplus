@@ -57,6 +57,7 @@ import java.util.ArrayList;
 
 import org.jfedor.frozenbubble.BubbleSprite;
 import org.jfedor.frozenbubble.FrozenBubble;
+import org.jfedor.frozenbubble.FrozenGame;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -90,7 +91,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   /*
    * Datagram size definitions.
    */
-  public static final int  ACTION_BYTES = 38;
+  public static final int  ACTION_BYTES = 36;
   public static final int  FIELD_BYTES  = 111;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
@@ -186,7 +187,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public byte  launchBubbleColor  = -1;
     public byte  nextBubbleColor    = -1;
     public byte  newNextBubbleColor = -1;
-    public short totalAttackBubbles = 0;
+    public short attackBarBubbles   = 0;
     /*
      * The game field is represented by a 2-dimensional array, with 8
      * rows and 13 columns.  This is displayed on the screen as 13 rows
@@ -224,12 +225,12 @@ public class NetworkGameManager extends Thread implements MulticastListener {
      */
     public void copyFromFieldData(GameFieldData fieldData) {
       if (fieldData != null) {
-        this.playerID            = fieldData.playerID;
-        this.compressorSteps     = fieldData.compressorSteps;
-        this.launchBubbleColor   = fieldData.launchBubbleColor;
-        this.nextBubbleColor     = fieldData.nextBubbleColor;
-        this.newNextBubbleColor  = fieldData.newNextBubbleColor;
-        this.totalAttackBubbles  = fieldData.totalAttackBubbles;
+        this.playerID           = fieldData.playerID;
+        this.compressorSteps    = fieldData.compressorSteps;
+        this.launchBubbleColor  = fieldData.launchBubbleColor;
+        this.nextBubbleColor    = fieldData.nextBubbleColor;
+        this.newNextBubbleColor = fieldData.newNextBubbleColor;
+        this.attackBarBubbles   = fieldData.attackBarBubbles;
 
         for (int x = 0; x < 8; x++) {
           for (int y = 0; y < 13; y++) {
@@ -248,14 +249,14 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       byte[] shortBytes  = new byte[2];
 
       if (buffer != null) {
-        this.playerID            = buffer[startIndex++];
-        this.compressorSteps     = buffer[startIndex++];
-        this.launchBubbleColor   = buffer[startIndex++];
-        this.nextBubbleColor     = buffer[startIndex++];
-        this.newNextBubbleColor  = buffer[startIndex++];
-        shortBytes[0]            = buffer[startIndex++];
-        shortBytes[1]            = buffer[startIndex++];
-        this.totalAttackBubbles  = toShort(shortBytes);
+        this.playerID           = buffer[startIndex++];
+        this.compressorSteps    = buffer[startIndex++];
+        this.launchBubbleColor  = buffer[startIndex++];
+        this.nextBubbleColor    = buffer[startIndex++];
+        this.newNextBubbleColor = buffer[startIndex++];
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.attackBarBubbles   = toShort(shortBytes);
 
         for (int x = 0; x < 8; x++) {
           for (int y = 0; y < 13; y++) {
@@ -279,7 +280,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
-        toByteArray(this.totalAttackBubbles, shortBytes);
+        toByteArray(this.attackBarBubbles, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
 
@@ -327,8 +328,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     public byte    launchBubbleColor;
     public byte    nextBubbleColor;
     public byte    newNextBubbleColor;
-    public short   addAttackBubbles;
-    public short   totalAttackBubbles;
+    public short   attackBarBubbles;
     public byte    attackBubbles[] = { -1, -1, -1, -1, -1,
                                        -1, -1, -1, -1, -1,
                                        -1, -1, -1, -1, -1 };
@@ -365,14 +365,13 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.launchBubbleColor  = action.launchBubbleColor;
         this.nextBubbleColor    = action.nextBubbleColor;
         this.newNextBubbleColor = action.newNextBubbleColor;
-        this.addAttackBubbles   = action.addAttackBubbles;
-        this.totalAttackBubbles = action.totalAttackBubbles;
+        this.attackBarBubbles   = action.attackBarBubbles;
 
         for (int index = 0; index < 15; index++) {
           this.attackBubbles[index] = action.attackBubbles[index];
         }
 
-        this.aimPosition        = action.aimPosition;
+        this.aimPosition = action.aimPosition;
       }
     }
 
@@ -401,10 +400,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         this.newNextBubbleColor = buffer[startIndex++];
         shortBytes[0]           = buffer[startIndex++];
         shortBytes[1]           = buffer[startIndex++];
-        this.addAttackBubbles   = toShort(shortBytes);
-        shortBytes[0]           = buffer[startIndex++];
-        shortBytes[1]           = buffer[startIndex++];
-        this.totalAttackBubbles = toShort(shortBytes);
+        this.attackBarBubbles   = toShort(shortBytes);
 
         for (int index = 0; index < 15; index++) {
           this.attackBubbles[index] = buffer[startIndex++];
@@ -414,7 +410,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
           doubleBytes[index] = buffer[startIndex++];
         }
 
-        this.aimPosition        = toDouble(doubleBytes);
+        this.aimPosition = toDouble(doubleBytes);
       }
     }
 
@@ -441,10 +437,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
-        toByteArray(this.addAttackBubbles, shortBytes);
-        buffer[startIndex++] = shortBytes[0];
-        buffer[startIndex++] = shortBytes[1];
-        toByteArray(this.totalAttackBubbles, shortBytes);
+        toByteArray(this.attackBarBubbles, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
 
@@ -661,7 +654,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   };
 
   private boolean actionTimerExpired() {
-    return (System.currentTimeMillis() > actionTxTime);
+    return System.currentTimeMillis() > actionTxTime;
   }
 
   /**
@@ -786,7 +779,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
         }
       }
     }
-    return(removed);
+    return removed;
   }
 
   public void cleanUp() {
@@ -904,20 +897,20 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   private boolean gameStartTimerExpired() {
-    return (System.currentTimeMillis() > gameStartTime);
+    return System.currentTimeMillis() > gameStartTime;
   }
 
   private void getGameFieldData(GameFieldData gameData) {
-    gameData.playerID = (byte) localPlayer.playerID;
-    gameData.compressorSteps =
-        (byte) localPlayer.mGameRef.getCompressorSteps();
-    gameData.launchBubbleColor = (byte) localPlayer.mGameRef.getCurrentColor();
-    gameData.nextBubbleColor = (byte) localPlayer.mGameRef.getNextColor();
-    gameData.newNextBubbleColor =
-        (byte) localPlayer.mGameRef.getNewNextColor();
-    gameData.totalAttackBubbles =
-        (short) localPlayer.mGameRef.getAttackBarBubbles();
-    BubbleSprite[][] bubbleGrid = localPlayer.mGameRef.getGrid();
+    FrozenGame gameRef = localPlayer.mGameRef;
+
+    gameData.playerID           = (byte)  localPlayer.playerID;
+    gameData.compressorSteps    = (byte)  gameRef.getCompressorSteps();
+    gameData.launchBubbleColor  = (byte)  gameRef.getCurrentColor();
+    gameData.nextBubbleColor    = (byte)  gameRef.getNextColor();
+    gameData.newNextBubbleColor = (byte)  gameRef.getNewNextColor();
+    gameData.attackBarBubbles   = (short) gameRef.getAttackBarBubbles();
+
+    BubbleSprite[][] bubbleGrid = gameRef.getGrid();
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
         if (bubbleGrid[i][j] != null) {
@@ -954,7 +947,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       }
     }
 
-    return (tempAction);
+    return tempAction;
   }
 
   /**
@@ -991,7 +984,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       }
     }
 
-    return (remoteInterface.gotAction);
+    return remoteInterface.gotAction;
   }
 
   /**
@@ -1001,7 +994,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * which provides all necessary remote player data.
    */
   public NetGameInterface getRemoteInterface() {
-    return (remoteInterface);
+    return remoteInterface;
   }
 
   /**
@@ -1290,14 +1283,9 @@ public class NetworkGameManager extends Thread implements MulticastListener {
    * @param newNextColor - when a bubble is launched, this is the new
    * next bubble color.  The prior next color is promoted to the
    * launch bubble color.
-   * @param addAttackBubbles - the number of attack bubbles to add to
-   * the opponent's attack bar.  Note this value may be set by either
-   * player, but is only set by the remote player with respect to the
-   * local player when a bubble superposition was prevented.  A
-   * superposition is detected when an attack bubble attempts to
-   * occupy an already occupied grid location.
-   * @param totalAttackBubbles - the number of attack bubbles stored on
-   * the attack bar prior to adding <code>addAttackBubbles</code>.
+   * @param attackBarBubbles - the number of attack bubbles stored on
+   * the attack bar.  If there are attack bubbles being launched, this
+   * should be the value prior to launch.
    * @param attackBubbles - the array of attack bubble colors.  A value
    * of -1 denotes no color, and thus no attack bubble at that column.
    * @param aimPosition - the launcher aim aimPosition.
@@ -1309,8 +1297,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
                                     int launchColor,
                                     int nextColor,
                                     int newNextColor,
-                                    int addAttackBubbles,
-                                    int totalAttackBubbles,
+                                    int attackBarBubbles,
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
@@ -1323,8 +1310,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     tempAction.launchBubbleColor = (byte) launchColor;
     tempAction.nextBubbleColor = (byte) nextColor;
     tempAction.newNextBubbleColor = (byte) newNextColor;
-    tempAction.addAttackBubbles = (short) addAttackBubbles;
-    tempAction.totalAttackBubbles = (short) totalAttackBubbles;
+    tempAction.attackBarBubbles = (short) attackBarBubbles;
     if (attackBubbles != null)
       for (int index = 0;index < 15; index++)
         tempAction.attackBubbles[index] = attackBubbles[index];
@@ -1389,7 +1375,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   private boolean statusTimerExpired() {
-    return (System.currentTimeMillis() > statusTxTime);
+    return System.currentTimeMillis() > statusTxTime;
   }
 
   /**
