@@ -94,8 +94,10 @@ public class Freile implements Opponent, Runnable {
     DONE_COMPUTING;
   }
 
-  /*
-   * Listener user set.
+  /**
+   * Opponent event listener user set.
+   * @author Glenn Sanson
+   *
    */
   public interface OpponentListener {
     public abstract void onOpponentEvent(eventEnum event);
