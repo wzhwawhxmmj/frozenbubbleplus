@@ -642,11 +642,6 @@ public class NetworkGameManager extends Thread implements MulticastListener {
       gameFieldData = null;
     }
 
-    public void postProcess() {
-      gotAction = false;
-      gotFieldData = false;
-    }
-
     public NetGameInterface() {
       playerAction = new PlayerAction(null);
       gameFieldData = new GameFieldData(null);
@@ -896,6 +891,22 @@ public class NetworkGameManager extends Thread implements MulticastListener {
     }
   }
 
+  /**
+   * Check if the network game is ready for action.  The game is ready
+   * to begin play when all data synchronization tasks are completed.
+   * If the local player is requesting game field data, then this method
+   * will inform the caller that action processing should be suspended
+   * until the requested data has been received.
+   * @return <code>true</code> if game synchronization is complete.
+   */
+  public boolean gameIsReadyForAction() {
+    if (remoteStatus == null)
+      return false;
+    else
+      return localStatus.readyToPlay && !localStatus.field_request &&
+             remoteStatus.readyToPlay;
+  }
+
   private boolean gameStartTimerExpired() {
     return System.currentTimeMillis() > gameStartTime;
   }
@@ -1096,9 +1107,7 @@ public class NetworkGameManager extends Thread implements MulticastListener {
   }
 
   @Override
-  public void onMulticastEvent(eventEnum event,
-                               byte[] buffer,
-                               int length) {
+  public void onMulticastEvent(eventEnum event, byte[] buffer, int length) {
     /*
      * Process the multicast message.  If the game ID has not yet been
      * set, then only process status messages.
@@ -1214,9 +1223,19 @@ public class NetworkGameManager extends Thread implements MulticastListener {
             remoteInterface.gameFieldData.copyFromBuffer(buffer, 2);
             remoteInterface.gotFieldData = true;
             localStatus.field_request = false;
-            localStatus.readyToPlay = true;
           }
         }
+
+        /*
+         * If all new game data synchronization requests have been fulfilled,
+         * then the network game is ready to begin play.
+         */
+        if (!localStatus.field_request &&
+            !localStatus.prefs_request &&
+            !localStatus.readyToPlay) {
+          localStatus.readyToPlay = true;
+        }
+
         /*
          * Wake up the thread.
          */

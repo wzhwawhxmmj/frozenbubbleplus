@@ -437,8 +437,7 @@ class MultiplayerGameView extends SurfaceView implements
     PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
 
     if (previewAction != null) {
-      actNow = previewAction.compress ||
-               previewAction.swapBubble;
+      actNow = previewAction.compress || previewAction.swapBubble;
     }
 
     return actNow;
@@ -448,31 +447,34 @@ class MultiplayerGameView extends SurfaceView implements
     if ((mNetworkManager != null) && (mRemoteInput != null)) {
       /*
        * Check the remote player interface for game field updates.
+       * Processing remote player game field data is the highest
+       * priority activity, and requesting game field data blocks
+       * remote player action processing.
        */
       if (remoteInterface.gotFieldData) {
         setPlayerGameField(remoteInterface.gameFieldData);
+        remoteInterface.gotFieldData = false;
       }
 
       /*
-       * If the game thread is not running, then allow the remote player
-       * to update the game thread state.
+       * Do not allow remote actions to be processed when the local
+       * player requested remote field data or the game is not ready.
        *
-       * If this is an asynchronous action or it is appropriate to
+       * Once the game is ready, if the game thread is not running, then
+       * allow the remote player to update the game thread state.
+       *
+       * If an asynchronous action is available or we are clear to
        * perform a synchronous action, retrieve and clear the current
        * available action from the action queue.
        */
-      if ((mGameThread.mMode != stateEnum.RUNNING) || checkImmediateAction() ||
-          mRemoteInput.mGameRef.getOkToFire()) {
+      if (mNetworkManager.gameIsReadyForAction() && (checkImmediateAction() ||
+          mRemoteInput.mGameRef.getOkToFire() ||
+          (mGameThread.mMode != stateEnum.RUNNING))) {
         if (mNetworkManager.getRemoteAction()) {
           setPlayerAction(remoteInterface.playerAction);
+          remoteInterface.gotAction = false;
         }
       }
-
-      /*
-       * Notify the network game interface that all current information
-       * has been processed.
-       */
-      remoteInterface.postProcess();
     }
   }
 
