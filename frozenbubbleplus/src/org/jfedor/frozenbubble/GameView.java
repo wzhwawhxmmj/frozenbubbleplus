@@ -117,8 +117,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   // Listener interface for various events
   //********************************************************************
 
-  /*
-   *  Listener user set.
+  /**
+   * Game event listener user set.
+   * @author Eric Fortin
+   *
    */
   public interface GameListener {
     public abstract void onGameEvent(eventEnum event);

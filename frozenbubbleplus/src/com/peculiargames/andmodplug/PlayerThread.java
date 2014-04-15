@@ -260,8 +260,10 @@ public class PlayerThread extends Thread {
     SONG_COMPLETED;
   }
 
-  /*
-   *  Listener user set.
+  /**
+   * Music player event listener set.
+   * @author P.A. Casey (crow) Peculiar-Games.com
+   *
    */
   public interface PlayerListener {
     public abstract void onPlayerEvent(eventEnum event);
