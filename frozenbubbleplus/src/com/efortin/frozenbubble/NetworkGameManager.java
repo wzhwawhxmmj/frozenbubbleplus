@@ -95,7 +95,7 @@ public class NetworkGameManager extends Thread
    * Datagram size definitions.
    */
   public static final int  ACTION_BYTES = 36;
-  public static final int  FIELD_BYTES  = 111;
+  public static final int  FIELD_BYTES  = 112;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
 
@@ -152,9 +152,9 @@ public class NetworkGameManager extends Thread
     remotePlayer = null;
     localStatus = null;
     remoteStatus = null;
-    setActionTimeout(0);
+    setActionTimeout(0L);
     setGameStartTimeout(GAME_START_TIMEOUT);
-    setStatusTimeout(0);
+    setStatusTimeout(0L);
     SharedPreferences sp =
         myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                        Context.MODE_PRIVATE);
@@ -185,12 +185,13 @@ public class NetworkGameManager extends Thread
    *
    */
   public class GameFieldData {
-    public byte  playerID           = 0;
-    public byte  compressorSteps    = 0;
-    public byte  launchBubbleColor  = -1;
-    public byte  nextBubbleColor    = -1;
-    public byte  newNextBubbleColor = -1;
-    public short attackBarBubbles   = 0;
+    public byte    playerID           = 0;
+    public boolean readyToPlay        = false;
+    public byte    compressorSteps    = 0;
+    public byte    launchBubbleColor  = -1;
+    public byte    nextBubbleColor    = -1;
+    public byte    newNextBubbleColor = -1;
+    public short   attackBarBubbles   = 0;
     /*
      * The game field is represented by a 2-dimensional array, with 8
      * rows and 13 columns.  This is displayed on the screen as 13 rows
@@ -229,6 +230,7 @@ public class NetworkGameManager extends Thread
     public void copyFromFieldData(GameFieldData fieldData) {
       if (fieldData != null) {
         this.playerID           = fieldData.playerID;
+        this.readyToPlay        = fieldData.readyToPlay;
         this.compressorSteps    = fieldData.compressorSteps;
         this.launchBubbleColor  = fieldData.launchBubbleColor;
         this.nextBubbleColor    = fieldData.nextBubbleColor;
@@ -253,6 +255,7 @@ public class NetworkGameManager extends Thread
 
       if (buffer != null) {
         this.playerID           = buffer[startIndex++];
+        this.readyToPlay        = buffer[startIndex++] == 1;
         this.compressorSteps    = buffer[startIndex++];
         this.launchBubbleColor  = buffer[startIndex++];
         this.nextBubbleColor    = buffer[startIndex++];
@@ -279,6 +282,7 @@ public class NetworkGameManager extends Thread
 
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
+        buffer[startIndex++] = (byte) ((this.readyToPlay == true)?1:0);
         buffer[startIndex++] = this.compressorSteps;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
@@ -303,9 +307,9 @@ public class NetworkGameManager extends Thread
    *
    */
   public class PlayerAction {
-    public byte  playerID;        // the player ID associated with this action.
-    public short localActionID;   // the ID of this particular action
-    public short remoteActionID;  // the ID of expected remote player action
+    public byte  playerID;        // player ID associated with this action
+    public short localActionID;   // ID of this particular action
+    public short remoteActionID;  // ID of expected remote player action
     /*
      * The following three booleans are flags associated with player
      * actions.
@@ -500,8 +504,8 @@ public class NetworkGameManager extends Thread
      * When one or either of these flags is true, then the other
      * player(s) shall transmit the appropriate information.
      */
-    private boolean field_request;
-    private boolean prefs_request;
+    private boolean fieldRequest;
+    private boolean prefsRequest;
 
     /**
      * Class constructor.
@@ -551,8 +555,8 @@ public class NetworkGameManager extends Thread
         this.gameClaimed     = status.gameClaimed;
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
-        this.field_request   = status.field_request;
-        this.prefs_request   = status.prefs_request;
+        this.fieldRequest   = status.fieldRequest;
+        this.prefsRequest   = status.prefsRequest;
       }
     }
 
@@ -575,8 +579,8 @@ public class NetworkGameManager extends Thread
         shortBytes[0]        = buffer[startIndex++];
         shortBytes[1]        = buffer[startIndex++];
         this.remoteActionID  = toShort(shortBytes);
-        this.field_request   = buffer[startIndex++] == 1;
-        this.prefs_request   = buffer[startIndex++] == 1;
+        this.fieldRequest   = buffer[startIndex++] == 1;
+        this.prefsRequest   = buffer[startIndex++] == 1;
       }
     }
 
@@ -599,8 +603,8 @@ public class NetworkGameManager extends Thread
         toByteArray(this.remoteActionID, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
-        buffer[startIndex++] = (byte) ((this.field_request == true)?1:0);
-        buffer[startIndex++] = (byte) ((this.prefs_request == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.fieldRequest == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.prefsRequest == true)?1:0);
       }
     }
 
@@ -627,8 +631,8 @@ public class NetworkGameManager extends Thread
       this.readyToPlay     = ready;
       this.localActionID   = localActionID;
       this.remoteActionID  = remoteActionID;
-      this.field_request   = field;
-      this.prefs_request   = prefs;
+      this.fieldRequest   = field;
+      this.prefsRequest   = prefs;
     }
   };
 
@@ -744,7 +748,7 @@ public class NetworkGameManager extends Thread
       if (!gamesInProgress[index]) {
         myGameID = index;
         session.setFilter(myGameID);
-        setStatusTimeout(0);
+        setStatusTimeout(0L);
         break;
       }
     }
@@ -906,7 +910,7 @@ public class NetworkGameManager extends Thread
     if (remoteStatus == null)
       return false;
     else
-      return localStatus.readyToPlay && !localStatus.field_request &&
+      return localStatus.readyToPlay && !localStatus.fieldRequest &&
              remoteStatus.readyToPlay;
   }
 
@@ -918,6 +922,7 @@ public class NetworkGameManager extends Thread
     FrozenGame gameRef = localPlayer.mGameRef;
 
     gameData.playerID           = (byte)  localPlayer.playerID;
+    gameData.readyToPlay        =         localStatus.readyToPlay;
     gameData.compressorSteps    = (byte)  gameRef.getCompressorSteps();
     gameData.launchBubbleColor  = (byte)  gameRef.getCurrentColor();
     gameData.nextBubbleColor    = (byte)  gameRef.getNextColor();
@@ -1028,14 +1033,14 @@ public class NetworkGameManager extends Thread
       }
     }
 
+    /*
+     * If the last action transmitted by the local player has not yet
+     * been received by the remote player, the remote player remote
+     * action ID will match or be less than the local player local
+     * action ID.  If this is the case, transmit the action ID expected
+     * by the remote player.
+     */
     if (remoteStatus != null) {
-      /*
-       * If the last action transmitted by the local player has not yet
-       * been received by the remote player, the remote player remote
-       * action ID will match or be less than the local player local
-       * action ID.  If this is the case, transmit the action ID
-       * expected by the remote player.
-       */
       if (localStatus.localActionID >= remoteStatus.remoteActionID) {
         if (!missedAction) {
           missedAction = true;
@@ -1059,32 +1064,26 @@ public class NetworkGameManager extends Thread
      */
     if (statusTimerExpired()) {
       if (remoteStatus != null) {
-        if (remoteStatus.prefs_request) {
-          transmitPrefs();
-          /*
-           * Clear the remote player preferences request flag to improve
-           * game startup efficiency.  A new remote status will update
-           * it anyways.
-           */
-          remoteStatus.prefs_request = false;
+        /*
+         * On a new game, request field data from the remote player.
+         */
+        if (!localStatus.readyToPlay  && !remoteStatus.readyToPlay &&
+            !localStatus.prefsRequest && !localStatus.fieldRequest) {
+          localStatus.fieldRequest = true;
         }
-        else if (remoteStatus.field_request) {
+
+        if (remoteStatus.prefsRequest) {
+          transmitPrefs();
+        }
+
+        if (remoteStatus.fieldRequest) {
           GameFieldData tempField = new GameFieldData(null);
           getGameFieldData(tempField);
           transmitGameField(tempField);
-          /*
-           * Clear the remote player game field request flag to improve
-           * game startup efficiency.  A new remote status will update
-           * it anyways.
-           */
-          remoteStatus.field_request = false;
         }
-        else
-          transmitStatus(localStatus);
       }
-      else
-        transmitStatus(localStatus);
 
+      transmitStatus(localStatus);
       setStatusTimeout(STATUS_TIMEOUT);
     }
   }
@@ -1092,7 +1091,6 @@ public class NetworkGameManager extends Thread
   public void newGame() {
     if (localStatus != null) {
       localStatus.readyToPlay = false;
-      localStatus.field_request = true;
       localStatus.localActionID = 0;
       localStatus.remoteActionID = 1;
     }
@@ -1106,7 +1104,13 @@ public class NetworkGameManager extends Thread
         remoteActionList.clear();
       }
     }
-    setStatusTimeout(0);
+    setStatusTimeout(0L);
+    /*
+     * Wake up the thread.
+     */
+    synchronized(this) {
+      notify();
+    }
   }
 
   @Override
@@ -1203,7 +1207,17 @@ public class NetworkGameManager extends Thread
           if (playerId == VirtualInput.PLAYER1) {
             copyPrefsFromBuffer(remotePrefs, buffer, 3);
             PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
-            localStatus.prefs_request = false;
+            localStatus.prefsRequest = false;
+            /*
+             * If all new game data synchronization requests have been
+             * fulfilled, then the network game is ready to begin play.
+             */
+            if (!localStatus.fieldRequest &&
+                !localStatus.prefsRequest &&
+                !localStatus.readyToPlay) {
+              localStatus.readyToPlay = true;
+            }
+            setStatusTimeout(0L);
           }
         }
   
@@ -1225,18 +1239,29 @@ public class NetworkGameManager extends Thread
           if (playerId == remotePlayer.playerID) {
             remoteInterface.gameFieldData.copyFromBuffer(buffer, 2);
             remoteInterface.gotFieldData = true;
-            localStatus.field_request = false;
+            /*
+             * The readyToPlay status is transmitted by both the player
+             * status and game field data datagrams.  As the game field
+             * data is a more infrequent message than the player status,
+             * the player status storage should always contain the most
+             * up-to-date value.
+             */
+            if (remoteStatus != null) {
+              remoteStatus.readyToPlay =
+                  remoteInterface.gameFieldData.readyToPlay;
+            }
+            localStatus.fieldRequest = false;
+            /*
+             * If all new game data synchronization requests have been
+             * fulfilled, then the network game is ready to begin play.
+             */
+            if (!localStatus.fieldRequest &&
+                !localStatus.prefsRequest &&
+                !localStatus.readyToPlay) {
+              localStatus.readyToPlay = true;
+            }
+            setStatusTimeout(0L);
           }
-        }
-
-        /*
-         * If all new game data synchronization requests have been fulfilled,
-         * then the network game is ready to begin play.
-         */
-        if (!localStatus.field_request &&
-            !localStatus.prefs_request &&
-            !localStatus.readyToPlay) {
-          localStatus.readyToPlay = true;
         }
 
         /*
@@ -1562,8 +1587,8 @@ public class NetworkGameManager extends Thread
     status.reservedGameId = myGameID != MulticastManager.FILTER_OFF;
     if (localStatus != null) {
       status.claimedGameId   = localStatus.gameClaimed;
-      status.needFieldData   = localStatus.field_request;
-      status.needPreferences = localStatus.prefs_request;
+      status.needFieldData   = localStatus.fieldRequest;
+      status.needPreferences = localStatus.prefsRequest;
     }
     else {
       status.claimedGameId   = false;
