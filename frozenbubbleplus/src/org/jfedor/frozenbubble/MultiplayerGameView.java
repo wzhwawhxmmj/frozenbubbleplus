@@ -1145,7 +1145,7 @@ public class MultiplayerGameView extends SurfaceView
         y += ysp;
       }
       else {
-        mFont.print("internet connection status: \\", x, y, canvas,
+        mFont.print("internet connection status: _", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
