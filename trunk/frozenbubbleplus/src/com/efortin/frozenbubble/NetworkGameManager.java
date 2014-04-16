@@ -1251,16 +1251,16 @@ public class NetworkGameManager extends Thread
           if (playerId == VirtualInput.PLAYER1) {
             copyPrefsFromBuffer(remotePrefs, buffer, 3);
             PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
-            localStatus.prefsRequest = false;
-            gotPrefsData = true;
             /*
              * If all new game data synchronization requests have been
              * fulfilled, then the network game is ready to begin play.
              */
-            if (!localStatus.fieldRequest &&
-                !localStatus.prefsRequest &&
-                !localStatus.readyToPlay) {
-              localStatus.readyToPlay = true;
+            if (localStatus.prefsRequest) {
+              if (!localStatus.fieldRequest && !localStatus.readyToPlay) {
+                gotPrefsData             = true;
+                localStatus.prefsRequest = false;
+                localStatus.readyToPlay  = true;
+              }
             }
             setStatusTimeout(0L);
           }
@@ -1295,16 +1295,16 @@ public class NetworkGameManager extends Thread
               remoteStatus.readyToPlay =
                   remoteInterface.gameFieldData.readyToPlay;
             }
-            localStatus.fieldRequest = false;
-            gotFieldData = true;
             /*
              * If all new game data synchronization requests have been
              * fulfilled, then the network game is ready to begin play.
              */
-            if (!localStatus.fieldRequest &&
-                !localStatus.prefsRequest &&
-                !localStatus.readyToPlay) {
-              localStatus.readyToPlay = true;
+            if (localStatus.fieldRequest) {
+              if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
+                gotFieldData             = true;
+                localStatus.fieldRequest = false;
+                localStatus.readyToPlay  = true;
+              }
             }
             setStatusTimeout(0L);
           }
