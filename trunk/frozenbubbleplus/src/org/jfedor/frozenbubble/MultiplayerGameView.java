@@ -1179,7 +1179,7 @@ public class MultiplayerGameView extends SurfaceView
       }
 
       if (status.localPlayerId == VirtualInput.PLAYER2) {
-        if (status.needPreferences) {
+        if (status.needPreferences || status.readyToPlay) {
           mFont.print("waiting for player " + status.remotePlayerId +
                       " preferences...|", x, y, canvas,
                       mDisplayScale, mDisplayDX, mDisplayDY);
@@ -1193,7 +1193,7 @@ public class MultiplayerGameView extends SurfaceView
         }
       }
 
-      if (status.needFieldData) {
+      if (status.needFieldData || status.readyToPlay) {
         mFont.print("waiting for player " + status.remotePlayerId +
                     " data...|", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
@@ -1217,7 +1217,7 @@ public class MultiplayerGameView extends SurfaceView
         return;
       }
 
-      mFont.print("touch screen to begin playing", x, y, canvas,
+      mFont.print("tap to begin playing", x, y, canvas,
                   mDisplayScale, mDisplayDX, mDisplayDY);
     }
 
@@ -1663,10 +1663,14 @@ public class MultiplayerGameView extends SurfaceView
                     drawAboutScreen(c);
                   }
                   else if (mMode == stateEnum.PAUSED) {
-                    if (mShowScores)
+                    if (mNetworkManager != null) {
+                      if (mShowNetwork)
+                        drawNetworkScreen(c);
+                      else
+                        doDraw(c);
+                    }
+                    else if (mShowScores)
                       drawHighScoreScreen(c, mHighscoreManager.getLevel());
-                    else if (mShowNetwork)
-                      drawNetworkScreen(c);
                     else
                       doDraw(c);
                   }
@@ -1893,10 +1897,6 @@ public class MultiplayerGameView extends SurfaceView
 
           case PAUSED:
             if (mNetworkManager != null) {
-              if (mShowScores) {
-                mShowScores = false;
-                return true;
-              }
               if (mShowNetwork) {
                 if (mNetworkManager.gameIsReadyForAction()) {
                   mShowNetwork = false;
@@ -1908,7 +1908,7 @@ public class MultiplayerGameView extends SurfaceView
                 return true;
               }
             }
-            if (mShowScores) {
+            else if (mShowScores) {
               mShowScores = false;
               setState(stateEnum.RUNNING);
               if (mGameListener != null) {
@@ -2020,7 +2020,10 @@ public class MultiplayerGameView extends SurfaceView
           numPlayer2GamesWon++;
         }
 
-        mShowScores = true;
+        if (mNetworkManager == null) {
+          mShowScores = true;
+        }
+
         pause();
         newGame();
 
