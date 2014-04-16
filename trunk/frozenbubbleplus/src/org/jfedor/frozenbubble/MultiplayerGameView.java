@@ -699,7 +699,7 @@ public class MultiplayerGameView extends SurfaceView
     private SoundManager  mSoundManager;
     private SurfaceHolder mSurfaceHolder;
 
-    private final HighscoreManager mHighscoreManager;
+    private final HighscoreManager mHighScoreManager;
 
     Vector<BmpWrap> mImageList;
 
@@ -865,7 +865,10 @@ public class MultiplayerGameView extends SurfaceView
         mSoundManager.cleanUp();
         mSoundManager = null;
         mLevelManager = null;
-        mHighscoreManager.close();
+
+        if (mHighScoreManager != null) {
+          mHighScoreManager.close();
+        }
       }
     }
 
@@ -1076,6 +1079,11 @@ public class MultiplayerGameView extends SurfaceView
      * @param level - the level difficulty index.
      */
     private void drawHighScoreScreen(Canvas canvas, int level) {
+      if (mHighScoreManager == null) {
+        mShowScores = false;
+        return;
+      }
+
       canvas.drawRGB(0, 0, 0);
       int x = 168;
       int y = 20;
@@ -1089,12 +1097,12 @@ public class MultiplayerGameView extends SurfaceView
         x -= GAMEFIELD_WIDTH/2;
 
       mFont.print("highscore for " +
-                  LevelManager.DifficultyStrings[mHighscoreManager.getLevel()],
+                  LevelManager.DifficultyStrings[mHighScoreManager.getLevel()],
                   x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
       y += 2 * ysp;
 
-      List<HighscoreDO> hlist = mHighscoreManager.getLowScore(level, 15);
-      long lastScoreId = mHighscoreManager.getLastScoreId();
+      List<HighscoreDO> hlist = mHighScoreManager.getLowScore(level, 15);
+      long lastScoreId = mHighScoreManager.getLastScoreId();
       int i = 1;
       for (HighscoreDO hdo : hlist) {
         String you = "";
@@ -1514,10 +1522,20 @@ public class MultiplayerGameView extends SurfaceView
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
       mSoundManager     = new SoundManager(mContext);
-      mHighscoreManager = new HighscoreManager(getContext(),
-                                               HighscoreManager.
-                                               MULTIPLAYER_DATABASE_NAME);
-      mLevelManager     = new LevelManager(0, FrozenBubble.getDifficulty());
+
+      /*
+       * Only keep a high score database when the opponent is the CPU.
+       */
+      if (mRemoteInput.isCPU) {
+        mHighScoreManager = new HighscoreManager(getContext(),
+                                                 HighscoreManager.
+                                                 MULTIPLAYER_DATABASE_NAME);
+      }
+      else {
+        mHighScoreManager = null;
+      }
+
+      mLevelManager = new LevelManager(0, FrozenBubble.getDifficulty());
       newGame();
     }
 
@@ -1535,7 +1553,7 @@ public class MultiplayerGameView extends SurfaceView
                                       mCompressorHead, mCompressor,
                                       malusBar2, mLauncher,
                                       mSoundManager, mLevelManager,
-                                      mHighscoreManager, mNetworkManager,
+                                      mHighScoreManager, mNetworkManager,
                                       mPlayer1);
         mPlayer1.setGameRef(mFrozenGame1);
         mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
@@ -1549,7 +1567,9 @@ public class MultiplayerGameView extends SurfaceView
                                       null, mNetworkManager,
                                       mPlayer2);
         mPlayer2.setGameRef(mFrozenGame2);
-        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
+        if (mHighScoreManager != null) {
+          mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
+        }
         if (mNetworkManager != null) {
           mNetworkManager.newGame();
           mShowNetwork = true;
@@ -1568,8 +1588,8 @@ public class MultiplayerGameView extends SurfaceView
             mFrozenGame1.pause();
           if (mFrozenGame2 != null)
             mFrozenGame2.pause();
-          if (mHighscoreManager != null)
-            mHighscoreManager.pauseLevel();
+          if (mHighScoreManager != null)
+            mHighScoreManager.pauseLevel();
         }
       }
     }
@@ -1627,7 +1647,9 @@ public class MultiplayerGameView extends SurfaceView
         mFrozenGame1     .restoreState(map, mImageList);
         mFrozenGame2     .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
-        mHighscoreManager.restoreState(map);
+        if (mHighScoreManager != null) {
+          mHighScoreManager.restoreState(map);
+        }
       }
     }
 
@@ -1636,7 +1658,9 @@ public class MultiplayerGameView extends SurfaceView
         if (mMode == stateEnum.RUNNING) {
           mFrozenGame1     .resume();
           mFrozenGame2     .resume();
-          mHighscoreManager.resumeLevel();
+          if (mHighScoreManager != null) {
+            mHighScoreManager.resumeLevel();
+          }
         }
       }
     }
@@ -1670,8 +1694,8 @@ public class MultiplayerGameView extends SurfaceView
                       else
                         doDraw(c);
                     }
-                    else if (mShowScores)
-                      drawHighScoreScreen(c, mHighscoreManager.getLevel());
+                    else if ((mHighScoreManager != null) && mShowScores)
+                      drawHighScoreScreen(c, mHighScoreManager.getLevel());
                     else
                       doDraw(c);
                   }
@@ -1718,7 +1742,9 @@ public class MultiplayerGameView extends SurfaceView
           mFrozenGame1     .saveState(map);
           mFrozenGame2     .saveState(map);
           mLevelManager    .saveState(map);
-          mHighscoreManager.saveState(map);
+          if (mHighScoreManager != null) {
+            mHighScoreManager.saveState(map);
+          }
         }
       }
       return map;
@@ -1930,8 +1956,7 @@ public class MultiplayerGameView extends SurfaceView
 
     private void updateGameState() {
       if ((mFrozenGame1 == null) || (mFrozenGame2 == null) ||
-          ((mOpponent == null) && mRemoteInput.isCPU) ||
-          (mHighscoreManager == null)) {
+          ((mOpponent == null) && mRemoteInput.isCPU)) {
         return;
       }
 
@@ -1991,11 +2016,15 @@ public class MultiplayerGameView extends SurfaceView
       else if (game2Result != gameEnum.PLAYING) {
         if ((game2Result == gameEnum.WON) ||
             (game2Result == gameEnum.NEXT_WON)) {
-          mHighscoreManager.lostLevel();
+          if (mHighScoreManager != null) {
+            mHighScoreManager.lostLevel();
+          }
           mFrozenGame1.setGameResult(gameEnum.LOST);
         }
         else {
-          mHighscoreManager.endLevel(mFrozenGame1.nbBubbles);
+          if (mHighScoreManager != null) {
+            mHighScoreManager.endLevel(mFrozenGame1.nbBubbles);
+          }
           mFrozenGame1.setGameResult(gameEnum.WON);
         }
       }
