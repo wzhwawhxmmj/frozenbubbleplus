@@ -475,19 +475,20 @@ public class MultiplayerGameView extends SurfaceView
     if ((mNetworkManager != null) && (mRemoteInput != null)) {
       /*
        * Check the remote player interface for game field updates.
-       * Processing remote player game field data is the highest
-       * priority activity, and requesting game field data blocks
-       * remote player action processing.
+       * Reject the game field data if it doesn't correspond to the
+       * latest remote player game field.  This is determined based on
+       * whether the game field data action ID matches the latest remote
+       * player action ID.
        */
       if (remoteInterface.gotFieldData) {
-        setPlayerGameField(remoteInterface.gameFieldData);
+        if (remoteInterface.getLatestActionId() ==
+            remoteInterface.gameFieldData.localActionID) {
+          setPlayerGameField(remoteInterface.gameFieldData);
+        }
         remoteInterface.gotFieldData = false;
       }
 
       /*
-       * Do not allow remote actions to be processed when the local
-       * player requested remote field data or the game is not ready.
-       *
        * Once the game is ready, if the game thread is not running, then
        * allow the remote player to update the game thread state.
        *

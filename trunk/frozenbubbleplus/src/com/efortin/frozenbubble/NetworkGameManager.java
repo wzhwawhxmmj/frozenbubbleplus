@@ -95,7 +95,7 @@ public class NetworkGameManager extends Thread
    * Datagram size definitions.
    */
   public static final int  ACTION_BYTES = 36;
-  public static final int  FIELD_BYTES  = 112;
+  public static final int  FIELD_BYTES  = 114;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
 
@@ -193,6 +193,7 @@ public class NetworkGameManager extends Thread
   public class GameFieldData {
     public byte    playerID           = 0;
     public boolean readyToPlay        = false;
+    public short   localActionID      = 0;
     public byte    compressorSteps    = 0;
     public byte    launchBubbleColor  = -1;
     public byte    nextBubbleColor    = -1;
@@ -237,6 +238,7 @@ public class NetworkGameManager extends Thread
       if (fieldData != null) {
         this.playerID           = fieldData.playerID;
         this.readyToPlay        = fieldData.readyToPlay;
+        this.localActionID      = fieldData.localActionID;
         this.compressorSteps    = fieldData.compressorSteps;
         this.launchBubbleColor  = fieldData.launchBubbleColor;
         this.nextBubbleColor    = fieldData.nextBubbleColor;
@@ -262,6 +264,9 @@ public class NetworkGameManager extends Thread
       if (buffer != null) {
         this.playerID           = buffer[startIndex++];
         this.readyToPlay        = buffer[startIndex++] == 1;
+        shortBytes[0]           = buffer[startIndex++];
+        shortBytes[1]           = buffer[startIndex++];
+        this.localActionID      = toShort(shortBytes);
         this.compressorSteps    = buffer[startIndex++];
         this.launchBubbleColor  = buffer[startIndex++];
         this.nextBubbleColor    = buffer[startIndex++];
@@ -289,6 +294,9 @@ public class NetworkGameManager extends Thread
       if (buffer != null) {
         buffer[startIndex++] = this.playerID;
         buffer[startIndex++] = (byte) ((this.readyToPlay == true)?1:0);
+        toByteArray(this.localActionID, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
         buffer[startIndex++] = this.compressorSteps;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
@@ -642,11 +650,23 @@ public class NetworkGameManager extends Thread
     }
   };
 
+  /**
+   * This class encapsulates player action and game field storage for
+   * use by the game thread to determine when to process remote player
+   * actions and game field bubble grid synchronization tasks.
+   * @author Eric Fortin
+   *
+   */
   public class NetGameInterface {
     public boolean       gotAction;
     public boolean       gotFieldData;
     public PlayerAction  playerAction;
     public GameFieldData gameFieldData;
+
+    public NetGameInterface() {
+      playerAction = new PlayerAction(null);
+      gameFieldData = new GameFieldData(null);
+    }
 
     public void cleanUp() {
       gotAction = false;
@@ -655,9 +675,17 @@ public class NetworkGameManager extends Thread
       gameFieldData = null;
     }
 
-    public NetGameInterface() {
-      playerAction = new PlayerAction(null);
-      gameFieldData = new GameFieldData(null);
+    public short getLatestActionId() {
+      if (remoteStatus != null) {
+        return remoteStatus.localActionID;
+      }
+      else {
+        return 0;
+      }
+    }
+
+    public void requestGameField() {
+      localStatus.fieldRequest = true;
     }
   };
 
@@ -906,18 +934,15 @@ public class NetworkGameManager extends Thread
 
   /**
    * Check if the network game is ready for action.  The game is ready
-   * to begin play when all data synchronization tasks are completed.
-   * If the local player is requesting game field data, then this method
-   * will inform the caller that action processing should be suspended
-   * until the requested data has been received.
+   * to begin play when all data synchronization tasks are completed, at
+   * which point every respective player's readyToPlay flag will be set.
    * @return <code>true</code> if game synchronization is complete.
    */
   public boolean gameIsReadyForAction() {
     if (remoteStatus == null)
       return false;
     else
-      return localStatus.readyToPlay && !localStatus.fieldRequest &&
-             remoteStatus.readyToPlay;
+      return localStatus.readyToPlay && remoteStatus.readyToPlay;
   }
 
   private boolean gameStartTimerExpired() {
@@ -929,6 +954,7 @@ public class NetworkGameManager extends Thread
 
     gameData.playerID           = (byte)  localPlayer.playerID;
     gameData.readyToPlay        =         localStatus.readyToPlay;
+    gameData.localActionID      =         localStatus.localActionID;
     gameData.compressorSteps    = (byte)  gameRef.getCompressorSteps();
     gameData.launchBubbleColor  = (byte)  gameRef.getCurrentColor();
     gameData.nextBubbleColor    = (byte)  gameRef.getNextColor();
