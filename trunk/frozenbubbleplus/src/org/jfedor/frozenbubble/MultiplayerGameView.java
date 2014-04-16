@@ -169,8 +169,8 @@ public class MultiplayerGameView extends SurfaceView
     public boolean isConnected;
     public boolean reservedGameId;
     public boolean claimedGameId;
-    public boolean needFieldData;
-    public boolean needPreferences;
+    public boolean gotFieldData;
+    public boolean gotPrefsData;
     public boolean readyToPlay;
   };
 
@@ -1161,7 +1161,7 @@ public class MultiplayerGameView extends SurfaceView
         return;
       }
 
-      mFont.print("open game slot found", x, y, canvas,
+      mFont.print("open game slot found!", x, y, canvas,
           mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
@@ -1179,7 +1179,7 @@ public class MultiplayerGameView extends SurfaceView
       }
 
       if (status.localPlayerId == VirtualInput.PLAYER2) {
-        if (status.needPreferences || status.readyToPlay) {
+        if (status.gotPrefsData || status.readyToPlay) {
           mFont.print("waiting for player " + status.remotePlayerId +
                       " preferences...|", x, y, canvas,
                       mDisplayScale, mDisplayDX, mDisplayDY);
@@ -1193,7 +1193,7 @@ public class MultiplayerGameView extends SurfaceView
         }
       }
 
-      if (status.needFieldData || status.readyToPlay) {
+      if (status.gotFieldData || status.readyToPlay) {
         mFont.print("waiting for player " + status.remotePlayerId +
                     " data...|", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
