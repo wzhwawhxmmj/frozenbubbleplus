@@ -109,6 +109,9 @@ public class NetworkGameManager extends Thread
   private static final byte GAME_ID_MAX        = 100;
 
   private byte             myGameID;
+  private boolean          anyStatusRx;
+  private boolean          gotFieldData;
+  private boolean          gotPrefsData;
   private boolean[]        gamesInProgress;
   private boolean          missedAction;
   private boolean          running;
@@ -143,6 +146,9 @@ public class NetworkGameManager extends Thread
      * not filter messages until we have obtained a game ID.
      */
     myGameID = MulticastManager.FILTER_OFF;
+    anyStatusRx = false;
+    gotFieldData = false;
+    gotPrefsData = false;
     gamesInProgress = new boolean[GAME_ID_MAX];
     missedAction = false;
     mContext = myContext;
@@ -1029,7 +1035,18 @@ public class NetworkGameManager extends Thread
     if ((myGameID == MulticastManager.FILTER_OFF) ||
         !localStatus.gameClaimed) {
       if (gameStartTimerExpired()) {
-        reserveGameID();
+        /*
+         * Don't reserve a game ID if we've never received a status
+         * message from another player.  Either we are having network
+         * issues and may inadvertently reserve an already claimed ID,
+         * or there isn't even any one else to play with on the network.
+         */
+        if (anyStatusRx) {
+          reserveGameID();
+        }
+        else {
+          setGameStartTimeout(GAME_START_TIMEOUT);
+        }
       }
     }
 
@@ -1089,6 +1106,7 @@ public class NetworkGameManager extends Thread
   }
 
   public void newGame() {
+    gotFieldData = false;
     if (localStatus != null) {
       localStatus.readyToPlay = false;
       localStatus.localActionID = 0;
@@ -1131,7 +1149,7 @@ public class NetworkGameManager extends Thread
        * received.
        */
       if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 2))) {
-        
+        anyStatusRx = true;
         /*
          * Perform game ID claim checking, otherwise process the remote
          * player status.
@@ -1208,6 +1226,7 @@ public class NetworkGameManager extends Thread
             copyPrefsFromBuffer(remotePrefs, buffer, 3);
             PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
             localStatus.prefsRequest = false;
+            gotPrefsData = true;
             /*
              * If all new game data synchronization requests have been
              * fulfilled, then the network game is ready to begin play.
@@ -1251,6 +1270,7 @@ public class NetworkGameManager extends Thread
                   remoteInterface.gameFieldData.readyToPlay;
             }
             localStatus.fieldRequest = false;
+            gotFieldData = true;
             /*
              * If all new game data synchronization requests have been
              * fulfilled, then the network game is ready to begin play.
@@ -1586,14 +1606,14 @@ public class NetworkGameManager extends Thread
     }
     status.reservedGameId = myGameID != MulticastManager.FILTER_OFF;
     if (localStatus != null) {
-      status.claimedGameId   = localStatus.gameClaimed;
-      status.needFieldData   = localStatus.fieldRequest;
-      status.needPreferences = localStatus.prefsRequest;
+      status.claimedGameId = localStatus.gameClaimed;
+      status.gotFieldData  = gotFieldData;
+      status.gotPrefsData  = gotPrefsData;
     }
     else {
-      status.claimedGameId   = false;
-      status.needFieldData   = false;
-      status.needPreferences = false;
+      status.claimedGameId = false;
+      status.gotFieldData  = false;
+      status.gotPrefsData  = false;
     }
     status.readyToPlay = gameIsReadyForAction();
   }
