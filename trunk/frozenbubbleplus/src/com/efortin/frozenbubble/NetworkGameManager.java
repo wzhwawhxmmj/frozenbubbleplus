@@ -95,7 +95,7 @@ public class NetworkGameManager extends Thread
    * Datagram size definitions.
    */
   public static final int  ACTION_BYTES = 36;
-  public static final int  FIELD_BYTES  = 114;
+  public static final int  FIELD_BYTES  = 113;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 10;
 
@@ -197,7 +197,6 @@ public class NetworkGameManager extends Thread
     public byte    compressorSteps    = 0;
     public byte    launchBubbleColor  = -1;
     public byte    nextBubbleColor    = -1;
-    public byte    newNextBubbleColor = -1;
     public short   attackBarBubbles   = 0;
     /*
      * The game field is represented by a 2-dimensional array, with 8
@@ -242,7 +241,6 @@ public class NetworkGameManager extends Thread
         this.compressorSteps    = fieldData.compressorSteps;
         this.launchBubbleColor  = fieldData.launchBubbleColor;
         this.nextBubbleColor    = fieldData.nextBubbleColor;
-        this.newNextBubbleColor = fieldData.newNextBubbleColor;
         this.attackBarBubbles   = fieldData.attackBarBubbles;
 
         for (int x = 0; x < 8; x++) {
@@ -270,7 +268,6 @@ public class NetworkGameManager extends Thread
         this.compressorSteps    = buffer[startIndex++];
         this.launchBubbleColor  = buffer[startIndex++];
         this.nextBubbleColor    = buffer[startIndex++];
-        this.newNextBubbleColor = buffer[startIndex++];
         shortBytes[0]           = buffer[startIndex++];
         shortBytes[1]           = buffer[startIndex++];
         this.attackBarBubbles   = toShort(shortBytes);
@@ -300,7 +297,6 @@ public class NetworkGameManager extends Thread
         buffer[startIndex++] = this.compressorSteps;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
-        buffer[startIndex++] = this.newNextBubbleColor;
         toByteArray(this.attackBarBubbles, shortBytes);
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
@@ -958,7 +954,6 @@ public class NetworkGameManager extends Thread
     gameData.compressorSteps    = (byte)  gameRef.getCompressorSteps();
     gameData.launchBubbleColor  = (byte)  gameRef.getCurrentColor();
     gameData.nextBubbleColor    = (byte)  gameRef.getNextColor();
-    gameData.newNextBubbleColor = (byte)  gameRef.getNewNextColor();
     gameData.attackBarBubbles   = (short) gameRef.getAttackBarBubbles();
 
     BubbleSprite[][] bubbleGrid = gameRef.getGrid();
@@ -1256,10 +1251,10 @@ public class NetworkGameManager extends Thread
              * fulfilled, then the network game is ready to begin play.
              */
             if (localStatus.prefsRequest) {
+              gotPrefsData = true;
+              localStatus.prefsRequest = false;
               if (!localStatus.fieldRequest && !localStatus.readyToPlay) {
-                gotPrefsData             = true;
-                localStatus.prefsRequest = false;
-                localStatus.readyToPlay  = true;
+                localStatus.readyToPlay = true;
               }
             }
             setStatusTimeout(0L);
@@ -1300,10 +1295,10 @@ public class NetworkGameManager extends Thread
              * fulfilled, then the network game is ready to begin play.
              */
             if (localStatus.fieldRequest) {
+              gotFieldData = true;
+              localStatus.fieldRequest = false;
               if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
-                gotFieldData             = true;
-                localStatus.fieldRequest = false;
-                localStatus.readyToPlay  = true;
+                localStatus.readyToPlay = true;
               }
             }
             setStatusTimeout(0L);

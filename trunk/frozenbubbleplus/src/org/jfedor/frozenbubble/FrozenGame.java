@@ -260,7 +260,6 @@ public class FrozenGame extends GameScreen {
      */
     currentColor = bubbleManager.nextBubbleIndex(random);
     nextColor    = bubbleManager.nextBubbleIndex(random);
-    newNextColor = bubbleManager.nextBubbleIndex(random);
 
     if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
       nextBubble = new ImageSprite(new Rect(302, 440, 302 + 32, 440 + 32),
@@ -628,7 +627,6 @@ public class FrozenGame extends GameScreen {
     int     attackBarBubbles = 0;
     int     currentColorWas = currentColor;
     int     nextColorWas = nextColor;
-    int     newNextColorWas = newNextColor;
     int     numAttackBubbles = 0;
 
     if (malusBar != null) {
@@ -721,8 +719,13 @@ public class FrozenGame extends GameScreen {
           this.addSprite(movingBubble);
           bubbleLaunched = true;
           currentColor = nextColor;
-          nextColor = newNextColor;
-          newNextColor = bubbleManager.nextBubbleIndex(random);
+
+          if (isRemote) {
+            nextColor = newNextColor;
+          }
+          else {
+            nextColor = bubbleManager.nextBubbleIndex(random);
+          }
 
           if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
             nextBubble.changeImage(bubbles[nextColor]);
@@ -856,7 +859,7 @@ public class FrozenGame extends GameScreen {
                                              swapPressed,
                                              currentColorWas,
                                              nextColorWas,
-                                             newNextColorWas,
+                                             nextColor,
                                              attackBarBubbles,
                                              malusBar.attackBubbles,
                                              launchBubblePosition);
@@ -1073,7 +1076,6 @@ public class FrozenGame extends GameScreen {
     nextBubble = (ImageSprite)savedSprites.elementAt(nextBubbleId);
     currentColor = map.getInt(String.format("%d-currentColor", player));
     nextColor = map.getInt(String.format("%d-nextColor", player));
-    newNextColor = map.getInt(String.format("%d-newNextColor", player));
     int movingBubbleId =
         map.getInt(String.format("%d-movingBubbleId", player));
     if (movingBubbleId == -1) {
@@ -1154,7 +1156,6 @@ public class FrozenGame extends GameScreen {
                nextBubble.getSavedId());
     map.putInt(String.format("%d-currentColor", player), currentColor);
     map.putInt(String.format("%d-nextColor", player), nextColor);
-    map.putInt(String.format("%d-newNextColor", player), newNextColor);
     if (movingBubble != null) {
       movingBubble.saveState(map, savedSprites, player);
       map.putInt(String.format("%d-movingBubbleId", player),

@@ -612,7 +612,7 @@ public class MultiplayerGameView extends SurfaceView
      */
     playerRef.mGameRef.setLaunchBubbleColors(newField.launchBubbleColor,
                                              newField.nextBubbleColor,
-                                             newField.newNextBubbleColor);
+                                             playerRef.mGameRef.getNewNextColor());
 
     /*
      * Set the current value of the attack bar.
