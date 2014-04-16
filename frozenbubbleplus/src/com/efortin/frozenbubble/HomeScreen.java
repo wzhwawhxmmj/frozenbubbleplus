@@ -97,8 +97,9 @@ public class HomeScreen extends Activity {
   private static int buttonSelPage2 = BTN4_ID;
   private static int buttonSelPage3 = BTN7_ID;
 
-  private Boolean homeShown       = false;
-  private Boolean musicOn         = true;
+  private boolean finished        = false;
+  private boolean homeShown       = false;
+  private boolean musicOn         = true;
   private ImageView myImageView   = null;
   private RelativeLayout myLayout = null;
   private ModPlayer myModPlayer   = null;
@@ -534,6 +535,7 @@ public class HomeScreen extends Activity {
       else {
         cleanUp();
         finish();
+        finished = true;
       }
       return true;
     }
@@ -548,6 +550,7 @@ public class HomeScreen extends Activity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    finished = false;
     restoreGamePrefs();
     /*
      * Configure the window presentation and layout.
@@ -595,11 +598,13 @@ public class HomeScreen extends Activity {
             }
           } catch (InterruptedException e) {
           } finally {
-            runOnUiThread(new Runnable() {
-              public void run() {
-                startHomeScreen();
-              }
-            });
+            if (!finished) {
+              runOnUiThread(new Runnable() {
+                public void run() {
+                    startHomeScreen();
+                }
+              });
+            }
           }
         }
       };
@@ -735,6 +740,7 @@ public class HomeScreen extends Activity {
      * Terminate the splash screen activity.
      */
     finish();
+    finished = true;
   }
 
   private void startHomeScreen() {
