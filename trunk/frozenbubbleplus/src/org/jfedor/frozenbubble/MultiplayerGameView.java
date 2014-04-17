@@ -1149,84 +1149,78 @@ public class MultiplayerGameView extends SurfaceView
       mNetworkManager.updateNetworkStatus(status);
 
       if (status.isConnected) {
-        mFont.print("internet connection status: ]", x, y, canvas,
+        mFont.print("internet status: ]", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
       else {
-        mFont.print("internet connection status: _", x, y, canvas,
+        mFont.print("internet status: _", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
 
       if (status.reservedGameId) {
-        mFont.print("checking for games in progress...|", x, y, canvas,
+        mFont.print("checking for games...|", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
       else {
-        mFont.print("checking for games in progress...", x, y, canvas,
+        mFont.print("checking for games...", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         return;
       }
 
       mFont.print("open game slot found!", x, y, canvas,
-          mDisplayScale, mDisplayDX, mDisplayDY);
+                  mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
       if (status.claimedGameId) {
-        mFont.print("waiting for player " + status.remotePlayerId +
-                    " to join...|", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.print("waiting for player " + status.remotePlayerId + "...|",
+                    x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
       else {
-        mFont.print("waiting for player " + status.remotePlayerId +
-                    " to join...", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.print("waiting for player " + status.remotePlayerId + "...",
+                    x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
         return;
       }
 
       if (status.localPlayerId == VirtualInput.PLAYER2) {
         if (status.gotPrefsData || status.readyToPlay) {
-          mFont.print("waiting for player " + status.remotePlayerId +
-                      " preferences...|", x, y, canvas,
+          mFont.print("getting preferences...|", x, y, canvas,
                       mDisplayScale, mDisplayDX, mDisplayDY);
           y += ysp;
         }
         else {
-          mFont.print("waiting for player " + status.remotePlayerId +
-                      " preferences...", x, y, canvas,
+          mFont.print("getting preferences...", x, y, canvas,
                       mDisplayScale, mDisplayDX, mDisplayDY);
           return;
         }
       }
 
       if (status.gotFieldData || status.readyToPlay) {
-        mFont.print("waiting for player " + status.remotePlayerId +
-                    " data...|", x, y, canvas,
+        mFont.print("getting data...|", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
       else {
-        mFont.print("waiting for player " + status.remotePlayerId +
-                    " data...", x, y, canvas,
+        mFont.print("getting data...", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         return;
       }
 
       if (status.readyToPlay) {
-        mFont.print("waiting for game to start...|", x, y, canvas,
+        mFont.print("waiting for game start...|", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
       else {
-        mFont.print("waiting for game to start", x, y, canvas,
+        mFont.print("waiting for game start...", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
         return;
       }
 
-      mFont.print("tap to begin playing", x, y, canvas,
+      mFont.print("tap to begin playing!", x, y, canvas,
                   mDisplayScale, mDisplayDX, mDisplayDY);
     }
 
