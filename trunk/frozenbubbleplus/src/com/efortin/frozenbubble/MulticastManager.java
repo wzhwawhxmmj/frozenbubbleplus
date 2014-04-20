@@ -77,9 +77,12 @@ import android.util.Log;
  * <p>A typical implementation looks like this:
  * <pre><code>
  * MulticastManager session =
- *     new MulticastManager(this.getContext());
+ *     new MulticastManager(context, host, addr, port);
  * session.setMulticastListener(this);
  * </code></pre>
+ * <p>The desired context, the host name, the IP address, and the port
+ * of the multicast session must be supplied when creating a new
+ * <code>MulticastManager</code> instance.
  * <p>The context will have to be provided based on the desired
  * context - either the view context for the current activity only via
  * <code>getContext()</code>, the application context to ensure the
@@ -149,9 +152,12 @@ public class MulticastManager {
    * <p>A typical implementation looks like this:
    * <pre><code>
    * MulticastManager session =
-   *     new MulticastManager(this.getContext());
+   *     new MulticastManager(context, host, addr, port);
    * session.setMulticastListener(this);
    * </code></pre>
+   * <p>The desired context, the host name, the IP address, and the port
+   * of the multicast session must be supplied when creating a new
+   * <code>MulticastManager</code> instance.
    * <p>The context will have to be provided based on the desired
    * context - either the view context for the current activity only via
    * <code>getContext()</code>, the application context to ensure the

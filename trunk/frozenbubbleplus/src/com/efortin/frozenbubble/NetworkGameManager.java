@@ -179,7 +179,7 @@ public class NetworkGameManager extends Thread
     remoteActionList = new ArrayList<PlayerAction>();
     /*
      * Set the preference request flag to request the game option data
-	   * from the remote player.  If this player is player 1, then don't
+     * from the remote player.  If this player is player 1, then don't
      * request the preference data, since player 1's preferences are
      * used as the game preferences for all players.
      */
@@ -190,16 +190,16 @@ public class NetworkGameManager extends Thread
     else {
       requestPrefs = true;
     }
-	  /*
+    /*
      * Initialize the local status local action ID to zero, as it is
      * pre-incremented for every action transmitted to the remote
      * player.
      * 
      * Initialize the local status remote action ID to 1, as it must be
      * the first action ID received from the remote player.
-	   *
-	   * Always request the game field data from the remote player when
-	   * the network manager is initially started.
+     *
+     * Always request the game field data from the remote player when
+     * the network manager is initially started.
      */
     localStatus = new PlayerStatus((byte) localPlayer.playerID,
                                    false, false,
@@ -1130,8 +1130,8 @@ public class NetworkGameManager extends Thread
          * On a new game, request field data from the remote player.
          */
         if (!gotFieldData             &&
-		    !localStatus.fieldRequest &&
-			!localStatus.readyToPlay) {
+            !localStatus.fieldRequest &&
+            !localStatus.readyToPlay) {
           localStatus.fieldRequest = true;
         }
 
@@ -1139,15 +1139,15 @@ public class NetworkGameManager extends Thread
           transmitPrefs();
         }
 
-		/*
-		 * Only transmit the local game field if the local player local
-		 * action ID is one less than the remote player remote action
-		 * ID.  This signifies that the game is synchronized with
-		 * respect to the local player and applying the game field will
-		 * not cause a discontinuity in the action queue.
-		 */
+        /*
+         * Only transmit the local game field if the local player local
+         * action ID is one less than the remote player remote action
+         * ID.  This signifies that the game is synchronized with
+         * respect to the local player and applying the game field will
+         * not cause a discontinuity in the action queue.
+         */
         if (remoteStatus.fieldRequest &&
-		    ((localStatus.localActionID + 1) == remoteStatus.remoteActionID)) {
+            ((localStatus.localActionID + 1) == remoteStatus.remoteActionID)) {
           GameFieldData tempField = new GameFieldData(null);
           getGameFieldData(tempField);
           transmitGameField(tempField);
