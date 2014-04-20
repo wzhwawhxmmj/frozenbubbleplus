@@ -2090,10 +2090,7 @@ public class MultiplayerGameView extends SurfaceView
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
     mOpponent = null;
-    mNetworkManager = null;
-    if (gameLocale == FrozenBubble.LOCALE_LAN) {
-      mNetworkManager = new NetworkGameManager(context);
-    }
+
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
@@ -2131,6 +2128,16 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     /*
+     * Create a network game manager if this is a network game.
+     */
+    mNetworkManager = null;
+    if (gameLocale == FrozenBubble.LOCALE_LAN) {
+      mNetworkManager =
+          new NetworkGameManager(context, mLocalInput, mRemoteInput);
+      remoteInterface = mNetworkManager.getRemoteInterface();
+    }
+
+    /*
      * Give this view focus-ability for improved compatibility with
      * various input devices.
      */
@@ -2143,11 +2150,6 @@ public class MultiplayerGameView extends SurfaceView
     mGameThread = new MultiplayerGameThread(holder);
     mGameThread.setRunning(true);
     mGameThread.start();
-
-    if (mNetworkManager != null) {
-      remoteInterface = mNetworkManager.getRemoteInterface();
-      mNetworkManager.startNetworkGame(mLocalInput, mRemoteInput);
-    }
   }
 
   public MultiplayerGameThread getThread() {

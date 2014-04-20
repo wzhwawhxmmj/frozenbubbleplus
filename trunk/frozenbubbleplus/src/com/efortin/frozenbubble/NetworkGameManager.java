@@ -72,8 +72,9 @@ import com.efortin.frozenbubble.MulticastManager.eventEnum;
  * sending the local actions to the remote player, and queueing the
  * incoming remote player actions for enactment on the local machine.
  * <p>The thread created by this class will not <code>run()</code> until
- * <code>VirtualInput</code> objects for each player are attached via
- * <code>startNetworkGame()</code>.
+ * <code>newGame()</code> is called.
+ * <p>Attach <code>VirtualInput</code> objects to this manager for each
+ * player in the network game.
  * @author Eric Fortin
  *
  */
@@ -118,7 +119,7 @@ public class NetworkGameManager extends Thread
   private long             actionTxTime;
   private long             gameStartTime;
   private long             statusTxTime;
-  private Context          mContext = null;
+  private Context          myContext = null;
   private PlayerStatus     localStatus = null;
   private PlayerStatus     remoteStatus = null;
   private Preferences      localPrefs = null;
@@ -138,9 +139,17 @@ public class NetworkGameManager extends Thread
   /**
    * Class constructor.
    * @param myContext - the application context to pass to the network
+   * @param localPlayer - reference to the local player input object.
+   * @param remotePlayer - reference to the remote player input object.
    * transport layer to create a socket connection.
    */
-  public NetworkGameManager(Context myContext) {
+  public NetworkGameManager(Context myContext,
+                            VirtualInput localPlayer,
+                            VirtualInput remotePlayer) {
+                            this.localPlayer = localPlayer;
+    this.myContext = myContext;
+    this.localPlayer = localPlayer;
+    this.remotePlayer = remotePlayer;
     /*
      * The game ID is used as the transport layer receive filter.  Do
      * not filter messages until we have obtained a game ID.
@@ -151,16 +160,11 @@ public class NetworkGameManager extends Thread
     gotPrefsData = false;
     gamesInProgress = new boolean[GAME_ID_MAX];
     missedAction = false;
-    mContext = myContext;
     localPrefs = new Preferences();
     remotePrefs = new Preferences();
-    localPlayer = null;
-    remotePlayer = null;
     localStatus = null;
     remoteStatus = null;
-    setActionTimeout(0L);
-    setGameStartTimeout(GAME_START_TIMEOUT);
-    setStatusTimeout(0L);
+    session = null;
     SharedPreferences sp =
         myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                        Context.MODE_PRIVATE);
@@ -174,13 +178,33 @@ public class NetworkGameManager extends Thread
     localActionList  = new ArrayList<PlayerAction>();
     remoteActionList = new ArrayList<PlayerAction>();
     /*
-     * Start an internet multicast session.
+     * Set the preference request flag to request the game option data
+	   * from the remote player.  If this player is player 1, then don't
+     * request the preference data, since player 1's preferences are
+     * used as the game preferences for all players.
      */
-    session = new MulticastManager(mContext.getApplicationContext(),
-                                   MCAST_HOST_NAME,
-                                   MCAST_BYTE_ADDR,
-                                   PORT);
-    session.setMulticastListener(this);
+    boolean requestPrefs;
+    if (localPlayer.playerID == VirtualInput.PLAYER1) {
+      requestPrefs = false;
+    }
+    else {
+      requestPrefs = true;
+    }
+	  /*
+     * Initialize the local status local action ID to zero, as it is
+     * pre-incremented for every action transmitted to the remote
+     * player.
+     * 
+     * Initialize the local status remote action ID to 1, as it must be
+     * the first action ID received from the remote player.
+	   *
+	   * Always request the game field data from the remote player when
+	   * the network manager is initially started.
+     */
+    localStatus = new PlayerStatus((byte) localPlayer.playerID,
+                                   false, false,
+                                   (short) 0, (short) 1,
+                                   true, requestPrefs);
   }
 
   /**
@@ -827,8 +851,8 @@ public class NetworkGameManager extends Thread
      */
     if (localPrefs != null) {
       SharedPreferences sp =
-          mContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
-                                        Context.MODE_PRIVATE);
+          myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
+                                         Context.MODE_PRIVATE);
       PreferencesActivity.setFrozenBubblePrefs(localPrefs, sp);
     }
 
@@ -1105,8 +1129,9 @@ public class NetworkGameManager extends Thread
         /*
          * On a new game, request field data from the remote player.
          */
-        if (!localStatus.readyToPlay  && !remoteStatus.readyToPlay &&
-            !localStatus.prefsRequest && !localStatus.fieldRequest) {
+        if (!gotFieldData             &&
+		    !localStatus.fieldRequest &&
+			!localStatus.readyToPlay) {
           localStatus.fieldRequest = true;
         }
 
@@ -1114,7 +1139,15 @@ public class NetworkGameManager extends Thread
           transmitPrefs();
         }
 
-        if (remoteStatus.fieldRequest) {
+		/*
+		 * Only transmit the local game field if the local player local
+		 * action ID is one less than the remote player remote action
+		 * ID.  This signifies that the game is synchronized with
+		 * respect to the local player and applying the game field will
+		 * not cause a discontinuity in the action queue.
+		 */
+        if (remoteStatus.fieldRequest &&
+		    ((localStatus.localActionID + 1) == remoteStatus.remoteActionID)) {
           GameFieldData tempField = new GameFieldData(null);
           getGameFieldData(tempField);
           transmitGameField(tempField);
@@ -1143,12 +1176,34 @@ public class NetworkGameManager extends Thread
         remoteActionList.clear();
       }
     }
+    /*
+     * Initialize the various timers.
+     */
+    setActionTimeout(0L);
+    setGameStartTimeout(GAME_START_TIMEOUT);
     setStatusTimeout(0L);
     /*
-     * Wake up the thread.
+     * If an internet multicast session has not yet been created, create
+     * a new one and start the <code>NetworkGameManager</code> thread.
      */
-    synchronized(this) {
-      notify();
+    if (session == null) {
+      session = new MulticastManager(myContext.getApplicationContext(),
+                                     MCAST_HOST_NAME,
+                                     MCAST_BYTE_ADDR,
+                                     PORT);
+      session.setMulticastListener(this);
+      /*
+       * Start the network manager thread.
+       */
+      start();
+    }
+    else {
+      /*
+       * Wake up the thread.
+       */
+      synchronized(this) {
+        notify();
+      }
     }
   }
 
@@ -1178,6 +1233,13 @@ public class NetworkGameManager extends Thread
         if (!localStatus.gameClaimed) {
           PlayerStatus tempStatus = new PlayerStatus(buffer, 2);
           /*
+           * If we receive a status from a game already in progress,
+           * mark it and bump the game start timer.
+           *
+           * If we receive a status with the filter mask off and we have
+           * the same player ID as the player ID in that status, mark
+           * that game as already in progress and bump game start timer.
+           *
            * If the game ID was reserved locally, then by definition we
            * are filtering all messages that don't possess the same game
            * ID.  Thus the remote player is also starting a game and
@@ -1189,16 +1251,21 @@ public class NetworkGameManager extends Thread
            * correct remote player ID, then we have found a game to
            * claim.  Jointly claim the game ID that was already reserved
            * by the remote player.
-           *
-           * Otherwise if this status is from a game already in
-           * progress, mark it in the game in progress buffer.  This
-           * buffer is checked in the game management thread for an
-           * available game ID.
            */
-          if ((playerId == remotePlayer.playerID) &&
-              ((myGameID != MulticastManager.FILTER_OFF) ||
-               ((gameId != MulticastManager.FILTER_OFF) &&
-                !tempStatus.gameClaimed))){
+          if (tempStatus.readyToPlay ||
+              ((gameId != MulticastManager.FILTER_OFF) &&
+               (playerId == localPlayer.playerID))) {
+            if (gameId < GAME_ID_MAX) {
+              if (gamesInProgress[gameId] == false) {
+                gamesInProgress[gameId] = true;
+                setGameStartTimeout(GAME_START_TIMEOUT);
+              }
+            }
+          }
+          else if ((playerId == remotePlayer.playerID) &&
+                   ((myGameID != MulticastManager.FILTER_OFF) ||
+                    ((gameId != MulticastManager.FILTER_OFF) &&
+                     !tempStatus.gameClaimed))){
             myGameID = gameId;
             session.setFilter(myGameID);
             localStatus.gameClaimed = true;
@@ -1208,19 +1275,14 @@ public class NetworkGameManager extends Thread
             else {
               remoteStatus.copyFromStatus(tempStatus);
             }
-            setStatusTimeout(0L);
             /*
-             * Wake up the thread.
+             * The local player status was updated.  Set the status
+             * timeout to expire immediately and wake up the network
+             * manager thread.
              */
+            setStatusTimeout(0L);
             synchronized(this) {
               notify();
-            }
-            return;
-          }
-          else if (tempStatus.gameClaimed && (gameId < GAME_ID_MAX)) {
-            if (gamesInProgress[gameId] == false) {
-              gamesInProgress[gameId] = true;
-              setGameStartTimeout(GAME_START_TIMEOUT);
             }
           }
         }
@@ -1256,8 +1318,16 @@ public class NetworkGameManager extends Thread
               if (!localStatus.fieldRequest && !localStatus.readyToPlay) {
                 localStatus.readyToPlay = true;
               }
+              /*
+               * The local player status was updated.  Set the status
+               * timeout to expire immediately and wake up the network
+               * manager thread.
+               */
+              setStatusTimeout(0L);
+              synchronized(this) {
+                notify();
+              }
             }
-            setStatusTimeout(0L);
           }
         }
   
@@ -1300,16 +1370,17 @@ public class NetworkGameManager extends Thread
               if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
                 localStatus.readyToPlay = true;
               }
+              /*
+               * The local player status was updated.  Set the status
+               * timeout to expire immediately and wake up the network
+               * manager thread.
+               */
+              setStatusTimeout(0L);
+              synchronized(this) {
+                notify();
+              }
             }
-            setStatusTimeout(0L);
           }
-        }
-
-        /*
-         * Wake up the thread.
-         */
-        synchronized(this) {
-          notify();
         }
       }
     }
@@ -1429,37 +1500,6 @@ public class NetworkGameManager extends Thread
    */
   public void setStatusTimeout(long timeout) {
     statusTxTime = System.currentTimeMillis() + timeout;
-  }
-
-  public void startNetworkGame(VirtualInput localPlayer,
-                               VirtualInput remotePlayer) {
-    this.localPlayer = localPlayer;
-    this.remotePlayer = remotePlayer;
-    /*
-     * Initialize the local status local action ID to zero, as it is
-     * pre-incremented for every action transmitted to the remote
-     * player.
-     * 
-     * Initialize the local status remote action ID to 1, as it must be
-     * the first action ID received from the remote player.
-     * 
-     * Set the field and preference request flags to request the
-     * data from the remote player.  If this player is player 1, then
-     * don't request the preference data, since player 1's preferences
-     * are used as the game preferences for all players.
-     */
-    boolean requestPrefs;
-    if (localPlayer.playerID == VirtualInput.PLAYER1) {
-      requestPrefs = false;
-    }
-    else {
-      requestPrefs = true;
-    }
-    localStatus = new PlayerStatus((byte) localPlayer.playerID,
-                                   false, false,
-                                   (short) 0, (short) 1,
-                                   true, requestPrefs);
-    start();
   }
 
   private boolean statusTimerExpired() {
@@ -1620,7 +1660,7 @@ public class NetworkGameManager extends Thread
     status.localPlayerId  = localPlayer.playerID;
     status.remotePlayerId = remotePlayer.playerID;
     if (session != null) {
-    status.isConnected = session.hasInternetConnection();
+      status.isConnected = session.hasInternetConnection();
     }
     else {
       status.isConnected = false;
