@@ -183,6 +183,7 @@ public class MulticastManager {
     WifiManager wm =
         (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
     mLock = wm.createMulticastLock("multicastLock");
+    mLock.setReferenceCounted(true);
     mLock.acquire();
     mThread = new Thread(new MulticastThread(), "mThread");
     mThread.start();
