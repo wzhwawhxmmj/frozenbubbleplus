@@ -72,25 +72,20 @@ import android.util.Log;
  * receive WiFi multicast messages.
  * <p>Multicast host addresses must be in the IPv4 class D address
  * range, with the first octet being within the 224 to 239 range.
- * For example, <code>"224.0.0.15"</code> is an actual IPv4 multicast
- * host address.
+ * For example, <code>"224.0.0.15"</code> is an actual local subnet IPv4
+ * multicast address.
+ * <p>Refer to:
+ * <a href="url">http://en.wikipedia.org/wiki/Multicast_address</a> for
+ * information regarding Multicast address usage and restrictions.
  * <p>A typical implementation looks like this:
  * <pre><code>
  * MulticastManager session =
  *     new MulticastManager(context, host, addr, port);
  * session.setMulticastListener(this);
  * </code></pre>
- * <p>The desired context, the host name, the IP address, and the port
- * of the multicast session must be supplied when creating a new
- * <code>MulticastManager</code> instance.
- * <p>The context will have to be provided based on the desired
- * context - either the view context for the current activity only via
- * <code>getContext()</code>, the application context to ensure the
- * multicast manager lifecycle is tied to the entire application
- * lifecycle via <code>getApplicationContext()</code>, or via
- * <code>getBaseContext()</code> if operating within a nested context.
- * @param context - the context defining the lifecycle of this manager
- * for the purpose of obtaining WiFi service access.
+ * <p>The context from which to obtain the application context, the host
+ * name, the IP address, and the port of the multicast session must be
+ * supplied when creating a new <code>MulticastManager</code> instance.
  * @author Eric Fortin, Wednesday, May 8, 2013
  */
 public class MulticastManager {
@@ -147,25 +142,27 @@ public class MulticastManager {
    * receive WiFi multicast messages.
    * <p>Multicast host addresses must be in the IPv4 class D address
    * range, with the first octet being within the 224 to 239 range.
-   * For example, <code>"224.0.0.15"</code> is an actual IPv4 multicast
-   * host address.
+   * For example, <code>"224.0.0.15"</code> is an actual local subnet
+   * IPv4 multicast address.
+   * <p>Refer to:
+   * <a href="url">http://en.wikipedia.org/wiki/Multicast_address</a>
+   * for information regarding Multicast address usage and restrictions.
    * <p>A typical implementation looks like this:
    * <pre><code>
    * MulticastManager session =
    *     new MulticastManager(context, host, addr, port);
    * session.setMulticastListener(this);
    * </code></pre>
-   * <p>The desired context, the host name, the IP address, and the port
-   * of the multicast session must be supplied when creating a new
-   * <code>MulticastManager</code> instance.
-   * <p>The context will have to be provided based on the desired
-   * context - either the view context for the current activity only via
-   * <code>getContext()</code>, the application context to ensure the
-   * multicast manager lifecycle is tied to the entire application
-   * lifecycle via <code>getApplicationContext()</code>, or via
-   * <code>getBaseContext()</code> if operating within a nested context.
-   * @param context - the context defining the lifecycle of this manager
-   * for the purpose of obtaining WiFi service access.
+   * <p>The context from which to obtain the application context, the
+   * host name, the IP address, and the port of the multicast session
+   * must be supplied when creating a new <code>MulticastManager</code>
+   * instance.
+   * <p>The following <code>uses</code> permissions must be addeded to
+   * the Android project manifest to perform multicast networking:<br>
+   * <code>CHANGE_WIFI_MULTICAST_STATE<br>
+   * INTERNET</code>
+   * @param context - the context from which to obtain the application
+   * context for the purpose of obtaining WiFi service access.
    * @param hostName - the host name of this multicast session.
    * @param address - the internet address of this multicast session.
    * @param port - the port number to use for the multicast socket.
@@ -176,7 +173,7 @@ public class MulticastManager {
                           int port) {
     filter = FILTER_OFF;
     mListener = null;
-    mContext = context;
+    mContext = context.getApplicationContext();
     mPort = port;
     txList = new ArrayList<byte[]>();
     configureMulticast(hostName, address, port);
@@ -226,6 +223,10 @@ public class MulticastManager {
   /**
    * Check with the <code>ConnectivityManager</code> if the device is
    * connected to the internet.
+   * <p>The following <code>uses</code> permission must be addeded to
+   * the Android project manifest to obtain the network connection
+   * status:<br>
+   * <code>ACCESS_NETWORK_STATE</code>
    * @return <code>true</code> if the device is connected to the
    * internet.
    * @see ConnectivityManager
