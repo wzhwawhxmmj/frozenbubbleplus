@@ -1137,6 +1137,12 @@ public class NetworkGameManager extends Thread
 
         if (remoteStatus.prefsRequest) {
           transmitPrefs();
+          /*
+           * Clear the remote request flag to potentially reduce network
+           * overhead.  If the remote player does not receive the data,
+           * the next remote status message will set the flag again.
+           */
+          remoteStatus.prefsRequest = false;
         }
 
         /*
@@ -1151,6 +1157,12 @@ public class NetworkGameManager extends Thread
           GameFieldData tempField = new GameFieldData(null);
           getGameFieldData(tempField);
           transmitGameField(tempField);
+          /*
+           * Clear the remote request flag to potentially reduce network
+           * overhead.  If the remote player does not receive the data,
+           * the next remote status message will set the flag again.
+           */
+          remoteStatus.fieldRequest = false;
         }
       }
 
@@ -1210,10 +1222,34 @@ public class NetworkGameManager extends Thread
   @Override
   public void onMulticastEvent(eventEnum event, byte[] buffer, int length) {
     /*
-     * Process the multicast message.  If the game ID has not yet been
-     * set, then only process status messages.
+     * Process the multicast message if it is a successfully received
+     * datagram that possesses a payload.
      */
     if ((event == eventEnum.PACKET_RX) && (buffer != null)) {
+      /*
+       * The first three bytes of every message must contain the same
+       * three fields - the game ID, the message ID, and the player ID.
+       * The game ID and message ID are prefixed prior to each datagram
+       * transmission, as they are used by the network layer and are of
+       * no significance to any other module.  The player ID must be the
+       * first byte of every datagram class implemented by the Frozen
+       * Bubble network game protocol.
+       *
+       * The game ID is used to filter messages so that only players
+       * with the same game ID will process each others' messages - all
+       * other messages are discarded.  The exception is when the game
+       * ID is -1, which means that the player is attempting to join a
+       * game, so all incoming messages are processed until an
+       * unreserved game ID is found.
+       *
+       * The message ID is used to identify the message type - either a
+       * player status datagram, game field datagram, player preferences
+       * datagram, or a player action datagram.
+       *
+       * The player ID is used to identify who originated the message.
+       * This must be unique amongst all the players using the same game
+       * ID.
+       */
       byte gameId   = buffer[0];
       byte msgId    = buffer[1];
       byte playerId = buffer[2];
@@ -1223,6 +1259,9 @@ public class NetworkGameManager extends Thread
        * the remote player status object.  The remote player status
        * object will be null until the first remote status datagram is
        * received.
+       *
+       * If the game ID has not yet been set, then player status
+       * messages are the only messages that will be processed.
        */
       if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 2))) {
         anyStatusRx = true;
@@ -1305,29 +1344,27 @@ public class NetworkGameManager extends Thread
          * players are set per player 1.
          */
         if ((msgId == MSG_ID_PREFS) && (length == (PREFS_BYTES + 3))) {
-          if (playerId == VirtualInput.PLAYER1) {
+          if ((playerId == VirtualInput.PLAYER1) && localStatus.prefsRequest) {
             copyPrefsFromBuffer(remotePrefs, buffer, 3);
             PreferencesActivity.setFrozenBubblePrefs(remotePrefs);
             /*
              * If all new game data synchronization requests have been
-             * fulfilled, then the network game is ready to begin play.
+             * fulfilled, then the network game is ready to begin.
              */
-            if (localStatus.prefsRequest) {
-              gotPrefsData = true;
-              localStatus.prefsRequest = false;
-              if (!localStatus.fieldRequest && !localStatus.readyToPlay) {
-                localStatus.readyToPlay = true;
-              }
-              /*
-               * The local player status was updated.  Set the status
-               * timeout to expire immediately and wake up the network
-               * manager thread.
-               */
-              setStatusTimeout(0L);
-              synchronized(this) {
-                notify();
-              }
+            gotPrefsData = true;
+            localStatus.prefsRequest = false;
+            if (!localStatus.fieldRequest && !localStatus.readyToPlay) {
+              localStatus.readyToPlay = true;
             }
+            /*
+             * The local player status was updated.  Set the status
+             * timeout to expire immediately and wake up the network
+             * manager thread.
+             */
+            setStatusTimeout(0L);
+            synchronized(this) {
+              notify();
+	          }
           }
         }
   
@@ -1346,7 +1383,8 @@ public class NetworkGameManager extends Thread
          * the remote player interface game field object.
          */
         if ((msgId == MSG_ID_FIELD) && (length == (FIELD_BYTES + 2))) {
-          if (playerId == remotePlayer.playerID) {
+          if ((playerId == remotePlayer.playerID) &&
+              localStatus.fieldRequest) {
             remoteInterface.gameFieldData.copyFromBuffer(buffer, 2);
             remoteInterface.gotFieldData = true;
             /*
@@ -1362,23 +1400,21 @@ public class NetworkGameManager extends Thread
             }
             /*
              * If all new game data synchronization requests have been
-             * fulfilled, then the network game is ready to begin play.
+             * fulfilled, then the network game is ready to begin.
              */
-            if (localStatus.fieldRequest) {
-              gotFieldData = true;
-              localStatus.fieldRequest = false;
-              if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
-                localStatus.readyToPlay = true;
-              }
-              /*
-               * The local player status was updated.  Set the status
-               * timeout to expire immediately and wake up the network
-               * manager thread.
-               */
-              setStatusTimeout(0L);
-              synchronized(this) {
-                notify();
-              }
+            gotFieldData = true;
+            localStatus.fieldRequest = false;
+            if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
+              localStatus.readyToPlay = true;
+            }
+            /*
+             * The local player status was updated.  Set the status
+             * timeout to expire immediately and wake up the network
+             * manager thread.
+             */
+            setStatusTimeout(0L);
+            synchronized(this) {
+              notify();
             }
           }
         }
