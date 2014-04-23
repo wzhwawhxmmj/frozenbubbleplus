@@ -92,6 +92,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -2075,17 +2076,35 @@ public class MultiplayerGameView extends SurfaceView
   /**
    * <code>MultiplayerGameView</code> class constructor.
    * @param context - the application context.
+   * @param attrs - the compiled XML attributes for the superclass.
+   */
+  public MultiplayerGameView(Context context, AttributeSet attrs) {
+    super(context, attrs);
+    //Log.i("frozen-bubble", "MultiplayerGameView constructor");
+    init(context, (int) VirtualInput.PLAYER1, FrozenBubble.LOCALE_LOCAL);
+  }
+
+  /**
+   * <code>MultiplayerGameView</code> class constructor.
+   * @param context - the application context.
    * @param myPlayerId - the local player ID (1 or 2).
-   * @param numPlayers - reserved for future development.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
    */
-  public MultiplayerGameView(Context context,
-                             int myPlayerId,
-                             int numPlayers,
-                             int gameLocale) {
+  public MultiplayerGameView(Context context, int myPlayerId, int gameLocale) {
     super(context);
-    //Log.i("frozen-bubble", "GameView constructor");
+    //Log.i("frozen-bubble", "MultiplayerGameView constructor");
+    init(context, myPlayerId, gameLocale);
+  }
+
+  /**
+   * <code>MultiplayerGameView</code> object initialization.
+   * @param context - the application context.
+   * @param myPlayerId - the local player ID (1 or 2).
+   * @param gameLocale - the game topology, which can be either local,
+   * or distributed over various network types.
+   */
+  private void init(Context context, int myPlayerId, int gameLocale) {
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
