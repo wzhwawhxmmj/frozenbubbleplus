@@ -80,8 +80,8 @@ import com.efortin.frozenbubble.MulticastManager.eventEnum;
  */
 public class NetworkGameManager extends Thread
   implements MulticastListener, NetworkStatusInterface {
-  private static final String MCAST_HOST_NAME = "224.0.0.15";
-  private static final byte[] MCAST_BYTE_ADDR = { (byte) 224, 0, 0, 15 };
+  private static final String MCAST_HOST_NAME = "225.0.0.15";
+  private static final byte[] MCAST_BYTE_ADDR = { (byte) 225, 0, 0, 15 };
   private static final int    PORT            = 5500;
 
   /*
@@ -589,8 +589,8 @@ public class NetworkGameManager extends Thread
         this.gameClaimed     = status.gameClaimed;
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
-        this.fieldRequest   = status.fieldRequest;
-        this.prefsRequest   = status.prefsRequest;
+        this.fieldRequest    = status.fieldRequest;
+        this.prefsRequest    = status.prefsRequest;
       }
     }
 
@@ -613,8 +613,8 @@ public class NetworkGameManager extends Thread
         shortBytes[0]        = buffer[startIndex++];
         shortBytes[1]        = buffer[startIndex++];
         this.remoteActionID  = toShort(shortBytes);
-        this.fieldRequest   = buffer[startIndex++] == 1;
-        this.prefsRequest   = buffer[startIndex++] == 1;
+        this.fieldRequest    = buffer[startIndex++] == 1;
+        this.prefsRequest    = buffer[startIndex++] == 1;
       }
     }
 
@@ -665,8 +665,8 @@ public class NetworkGameManager extends Thread
       this.readyToPlay     = ready;
       this.localActionID   = localActionID;
       this.remoteActionID  = remoteActionID;
-      this.fieldRequest   = field;
-      this.prefsRequest   = prefs;
+      this.fieldRequest    = field;
+      this.prefsRequest    = prefs;
     }
   };
 
@@ -1127,11 +1127,16 @@ public class NetworkGameManager extends Thread
     if (statusTimerExpired()) {
       if (remoteStatus != null) {
         /*
-         * On a new game, request field data from the remote player.
+         * On a new game, wait for the remote player to start a new game
+         * before requesting field data from the remote player.
+         *
+         * TODO: this is subject to failure given a remote status
+         * message loss.  Need to synchronize game start somehow.
          */
         if (!gotFieldData             &&
             !localStatus.fieldRequest &&
-            !localStatus.readyToPlay) {
+            !localStatus.readyToPlay  &&
+            !remoteStatus.readyToPlay) {
           localStatus.fieldRequest = true;
         }
 
@@ -1148,9 +1153,11 @@ public class NetworkGameManager extends Thread
         /*
          * Only transmit the local game field if the local player local
          * action ID is one less than the remote player remote action
-         * ID.  This signifies that the game is synchronized with
-         * respect to the local player and applying the game field will
-         * not cause a discontinuity in the action queue.
+         * ID.  This signifies that the distributed game is synchronized
+         * with respect to the local player.  Actions must be executed
+         * synchronously with respect to the corresponding game field in
+         * order for performance to be identical on each distributed
+         * device.
          */
         if (remoteStatus.fieldRequest &&
             ((localStatus.localActionID + 1) == remoteStatus.remoteActionID)) {

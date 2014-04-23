@@ -72,8 +72,8 @@ import android.util.Log;
  * receive WiFi multicast messages.
  * <p>Multicast host addresses must be in the IPv4 class D address
  * range, with the first octet being within the 224 to 239 range.
- * For example, <code>"224.0.0.15"</code> is an actual local subnet IPv4
- * multicast address.
+ * For example, <code>"225.0.0.15"</code> is an actual IPv4 multicast
+ * address.
  * <p>Refer to:
  * <a href="url">http://en.wikipedia.org/wiki/Multicast_address</a> for
  * information regarding Multicast address usage and restrictions.
@@ -142,8 +142,8 @@ public class MulticastManager {
    * receive WiFi multicast messages.
    * <p>Multicast host addresses must be in the IPv4 class D address
    * range, with the first octet being within the 224 to 239 range.
-   * For example, <code>"224.0.0.15"</code> is an actual local subnet
-   * IPv4 multicast address.
+   * For example, <code>"225.0.0.15"</code> is an actual IPv4 multicast
+   * address.
    * <p>Refer to:
    * <a href="url">http://en.wikipedia.org/wiki/Multicast_address</a>
    * for information regarding Multicast address usage and restrictions.
