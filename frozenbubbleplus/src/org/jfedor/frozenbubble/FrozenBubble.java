@@ -635,7 +635,6 @@ public class FrozenBubble extends Activity
     if (numPlayers > 1) {
       mMultiplayerGameView = new MultiplayerGameView(this,
                                                      myPlayerId,
-                                                     numPlayers,
                                                      gameLocale);
       setContentView(mMultiplayerGameView);
       mMultiplayerGameView.setGameListener(this);
