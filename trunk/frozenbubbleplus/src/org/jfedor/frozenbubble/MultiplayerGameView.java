@@ -168,7 +168,7 @@ public class MultiplayerGameView extends SurfaceView
     public int     remotePlayerId;
     public boolean isConnected;
     public boolean reservedGameId;
-    public boolean claimedGameId;
+    public boolean playerJoined;
     public boolean gotFieldData;
     public boolean gotPrefsData;
     public boolean readyToPlay;
@@ -1174,7 +1174,7 @@ public class MultiplayerGameView extends SurfaceView
                   mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
-      if (status.claimedGameId) {
+      if (status.playerJoined) {
         mFont.print("waiting for player " + status.remotePlayerId + "...|",
                     x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
