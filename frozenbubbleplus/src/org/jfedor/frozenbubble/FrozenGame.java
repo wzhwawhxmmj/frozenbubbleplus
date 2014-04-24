@@ -1237,7 +1237,6 @@ public class FrozenGame extends GameScreen {
     falling.clear();
     goingUp.clear();
     jumping.clear();
-    bubblePlay = new BubbleSprite[8][13];
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
         bubblePlay[i][j] = null;

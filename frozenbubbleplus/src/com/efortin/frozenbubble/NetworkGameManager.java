@@ -1256,7 +1256,7 @@ public class NetworkGameManager extends Thread
           if (tempStatus.readyToPlay ||
               ((gameId != MulticastManager.FILTER_OFF) &&
                (playerId == localPlayer.playerID))) {
-            if (gameId < GAME_ID_MAX) {
+            if ((gameId >= 0) && (gameId < GAME_ID_MAX)) {
               if (gamesInProgress[gameId] == false) {
                 gamesInProgress[gameId] = true;
                 setGameStartTimeout(GAME_START_TIMEOUT);
@@ -1304,7 +1304,7 @@ public class NetworkGameManager extends Thread
             setStatusTimeout(0L);
             synchronized(this) {
               notify();
-	          }
+            }
           }
         }
 
