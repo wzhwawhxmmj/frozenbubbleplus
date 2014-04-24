@@ -115,6 +115,7 @@ public class NetworkGameManager extends Thread
   private boolean          gotPrefsData;
   private boolean[]        gamesInProgress;
   private boolean          missedAction;
+  private boolean          paused;
   private boolean          running;
   private long             actionTxTime;
   private long             gameStartTime;
@@ -1351,6 +1352,15 @@ public class NetworkGameManager extends Thread
     }
   }
 
+  public void pause() {
+    if (running) {
+      if (session != null) {
+        session.pause();
+      }
+      paused = true;
+    }
+  }
+
   /**
    * Reserve the first available game ID, and update the transport layer
    * receive message filter to ignore all messages that don't have this
@@ -1372,20 +1382,32 @@ public class NetworkGameManager extends Thread
    */
   @Override
   public void run() {
+    paused  = false;
     running = true;
 
     while (running)
     {
-      try {
+      if (paused) try {
+        synchronized(this) {
+          wait();
+        }
+      } catch (InterruptedException ie) {
+        /*
+         * Interrupted.  This is expected behavior.
+         */
+      }
+
+      if (!paused && running) try {
         synchronized(this) {
           wait(100);
         }
       } catch (InterruptedException ie) {
         /*
-         * Receive timeout.  This is expected behavior.
+         * Timed out.  This is expected behavior.
          */
       }
-      if (running) {
+
+      if (!paused && running) {
         manageNetworkGame();
       }
     }
@@ -1491,12 +1513,10 @@ public class NetworkGameManager extends Thread
    * Stop and <code>join()</code> the network game manager thread.
    */
   private void stopThread() {
+    paused  = false;
     running = false;
-    /*
-     * Wake up the thread.
-     */
     synchronized(this) {
-      notify();
+      interrupt();
     }
     /*
      *  Close and join() the multicast thread.
@@ -1635,6 +1655,16 @@ public class NetworkGameManager extends Thread
      * Send the datagram via the multicast manager.
      */
     return session.transmit(buffer);
+  }
+
+  public void unPause() {
+    paused = false;
+    synchronized(this) {
+      interrupt();
+    }
+    if (session != null) {
+      session.unPause();
+    }
   }
 
   public void updateNetworkStatus(NetworkStatus status) {

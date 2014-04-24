@@ -56,7 +56,9 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -125,6 +127,7 @@ public class MulticastManager {
   /*
    * MulticastManager class member variables.
    */
+  private boolean paused;
   private boolean running;
   private byte filter;
   private int mPort;
@@ -267,18 +270,17 @@ public class MulticastManager {
      * registered listener upon datagram receipt.
      */
     private void receiveDatagram() {
-      try {
+      if (!paused && running) try {
         DatagramPacket dpRX =
             new DatagramPacket(rxBuffer, rxBuffer.length, mAddress, mPort);
         mSocket.receive(dpRX);
         byte[] buffer = dpRX.getData();
+        int length    = dpRX.getLength();
 
-        if (running && (dpRX.getLength() != 0) && (mListener != null)) {
+        if (!paused && running && (length != 0) && (mListener != null)) {
           if ((filter == FILTER_OFF) || (filter == buffer[0])) {
-            mListener.onMulticastEvent(eventEnum.PACKET_RX,
-                                       buffer,
-                                       dpRX.getLength());
-            Log.d(LOG_TAG, "received "+dpRX.getLength()+" bytes");
+            mListener.onMulticastEvent(eventEnum.PACKET_RX, buffer, length);
+            Log.d(LOG_TAG, "received "+length+" bytes");
           }
         }
       } catch (NullPointerException npe) {
@@ -315,12 +317,24 @@ public class MulticastManager {
      */
     @Override
     public void run() {
+      paused  = false;
       running = true;
 
-      while (running)
-      {
-        sendDatagram();
-        receiveDatagram();
+      while (running) {
+        if (paused) try {
+          synchronized(this) {
+            wait();
+          }
+        } catch (InterruptedException ie) {
+          /*
+           * Interrupted.  This is expected behavior.
+           */
+        }
+
+        if (!paused && running) {
+          sendDatagram();
+          receiveDatagram();
+        }
       }
     }
 
@@ -329,20 +343,20 @@ public class MulticastManager {
      * as a multicast datagram packet.
      */
     private void sendDatagram() {
-      try {
-        if (running && txList.size() > 0) {
-          byte[] bytes;
-          synchronized(txList) {
-            bytes = txList.get(0);
-          }
-          mSocket.send(new DatagramPacket(bytes,
-                                          bytes.length,
-                                          mAddress,
-                                          mPort));
-          Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
-          synchronized(txList) {
-            txList.remove(0);
-          }
+      if (!paused && running && txList.size() > 0) try {
+        byte[] bytes;
+        synchronized(txList) {
+          bytes = txList.get(0);
+        }
+        mSocket.send(new DatagramPacket(bytes, bytes.length, mAddress, mPort));
+        Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes");
+        synchronized(txList) {
+          txList.remove(0);
+        }
+      } catch (NullPointerException npe) {
+        npe.printStackTrace();
+        if (mListener != null) {
+          mListener.onMulticastEvent(eventEnum.TX_FAIL, null, 0);
         }
       } catch (IOException ioe) {
         ioe.printStackTrace();
@@ -350,6 +364,13 @@ public class MulticastManager {
           mListener.onMulticastEvent(eventEnum.TX_FAIL, null, 0);
         }
       }
+    }
+  }
+
+  public void pause() {
+    if (running) {
+      paused = true;
+      mSocket.disconnect();
     }
   }
 
@@ -369,7 +390,13 @@ public class MulticastManager {
    * Stop and <code>join()</code> the multicast thread.
    */
   private void stopThread() {
+    paused  = false;
     running = false;
+    if (mThread != null) {
+      synchronized(mThread) {
+        mThread.interrupt();
+      }
+    }
     /*
      *  Close and join() the multicast thread.
      */
@@ -401,5 +428,19 @@ public class MulticastManager {
       return true;
     }
     return false;
+  }
+
+  public void unPause() {
+    paused = false;
+    try {
+      mSocket.connect(new InetSocketAddress(mAddress, mPort));
+    } catch (SocketException se) {
+      se.printStackTrace();
+    }
+    if (mThread != null) {
+      synchronized(mThread) {
+        mThread.interrupt();
+      }
+    }
   }
 }

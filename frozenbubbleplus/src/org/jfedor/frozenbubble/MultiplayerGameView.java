@@ -2177,13 +2177,13 @@ public class MultiplayerGameView extends SurfaceView
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
-    //Log.i("frozen-bubble", "GameView.onKeyDown()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.onKeyDown()");
     return mGameThread.doKeyDown(keyCode, msg);
   }
 
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent msg) {
-    //Log.i("frozen-bubble", "GameView.onKeyUp()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.onKeyUp()");
     return mGameThread.doKeyUp(keyCode, msg);
   }
 
@@ -2201,31 +2201,39 @@ public class MultiplayerGameView extends SurfaceView
 
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
-    //Log.i("frozen-bubble", "GameView.onWindowFocusChanged()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.onWindowFocusChanged()");
     if (!hasWindowFocus) {
+      if (mNetworkManager != null) {
+        mNetworkManager.pause();
+      }
       if (mGameThread != null)
         mGameThread.pause();
+    }
+    else {
+      if (mNetworkManager != null) {
+        mNetworkManager.unPause();
+      }
     }
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
                              int height) {
-    //Log.i("frozen-bubble", "GameView.surfaceChanged");
+    //Log.i("frozen-bubble", "MultiplayerGameView.surfaceChanged");
     mGameThread.setSurfaceSize(width, height);
   }
 
   public void surfaceCreated(SurfaceHolder holder) {
-    //Log.i("frozen-bubble", "GameView.surfaceCreated()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.surfaceCreated()");
     mGameThread.setSurfaceOK(true);
   }
 
   public void surfaceDestroyed(SurfaceHolder holder) {
-    //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.surfaceDestroyed()");
     mGameThread.setSurfaceOK(false);
   }
 
   public void cleanUp() {
-    //Log.i("frozen-bubble", "GameView.cleanUp()");
+    //Log.i("frozen-bubble", "MultiplayerGameView.cleanUp()");
     cleanUpNetworkManager();
 
     mPlayer1.init();
