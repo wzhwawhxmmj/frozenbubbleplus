@@ -340,7 +340,7 @@ public class HomeScreen extends Activity {
          */
         //startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
         Toast.makeText(getApplicationContext(),
-            "Not available in this version.", Toast.LENGTH_SHORT).show();
+            "Coming soon...", Toast.LENGTH_SHORT).show();
       }
     });
     startIPGameButton.setOnTouchListener(new Button.OnTouchListener(){
