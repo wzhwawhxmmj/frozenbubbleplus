@@ -536,9 +536,16 @@ public class MultiplayerGameView extends SurfaceView
     /*
      * Set the launcher bubble colors.
      */
-    playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
-                                             newAction.nextBubbleColor,
-                                             newAction.newNextBubbleColor);
+    if ((newAction.launchBubbleColor  > -1) &&
+        (newAction.launchBubbleColor  <  8) &&
+        (newAction.nextBubbleColor    > -1) &&
+        (newAction.nextBubbleColor    <  8) &&
+        (newAction.newNextBubbleColor > -1) &&
+        (newAction.newNextBubbleColor <  8)) {
+      playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
+                                               newAction.nextBubbleColor,
+                                               newAction.newNextBubbleColor);
+    }
 
     /*
      * Set the launcher aim position.
@@ -567,10 +574,21 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     /*
+     * Process a pause/play button toggle request.
+     */
+    if (newAction.keyCode == (byte) KeyEvent.KEYCODE_P) {
+      if (mGameThread != null) {
+        mGameThread.toggleKeyPress(KeyEvent.KEYCODE_P, false, false);
+      }
+    }
+
+    /*
      * Set the current value of the attack bar.
      */
-    playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
-                                                 newAction.attackBubbles);
+    if (newAction.attackBarBubbles > -1) {
+      playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
+                                                   newAction.attackBubbles);
+    }
   }
 
   /**
@@ -908,7 +926,7 @@ public class MultiplayerGameView extends SurfaceView
         /*
          * Process the key press if it is a function key.
          */
-        toggleKeyPress(keyCode, true);
+        toggleKeyPress(keyCode, true, true);
 
         /*
          * Process the key press if it is a game input key.
@@ -951,14 +969,14 @@ public class MultiplayerGameView extends SurfaceView
           x_offset = -318;
         /*
          * Check for a pause button sprite press.  This will toggle the
-         * pause button sprite between paused and unpaused.  If the game
-         * was previously paused by the pause button, ignore screen touches
+         * pause button sprite between pause and play.  If the game was
+         * previously paused by the pause button, ignore screen touches
          * that aren't on the pause button sprite.
          */
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
           if ((Math.abs(x - 183) <= TOUCH_BUTTON_THRESHOLD) &&
               (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
-            toggleKeyPress(KeyEvent.KEYCODE_P, false);
+            toggleKeyPress(KeyEvent.KEYCODE_P, false, true);
           }
           else if (toggleKeyState(KeyEvent.KEYCODE_P))
             return false;
@@ -1854,11 +1872,20 @@ public class MultiplayerGameView extends SurfaceView
      * and off (e.g., game paused on/off, sound on/off, etc.).
      * @param keyCode - the key code to process.
      * @param updateNow - if true, apply state changes.
+     * @param transmit - if true and this is a network game, send the
+     * key code over the network.
      */
-    public void toggleKeyPress(int keyCode, boolean updateNow) {
+    public void toggleKeyPress(int keyCode,
+                               boolean updateNow,
+                               boolean transmit) {
       if (keyCode == KeyEvent.KEYCODE_M)
         muteKeyToggle = !muteKeyToggle;
       else if (keyCode == KeyEvent.KEYCODE_P) {
+        if (transmit && (mNetworkManager != null)) {
+          mNetworkManager.sendLocalPlayerAction(mLocalInput.playerID,
+              false, false, false, keyCode, -1, -1, -1, -1, null,
+              mLocalInput.mGameRef.launchBubblePosition);
+        }
         pauseKeyToggle = !pauseKeyToggle;
         mGameThread.pauseButtonPressed(pauseKeyToggle);
         if (updateNow) {

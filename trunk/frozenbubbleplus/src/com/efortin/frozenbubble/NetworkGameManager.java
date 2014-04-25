@@ -95,7 +95,7 @@ public class NetworkGameManager extends Thread
   /*
    * Datagram size definitions.
    */
-  public static final int  ACTION_BYTES = 36;
+  public static final int  ACTION_BYTES = 37;
   public static final int  FIELD_BYTES  = 112;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
   public static final int  STATUS_BYTES = 9;
@@ -103,7 +103,7 @@ public class NetworkGameManager extends Thread
   /*
    * Network game management definitions.
    */
-  private static final long ACTION_TIMEOUT     = 211L;
+  private static final long ACTION_TIMEOUT     = 521L;
   private static final long GAME_START_TIMEOUT = 509L;
   private static final long STATUS_TIMEOUT     = 503L;
   private static final byte PROTOCOL_VERSION   = 1;
@@ -196,7 +196,7 @@ public class NetworkGameManager extends Thread
      * Initialize the local status local action ID to zero, as it is
      * pre-incremented for every action transmitted to the remote
      * player.
-     * 
+     *
      * Initialize the local status remote action ID to 1, as it must be
      * the first action ID received from the remote player.
      */
@@ -341,16 +341,16 @@ public class NetworkGameManager extends Thread
     /*
      * The following three booleans are flags associated with player
      * actions.
-     * 
+     *
      * compress -
      *   This flag indicates whether to lower the game field compressor.
-     * 
+     *
      * launchBubble -
      *   This flag indicates that the player desires a bubble launch to
      *   occur.  This flag must be set with a valid aimPosition value,
      *   as well as valid values for launchBubbleColor and
      *   nextBubbleColor.
-     * 
+     *
      * swapBubble -
      *   This flag indicates that the player desires that the current
      *   launch bubble be swapped with the next launch bubble.  This
@@ -360,6 +360,7 @@ public class NetworkGameManager extends Thread
     public boolean compress;
     public boolean launchBubble;
     public boolean swapBubble;
+    public byte    keyCode;
     public byte    launchBubbleColor;
     public byte    nextBubbleColor;
     public byte    newNextBubbleColor;
@@ -397,6 +398,7 @@ public class NetworkGameManager extends Thread
         this.compress           = action.compress;
         this.launchBubble       = action.launchBubble;
         this.swapBubble         = action.swapBubble;
+        this.keyCode            = action.keyCode;
         this.launchBubbleColor  = action.launchBubbleColor;
         this.nextBubbleColor    = action.nextBubbleColor;
         this.newNextBubbleColor = action.newNextBubbleColor;
@@ -430,6 +432,7 @@ public class NetworkGameManager extends Thread
         this.compress           = buffer[startIndex++] == 1;
         this.launchBubble       = buffer[startIndex++] == 1;
         this.swapBubble         = buffer[startIndex++] == 1;
+        this.keyCode            = buffer[startIndex++];
         this.launchBubbleColor  = buffer[startIndex++];
         this.nextBubbleColor    = buffer[startIndex++];
         this.newNextBubbleColor = buffer[startIndex++];
@@ -469,6 +472,7 @@ public class NetworkGameManager extends Thread
         buffer[startIndex++] = (byte) ((this.compress == true)?1:0);
         buffer[startIndex++] = (byte) ((this.launchBubble == true)?1:0);
         buffer[startIndex++] = (byte) ((this.swapBubble == true)?1:0);
+        buffer[startIndex++] = this.keyCode;
         buffer[startIndex++] = this.launchBubbleColor;
         buffer[startIndex++] = this.nextBubbleColor;
         buffer[startIndex++] = this.newNextBubbleColor;
@@ -515,7 +519,7 @@ public class NetworkGameManager extends Thread
      * last transmitted action identifer, and remoteActionID will refer
      * to that player's pending action identifier (the action it is 
      * expecting to receive next).
-     * 
+     *
      * This is useful for noting if a player has missed player action
      * datagrams from another player, because its remoteActionID will be
      * less than or equal to the localActionID of the other player if it
@@ -1440,6 +1444,7 @@ public class NetworkGameManager extends Thread
    * @param launch - set <code>true</code> to launch a bubble.
    * @param swap - set <code>true</code> to swap the launch bubble with
    * the next bubble.
+   * @param keyCode - set to the key code value of the player key press.
    * @param launchColor - the launch bubble color.
    * @param nextColor - the next bubble color.
    * @param newNextColor - when a bubble is launched, this is the new
@@ -1450,12 +1455,13 @@ public class NetworkGameManager extends Thread
    * should be the value prior to launch.
    * @param attackBubbles - the array of attack bubble colors.  A value
    * of -1 denotes no color, and thus no attack bubble at that column.
-   * @param aimPosition - the launcher aim aimPosition.
+   * @param aimPosition - the launcher aim position.
    */
   public void sendLocalPlayerAction(int playerId,
                                     boolean compress,
                                     boolean launch,
                                     boolean swap,
+                                    int keyCode,
                                     int launchColor,
                                     int nextColor,
                                     int newNextColor,
@@ -1469,6 +1475,7 @@ public class NetworkGameManager extends Thread
     tempAction.compress = compress;
     tempAction.launchBubble = launch;
     tempAction.swapBubble = swap;
+    tempAction.keyCode = (byte) keyCode;
     tempAction.launchBubbleColor = (byte) launchColor;
     tempAction.nextBubbleColor = (byte) nextColor;
     tempAction.newNextBubbleColor = (byte) newNextColor;
@@ -1519,7 +1526,7 @@ public class NetworkGameManager extends Thread
       interrupt();
     }
     /*
-     *  Close and join() the multicast thread.
+     * Close and join() the multicast thread.
      */
     boolean retry = true;
     while (retry) {
@@ -1528,7 +1535,7 @@ public class NetworkGameManager extends Thread
         retry = false;
       } catch (InterruptedException e) {
         /*
-         *  Keep trying to close the multicast thread.
+         * Keep trying to close the multicast thread.
          */
       }
     }
