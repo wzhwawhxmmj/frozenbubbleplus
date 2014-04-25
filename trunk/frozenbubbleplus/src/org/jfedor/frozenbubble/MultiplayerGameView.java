@@ -578,7 +578,7 @@ public class MultiplayerGameView extends SurfaceView
      */
     if (newAction.keyCode == (byte) KeyEvent.KEYCODE_P) {
       if (mGameThread != null) {
-        mGameThread.toggleKeyPress(KeyEvent.KEYCODE_P, false, false);
+        mGameThread.toggleKeyPress(KeyEvent.KEYCODE_P, true, false);
       }
     }
 

@@ -138,6 +138,7 @@ public class FrozenGame extends GameScreen {
   boolean readyToFire;
   boolean swapPressed;
   gameEnum playResult;
+  short gridCRC16;
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
@@ -336,6 +337,21 @@ public class FrozenGame extends GameScreen {
     }
   }
 
+  public short calculateGridCRC16() {
+    CRC16 gridCRC = new CRC16(0);
+
+    for (int i=0 ; i<8 ; i++) {
+      for (int j=0 ; j<12 ; j++) {
+        if (bubblePlay[i][j] != null) {
+          gridCRC.update(bubblePlay[i][j].getColor());
+        }
+      }
+    }
+
+    gridCRC16 = (short) gridCRC.getValue();
+    return gridCRC16;
+  }
+
   private boolean checkLost() {
     boolean lost = false;
 
@@ -458,17 +474,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public short getGridCRC16() {
-    CRC16 gridCRC = new CRC16(0);
-
-    for (int i=0 ; i<8 ; i++) {
-      for (int j=0 ; j<12 ; j++) {
-        if (bubblePlay[i][j] != null) {
-          gridCRC.update(bubblePlay[i][j].getColor());
-        }
-      }
-    }
-
-    return (short) gridCRC.getValue();
+    return gridCRC16;
   }
 
   public double getMoveDown() {
