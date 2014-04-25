@@ -136,7 +136,8 @@ public class HomeScreen extends Activity {
      * http://en.wikipedia.org/wiki/Arrow_(symbol)
      */
     backButton.setText("\u21B6");
-    backButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 12);
+    backButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 30);
+    backButton.setWidth((int) backButton.getTextSize() * 2);
     backButton.setTypeface(null, Typeface.BOLD);
     backButton.setBackgroundResource(R.drawable.round_button);
     backButton.setId(BACK_ID);
@@ -146,8 +147,8 @@ public class HomeScreen extends Activity {
                                              LayoutParams.WRAP_CONTENT);
     myParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
     myParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-    myParams.topMargin = 30;
-    myParams.rightMargin = 30;
+    myParams.topMargin = 25;
+    myParams.rightMargin = 25;
     /*
      * Add view to layout.
      */
@@ -186,8 +187,9 @@ public class HomeScreen extends Activity {
       }
     });
     start2pGameButton.setText("2 Player");
-    start2pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() * 10));
+    start2pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    start2pGameButton.setWidth((int) (start2pGameButton.getTextSize() * 9));
+    start2pGameButton.setTypeface(null, Typeface.BOLD);
     start2pGameButton.setHorizontalFadingEdgeEnabled(true);
     start2pGameButton.setFadingEdgeLength(5);
     start2pGameButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -225,8 +227,9 @@ public class HomeScreen extends Activity {
       }
     });
     start1pGameButton.setText("1 Player");
-    start1pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() * 10));
+    start1pGameButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    start1pGameButton.setWidth((int) (start1pGameButton.getTextSize() * 9));
+    start1pGameButton.setTypeface(null, Typeface.BOLD);
     start1pGameButton.setHorizontalFadingEdgeEnabled(true);
     start1pGameButton.setFadingEdgeLength(5);
     start1pGameButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -265,8 +268,9 @@ public class HomeScreen extends Activity {
       }
     });
     optionsButton.setText("Options");
-    optionsButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    optionsButton.setWidth((int) (optionsButton.getTextSize() * 10));
+    optionsButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    optionsButton.setWidth((int) (optionsButton.getTextSize() * 9));
+    optionsButton.setTypeface(null, Typeface.BOLD);
     optionsButton.setHorizontalFadingEdgeEnabled(true);
     optionsButton.setFadingEdgeLength(5);
     optionsButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -317,8 +321,9 @@ public class HomeScreen extends Activity {
       }
     });
     startLanGameButton.setText("Local Network");
-    startLanGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    startLanGameButton.setWidth((int) (startLanGameButton.getTextSize() * 10));
+    startLanGameButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    startLanGameButton.setWidth((int) (startLanGameButton.getTextSize() * 9));
+    startLanGameButton.setTypeface(null, Typeface.BOLD);
     startLanGameButton.setHorizontalFadingEdgeEnabled(true);
     startLanGameButton.setFadingEdgeLength(5);
     startLanGameButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -356,8 +361,9 @@ public class HomeScreen extends Activity {
       }
     });
     startCPUGameButton.setText("Player vs. CPU");
-    startCPUGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    startCPUGameButton.setWidth((int) (startCPUGameButton.getTextSize() * 10));
+    startCPUGameButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    startCPUGameButton.setWidth((int) (startCPUGameButton.getTextSize() * 9));
+    startCPUGameButton.setTypeface(null, Typeface.BOLD);
     startCPUGameButton.setHorizontalFadingEdgeEnabled(true);
     startCPUGameButton.setFadingEdgeLength(5);
     startCPUGameButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -398,8 +404,9 @@ public class HomeScreen extends Activity {
       }
     });
     startIPGameButton.setText("Internet");
-    startIPGameButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    startIPGameButton.setWidth((int) (startIPGameButton.getTextSize() * 10));
+    startIPGameButton.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    startIPGameButton.setWidth((int) (startIPGameButton.getTextSize() * 9));
+    startIPGameButton.setTypeface(null, Typeface.BOLD);
     startIPGameButton.setHorizontalFadingEdgeEnabled(true);
     startIPGameButton.setFadingEdgeLength(5);
     startIPGameButton.setShadowLayer(5, 5, 5, R.color.black);
@@ -450,8 +457,9 @@ public class HomeScreen extends Activity {
       }
     });
     player2Button.setText("Player 2");
-    player2Button.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    player2Button.setWidth((int) (player2Button.getTextSize() * 10));
+    player2Button.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    player2Button.setWidth((int) (player2Button.getTextSize() * 9));
+    player2Button.setTypeface(null, Typeface.BOLD);
     player2Button.setHorizontalFadingEdgeEnabled(true);
     player2Button.setFadingEdgeLength(5);
     player2Button.setShadowLayer(5, 5, 5, R.color.black);
@@ -489,8 +497,9 @@ public class HomeScreen extends Activity {
       }
     });
     player1Button.setText("Player 1");
-    player1Button.setTextSize(TypedValue.COMPLEX_UNIT_PT, 8);
-    player1Button.setWidth((int) (player1Button.getTextSize() * 10));
+    player1Button.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 18);
+    player1Button.setWidth((int) (player1Button.getTextSize() * 9));
+    player1Button.setTypeface(null, Typeface.BOLD);
     player1Button.setHorizontalFadingEdgeEnabled(true);
     player1Button.setFadingEdgeLength(5);
     player1Button.setShadowLayer(5, 5, 5, R.color.black);
