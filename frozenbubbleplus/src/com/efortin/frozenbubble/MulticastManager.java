@@ -403,7 +403,7 @@ public class MulticastManager {
       }
     }
     /*
-     *  Close and join() the multicast thread.
+     * Close and join() the multicast thread.
      */
     boolean retry = true;
     while (retry && (mThread != null)) {
@@ -412,7 +412,7 @@ public class MulticastManager {
         retry = false;
       } catch (InterruptedException e) {
         /*
-         *  Keep trying to close the multicast thread.
+         * Keep trying to close the multicast thread.
          */
       }
     }

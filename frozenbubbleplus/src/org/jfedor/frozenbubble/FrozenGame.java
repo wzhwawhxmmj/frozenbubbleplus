@@ -857,6 +857,7 @@ public class FrozenGame extends GameScreen {
                                              compressed,
                                              bubbleLaunched,
                                              swapPressed,
+                                             0,
                                              currentColorWas,
                                              nextColorWas,
                                              nextColor,
