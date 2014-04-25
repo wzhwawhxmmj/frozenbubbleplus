@@ -64,6 +64,7 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 
+import com.efortin.frozenbubble.CRC16;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.VirtualInput;
@@ -454,6 +455,20 @@ public class FrozenGame extends GameScreen {
 
   public BubbleSprite[][] getGrid() {
     return bubblePlay;
+  }
+
+  public short getGridCRC16() {
+    CRC16 gridCRC = new CRC16(0);
+
+    for (int i=0 ; i<8 ; i++) {
+      for (int j=0 ; j<12 ; j++) {
+        if (bubblePlay[i][j] != null) {
+          gridCRC.update(bubblePlay[i][j].getColor());
+        }
+      }
+    }
+
+    return (short) gridCRC.getValue();
   }
 
   public double getMoveDown() {
