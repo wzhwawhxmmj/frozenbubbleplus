@@ -59,6 +59,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.KeyEvent;
@@ -83,14 +84,15 @@ public class HomeScreen extends Activity {
    * programmatically.
    */
   private final static int SCREEN_ID = 100;
-  private final static int BTN1_ID   = 101;
-  private final static int BTN2_ID   = 102;
-  private final static int BTN3_ID   = 103;
-  private final static int BTN4_ID   = 104;
-  private final static int BTN5_ID   = 105;
-  private final static int BTN6_ID   = 106;
-  private final static int BTN7_ID   = 107;
-  private final static int BTN8_ID   = 108;
+  private final static int BACK_ID   = 101;
+  private final static int BTN1_ID   = 102;
+  private final static int BTN2_ID   = 103;
+  private final static int BTN3_ID   = 104;
+  private final static int BTN4_ID   = 105;
+  private final static int BTN5_ID   = 106;
+  private final static int BTN6_ID   = 107;
+  private final static int BTN7_ID   = 108;
+  private final static int BTN8_ID   = 109;
 
   private static int buttonSelected = BTN1_ID;
   private static int buttonSelPage1 = BTN1_ID;
@@ -104,6 +106,53 @@ public class HomeScreen extends Activity {
   private RelativeLayout myLayout = null;
   private ModPlayer myModPlayer   = null;
   private Thread splashThread     = null;
+
+  /**
+   * Given that we are using a relative layout for the home screen in
+   * order to display the background image and various buttons, this
+   * function programmatically adds an on-screen back button to the
+   * layout.
+   */
+  private void addBackButton() {
+    /*
+     * Construct the back button.
+     */
+    Button backButton = new Button(this);
+    backButton.setOnClickListener(new Button.OnClickListener(){
+      public void onClick(View v){
+        backKeyPress();
+      }
+    });
+    backButton.setOnTouchListener(new Button.OnTouchListener(){
+      public boolean onTouch(View v, MotionEvent event){
+        if (event.getAction() == MotionEvent.ACTION_DOWN)
+          v.requestFocus();
+        return false;
+      }
+    });
+    /*
+     * Set the back button text to the following Unicode character:
+     * Anticlockwise Top Semicircle Arrow
+     * http://en.wikipedia.org/wiki/Arrow_(symbol)
+     */
+    backButton.setText("\u21B6");
+    backButton.setTextSize(TypedValue.COMPLEX_UNIT_PT, 12);
+    backButton.setTypeface(null, Typeface.BOLD);
+    backButton.setBackgroundResource(R.drawable.round_button);
+    backButton.setId(BACK_ID);
+    backButton.setFocusable(true);
+    backButton.setFocusableInTouchMode(true);
+    LayoutParams myParams = new LayoutParams(LayoutParams.WRAP_CONTENT,
+                                             LayoutParams.WRAP_CONTENT);
+    myParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+    myParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+    myParams.topMargin = 30;
+    myParams.rightMargin = 30;
+    /*
+     * Add view to layout.
+     */
+    myLayout.addView(backButton, myParams);
+  }
 
   /**
    * Given that we are using a relative layout for the home screen in
@@ -147,8 +196,7 @@ public class HomeScreen extends Activity {
     start2pGameButton.setFocusableInTouchMode(true);
     LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
-    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams1.topMargin = 15;
     myParams1.bottomMargin = 15;
     /*
@@ -187,7 +235,7 @@ public class HomeScreen extends Activity {
     start1pGameButton.setFocusableInTouchMode(true);
     LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams2.addRule(RelativeLayout.ABOVE, start2pGameButton.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
@@ -227,7 +275,7 @@ public class HomeScreen extends Activity {
     optionsButton.setFocusableInTouchMode(true);
     LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams3.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams3.addRule(RelativeLayout.BELOW, start2pGameButton.getId());
     myParams3.topMargin = 15;
     myParams3.bottomMargin = 15;
@@ -279,8 +327,7 @@ public class HomeScreen extends Activity {
     startLanGameButton.setFocusableInTouchMode(true);
     LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
-    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams1.topMargin = 15;
     myParams1.bottomMargin = 15;
     /*
@@ -319,7 +366,7 @@ public class HomeScreen extends Activity {
     startCPUGameButton.setFocusableInTouchMode(true);
     LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams2.addRule(RelativeLayout.ABOVE, startLanGameButton.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
@@ -361,7 +408,7 @@ public class HomeScreen extends Activity {
     startIPGameButton.setFocusableInTouchMode(true);
     LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams3.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams3.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams3.addRule(RelativeLayout.BELOW, startLanGameButton.getId());
     myParams3.topMargin = 15;
     myParams3.bottomMargin = 15;
@@ -413,8 +460,7 @@ public class HomeScreen extends Activity {
     player2Button.setFocusableInTouchMode(true);
     LayoutParams myParams1 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams1.addRule(RelativeLayout.CENTER_HORIZONTAL);
-    myParams1.addRule(RelativeLayout.CENTER_VERTICAL);
+    myParams1.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams1.topMargin = 15;
     myParams1.bottomMargin = 15;
     /*
@@ -453,7 +499,7 @@ public class HomeScreen extends Activity {
     player1Button.setFocusableInTouchMode(true);
     LayoutParams myParams2 = new LayoutParams(LayoutParams.WRAP_CONTENT,
                                               LayoutParams.WRAP_CONTENT);
-    myParams2.addRule(RelativeLayout.CENTER_HORIZONTAL);
+    myParams2.addRule(RelativeLayout.CENTER_IN_PARENT);
     myParams2.addRule(RelativeLayout.ABOVE, player2Button.getId());
     myParams2.topMargin = 15;
     myParams2.bottomMargin = 15;
@@ -461,6 +507,32 @@ public class HomeScreen extends Activity {
      * Add view to layout.
      */
     myLayout.addView(player1Button, myParams2);
+  }
+
+  private void backKeyPress() {
+    /*
+     * When one of the multiplayer game buttons was selected, if the
+     * back button was pressed, remove the multiplayer buttons and
+     * display the home buttons.  The 2 player button becomes selected
+     * by default on the home screen.
+     *
+     * Otherwise if one of the base level buttons was selected, then
+     * terminate the home screen activity.
+     */
+    if ((buttonSelected == BTN4_ID) ||
+        (buttonSelected == BTN5_ID) ||
+        (buttonSelected == BTN6_ID)) {
+      displayButtonPage(1);
+    }
+    else if ((buttonSelected == BTN7_ID) ||
+             (buttonSelected == BTN8_ID)) {
+      displayButtonPage(2);
+    }
+    else {
+      finished = true;
+      cleanUp();
+      finish();
+    }
   }
 
   private void cleanUp() {
@@ -514,29 +586,7 @@ public class HomeScreen extends Activity {
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      /*
-       * When one of the multiplayer game buttons was selected, if the
-       * back button was pressed, remove the multiplayer buttons and
-       * display the home buttons.  The 2 player button becomes selected
-       * by default on the home screen.
-       *
-       * Otherwise if one of the base level buttons was selected, then
-       * terminate the home screen activity.
-       */
-      if ((buttonSelected == BTN4_ID) ||
-          (buttonSelected == BTN5_ID) ||
-          (buttonSelected == BTN6_ID)) {
-        displayButtonPage(1);
-      }
-      else if ((buttonSelected == BTN7_ID) ||
-               (buttonSelected == BTN8_ID)) {
-        displayButtonPage(2);
-      }
-      else {
-        cleanUp();
-        finish();
-        finished = true;
-      }
+      backKeyPress();
       return true;
     }
     return super.onKeyDown(keyCode, event);
@@ -601,7 +651,7 @@ public class HomeScreen extends Activity {
             if (!finished) {
               runOnUiThread(new Runnable() {
                 public void run() {
-                    startHomeScreen();
+                  startHomeScreen();
                 }
               });
             }
@@ -723,6 +773,7 @@ public class HomeScreen extends Activity {
   private void startFrozenBubble(int myPlayerId,
                                  int numPlayers,
                                  int gameLocale) {
+    finished = true;
     /*
      * Since the default game activity creates its own player,
      * destroy the current player.
@@ -740,13 +791,13 @@ public class HomeScreen extends Activity {
      * Terminate the splash screen activity.
      */
     finish();
-    finished = true;
   }
 
   private void startHomeScreen() {
     if (!homeShown) {
       homeShown = true;
       setBackgroundImage(R.drawable.home_screen);
+      addBackButton();
       if ((buttonSelected == BTN1_ID) ||
           (buttonSelected == BTN2_ID) ||
           (buttonSelected == BTN3_ID))
