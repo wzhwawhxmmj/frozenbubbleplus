@@ -58,7 +58,6 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
@@ -371,6 +370,12 @@ public class MulticastManager {
     if (running) {
       paused = true;
       mSocket.disconnect();
+      try {
+        mSocket.leaveGroup(mAddress);
+      } catch (IOException ioe) {
+        ioe.printStackTrace();
+      }
+      mLock.release();
     }
   }
 
@@ -432,10 +437,13 @@ public class MulticastManager {
 
   public void unPause() {
     paused = false;
+    mLock.acquire();
     try {
+      mSocket.joinGroup(mAddress);
+      mSocket.bind   (new InetSocketAddress(mAddress, mPort));
       mSocket.connect(new InetSocketAddress(mAddress, mPort));
-    } catch (SocketException se) {
-      se.printStackTrace();
+    } catch (IOException ioe) {
+      ioe.printStackTrace();
     }
     if (mThread != null) {
       synchronized(mThread) {
