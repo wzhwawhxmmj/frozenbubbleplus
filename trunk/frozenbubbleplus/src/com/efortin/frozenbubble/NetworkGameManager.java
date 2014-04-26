@@ -98,7 +98,7 @@ public class NetworkGameManager extends Thread
   public static final int  ACTION_BYTES = 37;
   public static final int  FIELD_BYTES  = 112;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
-  public static final int  STATUS_BYTES = 9;
+  public static final int  STATUS_BYTES = 13;
 
   /*
    * Network game management definitions.
@@ -202,7 +202,8 @@ public class NetworkGameManager extends Thread
      */
     localStatus = new PlayerStatus((byte) localPlayer.playerID,
                                    (short) 0, (short) 1,
-                                   false, false, requestPrefs);
+                                   false, false, requestPrefs,
+                                   (short) 0, (short) 0);
   }
 
   /**
@@ -540,6 +541,13 @@ public class NetworkGameManager extends Thread
      */
     private boolean fieldRequest;
     private boolean prefsRequest;
+    /*
+     * The following values are the bubble grid CRC16 values for the
+     * local and remote game fields.  When the CRC16 value is zero, the
+     * CRC16 value has not been calculated (or improbably, is zero).
+     */
+    public short localChecksum;
+    public short remoteChecksum;
 
     /**
      * Class constructor.
@@ -549,14 +557,18 @@ public class NetworkGameManager extends Thread
      * @param ready - player is ready to play flag.
      * @param field - request field data.
      * @param prefs - request preference data.
+     * @param localCRC - the local player bubble grid CRC16 checksum.
+     * @param remoteCRC - the remote player bubble grid CRC16 checksum.
      */
     public PlayerStatus(byte id,
                         short localId,
                         short remoteId,
                         boolean ready,
                         boolean field,
-                        boolean prefs) {
-      init(id, localId, remoteId, ready, field, prefs);
+                        boolean prefs,
+                        short localCRC,
+                        short remoteCRC) {
+      init(id, localId, remoteId, ready, field, prefs, localCRC, remoteCRC);
     }
 
     /**
@@ -588,6 +600,8 @@ public class NetworkGameManager extends Thread
         this.readyToPlay     = status.readyToPlay;
         this.fieldRequest    = status.fieldRequest;
         this.prefsRequest    = status.prefsRequest;
+        this.localChecksum   = status.localChecksum;
+        this.remoteChecksum  = status.remoteChecksum;
       }
     }
 
@@ -611,6 +625,12 @@ public class NetworkGameManager extends Thread
         this.readyToPlay     = buffer[startIndex++] == 1;
         this.fieldRequest    = buffer[startIndex++] == 1;
         this.prefsRequest    = buffer[startIndex++] == 1;
+        shortBytes[0]        = buffer[startIndex++];
+        shortBytes[1]        = buffer[startIndex++];
+        this.localChecksum   = toShort(shortBytes);
+        shortBytes[0]        = buffer[startIndex++];
+        shortBytes[1]        = buffer[startIndex++];
+        this.remoteChecksum  = toShort(shortBytes);
       }
     }
 
@@ -634,6 +654,12 @@ public class NetworkGameManager extends Thread
         buffer[startIndex++] = (byte) ((this.readyToPlay == true)?1:0);
         buffer[startIndex++] = (byte) ((this.fieldRequest == true)?1:0);
         buffer[startIndex++] = (byte) ((this.prefsRequest == true)?1:0);
+        toByteArray(this.localChecksum, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
+        toByteArray(this.remoteChecksum, shortBytes);
+        buffer[startIndex++] = shortBytes[0];
+        buffer[startIndex++] = shortBytes[1];
       }
     }
 
@@ -645,13 +671,17 @@ public class NetworkGameManager extends Thread
      * @param ready - player is ready to play.
      * @param field - request field data
      * @param prefs - request preference data
+     * @param localCRC - the local player bubble grid CRC16 checksum.
+     * @param remoteCRC - the remote player bubble grid CRC16 checksum.
      */
     public void init(byte id,
                      short localId,
                      short remoteId,
                      boolean ready,
                      boolean field,
-                     boolean prefs) {
+                     boolean prefs,
+                     short localCRC,
+                     short remoteCRC) {
       this.playerID        = id;
       this.protocolVersion = PROTOCOL_VERSION;
       this.localActionID   = localId;
@@ -659,6 +689,8 @@ public class NetworkGameManager extends Thread
       this.readyToPlay     = ready;
       this.fieldRequest    = field;
       this.prefsRequest    = prefs;
+      this.localChecksum   = localCRC;
+      this.remoteChecksum  = remoteCRC;
     }
   };
 
@@ -694,10 +726,6 @@ public class NetworkGameManager extends Thread
       else {
         return -1;
       }
-    }
-
-    public void requestGameField() {
-      localStatus.fieldRequest = true;
     }
   };
 
@@ -780,6 +808,17 @@ public class NetworkGameManager extends Thread
         if (newAction.localActionID == localStatus.remoteActionID) {
           setStatusTimeout(STATUS_TIMEOUT);
         }
+      }
+    }
+  }
+
+  public void checkRemoteGridChecksum() {
+    if ((localStatus != null) && (remoteStatus != null)) {
+      if ((localStatus.remoteActionID == (remoteStatus.localActionID + 1)) &&
+          (localStatus.remoteChecksum != 0) &&
+          (remoteStatus.localChecksum != 0) &&
+          (localStatus.remoteChecksum != remoteStatus.localChecksum)) {
+        localStatus.fieldRequest = true;
       }
     }
   }
@@ -1469,6 +1508,7 @@ public class NetworkGameManager extends Thread
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
+    localStatus.localChecksum = 0;
     tempAction.playerID = (byte) playerId;
     tempAction.localActionID = ++localStatus.localActionID;
     tempAction.remoteActionID = localStatus.remoteActionID;
@@ -1502,6 +1542,28 @@ public class NetworkGameManager extends Thread
    */
   public void setGameStartTimeout(long timeout) {
     gameStartTime = System.currentTimeMillis() + timeout;
+  }
+
+  /**
+   * Set the local player local game field checksum.  The checksum is
+   * set to zero immediately after every local player action, and must
+   * be set as soon as the game field has become static and a new
+   * checksum has been calculated.
+   * @param checksum - the new game field checksum.
+   */
+  public void setLocalChecksum(short checksum) {
+    localStatus.localChecksum = checksum;
+  }
+
+  /**
+   * Set the local player remote game field checksum.  The checksum is
+   * set to zero immediately after every remote player action, and must
+   * be set as soon as the game field has become static and a new
+   * checksum has been calculated.
+   * @param checksum - the new game field checksum.
+   */
+  public void setRemoteChecksum(short checksum) {
+    localStatus.remoteChecksum = checksum;
   }
 
   /**
