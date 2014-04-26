@@ -1508,7 +1508,6 @@ public class NetworkGameManager extends Thread
                                     byte attackBubbles[],
                                     double aimPosition) {
     PlayerAction tempAction = new PlayerAction(null);
-    localStatus.localChecksum = 0;
     tempAction.playerID = (byte) playerId;
     tempAction.localActionID = ++localStatus.localActionID;
     tempAction.remoteActionID = localStatus.remoteActionID;

@@ -2010,9 +2010,9 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * If playing a network game, update the bubble grid checksums.
        */
-      if (mNetworkManager == null) {
-        mNetworkManager.setLocalChecksum(mFrozenGame1.gridChecksum);
-        mNetworkManager.setRemoteChecksum(mFrozenGame2.gridChecksum);
+      if (mNetworkManager != null) {
+        mNetworkManager.setLocalChecksum(mLocalInput.mGameRef.gridChecksum);
+        mNetworkManager.setRemoteChecksum(mRemoteInput.mGameRef.gridChecksum);
       }
 
       /*
