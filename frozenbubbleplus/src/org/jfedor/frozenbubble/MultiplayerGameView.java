@@ -504,6 +504,9 @@ public class MultiplayerGameView extends SurfaceView
           setPlayerAction(remoteInterface.playerAction);
           remoteInterface.gotAction = false;
         }
+        else if (mRemoteInput.mGameRef.getOkToFire()) {
+          mNetworkManager.checkRemoteGridChecksum();
+        }
       }
     }
   }
@@ -2003,6 +2006,14 @@ public class MultiplayerGameView extends SurfaceView
                                               mPlayer2.getTouchY(),
                                               mPlayer2.actionTouchFireATS(),
                                               mPlayer2.getTouchDxATS());
+
+      /*
+       * If playing a network game, update the bubble grid checksums.
+       */
+      if (mNetworkManager == null) {
+        mNetworkManager.setLocalChecksum(mFrozenGame1.gridChecksum);
+        mNetworkManager.setRemoteChecksum(mFrozenGame2.gridChecksum);
+      }
 
       /*
        * If playing a CPU opponent, notify the computer that the current

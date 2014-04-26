@@ -138,7 +138,7 @@ public class FrozenGame extends GameScreen {
   boolean readyToFire;
   boolean swapPressed;
   gameEnum playResult;
-  short gridCRC16;
+  short gridChecksum;
   int fixedBubbles;
   int frozenifyX, frozenifyY;
   int nbBubbles;
@@ -337,7 +337,7 @@ public class FrozenGame extends GameScreen {
     }
   }
 
-  public short calculateGridCRC16() {
+  public void calculateGridChecksum() {
     CRC16 gridCRC = new CRC16(0);
 
     for (int i=0 ; i<8 ; i++) {
@@ -348,8 +348,7 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    gridCRC16 = (short) gridCRC.getValue();
-    return gridCRC16;
+    gridChecksum = (short) gridCRC.getValue();
   }
 
   private boolean checkLost() {
@@ -471,10 +470,6 @@ public class FrozenGame extends GameScreen {
 
   public BubbleSprite[][] getGrid() {
     return bubblePlay;
-  }
-
-  public short getGridCRC16() {
-    return gridCRC16;
   }
 
   public double getMoveDown() {
@@ -871,20 +866,26 @@ public class FrozenGame extends GameScreen {
      * network game, transmit the local player action to the remote
      * player if an action occurred.
      */
-    if ((networkManager != null) && !isRemote && (malusBar != null)) {
+    if ((networkManager != null) && (malusBar != null)) {
       if (bubbleLaunched || compressed || swapPressed ||
           (numAttackBubbles > 0)) {
-        networkManager.sendLocalPlayerAction(player,
-                                             compressed,
-                                             bubbleLaunched,
-                                             swapPressed,
-                                             0,
-                                             currentColorWas,
-                                             nextColorWas,
-                                             nextColor,
-                                             attackBarBubbles,
-                                             malusBar.attackBubbles,
-                                             launchBubblePosition);
+        gridChecksum = 0;
+        if (!isRemote) {
+          networkManager.sendLocalPlayerAction(player,
+                                               compressed,
+                                               bubbleLaunched,
+                                               swapPressed,
+                                               0,
+                                               currentColorWas,
+                                               nextColorWas,
+                                               nextColor,
+                                               attackBarBubbles,
+                                               malusBar.attackBubbles,
+                                               launchBubblePosition);
+        }
+      }
+      else if ((gridChecksum == 0) && getOkToFire()) {
+        calculateGridChecksum();
       }
     }
 
