@@ -1192,9 +1192,11 @@ public class NetworkGameManager extends Thread
   public void newGame() {
     gotFieldData = false;
     if (localStatus != null) {
-      localStatus.readyToPlay = false;
-      localStatus.localActionID = 0;
+      localStatus.readyToPlay    = false;
+      localStatus.localActionID  = 0;
       localStatus.remoteActionID = 1;
+      localStatus.localChecksum  = 0;
+      localStatus.remoteChecksum = 0;
     }
     if (localActionList != null) {
       synchronized(localActionList) {
