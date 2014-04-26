@@ -869,7 +869,9 @@ public class FrozenGame extends GameScreen {
     if ((networkManager != null) && (malusBar != null)) {
       if (bubbleLaunched || compressed || swapPressed ||
           (numAttackBubbles > 0)) {
-        gridChecksum = 0;
+        if (bubbleLaunched || (numAttackBubbles > 0)) {
+          gridChecksum = 0;
+        }
         if (!isRemote) {
           networkManager.sendLocalPlayerAction(player,
                                                compressed,
