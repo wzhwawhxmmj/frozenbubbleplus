@@ -867,15 +867,30 @@ public class FrozenBubble extends Activity
         AccelerometerManager.isSupported(getApplicationContext())) {
       AccelerometerManager.startListening(getApplicationContext(),this);
       /*
-       * In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT was added to
-       * ActivityInfo.  This mode was actually supported by earlier
-       * APIs, but a definition was not yet explicity defined.
+       * In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT and
+       * SCREEN_ORIENTATION_SENSOR_LANDSCAPE were added to ActivityInfo.
+       * This application is developed in API level 4, but using these
+       * values will be supported correctly in devices with a native API
+       * level that implements this functionality.
        *
-       * This mode allows the device to display the screen in either
+       * These modes allow the device to display the screen in either
        * normal or reverse portrait mode based on the device orientation
        * reported by the accelerometer hardware.
+       *
+       * For multiplayer games using rotate to shoot, set the
+       * orientation to sensor landscape, and for single player games,
+       * set the orientation to sensor portrait.
        */
-      setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+      /*
+       * TODO: need to fix setting the orientation for multiplayer
+       * games.
+       */
+      if (numPlayers > 1) {
+        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+      }
+      else {
+        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+      }
     }
 
     if ((targetMode != ROTATE_TO_SHOOT) &&
@@ -933,14 +948,25 @@ public class FrozenBubble extends Activity
       if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x = -x;
 
-      mGameThread.setPosition(20f+x*2f);
+      mGameThread.setPosition(20.0f+x*2.0f);
     }
 
     if (mMultiplayerGameThread != null) {
       if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x = -x;
+      /*
+       * TODO: need to fix landscape rotation targeting - accelerometer
+       * manager may need addressing.
+       *
+       * TODO: need to fix saving targeting mode in multiplayer, and
+       * screen rotation getting applied prior to game start.
+       */
+      //else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+      //  x = -x;
+      //else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+      //  x = -x;
 
-      mMultiplayerGameThread.setPosition(20f+x*2f);
+      mMultiplayerGameThread.setPosition(20.0f+x*2.0f);
     }
   }
 

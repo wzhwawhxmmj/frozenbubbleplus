@@ -52,6 +52,7 @@
 
 package com.efortin.frozenbubble;
 
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
@@ -109,6 +110,14 @@ public class NetworkGameManager extends Thread
   private static final byte PROTOCOL_VERSION   = 1;
   private static final byte GAME_ID_MAX        = 100;
 
+  /*
+   * UDP unicast and multicast connection type enumeration. 
+   */
+  public static enum connectEnum {
+    UDP_UNICAST,
+    UDP_MULTICAST;
+  }
+
   private byte             myGameID;
   private boolean          anyStatusRx;
   private boolean          gotFieldData;
@@ -120,6 +129,7 @@ public class NetworkGameManager extends Thread
   private long             actionTxTime;
   private long             gameStartTime;
   private long             statusTxTime;
+  private connectEnum      connectType;
   private String           localIpAddress = null;
   private String           remoteIpAddress = null;
   private Context          myContext = null;
@@ -145,15 +155,17 @@ public class NetworkGameManager extends Thread
    * Class constructor.
    * @param myContext - the context from which to obtain the application
    * context to pass to the transport layer.
+   * @param connectType - the transport layer connect type.
    * @param localPlayer - reference to the local player input object.
    * @param remotePlayer - reference to the remote player input object.
    * transport layer to create a socket connection.
    */
   public NetworkGameManager(Context myContext,
+                            connectEnum connectType,
                             VirtualInput localPlayer,
                             VirtualInput remotePlayer) {
-    this.localPlayer = localPlayer;
     this.myContext = myContext.getApplicationContext();
+    this.connectType = connectType;
     this.localPlayer = localPlayer;
     this.remotePlayer = remotePlayer;
     /*
@@ -1056,6 +1068,18 @@ public class NetworkGameManager extends Thread
     return remoteInterface.gotAction;
   }
 
+  private String getRemoteAddress() {
+    if (connectType == connectEnum.UDP_UNICAST) {
+      SharedPreferences dsp = 
+          PreferenceManager.getDefaultSharedPreferences(myContext);
+      remoteIpAddress = dsp.getString("opponent_ip_address", null);
+    }
+    else
+      remoteIpAddress = MCAST_HOST_NAME;
+
+    return remoteIpAddress;
+  }
+
   /**
    * This function obtains the remote player interface and returns a
    * reference to it to the caller.
@@ -1200,15 +1224,24 @@ public class NetworkGameManager extends Thread
     setGameStartTimeout(GAME_START_TIMEOUT);
     setStatusTimeout(0L);
     /*
-     * If an internet multicast session has not yet been created, create
-     * a new one and start the <code>NetworkGameManager</code> thread.
+     * If a UDP session has not yet been created, create a new one and
+     * start the <code>NetworkGameManager</code> thread.
      */
     if (session == null) {
-      session = new MulticastManager(myContext,
-                                     MCAST_HOST_NAME,
-                                     MCAST_BYTE_ADDR,
-                                     PORT);
-      session.setMulticastListener(this);
+      try {
+        if (connectType == connectEnum.UDP_UNICAST) {
+          session = new MulticastManager(myContext, getRemoteAddress(), PORT);
+        }
+        else {
+          session = new MulticastManager(myContext, MCAST_BYTE_ADDR, PORT);
+        }
+        session.setMulticastListener(this);
+      } catch(UnknownHostException uhe) {
+        if (session != null) {
+          session.cleanUp();
+        }
+        session = null;
+      }
       /*
        * Start the network manager thread.
        */
@@ -1400,7 +1433,9 @@ public class NetworkGameManager extends Thread
     for (byte index = 0;index < GAME_ID_MAX;index++) {
       if (!gamesInProgress[index]) {
         myGameID = index;
-        session.setFilter(myGameID);
+        if (session != null) {
+          session.setFilter(myGameID);
+        }
         setStatusTimeout(0L);
         break;
       }
@@ -1660,7 +1695,12 @@ public class NetworkGameManager extends Thread
     /*
      * Send the datagram via the multicast manager.
      */
-    return session.transmit(buffer);
+    if (session != null) {
+      return session.transmit(buffer);
+    }
+    else {
+      return false;
+    }
   }
 
   /**
@@ -1677,7 +1717,12 @@ public class NetworkGameManager extends Thread
     /*
      * Send the datagram via the multicast manager.
      */
-    return session.transmit(buffer);
+    if (session != null) {
+      return session.transmit(buffer);
+    }
+    else {
+      return false;
+    }
   }
 
   /**
@@ -1692,7 +1737,12 @@ public class NetworkGameManager extends Thread
     /*
      * Send the datagram via the multicast manager.
      */
-    return session.transmit(buffer);
+    if (session != null) {
+      return session.transmit(buffer);
+    }
+    else {
+      return false;
+    }
   }
 
   /**
@@ -1709,7 +1759,12 @@ public class NetworkGameManager extends Thread
     /*
      * Send the datagram via the multicast manager.
      */
-    return session.transmit(buffer);
+    if (session != null) {
+      return session.transmit(buffer);
+    }
+    else {
+      return false;
+    }
   }
 
   public void unPause() {
@@ -1742,14 +1797,12 @@ public class NetworkGameManager extends Thread
       status.gotPrefsData  = false;
     }
     status.readyToPlay = gameIsReadyForAction();
-    if (localIpAddress == null) {
+    if ((localIpAddress == null) && (session != null)) {
       localIpAddress = session.getLocalIpAddress();
     }
     status.localIpAddress = localIpAddress;
     if (remoteIpAddress == null) {
-      SharedPreferences dsp = 
-          PreferenceManager.getDefaultSharedPreferences(myContext);
-      remoteIpAddress = dsp.getString("opponent_ip_address", null);
+      getRemoteAddress();
     }
     status.remoteIpAddress = remoteIpAddress;
   }
