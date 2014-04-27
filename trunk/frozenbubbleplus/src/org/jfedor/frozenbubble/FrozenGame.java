@@ -242,8 +242,8 @@ public class FrozenGame extends GameScreen {
       return;
     }
 
-    for (int j=0 ; j<12 ; j++) {
-      for (int i=j%2 ; i<8 ; i++) {
+    for (int j = 0; j < 12; j++) {
+      for (int i = j%2; i < 8; i++) {
         if (currentLevel[i][j] != -1) {
           BubbleSprite newOne = new BubbleSprite(
             new Rect(190+i*32-(j%2)*16, 44+j*28, 32, 32),
@@ -327,10 +327,10 @@ public class FrozenGame extends GameScreen {
   }
 
   private void blinkLine(int number) {
-    int move = number % 2;
+    int move = number%2;
     int column = (number+1) >> 1;
 
-    for (int i=move ; i<13 ; i++) {
+    for (int i = move; i < 13; i++) {
       if (bubblePlay[column][i] != null) {
         bubblePlay[column][i].blink();
       }
@@ -340,8 +340,8 @@ public class FrozenGame extends GameScreen {
   public void calculateGridChecksum() {
     CRC16 gridCRC = new CRC16(0);
 
-    for (int i=0 ; i<8 ; i++) {
-      for (int j=0 ; j<12 ; j++) {
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 12; j++) {
         if (bubblePlay[i][j] != null) {
           gridCRC.update(bubblePlay[i][j].getColor());
         }
@@ -356,11 +356,9 @@ public class FrozenGame extends GameScreen {
 
     if (!endOfGame) {
       if (movingBubble != null) {
-        if (movingBubble.fixed()) {
-          if (movingBubble.getSpritePosition().y>=380 &&
-              !movingBubble.released()) {
-            lost = true;
-          }
+        if (movingBubble.fixed() && !movingBubble.released() &&
+            (movingBubble.getSpritePosition().y >= 380)) {
+          lost = true;
         }
       }
   
@@ -421,7 +419,7 @@ public class FrozenGame extends GameScreen {
       frozenifyX = 7;
       frozenifyY--;
 
-      if (frozenifyY<0) {
+      if (frozenifyY < 0) {
         frozenify = false;
         this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
                                        gameLost));
@@ -436,7 +434,7 @@ public class FrozenGame extends GameScreen {
         frozenifyX = 7;
         frozenifyY--;
 
-        if (frozenifyY<0) {
+        if (frozenifyY < 0) {
           frozenify = false;
           this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
                                          gameLost));
@@ -541,12 +539,12 @@ public class FrozenGame extends GameScreen {
       soundManager.playSound(FrozenBubble.SOUND_NEWROOT);
     }
 
-    for (int i=0 ; i<8 ; i++) {
-      for (int j=0 ; j<12 ; j++) {
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 12; j++) {
         if (bubblePlay[i][j] != null) {
           bubblePlay[i][j].moveDown();
 
-          if ((bubblePlay[i][j].getSpritePosition().y>=380) && !endOfGame) {
+          if ((bubblePlay[i][j].getSpritePosition().y >= 380) && !endOfGame) {
             penguin.updateState(PenguinSprite.STATE_GAME_LOST);
             if (highscoreManager != null)
               highscoreManager.lostLevel();
@@ -715,7 +713,11 @@ public class FrozenGame extends GameScreen {
       else {
         penguin.updateState(PenguinSprite.STATE_VOID);
 
-        if (frozenify) {
+        /*
+         * If the game is over because of bubble overflow, wait until
+         * all the bubbles are fixed in place to freeze them.
+         */
+        if (frozenify && (goingUp.size() == 0)) {
           frozenify();
         }
       }
@@ -807,12 +809,12 @@ public class FrozenGame extends GameScreen {
       if (hurryTime == 2) {
         removeSprite(hurrySprite);
       }
-      if (hurryTime>=240) {
-        if (hurryTime % 40 == 10) {
+      if (hurryTime >= 240) {
+        if (hurryTime%40 == 10) {
           addSprite(hurrySprite);
           soundManager.playSound(FrozenBubble.SOUND_HURRY);
         }
-        else if (hurryTime % 40 == 35) {
+        else if (hurryTime%40 == 35) {
           removeSprite(hurrySprite);
         }
       }
@@ -822,7 +824,6 @@ public class FrozenGame extends GameScreen {
           numAttackBubbles = releaseBubbles();
           malusBar.releaseTime = 0;
         }
-        checkLost();
       }
     }
 
@@ -847,16 +848,24 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    for (int i=0 ; i<falling.size() ; i++) {
+    for (int i = 0; i < falling.size(); i++) {
       ((BubbleSprite)falling.elementAt(i)).fall();
     }
 
-    for (int i=0 ; i<goingUp.size() ; i++) {
+    for (int i = 0; i < goingUp.size(); i++) {
       ((BubbleSprite)goingUp.elementAt(i)).goUp();
     }
 
-    for (int i=0 ; i<jumping.size() ; i++) {
+    for (int i = 0; i < jumping.size(); i++) {
       ((BubbleSprite)jumping.elementAt(i)).jump();
+    }
+
+    /*
+     * In a multiplayer game, check if the player lost due to attack
+     * bubbles overflowing the play area.
+     */
+    if (malusBar != null) {
+      checkLost();
     }
 
     synchronizeBubbleManager();
@@ -1367,13 +1376,13 @@ public class FrozenGame extends GameScreen {
           }
         }
       }
-      for (int i=0 ; i<falling.size() ; i++) {
+      for (int i = 0; i < falling.size(); i++) {
         this.addSprite(falling.elementAt(i));
       }
-      for (int i=0 ; i<goingUp.size() ; i++) {
+      for (int i = 0; i < goingUp.size(); i++) {
         this.addSprite(goingUp.elementAt(i));
       }
-      for (int i=0 ; i<jumping.size() ; i++) {
+      for (int i = 0; i < jumping.size(); i++) {
         this.addSprite(jumping.elementAt(i));
       }
     }
