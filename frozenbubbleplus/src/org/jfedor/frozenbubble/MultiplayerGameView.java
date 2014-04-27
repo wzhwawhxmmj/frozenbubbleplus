@@ -82,6 +82,8 @@ import org.gsanson.frozenbubble.MalusBar;
 import org.jfedor.frozenbubble.GameScreen.eventEnum;
 import org.jfedor.frozenbubble.GameScreen.gameEnum;
 import org.jfedor.frozenbubble.GameScreen.stateEnum;
+import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.NetworkStatus;
+import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.RemoteInterface;
 
 import android.app.Activity;
 import android.content.Context;
@@ -105,7 +107,6 @@ import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.NetworkGameManager.GameFieldData;
-import com.efortin.frozenbubble.NetworkGameManager.NetGameInterface;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
 
@@ -129,8 +130,8 @@ public class MultiplayerGameView extends SurfaceView
   private int                   numPlayer2GamesWon;
   private Context               mContext;
   private MultiplayerGameThread mGameThread;
-  private NetGameInterface      remoteInterface;
   private NetworkGameManager    mNetworkManager;
+  private RemoteInterface       remoteInterface;
   private ComputerAI            mOpponent;
   private VirtualInput          mLocalInput;
   private VirtualInput          mRemoteInput;
@@ -159,28 +160,84 @@ public class MultiplayerGameView extends SurfaceView
   }
 
   /**
-   * A class to encapsulate all network status variables used in drawing
-   * the network status screen.
-   * @author efortin
-   *
-   */
-  public class NetworkStatus {
-    public int     localPlayerId;
-    public int     remotePlayerId;
-    public boolean isConnected;
-    public boolean reservedGameId;
-    public boolean playerJoined;
-    public boolean gotFieldData;
-    public boolean gotPrefsData;
-    public boolean readyToPlay;
-  };
-
-  /**
-   * Network status interface to obtain game synchronization progress.
+   * Network game interface.  This interface declares methods that must
+   * be implemented by the network management class to implement a
+   * distributed network multiplayer game.
    * @author Eric Fortin
    *
    */
-  public interface NetworkStatusInterface {
+  public interface NetGameInterface {
+    /**
+     * This class encapsulates player action and game field storage for
+     * use by the game thread to determine when to process remote player
+     * actions and game field bubble grid synchronization tasks.
+     * @author Eric Fortin
+     *
+     */
+    public class RemoteInterface {
+      public boolean       gotAction;
+      public boolean       gotFieldData;
+      public PlayerAction  playerAction;
+      public GameFieldData gameFieldData;
+
+      public RemoteInterface(PlayerAction action, GameFieldData fieldData) {
+        gotAction = false;
+        gotFieldData = false;
+        playerAction = action;
+        gameFieldData = fieldData;
+      }
+
+      public void cleanUp() {
+        gotAction = false;
+        gotFieldData = false;
+        playerAction = null;
+        gameFieldData = null;
+      }
+    };
+
+    /**
+     * A class to encapsulate all network status variables used in
+     * drawing the network status screen.
+     * @author efortin
+     *
+     */
+    public class NetworkStatus {
+      public int     localPlayerId;
+      public int     remotePlayerId;
+      public boolean isConnected;
+      public boolean reservedGameId;
+      public boolean playerJoined;
+      public boolean gotFieldData;
+      public boolean gotPrefsData;
+      public boolean readyToPlay;
+    };
+
+    /*
+     * Force the implementer to supply the following methods.
+     */
+    public abstract void checkRemoteChecksum();
+    public abstract void cleanUp();
+    public abstract boolean gameIsReadyForAction();
+    public abstract short getLatestRemoteActionId();
+    public abstract boolean getRemoteAction();
+    public abstract PlayerAction getRemoteActionPreview();
+    public abstract RemoteInterface getRemoteInterface();
+    public abstract void newGame();
+    public abstract void pause();
+    public abstract void sendLocalPlayerAction(int playerId,
+                                               boolean compress,
+                                               boolean launch,
+                                               boolean swap,
+                                               int keyCode,
+                                               int launchColor,
+                                               int nextColor,
+                                               int newNextColor,
+                                               int attackBarBubbles,
+                                               byte attackBubbles[],
+                                               double aimPosition);
+    public abstract void setLocalChecksum(short checksum);
+    public abstract void setRemoteChecksum(short checksum);
+    public abstract void unPause();
     public abstract void updateNetworkStatus(NetworkStatus status);
   }
 
@@ -482,7 +539,7 @@ public class MultiplayerGameView extends SurfaceView
        * player action ID.
        */
       if (remoteInterface.gotFieldData) {
-        if (remoteInterface.getLatestActionId() ==
+        if (mNetworkManager.getLatestRemoteActionId() ==
             remoteInterface.gameFieldData.localActionID) {
           setPlayerGameField(remoteInterface.gameFieldData);
         }
@@ -505,7 +562,7 @@ public class MultiplayerGameView extends SurfaceView
           remoteInterface.gotAction = false;
         }
         else if (mRemoteInput.mGameRef.getOkToFire()) {
-          mNetworkManager.checkRemoteGridChecksum();
+          mNetworkManager.checkRemoteChecksum();
         }
       }
     }
