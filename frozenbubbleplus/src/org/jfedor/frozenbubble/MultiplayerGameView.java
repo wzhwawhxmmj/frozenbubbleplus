@@ -108,6 +108,7 @@ import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.NetworkGameManager.GameFieldData;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
+import com.efortin.frozenbubble.NetworkGameManager.connectEnum;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class MultiplayerGameView extends SurfaceView
@@ -1251,11 +1252,11 @@ public class MultiplayerGameView extends SurfaceView
         y += ysp;
       }
 
-      mFont.print("my ip address: " + status.localIpAddress, x, y, canvas,
+      mFont.print("my address: " + status.localIpAddress, x, y, canvas,
           mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
-      mFont.print("connecting to: " + status.remoteIpAddress, x, y, canvas,
+      mFont.print("connect to: " + status.remoteIpAddress, x, y, canvas,
           mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
@@ -1860,7 +1861,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void setPosition(double value) {
-      mFrozenGame1.setPosition(value);
+      mLocalInput.mGameRef.setPosition(value);
     }
 
     public void setRunning(boolean b) {
@@ -1911,12 +1912,20 @@ public class MultiplayerGameView extends SurfaceView
            * display player one or player two.  For normal portrait
            * orientation, show player one, and for reverse portrait,
            * show player two.
+           *
+           * When rotate to shoot targeting mode is selected, then the
+           * screen orientation is always forced to normal landscape.
            */
-          int orientation = getScreenOrientation();
-          if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-            mDisplayDX = (int)(-mDisplayScale * gameWidth);
-          else
+          if (FrozenBubble.getTargetMode() == FrozenBubble.ROTATE_TO_SHOOT) {
             mDisplayDX = 0;
+          }
+          else {
+            int orientation = getScreenOrientation();
+            if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+              mDisplayDX = (int)(-mDisplayScale * gameWidth);
+            else
+              mDisplayDX = 0;
+          }
           mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
         mPlayer1DX = (int) (mDisplayDX - (mDisplayScale * ( gameWidth / 2 )));
@@ -2266,9 +2275,19 @@ public class MultiplayerGameView extends SurfaceView
      * Create a network game manager if this is a network game.
      */
     mNetworkManager = null;
-    if (gameLocale == FrozenBubble.LOCALE_LAN) {
-      mNetworkManager =
-          new NetworkGameManager(context, mLocalInput, mRemoteInput);
+    if ((gameLocale == FrozenBubble.LOCALE_LAN) ||
+        (gameLocale == FrozenBubble.LOCALE_INTERNET)) {
+      connectEnum connectType;
+      if (gameLocale == FrozenBubble.LOCALE_LAN) {
+        connectType = connectEnum.UDP_MULTICAST;
+      }
+      else {
+        connectType = connectEnum.UDP_UNICAST;
+      }
+      mNetworkManager = new NetworkGameManager(context,
+                                               connectType,
+                                               mLocalInput,
+                                               mRemoteInput);
       remoteInterface = mNetworkManager.getRemoteInterface();
     }
 

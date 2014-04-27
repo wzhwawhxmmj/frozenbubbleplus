@@ -70,7 +70,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 import android.widget.RelativeLayout.LayoutParams;
 
 public class HomeScreen extends Activity {
@@ -389,11 +388,9 @@ public class HomeScreen extends Activity {
         buttonSelected = BTN6_ID;
         buttonSelPage2 = BTN6_ID;
         /*
-         * Process the button tap and start an internet game.
+         * Display the player ID buttons page.
          */
-        //startFrozenBubble(2, FrozenBubble.LOCALE_INTERNET);
-        Toast.makeText(getApplicationContext(),
-            "Coming soon...", Toast.LENGTH_SHORT).show();
+        displayButtonPage(3);
       }
     });
     startIPGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -446,7 +443,13 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start a 2 player game.
          */
-        startFrozenBubble(VirtualInput.PLAYER2, 2, FrozenBubble.LOCALE_LAN);
+        if (buttonSelPage2 == BTN6_ID) {
+          startFrozenBubble(VirtualInput.PLAYER2, 2,
+                            FrozenBubble.LOCALE_INTERNET);
+        }
+        else {
+          startFrozenBubble(VirtualInput.PLAYER2, 2, FrozenBubble.LOCALE_LAN);
+        }
       }
     });
     player2Button.setOnTouchListener(new Button.OnTouchListener(){
@@ -486,7 +489,13 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start a 2 player game.
          */
-        startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LAN);
+        if (buttonSelPage2 == BTN6_ID) {
+          startFrozenBubble(VirtualInput.PLAYER1, 2,
+                            FrozenBubble.LOCALE_INTERNET);
+        }
+        else {
+          startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LAN);
+        }
       }
     });
     player1Button.setOnTouchListener(new Button.OnTouchListener(){

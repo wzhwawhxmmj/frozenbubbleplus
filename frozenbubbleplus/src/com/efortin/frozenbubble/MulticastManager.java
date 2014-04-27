@@ -141,7 +141,7 @@ public class MulticastManager {
   private WifiManager.MulticastLock mLock = null;
 
   /**
-   * Multicast manager class constructor.
+   * Multicast manager UDP multicast class constructor.
    * <p>When created, this class instantiates a thread to send and
    * receive WiFi multicast messages.
    * <p>Multicast host addresses must be in the IPv4 class D address
@@ -167,25 +167,68 @@ public class MulticastManager {
    * INTERNET</code>
    * @param context - the context from which to obtain the application
    * context for the purpose of obtaining WiFi service access.
-   * @param hostName - the host name of this multicast session.
    * @param address - the internet address of this multicast session.
    * @param port - the port number to use for the multicast socket.
    */
   public MulticastManager(Context context,
-                          String hostName,
                           byte[]address,
-                          int port) {
-    filter = FILTER_OFF;
-    mListener = null;
+                          int port) throws UnknownHostException {
     mContext = context.getApplicationContext();
     mPort = port;
+    filter = FILTER_OFF;
+    mListener = null;
+    mLock = null;
+    mThread = null;
+    txList = null;
+    if (configureMulticast(address, port) == null) {
+      throw new UnknownHostException();
+    }
     txList = new ArrayList<byte[]>();
-    configureMulticast(hostName, address, port);
     WifiManager wm =
         (WifiManager)mContext.getSystemService(Context.WIFI_SERVICE);
     mLock = wm.createMulticastLock("multicastLock");
     mLock.setReferenceCounted(true);
     mLock.acquire();
+    mThread = new Thread(new MulticastThread(), "mThread");
+    mThread.start();
+  }
+
+  /**
+   * Multicast manager UDP unicast class constructor.
+   * <p>When created, this class instantiates a thread to send and
+   * receive WiFi UDP unicast messages.
+   * <p>A typical implementation looks like this:
+   * <pre><code>
+   * MulticastManager session =
+   *     new MulticastManager(context, addr, port);
+   * session.setMulticastListener(this);
+   * </code></pre>
+   * <p>The context from which to obtain the application context, the
+   * host name of the UDP unicast peer to connect to, and the port of
+   * the UDP unicast session must be supplied when creating a new
+   * <code>MulticastManager</code> instance.
+   * <p>The following <code>uses</code> permissions must be addeded to
+   * the Android project manifest to perform UDP networking:<br>
+   * <code>INTERNET</code>
+   * @param context - the context from which to obtain the application
+   * context for the purpose of obtaining WiFi service access.
+   * @param hostName - the host name of the UDP unicast peer.
+   * @param port - the port number to use for the UDP socket.
+   */
+  public MulticastManager(Context context,
+                          String hostName,
+                          int port) throws UnknownHostException {
+    mContext = context.getApplicationContext();
+    mPort = port;
+    filter = FILTER_OFF;
+    mListener = null;
+    mLock = null;
+    mThread = null;
+    txList = null;
+    if (configureMulticast(hostName, port) == null) {
+      throw new UnknownHostException();
+    }
+    txList = new ArrayList<byte[]>();
     mThread = new Thread(new MulticastThread(), "mThread");
     mThread.start();
   }
@@ -197,31 +240,65 @@ public class MulticastManager {
   public void cleanUp() {
     mListener = null;
     stopThread();
-    mSocket.close();
-    txList.clear();
-    mLock.release();
+    if (mSocket != null) {
+      mSocket.close();
+    }
+    mSocket = null;
+    if (txList != null) {
+      txList.clear();
+    }
+    txList = null;
+    if (mLock != null) {
+      mLock.release();
+    }
+    mLock = null;
   }
 
   /**
    * Configure the multicast socket settings.
    * <p>This must be called before <code>start()</code>ing the thread.
-   * @param hostName - the host name of this multicast session.
    * @param address - the internet address of this multicast session.
    * @param port - the port number to use for the multicast socket.
    */
-  private void configureMulticast(String hostName, byte[]address, int port) {
+  private MulticastSocket configureMulticast(byte[]address, int port) {
     try {
-      mAddress = InetAddress.getByAddress(hostName, address);
+      mAddress = InetAddress.getByAddress(address);
       mSocket = new MulticastSocket(port);
       mSocket.setSoTimeout(101);
       mSocket.setBroadcast(false);
       mSocket.setLoopbackMode(true);
       mSocket.joinGroup(mAddress);
     } catch (UnknownHostException uhe) {
+      mSocket = null;
       uhe.printStackTrace();
     } catch (IOException ioe) {
+      mSocket = null;
       ioe.printStackTrace();
     }
+    return mSocket;
+  }
+
+  /**
+   * Configure the multicast socket settings.
+   * <p>This must be called before <code>start()</code>ing the thread.
+   * @param hostName - the host name of the UDP unicast peer.
+   * @param port - the port number to use for the UDP socket.
+   */
+  private MulticastSocket configureMulticast(String hostName, int port) {
+    try {
+      mAddress = InetAddress.getByName(hostName);
+      mSocket = new MulticastSocket(port);
+      mSocket.setSoTimeout(101);
+      mSocket.setBroadcast(false);
+      mSocket.setLoopbackMode(true);
+    } catch (UnknownHostException uhe) {
+      mSocket = null;
+      uhe.printStackTrace();
+    } catch (IOException ioe) {
+      mSocket = null;
+      ioe.printStackTrace();
+    }
+    return mSocket;
   }
 
   /**
@@ -388,12 +465,14 @@ public class MulticastManager {
     if (running) {
       paused = true;
       mSocket.disconnect();
-      try {
-        mSocket.leaveGroup(mAddress);
-      } catch (IOException ioe) {
-        ioe.printStackTrace();
+      if (mLock != null) {
+        try {
+          mSocket.leaveGroup(mAddress);
+        } catch (IOException ioe) {
+          ioe.printStackTrace();
+        }
+        mLock.release();
       }
-      mLock.release();
     }
   }
 
@@ -455,9 +534,11 @@ public class MulticastManager {
 
   public void unPause() {
     paused = false;
-    mLock.acquire();
     try {
-      mSocket.joinGroup(mAddress);
+      if (mLock != null) {
+        mLock.acquire();
+        mSocket.joinGroup(mAddress);
+      }
       mSocket.bind   (new InetSocketAddress(mAddress, mPort));
       mSocket.connect(new InetSocketAddress(mAddress, mPort));
     } catch (IOException ioe) {
