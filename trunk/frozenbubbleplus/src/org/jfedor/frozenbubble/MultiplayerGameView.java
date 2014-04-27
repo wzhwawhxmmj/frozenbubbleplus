@@ -210,6 +210,19 @@ public class MultiplayerGameView extends SurfaceView
       public boolean gotFieldData;
       public boolean gotPrefsData;
       public boolean readyToPlay;
+      public String  localIpAddress;
+      public String  remoteIpAddress;
+
+      public NetworkStatus() {
+        isConnected     = false;
+        reservedGameId  = false;
+        playerJoined    = false;
+        gotFieldData    = false;
+        gotPrefsData    = false;
+        readyToPlay     = false;
+        localIpAddress  = null;
+        remoteIpAddress = null;
+      }
     };
 
     /*
@@ -1237,6 +1250,14 @@ public class MultiplayerGameView extends SurfaceView
                     mDisplayScale, mDisplayDX, mDisplayDY);
         y += ysp;
       }
+
+      mFont.print("my ip address: " + status.localIpAddress, x, y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
+
+      mFont.print("connecting to: " + status.remoteIpAddress, x, y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
+      y += ysp;
 
       if (status.reservedGameId) {
         mFont.print("checking for games...|", x, y, canvas,

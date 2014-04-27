@@ -62,6 +62,7 @@ import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
 import com.efortin.frozenbubble.MulticastManager.eventEnum;
@@ -119,6 +120,8 @@ public class NetworkGameManager extends Thread
   private long             actionTxTime;
   private long             gameStartTime;
   private long             statusTxTime;
+  private String           localIpAddress = null;
+  private String           remoteIpAddress = null;
   private Context          myContext = null;
   private PlayerStatus     localStatus = null;
   private PlayerStatus     remoteStatus = null;
@@ -163,6 +166,8 @@ public class NetworkGameManager extends Thread
     gotPrefsData = false;
     gamesInProgress = new boolean[GAME_ID_MAX];
     missedAction = false;
+    localIpAddress = null;
+    remoteIpAddress = null;
     localPrefs = new Preferences();
     remotePrefs = new Preferences();
     localStatus = null;
@@ -1737,5 +1742,15 @@ public class NetworkGameManager extends Thread
       status.gotPrefsData  = false;
     }
     status.readyToPlay = gameIsReadyForAction();
+    if (localIpAddress == null) {
+      localIpAddress = session.getLocalIpAddress();
+    }
+    status.localIpAddress = localIpAddress;
+    if (remoteIpAddress == null) {
+      SharedPreferences dsp = 
+          PreferenceManager.getDefaultSharedPreferences(myContext);
+      remoteIpAddress = dsp.getString("opponent_ip_address", null);
+    }
+    status.remoteIpAddress = remoteIpAddress;
   }
 };
