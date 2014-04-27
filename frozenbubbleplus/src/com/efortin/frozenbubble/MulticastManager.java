@@ -64,7 +64,9 @@ import java.util.ArrayList;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.text.format.Formatter;
 import android.util.Log;
 
 /**
@@ -220,6 +222,22 @@ public class MulticastManager {
     } catch (IOException ioe) {
       ioe.printStackTrace();
     }
+  }
+
+  /**
+   * Obtain the local IP address from the <code>WiFiManager</code>.
+   * <p>The following <code>uses</code> permission must be addeded to
+   * the Android project manifest to obtain the network connection
+   * status:<br>
+   * <code>ACCESS_WIFI_STATE</code>
+   * @return the local WiFi IP address.
+   * @see WifiManager
+   */
+  public String getLocalIpAddress() {
+    WifiManager wifiManager =
+        (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
+    WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+    return Formatter.formatIpAddress(wifiInfo.getIpAddress());
   }
 
   /**
