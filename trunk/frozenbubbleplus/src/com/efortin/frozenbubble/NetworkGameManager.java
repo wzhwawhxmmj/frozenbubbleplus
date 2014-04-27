@@ -58,8 +58,7 @@ import java.util.ArrayList;
 import org.jfedor.frozenbubble.BubbleSprite;
 import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.FrozenGame;
-import org.jfedor.frozenbubble.MultiplayerGameView.NetworkStatus;
-import org.jfedor.frozenbubble.MultiplayerGameView.NetworkStatusInterface;
+import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -79,7 +78,7 @@ import com.efortin.frozenbubble.MulticastManager.eventEnum;
  *
  */
 public class NetworkGameManager extends Thread
-  implements MulticastListener, NetworkStatusInterface {
+  implements MulticastListener, NetGameInterface {
   private static final String MCAST_HOST_NAME = "225.0.0.15";
   private static final byte[] MCAST_BYTE_ADDR = { (byte) 225, 0, 0, 15 };
   private static final int    PORT            = 5500;
@@ -127,6 +126,9 @@ public class NetworkGameManager extends Thread
   private Preferences      remotePrefs = null;
   private VirtualInput     localPlayer = null;
   private VirtualInput     remotePlayer = null;
+  private GameFieldData    remoteGameFieldData = null;
+  private PlayerAction     remotePlayerAction = null;
+  private RemoteInterface  remoteInterface = null;
   private MulticastManager session = null;
 
   /*
@@ -135,7 +137,6 @@ public class NetworkGameManager extends Thread
    */
   private ArrayList<PlayerAction> localActionList = null;
   private ArrayList<PlayerAction> remoteActionList = null;
-  private NetGameInterface remoteInterface = null;
 
   /**
    * Class constructor.
@@ -166,12 +167,15 @@ public class NetworkGameManager extends Thread
     remotePrefs = new Preferences();
     localStatus = null;
     remoteStatus = null;
+    remoteGameFieldData = new GameFieldData(null);
+    remotePlayerAction = new PlayerAction(null);
+    remoteInterface = new RemoteInterface(remotePlayerAction,
+                                          remoteGameFieldData);
     session = null;
     SharedPreferences sp =
         myContext.getSharedPreferences(FrozenBubble.PREFS_NAME,
                                        Context.MODE_PRIVATE);
     PreferencesActivity.getFrozenBubblePrefs(localPrefs, sp);
-    remoteInterface = new NetGameInterface();
     /*
      * Create the player action arrays.  The actions are inserted
      * chronologically based on message receipt order, but are extracted
@@ -694,41 +698,6 @@ public class NetworkGameManager extends Thread
     }
   };
 
-  /**
-   * This class encapsulates player action and game field storage for
-   * use by the game thread to determine when to process remote player
-   * actions and game field bubble grid synchronization tasks.
-   * @author Eric Fortin
-   *
-   */
-  public class NetGameInterface {
-    public boolean       gotAction;
-    public boolean       gotFieldData;
-    public PlayerAction  playerAction;
-    public GameFieldData gameFieldData;
-
-    public NetGameInterface() {
-      playerAction = new PlayerAction(null);
-      gameFieldData = new GameFieldData(null);
-    }
-
-    public void cleanUp() {
-      gotAction = false;
-      gotFieldData = false;
-      playerAction = null;
-      gameFieldData = null;
-    }
-
-    public short getLatestActionId() {
-      if (remoteStatus != null) {
-        return remoteStatus.localActionID;
-      }
-      else {
-        return -1;
-      }
-    }
-  };
-
   private boolean actionTimerExpired() {
     return System.currentTimeMillis() >= actionTxTime;
   }
@@ -812,7 +781,7 @@ public class NetworkGameManager extends Thread
     }
   }
 
-  public void checkRemoteGridChecksum() {
+  public void checkRemoteChecksum() {
     if ((localStatus != null) && (remoteStatus != null)) {
       if ((localStatus.remoteActionID == (remoteStatus.localActionID + 1)) &&
           (localStatus.remoteChecksum != 0) &&
@@ -875,6 +844,8 @@ public class NetworkGameManager extends Thread
     remotePrefs = null;
     localPlayer = null;
     remotePlayer = null;
+    remoteGameFieldData = null;
+    remotePlayerAction = null;
 
     if (remoteInterface != null)
       remoteInterface.cleanUp();
@@ -1007,6 +978,15 @@ public class NetworkGameManager extends Thread
     }
   }
 
+  public short getLatestRemoteActionId() {
+    if (remoteStatus != null) {
+      return remoteStatus.localActionID;
+    }
+    else {
+      return -1;
+    }
+  }
+
   /**
    * Peek into the remote action list to see if we have obtained the
    * current expected remote action.
@@ -1077,7 +1057,7 @@ public class NetworkGameManager extends Thread
    * @return A reference to the remote player network game interface
    * which provides all necessary remote player data.
    */
-  public NetGameInterface getRemoteInterface() {
+  public RemoteInterface getRemoteInterface() {
     return remoteInterface;
   }
 
