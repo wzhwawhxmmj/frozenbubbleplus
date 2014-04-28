@@ -1907,14 +1907,15 @@ public class MultiplayerGameView extends SurfaceView
         else {
           mDisplayScale = (1.0 * newWidth) / gameWidth;
           /*
+           * When rotate to shoot targeting mode is selected during a
+           * multiplayer game, then the screen orientation is forced to
+           * landscape.
+           *
            * In portrait mode during a multiplayer game, display just
            * one game field.  Depending on which portrait mode it is,
            * display player one or player two.  For normal portrait
            * orientation, show player one, and for reverse portrait,
            * show player two.
-           *
-           * When rotate to shoot targeting mode is selected, then the
-           * screen orientation is always forced to normal landscape.
            */
           if (FrozenBubble.getTargetMode() == FrozenBubble.ROTATE_TO_SHOOT) {
             mDisplayDX = 0;

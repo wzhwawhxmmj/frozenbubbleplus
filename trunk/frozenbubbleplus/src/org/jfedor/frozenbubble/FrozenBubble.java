@@ -207,6 +207,10 @@ public class FrozenBubble extends Activity
   };
 
   /*
+   * Following are ancestor superclass overrides.
+   */
+
+  /*
    * (non-Javadoc)
    * @see android.app.Activity#onCreate(android.os.Bundle)
    * This method is called when the activity is started.  The activity
@@ -226,18 +230,6 @@ public class FrozenBubble extends Activity
     super.onCreate(savedInstanceState);
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
-    restoreGamePrefs();
-
-    currentOrientation = getScreenOrientation();
-    myOrientationEventListener =
-      new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
-        @Override
-        public void onOrientationChanged(int arg0) {
-          currentOrientation = getScreenOrientation();
-        }
-      };
-    if (myOrientationEventListener.canDetectOrientation())
-      myOrientationEventListener.enable();
 
     /*
      * Allow editor functionalities.
@@ -271,19 +263,68 @@ public class FrozenBubble extends Activity
     return true;
   }
 
+  /**
+   * Invoked when the Activity is finishing or being destroyed by the
+   * system.
+   */
   @Override
-  public boolean onPrepareOptionsMenu(Menu menu) {
-    super.onPrepareOptionsMenu(menu);
-    allowUnpause = false;
-    menu.findItem(MENU_COLORBLIND_ON ).setVisible(getMode() == GAME_NORMAL);
-    menu.findItem(MENU_COLORBLIND_OFF).setVisible(getMode() != GAME_NORMAL);
-    menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
-    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
-    menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
-    menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
-    menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
-    menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
-    return true;
+  protected void onDestroy() {
+    //Log.i(TAG, "FrozenBubble.onDestroy()");
+    super.onDestroy();
+    numPlayers = 0;
+    gameLocale = LOCALE_LOCAL;
+    cleanUp();
+  }
+
+  @Override
+  public boolean onKeyDown(int keyCode, KeyEvent event) {
+    if (keyCode == KeyEvent.KEYCODE_BACK) {
+      /*
+       * The current game was exited, so reset the static game state
+       * variables.
+       */
+      numPlayers = 0;
+      gameLocale = LOCALE_LOCAL;
+      /*
+       * Preserve game information and perform activity cleanup.
+       */
+      pause();
+      if (mGameView != null)
+        mGameView.getThread().setRunning(false);
+      if (mMultiplayerGameView != null)
+        mMultiplayerGameView.getThread().setRunning(false);
+      cleanUp();
+      /*
+       * Create an intent to launch the home screen.
+       */
+      Intent intent = new Intent(this, HomeScreen.class);
+      intent.putExtra("startHomeScreen", true);
+      startActivity(intent);
+      finish();
+      return true;
+    }
+    return super.onKeyDown(keyCode, event);
+  }
+
+  /* (non-Javadoc)
+   * @see android.app.Activity#onNewIntent(android.content.Intent)
+   */
+  @Override
+  protected void onNewIntent(Intent intent) {
+    if (null != intent) {
+      if (EDITORACTION.equals(intent.getAction())) {
+        cleanUpGameView();
+        startCustomGame(intent);
+      }
+      else if ((numPlayers != 0) && intent.hasExtra("numPlayers")) {
+        int newNumPlayers = intent.getIntExtra("numPlayers", 1);
+
+        if (newNumPlayers != numPlayers) {
+          cleanUpGameView();
+          startDefaultGame(intent, null);
+        }
+      }
+    }
   }
 
   @Override
@@ -355,36 +396,6 @@ public class FrozenBubble extends Activity
     allowUnpause = true;
   }
 
-  @Override
-  public boolean onKeyDown(int keyCode, KeyEvent event) {
-    if (keyCode == KeyEvent.KEYCODE_BACK) {
-      /*
-       * The current game was exited, so reset the static game state
-       * variables.
-       */
-      numPlayers = 0;
-      gameLocale = LOCALE_LOCAL;
-      /*
-       * Preserve game information and perform activity cleanup.
-       */
-      pause();
-      if (mGameView != null)
-        mGameView.getThread().setRunning(false);
-      if (mMultiplayerGameView != null)
-        mMultiplayerGameView.getThread().setRunning(false);
-      cleanUp();
-      /*
-       * Create an intent to launch the home screen.
-       */
-      Intent intent = new Intent(this, HomeScreen.class);
-      intent.putExtra("startHomeScreen", true);
-      startActivity(intent);
-      finish();
-      return true;
-    }
-    return super.onKeyDown(keyCode, event);
-  }
-
   /**
    * Invoked when the Activity loses user focus.
    */
@@ -395,17 +406,19 @@ public class FrozenBubble extends Activity
     pause();
   }
 
-  /**
-   * Invoked when the Activity is finishing or being destroyed by the
-   * system.
-   */
   @Override
-  protected void onDestroy() {
-    //Log.i(TAG, "FrozenBubble.onDestroy()");
-    super.onDestroy();
-    numPlayers = 0;
-    gameLocale = LOCALE_LOCAL;
-    cleanUp();
+  public boolean onPrepareOptionsMenu(Menu menu) {
+    super.onPrepareOptionsMenu(menu);
+    allowUnpause = false;
+    menu.findItem(MENU_COLORBLIND_ON ).setVisible(getMode() == GAME_NORMAL);
+    menu.findItem(MENU_COLORBLIND_OFF).setVisible(getMode() != GAME_NORMAL);
+    menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
+    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
+    menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
+    menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
+    menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
+    menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
+    return true;
   }
 
   /**
@@ -430,361 +443,18 @@ public class FrozenBubble extends Activity
       mMultiplayerGameThread.saveState(outState);
   }
 
-  /* (non-Javadoc)
-   * @see android.app.Activity#onNewIntent(android.content.Intent)
-   */
-  @Override
-  protected void onNewIntent(Intent intent) {
-    if (null != intent) {
-      if (EDITORACTION.equals(intent.getAction())) {
-        cleanUpGameView();
-        startCustomGame(intent);
-      }
-      else if ((numPlayers != 0) && intent.hasExtra("numPlayers")) {
-        int newNumPlayers = intent.getIntExtra("numPlayers", 1);
-
-        if (newNumPlayers != numPlayers) {
-          cleanUpGameView();
-          startDefaultGame(intent, null);
-        }
-      }
-    }
-  }
-
   @Override
   public void onWindowFocusChanged (boolean hasFocus) {
     super.onWindowFocusChanged(hasFocus);
     allowUnpause = hasFocus;
   }
 
-  private void restoreGamePrefs() {
-    SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
-                                                     Context.MODE_PRIVATE);
-    collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX );
-    compressor = mConfig.getBoolean("compressor", false                );
-    difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
-    dontRushMe = mConfig.getBoolean("dontRushMe", false                );
-    fullscreen = mConfig.getBoolean("fullscreen", true                 );
-    gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL          );
-    musicOn    = mConfig.getBoolean("musicOn",    true                 );
-    soundOn    = mConfig.getBoolean("soundOn",    true                 );
-    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT       );
-
-    BubbleSprite.setCollisionThreshold(collision);
-    setTargetMode(targetMode);
-    setTargetModeOrientation();
-  }
-
-  private int getScreenOrientation() {
-    /*
-     * The method getOrientation() was deprecated in API level 8.
-     *
-     * For API level 8 or greater, use getRotation().
-     */
-    int rotation = getWindowManager().getDefaultDisplay().getOrientation();
-    DisplayMetrics dm = new DisplayMetrics();
-    getWindowManager().getDefaultDisplay().getMetrics(dm);
-    int width  = dm.widthPixels;
-    int height = dm.heightPixels;
-    int orientation;
-    /*
-     * The orientation determination is based on the natural orienation
-     * mode of the device, which can be either portrait, landscape, or
-     * square.
-     *
-     * After the natural orientation is determined, convert the device
-     * rotation into a fully qualified orientation.
-     */
-    if ((((rotation == Surface.ROTATION_0  ) ||
-          (rotation == Surface.ROTATION_180)) && (height > width)) ||
-        (((rotation == Surface.ROTATION_90 ) ||
-          (rotation == Surface.ROTATION_270)) && (width  > height))) {
-      /*
-       * Natural orientation is portrait.
-       */
-      switch(rotation) {
-        case Surface.ROTATION_0:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-          break;
-        case Surface.ROTATION_90:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-          break;
-        case Surface.ROTATION_180:
-          orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-          break;
-        case Surface.ROTATION_270:
-          orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-          break;
-        default:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-          break;              
-      }
-    }
-    else {
-      /*
-       * Natural orientation is landscape or square.
-       */
-      switch(rotation) {
-        case Surface.ROTATION_0:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-          break;
-        case Surface.ROTATION_90:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-          break;
-        case Surface.ROTATION_180:
-          orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-          break;
-        case Surface.ROTATION_270:
-          orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-          break;
-        default:
-          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-          break;              
-      }
-    }
-
-    return orientation;
-  }
-
-  private void newGameDialog() {
-    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    /*
-     * Set the dialog title.
-     */
-    builder.setTitle(R.string.menu_new_game)
-    /*
-     * Set the action buttons.
-     */
-    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int id) {
-        // User clicked OK.  Start a new game.
-        newGame();
-      }
-    })
-    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int id) {
-        // User clicked Cancel.  Do nothing.
-      }
-    });
-    builder.create();
-    builder.show();
-  }
-
-  /**
-   * Method to start a game using levels from the level editor.
-   * <p>If the level isn't specified from the editor, then the player
-   * selected the option to continue playing from the last level
-   * played, so use the last level played instead.
-   * @param intent - The intent from the level editor used to start this
-   * activity, which contains the custom level data.
+  /*
+   * The following methods are used to retrieve and set the volatile
+   * memory game options variables.  They are all static, so are
+   * available to all activities within this application while the
+   * application is running.
    */
-  private void startCustomGame(Intent intent) {
-    activityCustomStarted = true;
-    numPlayers = 1;
-    /*
-     * Get custom level last played.
-     */
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    int startingLevel       = sp    .getInt     ("levelCustom",    0);
-    int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
-    startingLevel =
-      (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
-    mGameView = new GameView(this,
-                             intent.getExtras().getByteArray("levels"),
-                             startingLevel);
-    setContentView(mGameView);
-    mGameView.setGameListener(this);
-    mGameThread = mGameView.getThread();
-    mGameView.requestFocus();
-    setFullscreen();
-    playMusic(false);
-  }
-
-  /**
-   * Method to start a game using default levels, if single player game
-   * mode was selected.
-   * <p>This method is also used to start a multiplayer game.
-   * @param intent - The intent used to start this activity.
-   * @param savedInstanceState - the bundle of saved state information.
-   */
-  private void startDefaultGame(Intent intent, Bundle savedInstanceState) {
-    /*
-     * Initialize the flag to denote this game uses default levels.
-     */
-    activityCustomStarted = false;
-    /*
-     * Check if this is a single player or multiplayer game.
-     */
-    numPlayers = 1;
-    gameLocale = LOCALE_LOCAL;
-    if (intent != null) {
-      if (intent.hasExtra("myPlayerId"))
-        myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
-      if (intent.hasExtra("numPlayers"))
-        numPlayers = intent.getIntExtra("numPlayers", 1);
-      if (intent.hasExtra("gameLocale"))
-        gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
-    }
-    /*
-     * If there is more than one player, launch a multiplayer game.
-     * Otherwise start a single player game.
-     */
-    if (numPlayers > 1) {
-      mMultiplayerGameView = new MultiplayerGameView(this,
-                                                     myPlayerId,
-                                                     gameLocale);
-      setContentView(mMultiplayerGameView);
-      mMultiplayerGameView.setGameListener(this);
-      mMultiplayerGameThread = mMultiplayerGameView.getThread();
-      /*
-       * Only restore the bundle for a multiplayer game if it was local.
-       */
-      if ((savedInstanceState != null) && (gameLocale == LOCALE_LOCAL)) {
-        int savedPlayers = savedInstanceState.getInt("numPlayers");
-        if (savedPlayers == 2) {
-          mMultiplayerGameThread.restoreState(savedInstanceState);
-        }
-      }
-      mMultiplayerGameThread.startOpponent();
-      mMultiplayerGameView.requestFocus();
-    }
-    else {
-      setContentView(R.layout.activity_frozen_bubble);
-      mGameView = (GameView)findViewById(R.id.game);
-      mGameView.setGameListener(this);
-      mGameThread = mGameView.getThread();
-      if (savedInstanceState != null) {
-        int savedPlayers = savedInstanceState.getInt("numPlayers");
-        if (savedPlayers == 1)
-          mGameThread.restoreState(savedInstanceState);
-      }
-      mGameView.requestFocus();
-    }
-    setFullscreen();
-    playMusic(false);
-  }
-
-  private void setFullscreen() {
-    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
-    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
-
-    if (fullscreen) {
-      getWindow().addFlags(flagFs);
-      getWindow().clearFlags(flagNoFs);
-    }
-    else {
-      getWindow().clearFlags(flagFs);
-      getWindow().addFlags(flagNoFs);
-    }
-
-    if (mGameView != null)
-      mGameView.requestLayout();
-
-    if (mMultiplayerGameView != null)
-      mMultiplayerGameView.requestLayout();
-  }
-
-  private void soundOptionsDialog() {
-    boolean isCheckedItem[] = {getSoundOn(), getMusicOn()};
-
-    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    /*
-     * Set the dialog title.
-     */
-    builder.setTitle(R.string.menu_sound_options)
-    /*
-     * Specify the list array, the items to be selected by default (null
-     * for none), and the listener through which to receive callbacks
-     * when items are selected.
-     */
-    .setMultiChoiceItems(R.array.sound_options_array, isCheckedItem,
-                         new DialogInterface.OnMultiChoiceClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-
-        switch (which) {
-          case 0:
-            setSoundOn(isChecked);
-            editor.putBoolean("soundOn", soundOn);
-            editor.commit();
-            break;
-          case 1:
-            setMusicOn(isChecked);
-            if (myModPlayer != null) {
-              myModPlayer.setMusicOn(isChecked);
-            }
-            editor.putBoolean("musicOn", musicOn);
-            editor.commit();
-            break;
-        }
-      }
-    })
-    /*
-     * Set the action buttons.
-     */
-    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int id) {
-        // User clicked OK.
-      }
-    });
-    builder.create();
-    builder.show();
-  }
-
-  private void targetOptionsDialog() {
-    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    /*
-     * Set the dialog title.
-     */
-    builder.setTitle(R.string.menu_target_mode)
-    /*
-     * Specify the list array, the item to be selected by default, and
-     * the listener through which to receive callbacks when the item is
-     * selected.
-     */
-    .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
-                          new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface builder, int which) {
-        switch (which) {
-          case 0:
-            setTargetMode(AIM_TO_SHOOT);
-            break;
-          case 1:
-            setTargetMode(POINT_TO_SHOOT);
-            break;
-          case 2:
-            setTargetMode(ROTATE_TO_SHOOT);
-            break;
-        }
-        setTargetModeOrientation();
-      }
-    })
-    /*
-     * Set the action buttons.
-     */
-    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface builder, int id) {
-        // User clicked OK.
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putInt("targetMode", targetMode);
-        editor.commit();
-      }
-    });
-
-    builder.create();
-    builder.show();
-  }
 
   public synchronized static boolean getAimThenShoot() {
     return (targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT);
@@ -862,43 +532,9 @@ public class FrozenBubble extends Activity
     targetMode = tm;
   }
 
-  private void setTargetModeOrientation() {
-    if ((targetMode == ROTATE_TO_SHOOT) &&
-        AccelerometerManager.isSupported(getApplicationContext())) {
-      AccelerometerManager.startListening(getApplicationContext(),this);
-      /*
-       * In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT and
-       * SCREEN_ORIENTATION_SENSOR_LANDSCAPE were added to ActivityInfo.
-       * This application is developed in API level 4, but using these
-       * values will be supported correctly in devices with a native API
-       * level that implements this functionality.
-       *
-       * These modes allow the device to display the screen in either
-       * normal or reverse portrait mode based on the device orientation
-       * reported by the accelerometer hardware.
-       *
-       * For multiplayer games using rotate to shoot, set the
-       * orientation to sensor landscape, and for single player games,
-       * set the orientation to sensor portrait.
-       */
-      /*
-       * TODO: need to fix setting the orientation for multiplayer
-       * games.
-       */
-      if (numPlayers > 1) {
-        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
-      }
-      else {
-        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
-      }
-    }
-
-    if ((targetMode != ROTATE_TO_SHOOT) &&
-        AccelerometerManager.isListening()) {
-      AccelerometerManager.stopListening();
-      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
-    }
-  }
+  /*
+   * Following are general utility functions.
+   */
 
   public void cleanUp() {
     if (AccelerometerManager.isListening())
@@ -928,6 +564,96 @@ public class FrozenBubble extends Activity
     mMultiplayerGameThread = null;
   }
 
+  private int getScreenOrientation() {
+    /*
+     * The method getOrientation() was deprecated in API level 8.
+     *
+     * For API level 8 or greater, use getRotation().
+     */
+    int rotation = getWindowManager().getDefaultDisplay().getOrientation();
+    DisplayMetrics dm = new DisplayMetrics();
+    getWindowManager().getDefaultDisplay().getMetrics(dm);
+    int width  = dm.widthPixels;
+    int height = dm.heightPixels;
+    int orientation;
+    /*
+     * The orientation determination is based on the natural orienation
+     * mode of the device, which can be either portrait, landscape, or
+     * square.
+     *
+     * After the natural orientation is determined, convert the device
+     * rotation into a fully qualified orientation.
+     */
+    if ((((rotation == Surface.ROTATION_0  ) ||
+          (rotation == Surface.ROTATION_180)) && (height > width)) ||
+        (((rotation == Surface.ROTATION_90 ) ||
+          (rotation == Surface.ROTATION_270)) && (width  > height))) {
+      /*
+       * Natural orientation is portrait.
+       */
+      switch(rotation) {
+        case Surface.ROTATION_0:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+          break;
+        case Surface.ROTATION_90:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+          break;
+        case Surface.ROTATION_180:
+          orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+          break;
+        case Surface.ROTATION_270:
+          orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+          break;
+        default:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+          break;              
+      }
+    }
+    else {
+      /*
+       * Natural orientation is landscape or square.
+       */
+      switch(rotation) {
+        case Surface.ROTATION_0:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+          break;
+        case Surface.ROTATION_90:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+          break;
+        case Surface.ROTATION_180:
+          orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+          break;
+        case Surface.ROTATION_270:
+          orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+          break;
+        default:
+          orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+          break;              
+      }
+    }
+
+    return orientation;
+  }
+
+  /**
+   * Restore the game options from the saved preferences, and register
+   * the device orientation listener to detect orientation changes.
+   */
+  private void initGameOptions() {
+    restoreGamePrefs();
+
+    currentOrientation = getScreenOrientation();
+    myOrientationEventListener =
+      new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
+        @Override
+        public void onOrientationChanged(int arg0) {
+          currentOrientation = getScreenOrientation();
+        }
+      };
+    if (myOrientationEventListener.canDetectOrientation())
+      myOrientationEventListener.enable();
+  }
+
   /**
    * Start a new game and music player.
    */
@@ -943,6 +669,32 @@ public class FrozenBubble extends Activity
     playMusic(false);
   }
 
+  private void newGameDialog() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    /*
+     * Set the dialog title.
+     */
+    builder.setTitle(R.string.menu_new_game)
+    /*
+     * Set the action buttons.
+     */
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked OK.  Start a new game.
+        newGame();
+      }
+    })
+    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked Cancel.  Do nothing.
+      }
+    });
+    builder.create();
+    builder.show();
+  }
+
   public void onAccelerationChanged(float x, float y, float z) {
     if (mGameThread != null) {
       if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
@@ -952,19 +704,12 @@ public class FrozenBubble extends Activity
     }
 
     if (mMultiplayerGameThread != null) {
-      if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+      if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+        x = -y;
+      else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+        x = y;
+      else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x = -x;
-      /*
-       * TODO: need to fix landscape rotation targeting - accelerometer
-       * manager may need addressing.
-       *
-       * TODO: need to fix saving targeting mode in multiplayer, and
-       * screen rotation getting applied prior to game start.
-       */
-      //else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
-      //  x = -x;
-      //else if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-      //  x = -x;
 
       mMultiplayerGameThread.setPosition(20.0f+x*2.0f);
     }
@@ -1078,6 +823,24 @@ public class FrozenBubble extends Activity
     allowUnpause = true;
   }
 
+  private void restoreGamePrefs() {
+    SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
+                                                     Context.MODE_PRIVATE);
+    collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX );
+    compressor = mConfig.getBoolean("compressor", false                );
+    difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
+    dontRushMe = mConfig.getBoolean("dontRushMe", false                );
+    fullscreen = mConfig.getBoolean("fullscreen", true                 );
+    gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL          );
+    musicOn    = mConfig.getBoolean("musicOn",    true                 );
+    soundOn    = mConfig.getBoolean("soundOn",    true                 );
+    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT       );
+
+    BubbleSprite.setCollisionThreshold(collision);
+    setTargetMode(targetMode);
+    setTargetModeOrientation();
+  }
+
   /**
    * Save critically important game information.
    */
@@ -1105,6 +868,208 @@ public class FrozenBubble extends Activity
       }
       editor.commit();
     }
+  }
+
+  private void setFullscreen() {
+    final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
+    final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
+
+    if (fullscreen) {
+      getWindow().addFlags(flagFs);
+      getWindow().clearFlags(flagNoFs);
+    }
+    else {
+      getWindow().clearFlags(flagFs);
+      getWindow().addFlags(flagNoFs);
+    }
+
+    if (mGameView != null)
+      mGameView.requestLayout();
+
+    if (mMultiplayerGameView != null)
+      mMultiplayerGameView.requestLayout();
+  }
+
+  private void setTargetModeOrientation() {
+    if ((targetMode == ROTATE_TO_SHOOT) &&
+        AccelerometerManager.isSupported(getApplicationContext())) {
+      AccelerometerManager.startListening(getApplicationContext(),this);
+      /*
+       * In API level 9, SCREEN_ORIENTATION_SENSOR_PORTRAIT and
+       * SCREEN_ORIENTATION_SENSOR_LANDSCAPE were added to ActivityInfo.
+       * This application is developed in API level 4, but using these
+       * values will be supported correctly in devices with a native API
+       * level that implements this functionality.
+       *
+       * These modes allow the device to display the screen in either
+       * normal or reverse portrait mode based on the device orientation
+       * reported by the accelerometer hardware.
+       *
+       * For multiplayer games using rotate to shoot, set the
+       * orientation to sensor landscape, and for single player games,
+       * set the orientation to sensor portrait.
+       */
+      if (numPlayers > 1) {
+        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+      }
+      else {
+        setRequestedOrientation(SCREEN_ORIENTATION_SENSOR_PORTRAIT);
+      }
+    }
+
+    if ((targetMode != ROTATE_TO_SHOOT) &&
+        AccelerometerManager.isListening()) {
+      AccelerometerManager.stopListening();
+      setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+    }
+  }
+
+  private void soundOptionsDialog() {
+    boolean isCheckedItem[] = {getSoundOn(), getMusicOn()};
+
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    /*
+     * Set the dialog title.
+     */
+    builder.setTitle(R.string.menu_sound_options)
+    /*
+     * Specify the list array, the items to be selected by default (null
+     * for none), and the listener through which to receive callbacks
+     * when items are selected.
+     */
+    .setMultiChoiceItems(R.array.sound_options_array, isCheckedItem,
+                         new DialogInterface.OnMultiChoiceClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which, boolean isChecked) {
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                    Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+
+        switch (which) {
+          case 0:
+            setSoundOn(isChecked);
+            editor.putBoolean("soundOn", soundOn);
+            editor.commit();
+            break;
+          case 1:
+            setMusicOn(isChecked);
+            if (myModPlayer != null) {
+              myModPlayer.setMusicOn(isChecked);
+            }
+            editor.putBoolean("musicOn", musicOn);
+            editor.commit();
+            break;
+        }
+      }
+    })
+    /*
+     * Set the action buttons.
+     */
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked OK.
+      }
+    });
+    builder.create();
+    builder.show();
+  }
+
+  /**
+   * Method to start a game using levels from the level editor.
+   * <p>If the level isn't specified from the editor, then the player
+   * selected the option to continue playing from the last level
+   * played, so use the last level played instead.
+   * @param intent - The intent from the level editor used to start this
+   * activity, which contains the custom level data.
+   */
+  private void startCustomGame(Intent intent) {
+    activityCustomStarted = true;
+    numPlayers = 1;
+    initGameOptions();
+    /*
+     * Get custom level last played.
+     */
+    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                Context.MODE_PRIVATE);
+    int startingLevel       = sp    .getInt     ("levelCustom",    0);
+    int startingLevelIntent = intent.getIntExtra("startingLevel", -2);
+    startingLevel =
+      (startingLevelIntent == -2) ? startingLevel : startingLevelIntent;
+    mGameView = new GameView(this,
+                             intent.getExtras().getByteArray("levels"),
+                             startingLevel);
+    setContentView(mGameView);
+    mGameView.setGameListener(this);
+    mGameThread = mGameView.getThread();
+    mGameView.requestFocus();
+    setFullscreen();
+    playMusic(false);
+  }
+
+  /**
+   * Method to start a game using default levels, if single player game
+   * mode was selected.
+   * <p>This method is also used to start a multiplayer game.
+   * @param intent - The intent used to start this activity.
+   * @param savedInstanceState - the bundle of saved state information.
+   */
+  private void startDefaultGame(Intent intent, Bundle savedInstanceState) {
+    /*
+     * Initialize the flag to denote this game uses default levels.
+     */
+    activityCustomStarted = false;
+    /*
+     * Check if this is a single player or multiplayer game.
+     */
+    numPlayers = 1;
+    gameLocale = LOCALE_LOCAL;
+    if (intent != null) {
+      if (intent.hasExtra("myPlayerId"))
+        myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
+      if (intent.hasExtra("numPlayers"))
+        numPlayers = intent.getIntExtra("numPlayers", 1);
+      if (intent.hasExtra("gameLocale"))
+        gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
+    }
+    initGameOptions();
+    /*
+     * If there is more than one player, launch a multiplayer game.
+     * Otherwise start a single player game.
+     */
+    if (numPlayers > 1) {
+      mMultiplayerGameView = new MultiplayerGameView(this,
+                                                     myPlayerId,
+                                                     gameLocale);
+      setContentView(mMultiplayerGameView);
+      mMultiplayerGameView.setGameListener(this);
+      mMultiplayerGameThread = mMultiplayerGameView.getThread();
+      /*
+       * Only restore the bundle for a multiplayer game if it was local.
+       */
+      if ((savedInstanceState != null) && (gameLocale == LOCALE_LOCAL)) {
+        int savedPlayers = savedInstanceState.getInt("numPlayers");
+        if (savedPlayers == 2) {
+          mMultiplayerGameThread.restoreState(savedInstanceState);
+        }
+      }
+      mMultiplayerGameThread.startOpponent();
+      mMultiplayerGameView.requestFocus();
+    }
+    else {
+      setContentView(R.layout.activity_frozen_bubble);
+      mGameView = (GameView)findViewById(R.id.game);
+      mGameView.setGameListener(this);
+      mGameThread = mGameView.getThread();
+      if (savedInstanceState != null) {
+        int savedPlayers = savedInstanceState.getInt("numPlayers");
+        if (savedPlayers == 1)
+          mGameThread.restoreState(savedInstanceState);
+      }
+      mGameView.requestFocus();
+    }
+    setFullscreen();
+    playMusic(false);
   }
 
   /**
@@ -1150,5 +1115,53 @@ public class FrozenBubble extends Activity
         }
       }
     }
+  }
+
+  private void targetOptionsDialog() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    /*
+     * Set the dialog title.
+     */
+    builder.setTitle(R.string.menu_target_mode)
+    /*
+     * Specify the list array, the item to be selected by default, and
+     * the listener through which to receive callbacks when the item is
+     * selected.
+     */
+    .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
+                          new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface builder, int which) {
+        switch (which) {
+          case 0:
+            setTargetMode(AIM_TO_SHOOT);
+            break;
+          case 1:
+            setTargetMode(POINT_TO_SHOOT);
+            break;
+          case 2:
+            setTargetMode(ROTATE_TO_SHOOT);
+            break;
+        }
+        setTargetModeOrientation();
+      }
+    })
+    /*
+     * Set the action buttons.
+     */
+    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface builder, int id) {
+        // User clicked OK.
+        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
+                                                    Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putInt("targetMode", targetMode);
+        editor.commit();
+      }
+    });
+
+    builder.create();
+    builder.show();
   }
 }
