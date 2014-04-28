@@ -72,14 +72,14 @@
  * limitations under the License.
  */
 
-package org.jfedor.frozenbubble;
+package org.jfedor.frozenbubbleplus;
 
 import java.util.Random;
 
-import org.jfedor.frozenbubble.GameScreen.eventEnum;
-import org.jfedor.frozenbubble.GameScreen.stateEnum;
-import org.jfedor.frozenbubble.GameView.GameThread;
-import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
+import org.jfedor.frozenbubbleplus.GameScreen.eventEnum;
+import org.jfedor.frozenbubbleplus.GameScreen.stateEnum;
+import org.jfedor.frozenbubbleplus.GameView.GameThread;
+import org.jfedor.frozenbubbleplus.MultiplayerGameView.MultiplayerGameThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
