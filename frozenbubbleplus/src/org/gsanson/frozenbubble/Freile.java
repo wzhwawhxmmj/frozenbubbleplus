@@ -52,7 +52,7 @@
 
 package org.gsanson.frozenbubble;
 
-import org.jfedor.frozenbubble.BubbleSprite;
+import org.jfedor.frozenbubbleplus.BubbleSprite;
 
 import android.view.KeyEvent;
 
