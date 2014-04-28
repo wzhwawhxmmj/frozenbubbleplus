@@ -70,9 +70,17 @@ import android.text.format.Formatter;
 import android.util.Log;
 
 /**
- * Multicast manager class constructor.
- * <p>When created, this class instantiates a thread to send and
- * receive WiFi multicast messages.
+ * Multicast manager class - implements UDP unicast and multicast
+ * datagram sending and receiving.  This implementation currently only
+ * supports IPv4 internet addresses.
+ * <p>This class instantiates a thread to send and receive WiFi UDP
+ * unicast or multicast messages, depending on the constructor utilized.
+ * The <code>MulticastSocket</code> class is a descendant of
+ * <code>DatagramSocket</code>, the UDP datagram socket class.  Thus a
+ * multicast socket can be used to send and receive either UDP unicast
+ * datagrams, or UDP multicast datagrams, which makes it convenient to
+ * use either peer to peer networking scheme using virtually identical
+ * methods.
  * <p>Multicast host addresses must be in the IPv4 class D address
  * range, with the first octet being within the 224 to 239 range.
  * For example, <code>"225.0.0.15"</code> is an actual IPv4 multicast
@@ -80,15 +88,29 @@ import android.util.Log;
  * <p>Refer to:
  * <a href="url">http://en.wikipedia.org/wiki/Multicast_address</a> for
  * information regarding Multicast address usage and restrictions.
- * <p>A typical implementation looks like this:
+ * <p>A typical UDP multicast implementation looks like this:
  * <pre><code>
  * MulticastManager session =
- *     new MulticastManager(context, host, addr, port);
+ *     new MulticastManager(context, addr, port);
  * session.setMulticastListener(this);
  * </code></pre>
- * <p>The context from which to obtain the application context, the host
- * name, the IP address, and the port of the multicast session must be
- * supplied when creating a new <code>MulticastManager</code> instance.
+ * or alternatively the UDP unicast implementation appears as follows:
+ * <pre><code>
+ * MulticastManager session =
+ *     new MulticastManager(context, hostName, port);
+ * session.setMulticastListener(this);
+ * </code></pre>
+ * <p>The context from which to obtain the application context, the IP
+ * address or host name of the UDP peer, and the port of the UDP socket
+ * session must be supplied when creating a new
+ * <code>MulticastManager</code> instance.
+ * <p>The following <code>uses</code> permissions must be added to the
+ * Android project manifest to access all the API functionality required
+ * to perform UDP unicast or multicast networking as implemented:<br>
+ * <code>ACCESS_NETWORK_STATE<br>
+ * ACCESS_WIFI_STATE<br>
+ * CHANGE_WIFI_MULTICAST_STATE<br>
+ * INTERNET</code>
  * @author Eric Fortin, Wednesday, May 8, 2013
  */
 public class MulticastManager {
@@ -143,7 +165,7 @@ public class MulticastManager {
   /**
    * Multicast manager UDP multicast class constructor.
    * <p>When created, this class instantiates a thread to send and
-   * receive WiFi multicast messages.
+   * receive WiFi UDP multicast messages.
    * <p>Multicast host addresses must be in the IPv4 class D address
    * range, with the first octet being within the 224 to 239 range.
    * For example, <code>"225.0.0.15"</code> is an actual IPv4 multicast
@@ -154,15 +176,15 @@ public class MulticastManager {
    * <p>A typical implementation looks like this:
    * <pre><code>
    * MulticastManager session =
-   *     new MulticastManager(context, host, addr, port);
+   *     new MulticastManager(context, addr, port);
    * session.setMulticastListener(this);
    * </code></pre>
-   * <p>The context from which to obtain the application context, the
-   * host name, the IP address, and the port of the multicast session
-   * must be supplied when creating a new <code>MulticastManager</code>
-   * instance.
-   * <p>The following <code>uses</code> permissions must be addeded to
-   * the Android project manifest to perform multicast networking:<br>
+   * <p>The context from which to obtain the application context, the IP
+   * address of the UDP multicast session, and the port of the multicast
+   * session must be supplied when creating a new
+   * <code>MulticastManager</code> instance.
+   * <p>The following <code>uses</code> permissions must be added to the
+   * Android project manifest to perform multicast networking:<br>
    * <code>CHANGE_WIFI_MULTICAST_STATE<br>
    * INTERNET</code>
    * @param context - the context from which to obtain the application
@@ -200,7 +222,7 @@ public class MulticastManager {
    * <p>A typical implementation looks like this:
    * <pre><code>
    * MulticastManager session =
-   *     new MulticastManager(context, addr, port);
+   *     new MulticastManager(context, hostName, port);
    * session.setMulticastListener(this);
    * </code></pre>
    * <p>The context from which to obtain the application context, the
