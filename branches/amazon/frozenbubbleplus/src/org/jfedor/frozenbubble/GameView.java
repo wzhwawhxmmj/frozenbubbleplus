@@ -72,7 +72,7 @@
  *
  */
 
-package org.jfedor.frozenbubble;
+package org.jfedor.frozenbubbleplus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,9 +82,9 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
 
-import org.jfedor.frozenbubble.GameScreen.eventEnum;
-import org.jfedor.frozenbubble.GameScreen.gameEnum;
-import org.jfedor.frozenbubble.GameScreen.stateEnum;
+import org.jfedor.frozenbubbleplus.GameScreen.eventEnum;
+import org.jfedor.frozenbubbleplus.GameScreen.gameEnum;
+import org.jfedor.frozenbubbleplus.GameScreen.stateEnum;
 
 import android.content.Context;
 import android.content.SharedPreferences;
