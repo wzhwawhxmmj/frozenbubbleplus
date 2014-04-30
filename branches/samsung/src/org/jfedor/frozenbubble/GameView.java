@@ -72,7 +72,7 @@
  *
  */
 
-package org.jfedor.frozenbubble;
+package com.jfedor.frozenbubble;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,10 +81,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
-
-import org.jfedor.frozenbubble.GameScreen.eventEnum;
-import org.jfedor.frozenbubble.GameScreen.gameEnum;
-import org.jfedor.frozenbubble.GameScreen.stateEnum;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -102,6 +98,9 @@ import android.view.SurfaceView;
 
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
+import com.jfedor.frozenbubble.GameScreen.eventEnum;
+import com.jfedor.frozenbubble.GameScreen.gameEnum;
+import com.jfedor.frozenbubble.GameScreen.stateEnum;
 
 class GameView extends SurfaceView implements SurfaceHolder.Callback {
 

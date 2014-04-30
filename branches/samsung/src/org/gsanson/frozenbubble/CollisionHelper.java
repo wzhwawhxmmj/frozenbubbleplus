@@ -52,7 +52,7 @@
 
 package org.gsanson.frozenbubble;
 
-import org.jfedor.frozenbubble.BubbleSprite;
+import com.jfedor.frozenbubble.BubbleSprite;
 
 public class CollisionHelper {
 

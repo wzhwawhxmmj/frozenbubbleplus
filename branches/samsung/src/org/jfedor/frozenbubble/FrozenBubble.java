@@ -72,14 +72,9 @@
  * limitations under the License.
  */
 
-package org.jfedor.frozenbubble;
+package com.jfedor.frozenbubble;
 
 import java.util.Random;
-
-import org.jfedor.frozenbubble.GameScreen.eventEnum;
-import org.jfedor.frozenbubble.GameScreen.stateEnum;
-import org.jfedor.frozenbubble.GameView.GameThread;
-import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -108,6 +103,10 @@ import com.efortin.frozenbubble.HomeScreen;
 import com.efortin.frozenbubble.ModPlayer;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.VirtualInput;
+import com.jfedor.frozenbubble.GameScreen.eventEnum;
+import com.jfedor.frozenbubble.GameScreen.stateEnum;
+import com.jfedor.frozenbubble.GameView.GameThread;
+import com.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,

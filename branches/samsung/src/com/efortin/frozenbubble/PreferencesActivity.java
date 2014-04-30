@@ -52,17 +52,17 @@
 
 package com.efortin.frozenbubble;
 
-import org.jfedor.frozenbubble.BubbleSprite;
-import org.jfedor.frozenbubble.FrozenBubble;
-import org.jfedor.frozenbubble.LevelManager;
-import org.jfedor.frozenbubble.R;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
+
+import com.jfedor.frozenbubble.BubbleSprite;
+import com.jfedor.frozenbubble.FrozenBubble;
+import com.jfedor.frozenbubble.LevelManager;
+import com.jfedor.frozenbubble.R;
 
 public class PreferencesActivity extends PreferenceActivity{
 

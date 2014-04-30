@@ -52,9 +52,6 @@
 
 package com.efortin.frozenbubble;
 
-import org.jfedor.frozenbubble.FrozenBubble;
-import org.jfedor.frozenbubble.R;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -68,6 +65,9 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
+
+import com.jfedor.frozenbubble.FrozenBubble;
+import com.jfedor.frozenbubble.R;
 
 public class ScrollingCredits extends Activity implements Runnable {
   private boolean victoryScreenShown = false;
