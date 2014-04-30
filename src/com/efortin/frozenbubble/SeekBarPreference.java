@@ -52,8 +52,6 @@
 
 package com.efortin.frozenbubble;
 
-import org.jfedor.frozenbubble.R;
-
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.preference.Preference;
@@ -67,6 +65,8 @@ import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
+
+import com.jfedor.frozenbubble.R;
 
 public class SeekBarPreference extends Preference
   implements OnSeekBarChangeListener {

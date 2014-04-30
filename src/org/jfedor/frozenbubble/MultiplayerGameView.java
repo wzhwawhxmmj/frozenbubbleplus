@@ -72,18 +72,13 @@
  *
  */
 
-package org.jfedor.frozenbubble;
+package com.jfedor.frozenbubble;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Vector;
 
 import org.gsanson.frozenbubble.MalusBar;
-import org.jfedor.frozenbubble.GameScreen.eventEnum;
-import org.jfedor.frozenbubble.GameScreen.gameEnum;
-import org.jfedor.frozenbubble.GameScreen.stateEnum;
-import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.NetworkStatus;
-import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.RemoteInterface;
 
 import android.app.Activity;
 import android.content.Context;
@@ -110,6 +105,11 @@ import com.efortin.frozenbubble.NetworkGameManager.GameFieldData;
 import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
 import com.efortin.frozenbubble.NetworkGameManager.connectEnum;
 import com.efortin.frozenbubble.VirtualInput;
+import com.jfedor.frozenbubble.GameScreen.eventEnum;
+import com.jfedor.frozenbubble.GameScreen.gameEnum;
+import com.jfedor.frozenbubble.GameScreen.stateEnum;
+import com.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.NetworkStatus;
+import com.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.RemoteInterface;
 
 public class MultiplayerGameView extends SurfaceView
   implements SurfaceHolder.Callback {

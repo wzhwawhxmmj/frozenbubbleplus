@@ -50,7 +50,7 @@
  *          [[ http://www.frozen-bubble.org/   ]]
  */
 
-package org.jfedor.frozenbubble;
+package com.jfedor.frozenbubble;
 
 import android.content.Context;
 import android.media.AudioManager;

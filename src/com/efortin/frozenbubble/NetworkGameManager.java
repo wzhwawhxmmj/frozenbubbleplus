@@ -57,17 +57,16 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import org.jfedor.frozenbubble.BubbleSprite;
-import org.jfedor.frozenbubble.FrozenBubble;
-import org.jfedor.frozenbubble.FrozenGame;
-import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 import com.efortin.frozenbubble.MulticastManager.MulticastListener;
 import com.efortin.frozenbubble.MulticastManager.eventEnum;
+import com.jfedor.frozenbubble.BubbleSprite;
+import com.jfedor.frozenbubble.FrozenBubble;
+import com.jfedor.frozenbubble.FrozenGame;
+import com.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface;
 
 /**
  * This class manages the actions in a network multiplayer game by
