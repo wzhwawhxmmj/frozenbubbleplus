@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen
-   xmlns:android="http://schemas.android.com/apk/res/android"
-   xmlns:efortin="https://code.google.com/p/frozenbubbleandroid" >
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:efortin="https://code.google.com/p/frozenbubbleandroid"
+    android:layout_height="fill_parent"
+    android:layout_width="fill_parent" >
+
   <PreferenceCategory
     android:summary="Frozen Bubble Game Options"
     android:title="Player information" >
@@ -67,7 +69,11 @@
 
   <PreferenceCategory
     android:summary="Frozen Bubble Game Options"
-    android:title="Player vs CPU Options" >
+    android:title="2 Player Game Options" >
+  <EditTextPreference
+    android:key="opponent_ip_address"
+    android:summary="Please enter opponent IP address"
+    android:title="Opponent Internet Address" />
   <CheckBoxPreference
     android:defaultValue="true"
     android:key="compressor_option"
@@ -78,7 +84,7 @@
     android:key="difficulty_option"
     android:max="8"
     android:summary="Choose difficulty"
-    android:title="Player vs CPU Difficulty"
+    android:title="Difficulty"
     efortin:min="4"
     efortin:unitsLeft=""
     efortin:unitsRight=" colors" />
