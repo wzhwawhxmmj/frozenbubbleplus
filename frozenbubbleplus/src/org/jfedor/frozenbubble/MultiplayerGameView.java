@@ -85,6 +85,7 @@ import org.jfedor.frozenbubble.GameScreen.stateEnum;
 import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.NetworkStatus;
 import org.jfedor.frozenbubble.MultiplayerGameView.NetGameInterface.RemoteInterface;
 
+import tv.ouya.console.api.OuyaController;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -991,11 +992,18 @@ public class MultiplayerGameView extends SurfaceView
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
+        int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
         /*
          * Only update the game state if this is a fresh key press.
          */
-        if (mLocalInput.checkNewActionKeyPress(keyCode))
-          updateStateOnEvent(null);
+        if (player <= 0) {
+          if (mLocalInput.checkNewActionKeyPress(keyCode))
+            updateStateOnEvent(null);
+        }
+        else {
+          if (mRemoteInput.checkNewActionKeyPress(keyCode))
+            updateStateOnEvent(null);
+        }
 
         /*
          * Process the key press if it is a function key.
@@ -1005,7 +1013,12 @@ public class MultiplayerGameView extends SurfaceView
         /*
          * Process the key press if it is a game input key.
          */
-        return mLocalInput.setKeyDown(keyCode);
+        if (player <= 0) {
+          return mLocalInput.setKeyDown(keyCode);
+        }
+        else {
+          return mRemoteInput.setKeyDown(keyCode);
+        }
       }
     }
 
@@ -1019,7 +1032,15 @@ public class MultiplayerGameView extends SurfaceView
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
       synchronized (mSurfaceHolder) {
-        return mLocalInput.setKeyUp(keyCode);
+        /*
+         * Process the key release if it is a game input key.
+         */
+        if (OuyaController.getPlayerNumByDeviceId(msg.getDeviceId()) <= 0) {
+          return mLocalInput.setKeyUp(keyCode);
+        }
+        else {
+          return mRemoteInput.setKeyUp(keyCode);
+        }
       }
     }
 
@@ -1037,10 +1058,13 @@ public class MultiplayerGameView extends SurfaceView
         double x = xFromScr(event.getX());
         double y = yFromScr(event.getY());
 
-        if (mLocalInput.playerID == VirtualInput.PLAYER1)
-          x_offset = 0;
-        else
+        int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
+        if ((mLocalInput.playerID == VirtualInput.PLAYER2) || (player == 1)) {
           x_offset = -318;
+        }
+        else {
+          x_offset = 0;
+        }
         /*
          * Check for a pause button sprite press.  This will toggle the
          * pause button sprite between pause and play.  If the game was
@@ -1073,7 +1097,12 @@ public class MultiplayerGameView extends SurfaceView
         /*
          * Process the screen touch event.
          */
-        return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
+        if (player <= 0) {
+          return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
+        }
+        else {
+          return mRemoteInput.setTouchEvent(event.getAction(), x + x_offset, y);
+        }
       }
     }
 
@@ -1092,7 +1121,12 @@ public class MultiplayerGameView extends SurfaceView
       synchronized (mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
           if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
+            if (OuyaController.getPlayerNumByDeviceId(event.getDeviceId()) <= 0) {
+              mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
+            }
+            else {
+              mRemoteInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
+            }
             return true;
           }
         }
@@ -2207,30 +2241,40 @@ public class MultiplayerGameView extends SurfaceView
   public MultiplayerGameView(Context context, AttributeSet attrs) {
     super(context, attrs);
     //Log.i("frozen-bubble", "MultiplayerGameView constructor");
-    init(context, (int) VirtualInput.PLAYER1, FrozenBubble.LOCALE_LOCAL);
+    init(context, (int) VirtualInput.PLAYER1,
+         FrozenBubble.HUMAN,
+         FrozenBubble.LOCALE_LOCAL);
   }
 
   /**
    * <code>MultiplayerGameView</code> class constructor.
    * @param context - the application context.
    * @param myPlayerId - the local player ID (1 or 2).
+   * @param opponentId - the opponent type ID, human or CPU.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
    */
-  public MultiplayerGameView(Context context, int myPlayerId, int gameLocale) {
+  public MultiplayerGameView(Context context,
+                             int myPlayerId,
+                             int opponentId,
+                             int gameLocale) {
     super(context);
     //Log.i("frozen-bubble", "MultiplayerGameView constructor");
-    init(context, myPlayerId, gameLocale);
+    init(context, myPlayerId, opponentId, gameLocale);
   }
 
   /**
    * <code>MultiplayerGameView</code> object initialization.
    * @param context - the application context.
    * @param myPlayerId - the local player ID (1 or 2).
+   * @param opponentId - the opponent type ID, human or CPU.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
    */
-  private void init(Context context, int myPlayerId, int gameLocale) {
+  private void init(Context context,
+                    int myPlayerId,
+                    int opponentId,
+                    int gameLocale) {
     mContext = context;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
@@ -2239,25 +2283,8 @@ public class MultiplayerGameView extends SurfaceView
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    /*
-     * If this game is being played purely locally, then the opponent is
-     * CPU controlled.  Otherwise the opponent is a remote player.
-     *
-     * TODO: add the ability to support multiple local players via
-     * multi-touch, and the ability to specify any player as CPU
-     * controlled.
-     */
-    boolean isCPU;
-    boolean isRemote;
-
-    if (gameLocale == FrozenBubble.LOCALE_LOCAL) {
-      isCPU    = true;
-      isRemote = false;
-    }
-    else {
-      isCPU    = false;
-      isRemote = true;
-    }
+    boolean isCPU    = opponentId == FrozenBubble.CPU;
+    boolean isRemote = gameLocale != FrozenBubble.LOCALE_LOCAL;
 
     if (myPlayerId == VirtualInput.PLAYER1) {
       mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);

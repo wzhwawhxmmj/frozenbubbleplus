@@ -81,6 +81,7 @@ import org.jfedor.frozenbubble.GameScreen.stateEnum;
 import org.jfedor.frozenbubble.GameView.GameThread;
 import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
+import tv.ouya.console.api.OuyaController;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -154,12 +155,16 @@ public class FrozenBubble extends Activity
   public final static int ROTATE_TO_SHOOT = 2;
 
   public final static int LOCALE_LOCAL    = 0;
-  public final static int LOCALE_LAN      = 1;
-  public final static int LOCALE_INTERNET = 2;
+  public final static int LOCALE_LAN      = 2;
+  public final static int LOCALE_INTERNET = 3;
+
+  public final static int CPU   = 0;
+  public final static int HUMAN = 1;
 
   public static int gameLocale = LOCALE_LOCAL;
   public static int myPlayerId = VirtualInput.PLAYER1; 
   public static int numPlayers = 0;
+  public static int opponentId = CPU;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
@@ -228,6 +233,7 @@ public class FrozenBubble extends Activity
     //  Log.i(TAG, "FrozenBubble.onCreate(null)");
     //}
     super.onCreate(savedInstanceState);
+    OuyaController.init(this);
     setVolumeControlStream(AudioManager.STREAM_MUSIC);
     requestWindowFeature(Window.FEATURE_NO_TITLE);
 
@@ -1023,12 +1029,15 @@ public class FrozenBubble extends Activity
      * Check if this is a single player or multiplayer game.
      */
     numPlayers = 1;
+    opponentId = CPU;
     gameLocale = LOCALE_LOCAL;
     if (intent != null) {
       if (intent.hasExtra("myPlayerId"))
         myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
+      if (intent.hasExtra("opponentId"))
+        opponentId = intent.getIntExtra("opponentId", CPU);
       if (intent.hasExtra("gameLocale"))
         gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
     }
@@ -1040,6 +1049,7 @@ public class FrozenBubble extends Activity
     if (numPlayers > 1) {
       mMultiplayerGameView = new MultiplayerGameView(this,
                                                      myPlayerId,
+                                                     opponentId,
                                                      gameLocale);
       setContentView(mMultiplayerGameView);
       mMultiplayerGameView.setGameListener(this);
