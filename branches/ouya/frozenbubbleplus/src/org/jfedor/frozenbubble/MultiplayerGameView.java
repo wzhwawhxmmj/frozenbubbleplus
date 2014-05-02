@@ -955,16 +955,13 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the key press if it is a game input key.
        */
-      synchronized(mSurfaceHolder) {
-        if (player <= 0) {
-          return mLocalInput.setKeyDown(keyCode);
-        }
-        else {
-          return mRemoteInput.setKeyDown(keyCode);
-        }
+      if (player <= 0) {
+        return mLocalInput.setKeyDown(keyCode);
+      }
+      else {
+        return mRemoteInput.setKeyDown(keyCode);
       }
     }
-
     /**
      * Process key releases.  This must be allowed to run regardless of
      * the game state in order to properly clear key presses.
@@ -979,13 +976,11 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the key release if it is a game input key.
        */
-      synchronized(mSurfaceHolder) {
-        if (player <= 0) {
-          return mLocalInput.setKeyUp(keyCode);
-        }
-        else {
-          return mRemoteInput.setKeyUp(keyCode);
-        }
+      if (player <= 0) {
+        return mLocalInput.setKeyUp(keyCode);
+      }
+      else {
+        return mRemoteInput.setKeyUp(keyCode);
       }
     }
 
@@ -1041,13 +1036,11 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the screen touch event.
        */
-      synchronized(mSurfaceHolder) {
-        if (player <= 0) {
-          return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
-        }
-        else {
-          return mRemoteInput.setTouchEvent(event.getAction(), x + x_offset, y);
-        }
+      if (player <= 0) {
+        return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
+      }
+      else {
+        return mRemoteInput.setTouchEvent(event.getAction(), x + x_offset, y);
       }
     }
 
@@ -1067,13 +1060,11 @@ public class MultiplayerGameView extends SurfaceView
       int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
       if (mMode == stateEnum.RUNNING) {
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          synchronized(mSurfaceHolder) {
-            if (player <= 0) {
-              mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
-            }
-            else {
-              mRemoteInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
-            }
+          if (player <= 0) {
+            mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
+          }
+          else {
+            mRemoteInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
           }
           handled = true;
         }
