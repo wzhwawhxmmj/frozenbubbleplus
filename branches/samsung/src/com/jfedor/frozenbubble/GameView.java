@@ -215,9 +215,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     Vector<BmpWrap> mImageList;
 
     public int getCurrentLevelIndex() {
-      synchronized (mSurfaceHolder) {
-        return mLevelManager.getLevelIndex();
-      }
+      return mLevelManager.getLevelIndex();
     }
 
     private BmpWrap NewBmpWrap() {
@@ -446,7 +444,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void pause() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
           setState(stateEnum.PAUSED);
 
@@ -461,7 +459,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void resumeGame() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
           mFrozenGame      .resume();
           mHighscoreManager.resumeLevel();
@@ -470,7 +468,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void newGame() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         mLevelManager.goToFirstLevel();
         mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                      mFrozenBubbles, mTargetedBubbles,
@@ -499,7 +497,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
           if (surfaceOK()) {
             c = mSurfaceHolder.lockCanvas(null);
             if (c != null) {
-              synchronized (mSurfaceHolder) {
+              synchronized(mSurfaceHolder) {
                 if (mRun) {
                   if (mMode == stateEnum.ABOUT) {
                     drawAboutScreen(c);
@@ -543,7 +541,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (map != null) {
           map.putInt("numPlayers", 1);
           mFrozenGame      .saveState(map);
@@ -560,8 +558,8 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * destroyed.
      * @param savedState - Bundle containing the game state.
      */
-    public synchronized void restoreState(Bundle map) {
-      synchronized (mSurfaceHolder) {
+    public void restoreState(Bundle map) {
+      synchronized(mSurfaceHolder) {
         setState(stateEnum.PAUSED);
         mFrozenGame      .restoreState(map, mImageList);
         mLevelManager    .restoreState(map);
@@ -574,7 +572,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void setState(stateEnum newMode) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         /*
          * Only update the previous mode storage if the new mode is
          * different from the current mode, in case the same mode is
@@ -593,13 +591,13 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void setSurfaceOK(boolean ok) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         mSurfaceOK = ok;
       }
     }
 
     public boolean surfaceOK() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         return mSurfaceOK;
       }
     }
@@ -610,7 +608,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       float gameHeight   = GAMEFIELD_HEIGHT;
       float gameWidth    = GAMEFIELD_WIDTH;
       float extGameWidth = EXTENDED_GAMEFIELD_WIDTH;
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
           mDisplayScale = (1.0 * newHeight) / gameHeight;
           mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
@@ -634,45 +632,50 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
-      synchronized (mSurfaceHolder) {
-        /*
-         * Only update the game state if this is a fresh key press.
-         */
-        if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
-            ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
-             (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
-          updateStateOnEvent(null);
+      boolean handled = false;
+      /*
+       * Only update the game state if this is a fresh key press.
+       */
+      if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
+          ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
+        updateStateOnEvent(null);
 
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft    = true;
-          mWasLeft = true;
-          return true;
+      synchronized(mSurfaceHolder) {
+        switch(keyCode) {
+          case KeyEvent.KEYCODE_DPAD_LEFT:
+            mLeft    = true;
+            mWasLeft = true;
+            handled  = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_RIGHT:
+            mRight    = true;
+            mWasRight = true;
+            handled   = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_CENTER:
+            mFire    = true;
+            mWasFire = true;
+            handled  = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_UP:
+            mUp     = true;
+            mWasUp  = true;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_DOWN:
+            mDown    = true;
+            mWasDown = true;
+            handled  = true;
+            break;
+          default:
+            break;              
         }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight    = true;
-          mWasRight = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire    = true;
-          mWasFire = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp    = true;
-          mWasUp = true;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown    = true;
-          mWasDown = true;
-          return true;
-        }
-        return false;
       }
+      return handled;
     }
 
     /**
@@ -684,29 +687,34 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
-      synchronized (mSurfaceHolder) {
-        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-          mLeft = false;
-          return true;
+      boolean handled = false;
+      synchronized(mSurfaceHolder) {
+        switch(keyCode) {
+          case KeyEvent.KEYCODE_DPAD_LEFT:
+            mLeft   = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_RIGHT:
+            mRight  = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_CENTER:
+            mFire   = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_UP:
+            mUp     = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_DOWN:
+            mDown   = false;
+            handled = true;
+            break;
+          default:
+            break;              
         }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-          mRight = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-          mFire = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-          mUp = false;
-          return true;
-        }
-        else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-          mDown = false;
-          return true;
-        }
-        return false;
       }
+      return handled;
     }
 
     /**
@@ -721,15 +729,16 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * motion event and no other handling is necessary.
      */
     boolean doTrackballEvent(MotionEvent event) {
-      synchronized (mSurfaceHolder) {
-        if (mMode == stateEnum.RUNNING) {
-          if (event.getAction() == MotionEvent.ACTION_MOVE) {
+      boolean handled = false;
+      if (mMode == stateEnum.RUNNING) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+          synchronized(mSurfaceHolder) {
             mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
-            return true;
           }
+          handled = true;
         }
-        return false;
       }
+      return handled;
     }
 
     private double xFromScr(float x) {
@@ -749,17 +758,19 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      * @return <code>true</code> if the event was handled.
      */
     boolean doTouchEvent(MotionEvent event) {
-      synchronized (mSurfaceHolder) {
-        if(updateStateOnEvent(event))
-          return true;
+      boolean handled = false;
 
-        if (mMode == stateEnum.RUNNING) {
-          double x = xFromScr(event.getX());
-          double y = yFromScr(event.getY());
+      if(updateStateOnEvent(event))
+        return true;
 
-          /*
-           * Set the values used when Point To Shoot is on.
-           */
+      if (mMode == stateEnum.RUNNING) {
+        double x = xFromScr(event.getX());
+        double y = yFromScr(event.getY());
+
+        /*
+         * Set the values used when Point To Shoot is on.
+         */
+        synchronized(mSurfaceHolder) {
           if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (y < TOUCH_FIRE_Y_THRESHOLD) {
               mTouchFire = true;
@@ -769,7 +780,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
             else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
               mTouchSwap = true;
           }
-
+  
           /*
            * Set the values used when Aim Then Shoot is on.
            */
@@ -785,10 +796,10 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
             }
             mATSTouchLastX = x;
           }
-          return true;
         }
-        return false;
+        handled = true;
       }
+      return handled;
     }
 
     /**
@@ -1047,7 +1058,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
 
     public void cleanUp() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         /*
          * I don't really understand why all this is necessary.
          * I used to get a crash (an out-of-memory error) once every six
