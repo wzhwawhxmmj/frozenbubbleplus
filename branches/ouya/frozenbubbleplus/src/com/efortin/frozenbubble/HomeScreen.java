@@ -71,6 +71,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.RelativeLayout.LayoutParams;
+import android.widget.Toast;
 
 public class HomeScreen extends Activity {
   /*
@@ -102,6 +103,7 @@ public class HomeScreen extends Activity {
   private boolean finished        = false;
   private boolean homeShown       = false;
   private boolean musicOn         = true;
+  private long lastBackPressTime  = 0;
   private ImageView myImageView   = null;
   private RelativeLayout myLayout = null;
   private ModPlayer myModPlayer   = null;
@@ -602,9 +604,23 @@ public class HomeScreen extends Activity {
       displayButtonPage(2);
     }
     else {
-      finished = true;
-      cleanUp();
-      finish();
+      long currentTime = System.currentTimeMillis();
+      //
+      // If the player presses back twice in less than three seconds,
+      // then exit the game.  Otherwise pop up a toast telling them that
+      // if they press the button again the game will exit.
+      //
+      //
+      if ((currentTime - lastBackPressTime) < 3000) {
+        finished = true;
+        cleanUp();
+        finish();
+      }
+      else
+        Toast.makeText(getApplicationContext(), "Press again to exit...",
+                       Toast.LENGTH_SHORT).show();
+
+      lastBackPressTime = currentTime;
     }
   }
 

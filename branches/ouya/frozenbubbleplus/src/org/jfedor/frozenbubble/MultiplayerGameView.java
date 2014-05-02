@@ -588,81 +588,13 @@ public class MultiplayerGameView extends SurfaceView
    * via a client device over a network.
    * @param newAction - the object containing the remote input info.
    */
-  private synchronized void setPlayerAction(PlayerAction newAction) {
+  private void setPlayerAction(PlayerAction newAction) {
     if (newAction == null) {
       return;
     }
 
-    VirtualInput playerRef;
-
-    if (newAction.playerID == VirtualInput.PLAYER1) {
-      playerRef = mPlayer1;
-    }
-    else if (newAction.playerID == VirtualInput.PLAYER2) {
-      playerRef = mPlayer2;
-    }
-    else {
-      return;
-    }
-
-    if (mGameThread != null)
-      mGameThread.updateStateOnEvent(null);
-
-    /*
-     * Set the launcher bubble colors.
-     */
-    if ((newAction.launchBubbleColor  > -1) &&
-        (newAction.launchBubbleColor  <  8) &&
-        (newAction.nextBubbleColor    > -1) &&
-        (newAction.nextBubbleColor    <  8) &&
-        (newAction.newNextBubbleColor > -1) &&
-        (newAction.newNextBubbleColor <  8)) {
-      playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
-                                               newAction.nextBubbleColor,
-                                               newAction.newNextBubbleColor);
-    }
-
-    /*
-     * Set the launcher aim position.
-     */
-    playerRef.mGameRef.setPosition(newAction.aimPosition);
-
-    /*
-     * Process a compressor lower request.
-     */
-    if (newAction.compress) {
-      playerRef.mGameRef.lowerCompressor(true);
-    }
-
-    /*
-     * Process a bubble launch request.
-     */
-    if (newAction.launchBubble) {
-      playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP, true);
-    }
-
-    /*
-     * Process a bubble swap request.
-     */
-    if (newAction.swapBubble) {
-      playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN, false);
-    }
-
-    /*
-     * Process a pause/play button toggle request.
-     */
-    if (newAction.keyCode == (byte) KeyEvent.KEYCODE_P) {
-      if (mGameThread != null) {
-        mGameThread.toggleKeyPress(KeyEvent.KEYCODE_P, true, false);
-      }
-    }
-
-    /*
-     * Set the current value of the attack bar.
-     */
-    if (newAction.attackBarBubbles > -1) {
-      playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
-                                                   newAction.attackBubbles);
+    if (mGameThread != null) {
+      mGameThread.setPlayerAction(newAction);
     }
   }
 
@@ -991,28 +923,28 @@ public class MultiplayerGameView extends SurfaceView
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
+      int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
+      /*
+       * Only update the game state if this is a fresh key press.
+       */
+      if (player <= 0) {
+        if (mLocalInput.checkNewActionKeyPress(keyCode))
+          updateStateOnEvent(null);
+      }
+      else {
+        if (mRemoteInput.checkNewActionKeyPress(keyCode))
+          updateStateOnEvent(null);
+      }
+
+      /*
+       * Process the key press if it is a function key.
+       */
+      toggleKeyPress(keyCode, true, true);
+
+      /*
+       * Process the key press if it is a game input key.
+       */
       synchronized (mSurfaceHolder) {
-        int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
-        /*
-         * Only update the game state if this is a fresh key press.
-         */
-        if (player <= 0) {
-          if (mLocalInput.checkNewActionKeyPress(keyCode))
-            updateStateOnEvent(null);
-        }
-        else {
-          if (mRemoteInput.checkNewActionKeyPress(keyCode))
-            updateStateOnEvent(null);
-        }
-
-        /*
-         * Process the key press if it is a function key.
-         */
-        toggleKeyPress(keyCode, true, true);
-
-        /*
-         * Process the key press if it is a game input key.
-         */
         if (player <= 0) {
           return mLocalInput.setKeyDown(keyCode);
         }
@@ -1031,11 +963,13 @@ public class MultiplayerGameView extends SurfaceView
      * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
+      int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
+
+      /*
+       * Process the key release if it is a game input key.
+       */
       synchronized (mSurfaceHolder) {
-        /*
-         * Process the key release if it is a game input key.
-         */
-        if (OuyaController.getPlayerNumByDeviceId(msg.getDeviceId()) <= 0) {
+        if (player <= 0) {
           return mLocalInput.setKeyUp(keyCode);
         }
         else {
@@ -1053,50 +987,50 @@ public class MultiplayerGameView extends SurfaceView
      * @return <code>true</code> if the event was handled..
      */
     boolean doTouchEvent(MotionEvent event) {
+      double x_offset;
+      double x = xFromScr(event.getX());
+      double y = yFromScr(event.getY());
+
+      int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
+      if ((mLocalInput.playerID == VirtualInput.PLAYER2) || (player == 1)) {
+        x_offset = -318;
+      }
+      else {
+        x_offset = 0;
+      }
+      /*
+       * Check for a pause button sprite press.  This will toggle the
+       * pause button sprite between pause and play.  If the game was
+       * previously paused by the pause button, ignore screen touches
+       * that aren't on the pause button sprite.
+       */
+      if (event.getAction() == MotionEvent.ACTION_DOWN) {
+        if ((Math.abs(x - 183) <= TOUCH_BUTTON_THRESHOLD) &&
+            (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
+          toggleKeyPress(KeyEvent.KEYCODE_P, false, true);
+        }
+        else if (toggleKeyState(KeyEvent.KEYCODE_P))
+          return false;
+      }
+
+      /*
+       * Update the game state (paused, running, etc.) if necessary.
+       */
+      if(updateStateOnEvent(event))
+        return true;
+
+      /*
+       * If the game is running and the pause button sprite was pressed,
+       * pause the game.
+       */
+      if ((mMode == stateEnum.RUNNING) &&
+          (toggleKeyState(KeyEvent.KEYCODE_P)))
+        pause();
+
+      /*
+       * Process the screen touch event.
+       */
       synchronized (mSurfaceHolder) {
-        double x_offset;
-        double x = xFromScr(event.getX());
-        double y = yFromScr(event.getY());
-
-        int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
-        if ((mLocalInput.playerID == VirtualInput.PLAYER2) || (player == 1)) {
-          x_offset = -318;
-        }
-        else {
-          x_offset = 0;
-        }
-        /*
-         * Check for a pause button sprite press.  This will toggle the
-         * pause button sprite between pause and play.  If the game was
-         * previously paused by the pause button, ignore screen touches
-         * that aren't on the pause button sprite.
-         */
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-          if ((Math.abs(x - 183) <= TOUCH_BUTTON_THRESHOLD) &&
-              (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
-            toggleKeyPress(KeyEvent.KEYCODE_P, false, true);
-          }
-          else if (toggleKeyState(KeyEvent.KEYCODE_P))
-            return false;
-        }
-
-        /*
-         * Update the game state (paused, running, etc.) if necessary.
-         */
-        if(updateStateOnEvent(event))
-          return true;
-
-        /*
-         * If the game is running and the pause button sprite was pressed,
-         * pause the game.
-         */
-        if ((mMode == stateEnum.RUNNING) &&
-            (toggleKeyState(KeyEvent.KEYCODE_P)))
-          pause();
-
-        /*
-         * Process the screen touch event.
-         */
         if (player <= 0) {
           return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
         }
@@ -1118,20 +1052,21 @@ public class MultiplayerGameView extends SurfaceView
      * handled the motion event and no other handling is necessary.
      */
     boolean doTrackballEvent(MotionEvent event) {
-      synchronized (mSurfaceHolder) {
-        if (mMode == stateEnum.RUNNING) {
-          if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (OuyaController.getPlayerNumByDeviceId(event.getDeviceId()) <= 0) {
+      int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
+      if (mMode == stateEnum.RUNNING) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+          synchronized (mSurfaceHolder) {
+            if (player <= 0) {
               mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             }
             else {
               mRemoteInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             }
-            return true;
           }
+          return true;
         }
-        return false;
       }
+      return false;
     }
 
     private void drawAboutScreen(Canvas canvas) {
@@ -1412,9 +1347,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public int getCurrentLevelIndex() {
-      synchronized (mSurfaceHolder) {
-        return mLevelManager.getLevelIndex();
-      }
+      return mLevelManager.getLevelIndex();
     }
 
     private int getScreenOrientation() {
@@ -1768,7 +1701,7 @@ public class MultiplayerGameView extends SurfaceView
      * destroyed.
      * @param savedState - Bundle containing the game state.
      */
-    public synchronized void restoreState(Bundle map) {
+    public void restoreState(Bundle map) {
       synchronized (mSurfaceHolder) {
         setState(stateEnum.PAUSED);
         numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
@@ -1892,6 +1825,87 @@ public class MultiplayerGameView extends SurfaceView
       int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
       int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
       image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
+    }
+
+    /**
+     * Set the player action for a remote player - as in a person playing
+     * via a client device over a network.
+     * @param newAction - the object containing the remote input info.
+     */
+    public void setPlayerAction(PlayerAction newAction) {
+      VirtualInput playerRef;
+
+      if (newAction.playerID == VirtualInput.PLAYER1) {
+        playerRef = mPlayer1;
+      }
+      else if (newAction.playerID == VirtualInput.PLAYER2) {
+        playerRef = mPlayer2;
+      }
+      else {
+        return;
+      }
+
+      if (mGameThread != null)
+        mGameThread.updateStateOnEvent(null);
+
+      synchronized (mSurfaceHolder) {
+        /*
+         * Set the launcher bubble colors.
+         */
+        if ((newAction.launchBubbleColor  > -1) &&
+            (newAction.launchBubbleColor  <  8) &&
+            (newAction.nextBubbleColor    > -1) &&
+            (newAction.nextBubbleColor    <  8) &&
+            (newAction.newNextBubbleColor > -1) &&
+            (newAction.newNextBubbleColor <  8)) {
+          playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
+                                                   newAction.nextBubbleColor,
+                                                   newAction.newNextBubbleColor);
+        }
+
+        /*
+         * Set the launcher aim position.
+         */
+        playerRef.mGameRef.setPosition(newAction.aimPosition);
+
+        /*
+         * Process a compressor lower request.
+         */
+        if (newAction.compress) {
+          playerRef.mGameRef.lowerCompressor(true);
+        }
+
+        /*
+         * Process a bubble launch request.
+         */
+        if (newAction.launchBubble) {
+          playerRef.setAction(KeyEvent.KEYCODE_DPAD_UP, true);
+        }
+
+        /*
+         * Process a bubble swap request.
+         */
+        if (newAction.swapBubble) {
+          playerRef.setAction(KeyEvent.KEYCODE_DPAD_DOWN, false);
+        }
+
+        /*
+         * Process a pause/play button toggle request.
+         */
+        if (newAction.keyCode == (byte) KeyEvent.KEYCODE_P) {
+          if (mGameThread != null) {
+            mGameThread.toggleKeyPress(KeyEvent.KEYCODE_P, true, false);
+          }
+        }
+
+        /*
+         * Set the current value of the attack bar.
+         */
+        if (newAction.attackBarBubbles > -1) {
+          playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
+                                                       newAction.attackBubbles);
+        }
+      }
     }
 
     public void setPosition(double value) {
