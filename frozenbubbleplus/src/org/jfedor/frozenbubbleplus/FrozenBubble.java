@@ -83,7 +83,6 @@ import org.jfedor.frozenbubbleplus.MultiplayerGameView.MultiplayerGameThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -91,7 +90,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
@@ -101,7 +99,6 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.HomeScreen;
@@ -144,10 +141,9 @@ public class FrozenBubble extends Activity
   public final static int MENU_SOUND_OPTIONS  = 5;
   public final static int MENU_DONT_RUSH_ME   = 6;
   public final static int MENU_RUSH_ME        = 7;
-  public final static int MENU_NEW_GAME       = 8;
-  public final static int MENU_ABOUT          = 9;
-  public final static int MENU_EDITOR         = 10;
-  public final static int MENU_TARGET_MODE    = 11;
+  public final static int MENU_TARGET_MODE    = 8;
+  public final static int MENU_NEW_GAME       = 9;
+  public final static int MENU_ABOUT          = 10;
 
   public final static int AIM_TO_SHOOT    = 0;
   public final static int POINT_TO_SHOOT  = 1;
@@ -259,7 +255,6 @@ public class FrozenBubble extends Activity
     menu.add(0, MENU_RUSH_ME,        0, R.string.menu_rush_me);
     menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
     menu.add(0, MENU_NEW_GAME,       0, R.string.menu_new_game);
-    menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
     return true;
   }
 
@@ -381,9 +376,6 @@ public class FrozenBubble extends Activity
         setDontRushMe(false);
         editor.putBoolean("dontRushMe", dontRushMe);
         editor.commit();
-        return true;
-      case MENU_EDITOR:
-        startEditor();
         return true;
     }
 
@@ -1070,51 +1062,6 @@ public class FrozenBubble extends Activity
     }
     setFullscreen();
     playMusic(false);
-  }
-
-  /**
-   * Starts editor / market with editor's download.
-   */
-  private void startEditor() {
-    Intent i = new Intent();
-    /*
-     * First try to run the plus version of the level editor.
-     */
-    i.setClassName("sk.halmi.fbeditplus", 
-                   "sk.halmi.fbeditplus.EditorActivity");
-    try {
-      startActivity(i);
-      finish();
-    } catch (ActivityNotFoundException e) {
-      /*
-       * If not found, try to run the normal version.
-       */
-      i.setClassName("sk.halmi.fbedit", 
-                     "sk.halmi.fbedit.EditorActivity");
-      try {
-        startActivity(i);
-        finish();
-      } catch (ActivityNotFoundException ex) {
-        /*
-         * If the user doesn't have the Frozen Bubble Level Editor, take
-         * him to the application market.
-         */
-        try {
-          Toast.makeText(getApplicationContext(), 
-                         R.string.install_editor, Toast.LENGTH_SHORT).show();
-          i = new Intent(Intent.ACTION_VIEW,
-                         Uri.parse(
-                         "market://search?q=frozen bubble level editor"));
-          startActivity(i);
-        } catch (Exception exc) {
-          /*
-           * Damn, you don't have market?
-           */
-          Toast.makeText(getApplicationContext(), 
-                         R.string.market_missing, Toast.LENGTH_SHORT).show();
-        }
-      }
-    }
   }
 
   private void targetOptionsDialog() {
