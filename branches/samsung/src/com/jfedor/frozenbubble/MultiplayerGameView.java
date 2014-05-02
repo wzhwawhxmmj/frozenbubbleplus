@@ -1750,9 +1750,9 @@ public class MultiplayerGameView extends SurfaceView
         setState(stateEnum.PAUSED);
         numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
         numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
-        mFrozenGame1     .restoreState(map, mImageList);
-        mFrozenGame2     .restoreState(map, mImageList);
-        mLevelManager    .restoreState(map);
+        mFrozenGame1 .restoreState(map, mImageList);
+        mFrozenGame2 .restoreState(map, mImageList);
+        mLevelManager.restoreState(map);
         if (mHighScoreManager != null) {
           mHighScoreManager.restoreState(map);
         }
@@ -1762,8 +1762,8 @@ public class MultiplayerGameView extends SurfaceView
     public void resumeGame() {
       synchronized (mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
-          mFrozenGame1     .resume();
-          mFrozenGame2     .resume();
+          mFrozenGame1.resume();
+          mFrozenGame2.resume();
           if (mHighScoreManager != null) {
             mHighScoreManager.resumeLevel();
           }
