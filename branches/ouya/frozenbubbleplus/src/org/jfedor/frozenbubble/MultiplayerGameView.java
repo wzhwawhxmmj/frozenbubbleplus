@@ -430,32 +430,37 @@ public class MultiplayerGameView extends SurfaceView
      * @return True if the key press was processed, false if not.
      */
     public boolean setKeyDown(int keyCode) {
-      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        mLeft    = true;
-        mWasLeft = true;
-        return true;
+      boolean handled = false;
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft    = true;
+          mWasLeft = true;
+          handled  = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight    = true;
+          mWasRight = true;
+          handled   = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mCenter    = true;
+          mWasCenter = true;
+          handled    = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = true;
+          mWasUp  = true;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown    = true;
+          mWasDown = true;
+          handled  = true;
+          break;
+        default:
+          break;              
       }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        mRight    = true;
-        mWasRight = true;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-        mCenter    = true;
-        mWasCenter = true;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-        mUp    = true;
-        mWasUp = true;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-        mDown    = true;
-        mWasDown = true;
-        return true;
-      }
-      return false;
+      return handled;
     }
 
     /**
@@ -464,30 +469,36 @@ public class MultiplayerGameView extends SurfaceView
      * @return True if the key release was processed, false if not.
      */
     public boolean setKeyUp(int keyCode) {
-      if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
-        mLeft = false;
-        return true;
+      boolean handled = false;
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft   = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight  = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mCenter = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown   = false;
+          handled = true;
+          break;
+        default:
+          break;              
       }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
-        mRight = false;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
-        mCenter = false;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
-        mUp = false;
-        return true;
-      }
-      else if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
-        mDown = false;
-        return true;
-      }
-      return false;
+      return handled;
     }
 
     public boolean setTouchEvent(int event, double x, double y) {
+      boolean handled = false;
       if (mGameThread.mMode == stateEnum.RUNNING) {
         // Set the values used when Point To Shoot is on.
         if (event == MotionEvent.ACTION_DOWN) {
@@ -515,9 +526,9 @@ public class MultiplayerGameView extends SurfaceView
           }
           mTouchLastX = x;
         }
-        return true;
+        handled = true;
       }
-      return false;
+      return handled;
     }
 
     /**
@@ -730,7 +741,7 @@ public class MultiplayerGameView extends SurfaceView
     Vector<BmpWrap> mImageList;
 
     public void cleanUp() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         // I don't really understand why all this is necessary.
         // I used to get a crash (an out-of-memory error) once every six or
         // seven times I started the game.  I googled the error and someone
@@ -944,7 +955,7 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the key press if it is a game input key.
        */
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (player <= 0) {
           return mLocalInput.setKeyDown(keyCode);
         }
@@ -968,7 +979,7 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the key release if it is a game input key.
        */
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (player <= 0) {
           return mLocalInput.setKeyUp(keyCode);
         }
@@ -1030,7 +1041,7 @@ public class MultiplayerGameView extends SurfaceView
       /*
        * Process the screen touch event.
        */
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (player <= 0) {
           return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
         }
@@ -1052,10 +1063,11 @@ public class MultiplayerGameView extends SurfaceView
      * handled the motion event and no other handling is necessary.
      */
     boolean doTrackballEvent(MotionEvent event) {
+      boolean handled = false;
       int player = OuyaController.getPlayerNumByDeviceId(event.getDeviceId());
       if (mMode == stateEnum.RUNNING) {
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          synchronized (mSurfaceHolder) {
+          synchronized(mSurfaceHolder) {
             if (player <= 0) {
               mLocalInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             }
@@ -1063,10 +1075,10 @@ public class MultiplayerGameView extends SurfaceView
               mRemoteInput.setTrackBallDx(event.getX() * TRACKBALL_COEFFICIENT);
             }
           }
-          return true;
+          handled = true;
         }
       }
-      return false;
+      return handled;
     }
 
     private void drawAboutScreen(Canvas canvas) {
@@ -1602,7 +1614,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void newGame() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         malusBar1 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH - 164, 40,
                                  mBanana, mTomato);
         malusBar2 = new MalusBar(MultiplayerGameView.GAMEFIELD_WIDTH + 134, 40,
@@ -1640,7 +1652,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void pause() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
           setState(stateEnum.PAUSED);
 
@@ -1702,13 +1714,13 @@ public class MultiplayerGameView extends SurfaceView
      * @param savedState - Bundle containing the game state.
      */
     public void restoreState(Bundle map) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         setState(stateEnum.PAUSED);
         numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
         numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
-        mFrozenGame1     .restoreState(map, mImageList);
-        mFrozenGame2     .restoreState(map, mImageList);
-        mLevelManager    .restoreState(map);
+        mFrozenGame1 .restoreState(map, mImageList);
+        mFrozenGame2 .restoreState(map, mImageList);
+        mLevelManager.restoreState(map);
         if (mHighScoreManager != null) {
           mHighScoreManager.restoreState(map);
         }
@@ -1716,10 +1728,10 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void resumeGame() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
-          mFrozenGame1     .resume();
-          mFrozenGame2     .resume();
+          mFrozenGame1.resume();
+          mFrozenGame2.resume();
           if (mHighScoreManager != null) {
             mHighScoreManager.resumeLevel();
           }
@@ -1743,7 +1755,7 @@ public class MultiplayerGameView extends SurfaceView
           if (surfaceOK()) {
             c = mSurfaceHolder.lockCanvas(null);
             if (c != null) {
-              synchronized (mSurfaceHolder) {
+              synchronized(mSurfaceHolder) {
                 if (mRun) {
                   monitorRemotePlayer();
                   if (mMode == stateEnum.ABOUT) {
@@ -1796,7 +1808,7 @@ public class MultiplayerGameView extends SurfaceView
      * @return Bundle with this view's state
      */
     public Bundle saveState(Bundle map) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if (map != null) {
           map.putInt("numPlayers", 2);
           map.putInt("numPlayer1GamesWon", numPlayer1GamesWon);
@@ -1848,7 +1860,7 @@ public class MultiplayerGameView extends SurfaceView
       if (mGameThread != null)
         mGameThread.updateStateOnEvent(null);
 
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         /*
          * Set the launcher bubble colors.
          */
@@ -1917,7 +1929,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void setState(stateEnum newMode) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         /*
          * Only update the previous mode storage if the new mode is
          * different from the current mode, in case the same mode is
@@ -1935,7 +1947,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public void setSurfaceOK(boolean ok) {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         mSurfaceOK = ok;
       }
     }
@@ -1946,7 +1958,7 @@ public class MultiplayerGameView extends SurfaceView
       float gameHeight   = GAMEFIELD_HEIGHT;
       float gameWidth    = GAMEFIELD_WIDTH;
       float extGameWidth = EXTENDED_GAMEFIELD_WIDTH;
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
           mDisplayScale = (1.0 * newHeight) / gameHeight;
           mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
@@ -2001,7 +2013,7 @@ public class MultiplayerGameView extends SurfaceView
     }
 
     public boolean surfaceOK() {
-      synchronized (mSurfaceHolder) {
+      synchronized(mSurfaceHolder) {
         return mSurfaceOK;
       }
     }
