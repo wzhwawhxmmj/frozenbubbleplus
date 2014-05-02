@@ -1678,8 +1678,8 @@ public class MultiplayerGameView extends SurfaceView
     public void resumeGame() {
       synchronized(mSurfaceHolder) {
         if (mMode == stateEnum.RUNNING) {
-          mFrozenGame1     .resume();
-          mFrozenGame2     .resume();
+          mFrozenGame1.resume();
+          mFrozenGame2.resume();
           if (mHighScoreManager != null) {
             mHighScoreManager.resumeLevel();
           }
