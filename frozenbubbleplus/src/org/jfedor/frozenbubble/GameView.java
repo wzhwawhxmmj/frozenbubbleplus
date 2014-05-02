@@ -645,36 +645,34 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
            (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
         updateStateOnEvent(null);
 
-      synchronized(mSurfaceHolder) {
-        switch(keyCode) {
-          case KeyEvent.KEYCODE_DPAD_LEFT:
-            mLeft    = true;
-            mWasLeft = true;
-            handled  = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_RIGHT:
-            mRight    = true;
-            mWasRight = true;
-            handled   = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_CENTER:
-            mFire    = true;
-            mWasFire = true;
-            handled  = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_UP:
-            mUp     = true;
-            mWasUp  = true;
-            handled = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_DOWN:
-            mDown    = true;
-            mWasDown = true;
-            handled  = true;
-            break;
-          default:
-            break;              
-        }
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft    = true;
+          mWasLeft = true;
+          handled  = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight    = true;
+          mWasRight = true;
+          handled   = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mFire    = true;
+          mWasFire = true;
+          handled  = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = true;
+          mWasUp  = true;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown    = true;
+          mWasDown = true;
+          handled  = true;
+          break;
+        default:
+          break;              
       }
       return handled;
     }
@@ -689,31 +687,29 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
       boolean handled = false;
-      synchronized(mSurfaceHolder) {
-        switch(keyCode) {
-          case KeyEvent.KEYCODE_DPAD_LEFT:
-            mLeft   = false;
-            handled = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_RIGHT:
-            mRight  = false;
-            handled = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_CENTER:
-            mFire   = false;
-            handled = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_UP:
-            mUp     = false;
-            handled = true;
-            break;
-          case KeyEvent.KEYCODE_DPAD_DOWN:
-            mDown   = false;
-            handled = true;
-            break;
-          default:
-            break;              
-        }
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft   = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight  = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mFire   = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown   = false;
+          handled = true;
+          break;
+        default:
+          break;              
       }
       return handled;
     }
@@ -733,9 +729,7 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       boolean handled = false;
       if (mMode == stateEnum.RUNNING) {
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          synchronized(mSurfaceHolder) {
-            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
-          }
+          mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
           handled = true;
         }
       }

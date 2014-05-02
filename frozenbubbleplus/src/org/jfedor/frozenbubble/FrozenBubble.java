@@ -84,7 +84,6 @@ import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 import tv.ouya.console.api.OuyaController;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -92,7 +91,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
@@ -147,8 +145,6 @@ public class FrozenBubble extends Activity
   public final static int MENU_RUSH_ME        = 7;
   public final static int MENU_NEW_GAME       = 8;
   public final static int MENU_ABOUT          = 9;
-  public final static int MENU_EDITOR         = 10;
-  public final static int MENU_TARGET_MODE    = 11;
 
   public final static int AIM_TO_SHOOT    = 0;
   public final static int POINT_TO_SHOOT  = 1;
@@ -183,6 +179,7 @@ public class FrozenBubble extends Activity
   private boolean activityCustomStarted = false;
   private boolean allowUnpause;
   private int     currentOrientation;
+  private long    lastBackPressTime = 0;
 
   private GameThread mGameThread = null;
   private MultiplayerGameThread mMultiplayerGameThread = null;
@@ -260,12 +257,10 @@ public class FrozenBubble extends Activity
     menu.add(0, MENU_FULLSCREEN_ON,  0, R.string.menu_fullscreen_on);
     menu.add(0, MENU_FULLSCREEN_OFF, 0, R.string.menu_fullscreen_off);
     menu.add(0, MENU_SOUND_OPTIONS,  0, R.string.menu_sound_options);
-    menu.add(0, MENU_TARGET_MODE,    0, R.string.menu_target_mode);
     menu.add(0, MENU_DONT_RUSH_ME,   0, R.string.menu_dont_rush_me);
     menu.add(0, MENU_RUSH_ME,        0, R.string.menu_rush_me);
     menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
     menu.add(0, MENU_NEW_GAME,       0, R.string.menu_new_game);
-    menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
     return true;
   }
 
@@ -284,32 +279,49 @@ public class FrozenBubble extends Activity
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
+    boolean handled = false;
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      /*
-       * The current game was exited, so reset the static game state
-       * variables.
-       */
-      numPlayers = 0;
-      gameLocale = LOCALE_LOCAL;
-      /*
-       * Preserve game information and perform activity cleanup.
-       */
-      pause();
-      if (mGameView != null)
-        mGameView.getThread().setRunning(false);
-      if (mMultiplayerGameView != null)
-        mMultiplayerGameView.getThread().setRunning(false);
-      cleanUp();
-      /*
-       * Create an intent to launch the home screen.
-       */
-      Intent intent = new Intent(this, HomeScreen.class);
-      intent.putExtra("startHomeScreen", true);
-      startActivity(intent);
-      finish();
-      return true;
+      long currentTime = System.currentTimeMillis();
+      //
+      // If the player presses back twice in less than three seconds,
+      // then exit the game.  Otherwise pop up a toast telling them that
+      // if they press the button again the game will exit.
+      //
+      //
+      if ((currentTime - lastBackPressTime) < 3000) {
+        /*
+         * The current game was exited, so reset the static game state
+         * variables.
+         */
+        gameLocale = LOCALE_LOCAL;
+        myPlayerId = VirtualInput.PLAYER1; 
+        numPlayers = 0;
+        opponentId = CPU;
+        /*
+         * Preserve game information and perform activity cleanup.
+         */
+        pause();
+        if (mGameView != null)
+          mGameView.getThread().setRunning(false);
+        if (mMultiplayerGameView != null)
+          mMultiplayerGameView.getThread().setRunning(false);
+        cleanUp();
+        /*
+         * Create an intent to launch the home screen.
+         */
+        Intent intent = new Intent(this, HomeScreen.class);
+        intent.putExtra("startHomeScreen", true);
+        startActivity(intent);
+        finish();
+      }
+      else
+        Toast.makeText(getApplicationContext(), "Press again to exit...",
+                       Toast.LENGTH_SHORT).show();
+
+      lastBackPressTime = currentTime;
+      handled = true;
     }
-    return super.onKeyDown(keyCode, event);
+    return handled || super.onKeyDown(keyCode, event);
   }
 
   /* (non-Javadoc)
@@ -375,9 +387,6 @@ public class FrozenBubble extends Activity
         if (mMultiplayerGameView != null)
           mMultiplayerGameView.getThread().setState(stateEnum.ABOUT);
         return true;
-      case MENU_TARGET_MODE:
-        targetOptionsDialog();
-        return true;
       case MENU_DONT_RUSH_ME:
         setDontRushMe(true);
         editor.putBoolean("dontRushMe", dontRushMe);
@@ -387,9 +396,6 @@ public class FrozenBubble extends Activity
         setDontRushMe(false);
         editor.putBoolean("dontRushMe", dontRushMe);
         editor.commit();
-        return true;
-      case MENU_EDITOR:
-        startEditor();
         return true;
     }
 
@@ -421,7 +427,6 @@ public class FrozenBubble extends Activity
     menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
     menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
     menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
-    menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
     menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
     menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
     return true;
@@ -840,7 +845,7 @@ public class FrozenBubble extends Activity
     gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL          );
     musicOn    = mConfig.getBoolean("musicOn",    true                 );
     soundOn    = mConfig.getBoolean("soundOn",    true                 );
-    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT       );
+    targetMode = POINT_TO_SHOOT;
 
     BubbleSprite.setCollisionThreshold(collision);
     setTargetMode(targetMode);
@@ -1080,98 +1085,5 @@ public class FrozenBubble extends Activity
     }
     setFullscreen();
     playMusic(false);
-  }
-
-  /**
-   * Starts editor / market with editor's download.
-   */
-  private void startEditor() {
-    Intent i = new Intent();
-    /*
-     * First try to run the plus version of the level editor.
-     */
-    i.setClassName("sk.halmi.fbeditplus", 
-                   "sk.halmi.fbeditplus.EditorActivity");
-    try {
-      startActivity(i);
-      finish();
-    } catch (ActivityNotFoundException e) {
-      /*
-       * If not found, try to run the normal version.
-       */
-      i.setClassName("sk.halmi.fbedit", 
-                     "sk.halmi.fbedit.EditorActivity");
-      try {
-        startActivity(i);
-        finish();
-      } catch (ActivityNotFoundException ex) {
-        /*
-         * If the user doesn't have the Frozen Bubble Level Editor, take
-         * him to the application market.
-         */
-        try {
-          Toast.makeText(getApplicationContext(), 
-                         R.string.install_editor, Toast.LENGTH_SHORT).show();
-          i = new Intent(Intent.ACTION_VIEW,
-                         Uri.parse(
-                         "market://search?q=frozen bubble level editor"));
-          startActivity(i);
-        } catch (Exception exc) {
-          /*
-           * Damn, you don't have market?
-           */
-          Toast.makeText(getApplicationContext(), 
-                         R.string.market_missing, Toast.LENGTH_SHORT).show();
-        }
-      }
-    }
-  }
-
-  private void targetOptionsDialog() {
-    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
-    /*
-     * Set the dialog title.
-     */
-    builder.setTitle(R.string.menu_target_mode)
-    /*
-     * Specify the list array, the item to be selected by default, and
-     * the listener through which to receive callbacks when the item is
-     * selected.
-     */
-    .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
-                          new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface builder, int which) {
-        switch (which) {
-          case 0:
-            setTargetMode(AIM_TO_SHOOT);
-            break;
-          case 1:
-            setTargetMode(POINT_TO_SHOOT);
-            break;
-          case 2:
-            setTargetMode(ROTATE_TO_SHOOT);
-            break;
-        }
-        setTargetModeOrientation();
-      }
-    })
-    /*
-     * Set the action buttons.
-     */
-    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface builder, int id) {
-        // User clicked OK.
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putInt("targetMode", targetMode);
-        editor.commit();
-      }
-    });
-
-    builder.create();
-    builder.show();
   }
 }
