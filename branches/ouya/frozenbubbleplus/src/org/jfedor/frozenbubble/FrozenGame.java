@@ -428,7 +428,7 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    while (bubblePlay[frozenifyX][frozenifyY] == null && frozenifyY >=0) {
+    while ((bubblePlay[frozenifyX][frozenifyY] == null) && (frozenifyY >= 0)) {
       frozenifyX--;
       if (frozenifyX < 0) {
         frozenifyX = 7;
@@ -715,9 +715,9 @@ public class FrozenGame extends GameScreen {
 
         /*
          * If the game is over because of bubble overflow, wait until
-         * all the bubbles are fixed in place to freeze them.
+         * all the bubbles have stopped moving to freeze them.
          */
-        if (frozenify && (goingUp.size() == 0)) {
+        if (frozenify && (goingUp.size() == 0) && (movingBubble == null)) {
           frozenify();
         }
       }
