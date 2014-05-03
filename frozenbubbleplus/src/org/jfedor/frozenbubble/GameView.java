@@ -215,17 +215,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
 
     Vector<BmpWrap> mImageList;
 
-    public int getCurrentLevelIndex() {
-      return mLevelManager.getLevelIndex();
-    }
-
-    private BmpWrap NewBmpWrap() {
-      int new_img_id = mImageList.size();
-      BmpWrap new_img = new BmpWrap(new_img_id);
-      mImageList.addElement(new_img);
-      return new_img;
-    }
-
     public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
                       int startingLevel) {
       //Log.i("frozen-bubble", "GameThread()");
@@ -400,658 +389,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
     }
 
-    private void scaleFrom(BmpWrap image, Bitmap bmp) {
-      if ((image.bmp != null) && (image.bmp != bmp)) {
-        image.bmp.recycle();
-      }
-
-      if ((mDisplayScale > 0.99999) && (mDisplayScale < 1.00001)) {
-        image.bmp = bmp;
-        return;
-      }
-
-      int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
-      int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
-      image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
-    }
-
-    private void resizeBitmaps() {
-      //Log.i("frozen-bubble", "resizeBitmaps()");
-      scaleFrom(mBackground, mBackgroundOrig);
-      for (int i = 0; i < mBubblesOrig.length; i++) {
-        scaleFrom(mBubbles[i], mBubblesOrig[i]);
-      }
-      for (int i = 0; i < mBubblesBlind.length; i++) {
-        scaleFrom(mBubblesBlind[i], mBubblesBlindOrig[i]);
-      }
-      for (int i = 0; i < mFrozenBubbles.length; i++) {
-        scaleFrom(mFrozenBubbles[i], mFrozenBubblesOrig[i]);
-      }
-      for (int i = 0; i < mTargetedBubbles.length; i++) {
-        scaleFrom(mTargetedBubbles[i], mTargetedBubblesOrig[i]);
-      }
-      scaleFrom(mBubbleBlink, mBubbleBlinkOrig);
-      scaleFrom(mGameWon, mGameWonOrig);
-      scaleFrom(mGameLost, mGameLostOrig);
-      scaleFrom(mGamePaused, mGamePausedOrig);
-      scaleFrom(mHurry, mHurryOrig);
-      scaleFrom(mPenguins, mPenguinsOrig);
-      scaleFrom(mCompressorHead, mCompressorHeadOrig);
-      scaleFrom(mCompressor, mCompressorOrig);
-      scaleFrom(mLife, mLifeOrig);
-      scaleFrom(mFontImage, mFontImageOrig);
-      //Log.i("frozen-bubble", "resizeBitmaps done.");
-      mImagesReady = true;
-    }
-
-    public void pause() {
-      synchronized(mSurfaceHolder) {
-        if (mMode == stateEnum.RUNNING) {
-          setState(stateEnum.PAUSED);
-
-          if (mGameListener != null)
-            mGameListener.onGameEvent(eventEnum.GAME_PAUSED);
-          if (mFrozenGame != null)
-            mFrozenGame.pause();
-          if (mHighscoreManager != null)
-            mHighscoreManager.pauseLevel();
-        }
-      }
-    }
-
-    public void resumeGame() {
-      synchronized(mSurfaceHolder) {
-        if (mMode == stateEnum.RUNNING) {
-          mFrozenGame      .resume();
-          mHighscoreManager.resumeLevel();
-        }
-      }
-    }
-
-    public void newGame() {
-      synchronized(mSurfaceHolder) {
-        mLevelManager.goToFirstLevel();
-        mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                     mFrozenBubbles, mTargetedBubbles,
-                                     mBubbleBlink, mGameWon, mGameLost,
-                                     mGamePaused, mHurry, mPenguins,
-                                     mCompressorHead, mCompressor, mLauncher,
-                                     mSoundManager, mLevelManager,
-                                     mHighscoreManager);
-        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
-      }
-    }
-
-    @Override
-    public void run() {
-      while (mRun) {
-        long now = System.currentTimeMillis();
-        long delay = FRAME_DELAY + mLastTime - now;
-        if (delay > 0) {
-          try {
-            sleep(delay);
-          } catch (InterruptedException e) {}
-        }
-        mLastTime = now;
-        Canvas c = null;
-        try {
-          if (surfaceOK()) {
-            c = mSurfaceHolder.lockCanvas(null);
-            if (c != null) {
-              synchronized(mSurfaceHolder) {
-                if (mRun) {
-                  if (mMode == stateEnum.ABOUT) {
-                    drawAboutScreen(c);
-                  }
-                  else if (mMode == stateEnum.PAUSED) {
-                    if (mShowScores)
-                      drawHighScoreScreen(c, mHighscoreManager.getLevel());
-                    else
-                      doDraw(c);
-                  }
-                  else {
-                    if (mMode == stateEnum.RUNNING) {
-                      if (mModeWas != stateEnum.RUNNING)  {
-                        if (mGameListener != null)
-                          mGameListener.onGameEvent(eventEnum.GAME_RESUME);
-
-                        mModeWas = stateEnum.RUNNING;
-                        resumeGame();
-                      }
-                      updateGameState();
-                    }
-                    doDraw(c);
-                  }
-                }
-              }
-            }
-          }
-        } finally {
-          // do this in a finally so that if an exception is thrown
-          // during the above, we don't leave the Surface in an
-          // inconsistent state
-          if (c != null)
-            mSurfaceHolder.unlockCanvasAndPost(c);
-        }
-      }
-    }
-
-    /**
-     * Dump game state to the provided Bundle. Typically called when the
-     * Activity is being suspended.
-     * @return Bundle with this view's state
-     */
-    public Bundle saveState(Bundle map) {
-      synchronized(mSurfaceHolder) {
-        if (map != null) {
-          map.putInt("numPlayers", 1);
-          mFrozenGame      .saveState(map);
-          mLevelManager    .saveState(map);
-          mHighscoreManager.saveState(map);
-        }
-      }
-      return map;
-    }
-
-    /**
-     * Restores game state from the indicated Bundle. Typically called
-     * when the Activity is being restored after having been previously
-     * destroyed.
-     * @param savedState - Bundle containing the game state.
-     */
-    public void restoreState(Bundle map) {
-      synchronized(mSurfaceHolder) {
-        setState(stateEnum.PAUSED);
-        mFrozenGame      .restoreState(map, mImageList);
-        mLevelManager    .restoreState(map);
-        mHighscoreManager.restoreState(map);
-      }
-    }
-
-    public void setRunning(boolean b) {
-      mRun = b;
-    }
-
-    public void setState(stateEnum newMode) {
-      synchronized(mSurfaceHolder) {
-        /*
-         * Only update the previous mode storage if the new mode is
-         * different from the current mode, in case the same mode is
-         * being set multiple times.
-         * 
-         * The transition from state to state must be preserved in
-         * case a separate execution thread that checks for state
-         * transitions does not get a chance to run between calls to
-         * this method.
-         */
-        if (newMode != mMode)
-          mModeWas = mMode;
-
-        mMode = newMode;
-      }
-    }
-
-    public void setSurfaceOK(boolean ok) {
-      synchronized(mSurfaceHolder) {
-        mSurfaceOK = ok;
-      }
-    }
-
-    public boolean surfaceOK() {
-      synchronized(mSurfaceHolder) {
-        return mSurfaceOK;
-      }
-    }
-
-    public void setSurfaceSize(int width, int height) {
-      float newHeight    = height;
-      float newWidth     = width;
-      float gameHeight   = GAMEFIELD_HEIGHT;
-      float gameWidth    = GAMEFIELD_WIDTH;
-      float extGameWidth = EXTENDED_GAMEFIELD_WIDTH;
-      synchronized(mSurfaceHolder) {
-        if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
-          mDisplayScale = (1.0 * newHeight) / gameHeight;
-          mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
-          mDisplayDY = 0;
-        }
-        else {
-          mDisplayScale = (1.0 * newWidth) / gameWidth;
-          mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
-          mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
-        }
-        resizeBitmaps();
-      }
-    }
-
-    /**
-     * Process key presses.  This must be allowed to run regardless of
-     * the game state to correctly handle initial game conditions.
-     * @param keyCode - the static KeyEvent key identifier.
-     * @param msg - the key action message.
-     * @return <code>true</code> if the key action is processed.
-     * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
-     */
-    boolean doKeyDown(int keyCode, KeyEvent msg) {
-      boolean handled = false;
-      /*
-       * Only update the game state if this is a fresh key press.
-       */
-      if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
-          ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
-           (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
-           (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
-           (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
-           (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
-        updateStateOnEvent(null);
-
-      switch(keyCode) {
-        case KeyEvent.KEYCODE_DPAD_LEFT:
-          mLeft    = true;
-          mWasLeft = true;
-          handled  = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_RIGHT:
-          mRight    = true;
-          mWasRight = true;
-          handled   = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_CENTER:
-          mFire    = true;
-          mWasFire = true;
-          handled  = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_UP:
-          mUp     = true;
-          mWasUp  = true;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_DOWN:
-          mDown    = true;
-          mWasDown = true;
-          handled  = true;
-          break;
-        default:
-          break;              
-      }
-      return handled;
-    }
-
-    /**
-     * Process key releases.  This must be allowed to run regardless of
-     * the game state in order to properly clear key presses.
-     * @param keyCode - the static KeyEvent key identifier.
-     * @param msg - the key action message.
-     * @return <code>true</code> if the key action is processed.
-     * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
-     */
-    boolean doKeyUp(int keyCode, KeyEvent msg) {
-      boolean handled = false;
-      switch(keyCode) {
-        case KeyEvent.KEYCODE_DPAD_LEFT:
-          mLeft   = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_RIGHT:
-          mRight  = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_CENTER:
-          mFire   = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_UP:
-          mUp     = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_DOWN:
-          mDown   = false;
-          handled = true;
-          break;
-        default:
-          break;              
-      }
-      return handled;
-    }
-
-    /**
-     * Process trackball motion events.
-     * <p>This method only processes trackball motion for the purpose of
-     * aiming the launcher.  The trackball has no effect on the game
-     * state, much like moving a mouse cursor over a screen does not
-     * perform any intrinsic actions in most applications.
-     * @param event - the motion event associated with the trackball.
-     * @return This function returns true if the trackball motion was
-     * processed, which notifies the caller that this method handled the
-     * motion event and no other handling is necessary.
-     */
-    boolean doTrackballEvent(MotionEvent event) {
-      boolean handled = false;
-      if (mMode == stateEnum.RUNNING) {
-        if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
-          handled = true;
-        }
-      }
-      return handled;
-    }
-
-    private double xFromScr(float x) {
-      return (x - mDisplayDX) / mDisplayScale;
-    }
-
-    private double yFromScr(float y) {
-      return (y - mDisplayDY) / mDisplayScale;
-    }
-
-    /**
-     * This method to handles touch screen motion events.
-     * <p>This method will be called three times in succession for each
-     * touch, to process <code>ACTION_DOWN</code>,
-     * <code>ACTION_UP</code>, and <code>ACTION_MOVE</code>.
-     * @param event - the motion event.
-     * @return <code>true</code> if the event was handled.
-     */
-    boolean doTouchEvent(MotionEvent event) {
-      boolean handled = false;
-
-      if(updateStateOnEvent(event))
-        return true;
-
-      if (mMode == stateEnum.RUNNING) {
-        double x = xFromScr(event.getX());
-        double y = yFromScr(event.getY());
-
-        /*
-         * Set the values used when Point To Shoot is on.
-         */
-        synchronized(mSurfaceHolder) {
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < TOUCH_FIRE_Y_THRESHOLD) {
-              mTouchFire = true;
-              mTouchX = x;
-              mTouchY = y;
-            }
-            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
-              mTouchSwap = true;
-          }
-  
-          /*
-           * Set the values used when Aim Then Shoot is on.
-           */
-          if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchFire = true;
-            }
-            mATSTouchLastX = x;
-          }
-          else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
-              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
-            }
-            mATSTouchLastX = x;
-          }
-        }
-        handled = true;
-      }
-      return handled;
-    }
-
-    /**
-     * updateStateOnEvent() - a common method to process motion events
-     * to set the game state.  When the motion event has been fully
-     * processed, this function will return true, otherwise if the
-     * calling method should also process the motion event, this
-     * function will return false.
-     * @param event - The MotionEvent to process for the purpose of
-     * updating the game state.  If this parameter is null, then the
-     * game state is forced to update if applicable based on the current
-     * game state.
-     * @return This function returns <code>true</code> to inform the
-     * calling function that the game state has been updated and that no
-     * further processing is necessary, and <code>false</code> to
-     * indicate that the caller should continue processing the event.
-     */
-    private boolean updateStateOnEvent(MotionEvent event) {
-      boolean event_action_down = false;
-
-      if (event == null)
-        event_action_down = true;
-      else if (event.getAction() == MotionEvent.ACTION_DOWN)
-        event_action_down = true;
-
-      if (event_action_down) {
-        switch (mMode) {
-          case ABOUT:
-            if (!mBlankScreen) {
-              setState(stateEnum.RUNNING);
-              return true;
-            }
-            break;
-
-          case PAUSED:
-            if (mShowScores) {
-              mShowScores = false;
-              nextLevel();
-              if (getCurrentLevelIndex() != 0)
-                setState(stateEnum.RUNNING);
-              if (mGameListener != null) {
-                mGameListener.onGameEvent(eventEnum.LEVEL_START);
-              }
-              return true;
-            }
-            setState(stateEnum.RUNNING);
-            break;
-
-          case RUNNING:
-          default:
-            break;
-        }
-      }
-      return false;
-    }
-
-    private void drawBackground(Canvas c) {
-      Sprite.drawImage(mBackground, 0, 0, c, mDisplayScale,
-                       mDisplayDX, mDisplayDY);
-    }
-
-    private void drawLevelNumber(Canvas canvas) {
-      int y = 433;
-      int x;
-      int level = mLevelManager.getLevelIndex() + 1;
-      if (level < 10) {
-        x = 185;
-        mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else if (level < 100) {
-        x = 178;
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-      else {
-        x = 173;
-        x += mFont.paintChar(Character.forDigit(level / 100, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        level -= 100 * (level / 100);
-        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
-                             mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
-                        mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-    }
-
-    private void drawAboutScreen(Canvas canvas) {
-      canvas.drawRGB(0, 0, 0);
-      if (!mBlankScreen) {
-        int x = 168;
-        int y = 20;
-        int ysp = 26;
-        int indent = 10;
-        mFont.print("original frozen bubble:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("guillaume cottenceau", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("alexis younes", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("matthias le bidan", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        y += ysp;
-        mFont.print("java version:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("glenn sanson", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        y += ysp;
-        mFont.print("android port:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("aleksander fedorynski", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("eric fortin", x + indent, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += 2 * ysp;
-        mFont.print("android port source code", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("is available at:", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("http://code.google.com", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-        mFont.print("/p/frozenbubbleandroid", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-      }
-    }
-
-    /**
-     * Draw the high score screen for puzzle game mode.
-     * <p>The objective of puzzle game mode is efficiency - fire as few
-     * bubbles as possible as quickly as possible.  Thus the high score
-     * will exhibit the fewest shots fired the quickest.
-     * @param canvas - the drawing canvas to display the scores on.
-     * @param level - the level index.
-     */
-    private void drawHighScoreScreen(Canvas canvas, int level) {
-      canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
-      int ysp = 26;
-      int indent = 10;
-
-      mFont.print("highscore for level " + (level + 1), x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += 2 * ysp;
-
-      List<HighscoreDO> hlist = mHighscoreManager.getHighScore(level, 15);
-      long lastScoreId = mHighscoreManager.getLastScoreId();
-      int i = 1;
-      for (HighscoreDO hdo : hlist) {
-        String you = "";
-        if (lastScoreId == hdo.getId()) {
-          you = "|";
-        }
-        // TODO: Add player name support.
-        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
-        // + " - "
-        // + hdo.getShots()
-        // + " - " + (hdo.getTime() / 1000)
-        // + " sec", x + indent,
-        // y, canvas,
-        // mDisplayScale, mDisplayDX, mDisplayDY);
-        mFont.print(you + i++ + " - "
-          + hdo.getShots()
-          + " shots - "
-          + (hdo.getTime() / 1000)
-          + " sec", x + indent,
-          y, canvas,
-          mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-      }
-    }
-
-    private void doDraw(Canvas canvas) {
-      //Log.i("frozen-bubble", "doDraw()");
-      if (! mImagesReady) {
-        //Log.i("frozen-bubble", "!mImagesReady, returning");
-        return;
-      }
-      if ((mDisplayDX > 0) || (mDisplayDY > 0)) {
-        //Log.i("frozen-bubble", "Drawing black background.");
-        canvas.drawRGB(0, 0, 0);
-      }
-      drawBackground(canvas);
-      drawLevelNumber(canvas);
-      mFrozenGame.paint(canvas, mDisplayScale, mDisplayDX, mDisplayDY);
-    }
-
-    private void updateGameState() {
-      if ((mFrozenGame == null) || (mHighscoreManager == null))
-        return;
-
-      gameEnum gameState = mFrozenGame.play(mLeft || mWasLeft,
-                                            mRight || mWasRight,
-                                            mFire || mUp || mWasFire || mWasUp,
-                                            mDown || mWasDown || mTouchSwap,
-                                            mTrackballDX,
-                                            mTouchFire, mTouchX, mTouchY,
-                                            mATSTouchFire, mATSTouchDX);
-
-      if ((gameState == gameEnum.NEXT_LOST) ||
-          (gameState == gameEnum.NEXT_WON )) {
-        if (gameState == gameEnum.NEXT_WON) {
-          mShowScores = true;
-          pause();
-        }
-        else {
-          nextLevel();
-        }
-
-        if (mGameListener != null) {
-          if (gameState == gameEnum.NEXT_WON) {
-            mGameListener.onGameEvent(eventEnum.GAME_WON);
-          }
-          else {
-            mGameListener.onGameEvent(eventEnum.GAME_LOST);
-          }
-        }
-      }
-      mWasLeft      = false;
-      mWasRight     = false;
-      mWasFire      = false;
-      mWasUp        = false;
-      mWasDown      = false;
-      mTrackballDX  = 0;
-      mTouchFire    = false;
-      mTouchSwap    = false;
-      mATSTouchFire = false;
-      mATSTouchDX   = 0;
-    }
-
-    private void nextLevel() {
-      mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                   mFrozenBubbles, mTargetedBubbles,
-                                   mBubbleBlink, mGameWon, mGameLost,
-                                   mGamePaused, mHurry, mPenguins,
-                                   mCompressorHead, mCompressor, mLauncher,
-                                   mSoundManager, mLevelManager,
-                                   mHighscoreManager);
-      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
-    }
-
     public void cleanUp() {
       synchronized(mSurfaceHolder) {
         /*
@@ -1194,8 +531,669 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       }
     }
 
+    private void doDraw(Canvas canvas) {
+      //Log.i("frozen-bubble", "doDraw()");
+      if (! mImagesReady) {
+        //Log.i("frozen-bubble", "!mImagesReady, returning");
+        return;
+      }
+      if ((mDisplayDX > 0) || (mDisplayDY > 0)) {
+        //Log.i("frozen-bubble", "Drawing black background.");
+        canvas.drawRGB(0, 0, 0);
+      }
+      drawBackground(canvas);
+      drawLevelNumber(canvas);
+      mFrozenGame.paint(canvas, mDisplayScale, mDisplayDX, mDisplayDY);
+    }
+
+    /**
+     * Process key presses.  This must be allowed to run regardless of
+     * the game state to correctly handle initial game conditions.
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return <code>true</code> if the key action is processed.
+     * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
+     */
+    boolean doKeyDown(int keyCode, KeyEvent msg) {
+      boolean handled = false;
+      /*
+       * Only update the game state if this is a fresh key press.
+       */
+      if ((!mLeft && !mRight && !mFire && !mUp && !mDown) &&
+          ((keyCode == KeyEvent.KEYCODE_DPAD_LEFT) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_UP) ||
+           (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
+        updateStateOnEvent(null);
+
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft    = true;
+          mWasLeft = true;
+          handled  = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight    = true;
+          mWasRight = true;
+          handled   = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mFire    = true;
+          mWasFire = true;
+          handled  = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = true;
+          mWasUp  = true;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown    = true;
+          mWasDown = true;
+          handled  = true;
+          break;
+        default:
+          break;              
+      }
+      return handled;
+    }
+
+    /**
+     * Process key releases.  This must be allowed to run regardless of
+     * the game state in order to properly clear key presses.
+     * @param keyCode - the static KeyEvent key identifier.
+     * @param msg - the key action message.
+     * @return <code>true</code> if the key action is processed.
+     * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
+     */
+    boolean doKeyUp(int keyCode, KeyEvent msg) {
+      boolean handled = false;
+      switch(keyCode) {
+        case KeyEvent.KEYCODE_DPAD_LEFT:
+          mLeft   = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_RIGHT:
+          mRight  = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_CENTER:
+          mFire   = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_UP:
+          mUp     = false;
+          handled = true;
+          break;
+        case KeyEvent.KEYCODE_DPAD_DOWN:
+          mDown   = false;
+          handled = true;
+          break;
+        default:
+          break;              
+      }
+      return handled;
+    }
+
+    /**
+     * This method to handles touch screen motion events.
+     * <p>This method will be called three times in succession for each
+     * touch, to process <code>ACTION_DOWN</code>,
+     * <code>ACTION_UP</code>, and <code>ACTION_MOVE</code>.
+     * @param event - the motion event.
+     * @return <code>true</code> if the event was handled.
+     */
+    boolean doTouchEvent(MotionEvent event) {
+      boolean handled = false;
+
+      if(updateStateOnEvent(event))
+        return true;
+
+      if (mMode == stateEnum.RUNNING) {
+        double x = xFromScr(event.getX());
+        double y = yFromScr(event.getY());
+
+        /*
+         * Set the values used when Point To Shoot is on.
+         */
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+          if (y < TOUCH_FIRE_Y_THRESHOLD) {
+            mTouchFire = true;
+            mTouchX = x;
+            mTouchY = y;
+          }
+          else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
+            mTouchSwap = true;
+        }
+
+        /*
+         * Set the values used when Aim Then Shoot is on.
+         */
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+          if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
+            mATSTouchFire = true;
+          }
+          mATSTouchLastX = x;
+        }
+        else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+          if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
+            mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
+          }
+          mATSTouchLastX = x;
+        }
+        handled = true;
+      }
+      return handled;
+    }
+
+    /**
+     * Process trackball motion events.
+     * <p>This method only processes trackball motion for the purpose of
+     * aiming the launcher.  The trackball has no effect on the game
+     * state, much like moving a mouse cursor over a screen does not
+     * perform any intrinsic actions in most applications.
+     * @param event - the motion event associated with the trackball.
+     * @return This function returns true if the trackball motion was
+     * processed, which notifies the caller that this method handled the
+     * motion event and no other handling is necessary.
+     */
+    boolean doTrackballEvent(MotionEvent event) {
+      boolean handled = false;
+      if (mMode == stateEnum.RUNNING) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE) {
+          mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
+          handled = true;
+        }
+      }
+      return handled;
+    }
+
+    private void drawAboutScreen(Canvas canvas) {
+      canvas.drawRGB(0, 0, 0);
+      if (!mBlankScreen) {
+        int x = 168;
+        int y = 20;
+        int ysp = 26;
+        int indent = 10;
+        mFont.print("original frozen bubble:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("guillaume cottenceau", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("alexis younes", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("amaury amblard-ladurantie", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("matthias le bidan", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        y += ysp;
+        mFont.print("java version:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("glenn sanson", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        y += ysp;
+        mFont.print("android port:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("aleksander fedorynski", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("eric fortin", x + indent, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += 2 * ysp;
+        mFont.print("android port source code", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("is available at:", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("http://code.google.com", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+        mFont.print("/p/frozenbubbleandroid", x, y, canvas,
+                    mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+    }
+
+    private void drawBackground(Canvas c) {
+      Sprite.drawImage(mBackground, 0, 0, c, mDisplayScale,
+                       mDisplayDX, mDisplayDY);
+    }
+
+    /**
+     * Draw the high score screen for puzzle game mode.
+     * <p>The objective of puzzle game mode is efficiency - fire as few
+     * bubbles as possible as quickly as possible.  Thus the high score
+     * will exhibit the fewest shots fired the quickest.
+     * @param canvas - the drawing canvas to display the scores on.
+     * @param level - the level index.
+     */
+    private void drawHighScoreScreen(Canvas canvas, int level) {
+      canvas.drawRGB(0, 0, 0);
+      int x = 168;
+      int y = 20;
+      int ysp = 26;
+      int indent = 10;
+
+      mFont.print("highscore for level " + (level + 1), x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+      y += 2 * ysp;
+
+      List<HighscoreDO> hlist = mHighscoreManager.getHighScore(level, 15);
+      long lastScoreId = mHighscoreManager.getLastScoreId();
+      int i = 1;
+      for (HighscoreDO hdo : hlist) {
+        String you = "";
+        if (lastScoreId == hdo.getId()) {
+          you = "|";
+        }
+        // TODO: Add player name support.
+        // mFont.print(you + i++ + " - " + hdo.getName().toLowerCase()
+        // + " - "
+        // + hdo.getShots()
+        // + " - " + (hdo.getTime() / 1000)
+        // + " sec", x + indent,
+        // y, canvas,
+        // mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.print(you + i++ + " - "
+          + hdo.getShots()
+          + " shots - "
+          + (hdo.getTime() / 1000)
+          + " sec", x + indent,
+          y, canvas,
+          mDisplayScale, mDisplayDX, mDisplayDY);
+        y += ysp;
+      }
+    }
+
+    private void drawLevelNumber(Canvas canvas) {
+      int y = 433;
+      int x;
+      int level = mLevelManager.getLevelIndex() + 1;
+      if (level < 10) {
+        x = 185;
+        mFont.paintChar(Character.forDigit(level, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else if (level < 100) {
+        x = 178;
+        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+      else {
+        x = 173;
+        x += mFont.paintChar(Character.forDigit(level / 100, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        level -= 100 * (level / 100);
+        x += mFont.paintChar(Character.forDigit(level / 10, 10), x, y, canvas,
+                             mDisplayScale, mDisplayDX, mDisplayDY);
+        mFont.paintChar(Character.forDigit(level % 10, 10), x, y, canvas,
+                        mDisplayScale, mDisplayDX, mDisplayDY);
+      }
+    }
+
+    public int getCurrentLevelIndex() {
+      return mLevelManager.getLevelIndex();
+    }
+
+    private BmpWrap NewBmpWrap() {
+      int new_img_id = mImageList.size();
+      BmpWrap new_img = new BmpWrap(new_img_id);
+      mImageList.addElement(new_img);
+      return new_img;
+    }
+
+    public void newGame() {
+      synchronized(mSurfaceHolder) {
+        mLevelManager.goToFirstLevel();
+        mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                     mFrozenBubbles, mTargetedBubbles,
+                                     mBubbleBlink, mGameWon, mGameLost,
+                                     mGamePaused, mHurry, mPenguins,
+                                     mCompressorHead, mCompressor, mLauncher,
+                                     mSoundManager, mLevelManager,
+                                     mHighscoreManager);
+        mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
+      }
+    }
+
+    private void nextLevel() {
+      mFrozenGame = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
+                                   mFrozenBubbles, mTargetedBubbles,
+                                   mBubbleBlink, mGameWon, mGameLost,
+                                   mGamePaused, mHurry, mPenguins,
+                                   mCompressorHead, mCompressor, mLauncher,
+                                   mSoundManager, mLevelManager,
+                                   mHighscoreManager);
+      mHighscoreManager.startLevel(mLevelManager.getLevelIndex());
+    }
+
+    public void pause() {
+      synchronized(mSurfaceHolder) {
+        if (mMode == stateEnum.RUNNING) {
+          setState(stateEnum.PAUSED);
+
+          if (mGameListener != null)
+            mGameListener.onGameEvent(eventEnum.GAME_PAUSED);
+          if (mFrozenGame != null)
+            mFrozenGame.pause();
+          if (mHighscoreManager != null)
+            mHighscoreManager.pauseLevel();
+        }
+      }
+    }
+
+    private void resizeBitmaps() {
+      //Log.i("frozen-bubble", "resizeBitmaps()");
+      scaleFrom(mBackground, mBackgroundOrig);
+      for (int i = 0; i < mBubblesOrig.length; i++) {
+        scaleFrom(mBubbles[i], mBubblesOrig[i]);
+      }
+      for (int i = 0; i < mBubblesBlind.length; i++) {
+        scaleFrom(mBubblesBlind[i], mBubblesBlindOrig[i]);
+      }
+      for (int i = 0; i < mFrozenBubbles.length; i++) {
+        scaleFrom(mFrozenBubbles[i], mFrozenBubblesOrig[i]);
+      }
+      for (int i = 0; i < mTargetedBubbles.length; i++) {
+        scaleFrom(mTargetedBubbles[i], mTargetedBubblesOrig[i]);
+      }
+      scaleFrom(mBubbleBlink, mBubbleBlinkOrig);
+      scaleFrom(mGameWon, mGameWonOrig);
+      scaleFrom(mGameLost, mGameLostOrig);
+      scaleFrom(mGamePaused, mGamePausedOrig);
+      scaleFrom(mHurry, mHurryOrig);
+      scaleFrom(mPenguins, mPenguinsOrig);
+      scaleFrom(mCompressorHead, mCompressorHeadOrig);
+      scaleFrom(mCompressor, mCompressorOrig);
+      scaleFrom(mLife, mLifeOrig);
+      scaleFrom(mFontImage, mFontImageOrig);
+      //Log.i("frozen-bubble", "resizeBitmaps done.");
+      mImagesReady = true;
+    }
+
+    /**
+     * Restores game state from the indicated Bundle. Typically called
+     * when the Activity is being restored after having been previously
+     * destroyed.
+     * @param savedState - Bundle containing the game state.
+     */
+    public void restoreState(Bundle map) {
+      synchronized(mSurfaceHolder) {
+        setState(stateEnum.PAUSED);
+        mFrozenGame      .restoreState(map, mImageList);
+        mLevelManager    .restoreState(map);
+        mHighscoreManager.restoreState(map);
+      }
+    }
+
+    public void resumeGame() {
+      synchronized(mSurfaceHolder) {
+        if (mMode == stateEnum.RUNNING) {
+          mFrozenGame      .resume();
+          mHighscoreManager.resumeLevel();
+        }
+      }
+    }
+
+    @Override
+    public void run() {
+      while (mRun) {
+        long now = System.currentTimeMillis();
+        long delay = FRAME_DELAY + mLastTime - now;
+        if (delay > 0) {
+          try {
+            sleep(delay);
+          } catch (InterruptedException e) {}
+        }
+        mLastTime = now;
+        Canvas c = null;
+        try {
+          if (surfaceOK()) {
+            c = mSurfaceHolder.lockCanvas(null);
+            if (c != null) {
+              synchronized(mSurfaceHolder) {
+                if (mRun) {
+                  if (mMode == stateEnum.ABOUT) {
+                    drawAboutScreen(c);
+                  }
+                  else if (mMode == stateEnum.PAUSED) {
+                    if (mShowScores)
+                      drawHighScoreScreen(c, mHighscoreManager.getLevel());
+                    else
+                      doDraw(c);
+                  }
+                  else {
+                    if (mMode == stateEnum.RUNNING) {
+                      if (mModeWas != stateEnum.RUNNING)  {
+                        if (mGameListener != null)
+                          mGameListener.onGameEvent(eventEnum.GAME_RESUME);
+
+                        mModeWas = stateEnum.RUNNING;
+                        resumeGame();
+                      }
+                      updateGameState();
+                    }
+                    doDraw(c);
+                  }
+                }
+              }
+            }
+          }
+        } finally {
+          // do this in a finally so that if an exception is thrown
+          // during the above, we don't leave the Surface in an
+          // inconsistent state
+          if (c != null)
+            mSurfaceHolder.unlockCanvasAndPost(c);
+        }
+      }
+    }
+
+    /**
+     * Dump game state to the provided Bundle. Typically called when the
+     * Activity is being suspended.
+     * @return Bundle with this view's state
+     */
+    public Bundle saveState(Bundle map) {
+      synchronized(mSurfaceHolder) {
+        if (map != null) {
+          map.putInt("numPlayers", 1);
+          mFrozenGame      .saveState(map);
+          mLevelManager    .saveState(map);
+          mHighscoreManager.saveState(map);
+        }
+      }
+      return map;
+    }
+
+    private void scaleFrom(BmpWrap image, Bitmap bmp) {
+      if ((image.bmp != null) && (image.bmp != bmp)) {
+        image.bmp.recycle();
+      }
+
+      if ((mDisplayScale > 0.99999) && (mDisplayScale < 1.00001)) {
+        image.bmp = bmp;
+        return;
+      }
+
+      int dstWidth  = (int)(bmp.getWidth()  * mDisplayScale);
+      int dstHeight = (int)(bmp.getHeight() * mDisplayScale);
+      image.bmp = Bitmap.createScaledBitmap(bmp, dstWidth, dstHeight, true);
+    }
+
     public void setPosition(double value) {
       mFrozenGame.setPosition(value);
+    }
+
+    public void setRunning(boolean b) {
+      mRun = b;
+    }
+
+    public void setState(stateEnum newMode) {
+      synchronized(mSurfaceHolder) {
+        /*
+         * Only update the previous mode storage if the new mode is
+         * different from the current mode, in case the same mode is
+         * being set multiple times.
+         * 
+         * The transition from state to state must be preserved in
+         * case a separate execution thread that checks for state
+         * transitions does not get a chance to run between calls to
+         * this method.
+         */
+        if (newMode != mMode)
+          mModeWas = mMode;
+
+        mMode = newMode;
+      }
+    }
+
+    public void setSurfaceOK(boolean ok) {
+      synchronized(mSurfaceHolder) {
+        mSurfaceOK = ok;
+      }
+    }
+
+    public void setSurfaceSize(int width, int height) {
+      float newHeight    = height;
+      float newWidth     = width;
+      float gameHeight   = GAMEFIELD_HEIGHT;
+      float gameWidth    = GAMEFIELD_WIDTH;
+      float extGameWidth = EXTENDED_GAMEFIELD_WIDTH;
+      synchronized(mSurfaceHolder) {
+        if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
+          mDisplayScale = (1.0 * newHeight) / gameHeight;
+          mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
+          mDisplayDY = 0;
+        }
+        else {
+          mDisplayScale = (1.0 * newWidth) / gameWidth;
+          mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
+          mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
+        }
+        resizeBitmaps();
+      }
+    }
+
+    public boolean surfaceOK() {
+      synchronized(mSurfaceHolder) {
+        return mSurfaceOK;
+      }
+    }
+
+    private void updateGameState() {
+      if ((mFrozenGame == null) || (mHighscoreManager == null))
+        return;
+
+      gameEnum gameState = mFrozenGame.play(mLeft || mWasLeft,
+                                            mRight || mWasRight,
+                                            mFire || mUp || mWasFire || mWasUp,
+                                            mDown || mWasDown || mTouchSwap,
+                                            mTrackballDX,
+                                            mTouchFire, mTouchX, mTouchY,
+                                            mATSTouchFire, mATSTouchDX);
+
+      if ((gameState == gameEnum.NEXT_LOST) ||
+          (gameState == gameEnum.NEXT_WON )) {
+        if (gameState == gameEnum.NEXT_WON) {
+          mShowScores = true;
+          pause();
+        }
+        else {
+          nextLevel();
+        }
+
+        if (mGameListener != null) {
+          if (gameState == gameEnum.NEXT_WON) {
+            mGameListener.onGameEvent(eventEnum.GAME_WON);
+          }
+          else {
+            mGameListener.onGameEvent(eventEnum.GAME_LOST);
+          }
+        }
+      }
+      mWasLeft      = false;
+      mWasRight     = false;
+      mWasFire      = false;
+      mWasUp        = false;
+      mWasDown      = false;
+      mTrackballDX  = 0;
+      mTouchFire    = false;
+      mTouchSwap    = false;
+      mATSTouchFire = false;
+      mATSTouchDX   = 0;
+    }
+
+    /**
+     * updateStateOnEvent() - a common method to process motion events
+     * to set the game state.  When the motion event has been fully
+     * processed, this function will return true, otherwise if the
+     * calling method should also process the motion event, this
+     * function will return false.
+     * @param event - The MotionEvent to process for the purpose of
+     * updating the game state.  If this parameter is null, then the
+     * game state is forced to update if applicable based on the current
+     * game state.
+     * @return This function returns <code>true</code> to inform the
+     * calling function that the game state has been updated and that no
+     * further processing is necessary, and <code>false</code> to
+     * indicate that the caller should continue processing the event.
+     */
+    private boolean updateStateOnEvent(MotionEvent event) {
+      boolean event_action_down = false;
+
+      if (event == null)
+        event_action_down = true;
+      else if (event.getAction() == MotionEvent.ACTION_DOWN)
+        event_action_down = true;
+
+      if (event_action_down) {
+        switch (mMode) {
+          case ABOUT:
+            if (!mBlankScreen) {
+              setState(stateEnum.RUNNING);
+              return true;
+            }
+            break;
+
+          case PAUSED:
+            if (mShowScores) {
+              mShowScores = false;
+              nextLevel();
+              if (getCurrentLevelIndex() != 0)
+                setState(stateEnum.RUNNING);
+              if (mGameListener != null) {
+                mGameListener.onGameEvent(eventEnum.LEVEL_START);
+              }
+              return true;
+            }
+            setState(stateEnum.RUNNING);
+            break;
+
+          case RUNNING:
+          default:
+            break;
+        }
+      }
+      return false;
+    }
+
+    private double xFromScr(float x) {
+      return (x - mDisplayDX) / mDisplayScale;
+    }
+
+    private double yFromScr(float y) {
+      return (y - mDisplayDY) / mDisplayScale;
     }
   }
 
@@ -1235,6 +1233,36 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     return mGameThread;
   }
 
+  public void cleanUp() {
+    //Log.i("frozen-bubble", "GameView.cleanUp()");
+    mGameThread.cleanUp();
+  }
+
+  /**
+   * Display a blank screen (black background) for the specified wait
+   * interval.
+   * @param clearScreen - If <code>true</code>, show a blank screen for
+   * the specified wait interval.  If <code>false</code>, show the
+   * normal screen.
+   * @param wait - The amount of time to display the blank screen.
+   */
+  public void clearGameScreen(boolean clearScreen, int wait) {
+    mBlankScreen = clearScreen;
+    try {
+      if (clearScreen) {
+        mGameThread.setState(stateEnum.ABOUT);
+        Timer timer = new Timer();
+        timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
+      }
+    } catch (IllegalArgumentException illArgEx) {
+      illArgEx.printStackTrace();
+      mBlankScreen = false;
+    } catch (IllegalStateException illStateEx) {
+      illStateEx.printStackTrace();
+      mBlankScreen = false;
+    }
+  }
+
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyDown()");
@@ -1268,27 +1296,6 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   }
 
-  public void surfaceChanged(SurfaceHolder holder, int format, int width,
-                              int height) {
-    //Log.i("frozen-bubble", "GameView.surfaceChanged");
-    mGameThread.setSurfaceSize(width, height);
-  }
-
-  public void surfaceCreated(SurfaceHolder holder) {
-    //Log.i("frozen-bubble", "GameView.surfaceCreated()");
-    mGameThread.setSurfaceOK(true);
-  }
-
-  public void surfaceDestroyed(SurfaceHolder holder) {
-    //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
-    mGameThread.setSurfaceOK(false);
-  }
-
-  public void cleanUp() {
-    //Log.i("frozen-bubble", "GameView.cleanUp()");
-    mGameThread.cleanUp();
-  }
-
   /**
    * This is a class that extends TimerTask to resume displaying the
    * game screen as normal after it has been shown as a blank screen.
@@ -1303,28 +1310,19 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
     }
   };
 
-  /**
-   * Display a blank screen (black background) for the specified wait
-   * interval.
-   * @param clearScreen - If <code>true</code>, show a blank screen for
-   * the specified wait interval.  If <code>false</code>, show the
-   * normal screen.
-   * @param wait - The amount of time to display the blank screen.
-   */
-  public void clearGameScreen(boolean clearScreen, int wait) {
-    mBlankScreen = clearScreen;
-    try {
-      if (clearScreen) {
-        mGameThread.setState(stateEnum.ABOUT);
-        Timer timer = new Timer();
-        timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
-      }
-    } catch (IllegalArgumentException illArgEx) {
-      illArgEx.printStackTrace();
-      mBlankScreen = false;
-    } catch (IllegalStateException illStateEx) {
-      illStateEx.printStackTrace();
-      mBlankScreen = false;
-    }
+  public void surfaceChanged(SurfaceHolder holder, int format, int width,
+                             int height) {
+    //Log.i("frozen-bubble", "GameView.surfaceChanged");
+    mGameThread.setSurfaceSize(width, height);
+  }
+
+  public void surfaceCreated(SurfaceHolder holder) {
+    //Log.i("frozen-bubble", "GameView.surfaceCreated()");
+    mGameThread.setSurfaceOK(true);
+  }
+
+  public void surfaceDestroyed(SurfaceHolder holder) {
+    //Log.i("frozen-bubble", "GameView.surfaceDestroyed()");
+    mGameThread.setSurfaceOK(false);
   }
 }

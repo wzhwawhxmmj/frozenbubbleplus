@@ -934,6 +934,7 @@ public class MultiplayerGameView extends SurfaceView
      * @see android.view.View#onKeyDown(int, android.view.KeyEvent)
      */
     boolean doKeyDown(int keyCode, KeyEvent msg) {
+      boolean handled = false;
       int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
       /*
        * Only update the game state if this is a fresh key press.
@@ -956,11 +957,12 @@ public class MultiplayerGameView extends SurfaceView
        * Process the key press if it is a game input key.
        */
       if (player <= 0) {
-        return mLocalInput.setKeyDown(keyCode);
+        handled = mLocalInput.setKeyDown(keyCode);
       }
       else {
-        return mRemoteInput.setKeyDown(keyCode);
+        handled = mRemoteInput.setKeyDown(keyCode);
       }
+      return handled;
     }
     /**
      * Process key releases.  This must be allowed to run regardless of
@@ -971,17 +973,19 @@ public class MultiplayerGameView extends SurfaceView
      * @see android.view.View#onKeyUp(int, android.view.KeyEvent)
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
+      boolean handled = false;
       int player = OuyaController.getPlayerNumByDeviceId(msg.getDeviceId());
 
       /*
        * Process the key release if it is a game input key.
        */
       if (player <= 0) {
-        return mLocalInput.setKeyUp(keyCode);
+        handled = mLocalInput.setKeyUp(keyCode);
       }
       else {
-        return mRemoteInput.setKeyUp(keyCode);
+        handled = mRemoteInput.setKeyUp(keyCode);
       }
+      return handled;
     }
 
     /**
@@ -993,6 +997,7 @@ public class MultiplayerGameView extends SurfaceView
      * @return <code>true</code> if the event was handled..
      */
     boolean doTouchEvent(MotionEvent event) {
+      boolean handled = false;
       double x_offset;
       double x = xFromScr(event.getX());
       double y = yFromScr(event.getY());
@@ -1037,11 +1042,12 @@ public class MultiplayerGameView extends SurfaceView
        * Process the screen touch event.
        */
       if (player <= 0) {
-        return mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
+        handled = mLocalInput.setTouchEvent(event.getAction(), x + x_offset, y);
       }
       else {
-        return mRemoteInput.setTouchEvent(event.getAction(), x + x_offset, y);
+        handled = mRemoteInput.setTouchEvent(event.getAction(), x + x_offset, y);
       }
+      return handled;
     }
 
     /**
@@ -2280,6 +2286,26 @@ public class MultiplayerGameView extends SurfaceView
     init(context, myPlayerId, opponentId, gameLocale);
   }
 
+  public void cleanUp() {
+    //Log.i("frozen-bubble", "MultiplayerGameView.cleanUp()");
+    cleanUpNetworkManager();
+
+    mPlayer1.init();
+    mPlayer2.init();
+
+    if (mOpponent != null)
+      mOpponent.stopThread();
+    mOpponent = null;
+
+    mGameThread.cleanUp();
+  }
+
+  private void cleanUpNetworkManager() {
+    if (mNetworkManager != null)
+      mNetworkManager.cleanUp();
+    mNetworkManager = null;
+  }
+
   /**
    * <code>MultiplayerGameView</code> object initialization.
    * @param context - the application context.
@@ -2410,25 +2436,5 @@ public class MultiplayerGameView extends SurfaceView
   public void surfaceDestroyed(SurfaceHolder holder) {
     //Log.i("frozen-bubble", "MultiplayerGameView.surfaceDestroyed()");
     mGameThread.setSurfaceOK(false);
-  }
-
-  public void cleanUp() {
-    //Log.i("frozen-bubble", "MultiplayerGameView.cleanUp()");
-    cleanUpNetworkManager();
-
-    mPlayer1.init();
-    mPlayer2.init();
-
-    if (mOpponent != null)
-      mOpponent.stopThread();
-    mOpponent = null;
-
-    mGameThread.cleanUp();
-  }
-
-  private void cleanUpNetworkManager() {
-    if (mNetworkManager != null)
-      mNetworkManager.cleanUp();
-    mNetworkManager = null;
   }
 }
