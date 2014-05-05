@@ -567,34 +567,36 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
            (keyCode == KeyEvent.KEYCODE_DPAD_DOWN)))
         updateStateOnEvent(null);
 
-      switch(keyCode) {
-        case KeyEvent.KEYCODE_DPAD_LEFT:
-          mLeft    = true;
-          mWasLeft = true;
-          handled  = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_RIGHT:
-          mRight    = true;
-          mWasRight = true;
-          handled   = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_CENTER:
-          mFire    = true;
-          mWasFire = true;
-          handled  = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_UP:
-          mUp     = true;
-          mWasUp  = true;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_DOWN:
-          mDown    = true;
-          mWasDown = true;
-          handled  = true;
-          break;
-        default:
-          break;              
+      synchronized(mSurfaceHolder) {
+        switch(keyCode) {
+          case KeyEvent.KEYCODE_DPAD_LEFT:
+            mLeft    = true;
+            mWasLeft = true;
+            handled  = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_RIGHT:
+            mRight    = true;
+            mWasRight = true;
+            handled   = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_CENTER:
+            mFire    = true;
+            mWasFire = true;
+            handled  = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_UP:
+            mUp     = true;
+            mWasUp  = true;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_DOWN:
+            mDown    = true;
+            mWasDown = true;
+            handled  = true;
+            break;
+          default:
+            break;              
+        }
       }
       return handled;
     }
@@ -609,29 +611,31 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
      */
     boolean doKeyUp(int keyCode, KeyEvent msg) {
       boolean handled = false;
-      switch(keyCode) {
-        case KeyEvent.KEYCODE_DPAD_LEFT:
-          mLeft   = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_RIGHT:
-          mRight  = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_CENTER:
-          mFire   = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_UP:
-          mUp     = false;
-          handled = true;
-          break;
-        case KeyEvent.KEYCODE_DPAD_DOWN:
-          mDown   = false;
-          handled = true;
-          break;
-        default:
-          break;              
+      synchronized(mSurfaceHolder) {
+        switch(keyCode) {
+          case KeyEvent.KEYCODE_DPAD_LEFT:
+            mLeft   = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_RIGHT:
+            mRight  = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_CENTER:
+            mFire   = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_UP:
+            mUp     = false;
+            handled = true;
+            break;
+          case KeyEvent.KEYCODE_DPAD_DOWN:
+            mDown   = false;
+            handled = true;
+            break;
+          default:
+            break;              
+        }
       }
       return handled;
     }
@@ -654,33 +658,35 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
         double x = xFromScr(event.getX());
         double y = yFromScr(event.getY());
 
-        /*
-         * Set the values used when Point To Shoot is on.
-         */
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-          if (y < TOUCH_FIRE_Y_THRESHOLD) {
-            mTouchFire = true;
-            mTouchX = x;
-            mTouchY = y;
+        synchronized(mSurfaceHolder) {
+          /*
+           * Set the values used when Point To Shoot is on.
+           */
+          if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (y < TOUCH_FIRE_Y_THRESHOLD) {
+              mTouchFire = true;
+              mTouchX = x;
+              mTouchY = y;
+            }
+            else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
+              mTouchSwap = true;
           }
-          else if (Math.abs(x - 318) <= TOUCH_SWAP_X_THRESHOLD)
-            mTouchSwap = true;
-        }
-
-        /*
-         * Set the values used when Aim Then Shoot is on.
-         */
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-          if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
-            mATSTouchFire = true;
+  
+          /*
+           * Set the values used when Aim Then Shoot is on.
+           */
+          if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            if (y < ATS_TOUCH_FIRE_Y_THRESHOLD) {
+              mATSTouchFire = true;
+            }
+            mATSTouchLastX = x;
           }
-          mATSTouchLastX = x;
-        }
-        else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
-            mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
+          else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+            if (y >= ATS_TOUCH_FIRE_Y_THRESHOLD) {
+              mATSTouchDX = (x - mATSTouchLastX) * ATS_TOUCH_COEFFICIENT;
+            }
+            mATSTouchLastX = x;
           }
-          mATSTouchLastX = x;
         }
         handled = true;
       }
@@ -702,7 +708,9 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
       boolean handled = false;
       if (mMode == stateEnum.RUNNING) {
         if (event.getAction() == MotionEvent.ACTION_MOVE) {
-          mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
+          synchronized(mSurfaceHolder) {
+            mTrackballDX += event.getX() * TRACKBALL_COEFFICIENT;
+          }
           handled = true;
         }
       }
@@ -1266,25 +1274,29 @@ class GameView extends SurfaceView implements SurfaceHolder.Callback {
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyDown()");
-    return mGameThread.doKeyDown(keyCode, msg);
+    return mGameThread.doKeyDown(keyCode, msg) ||
+           super.onKeyDown(keyCode, msg);
   }
 
   @Override
   public boolean onKeyUp(int keyCode, KeyEvent msg) {
     //Log.i("frozen-bubble", "GameView.onKeyUp()");
-    return mGameThread.doKeyUp(keyCode, msg);
+    return mGameThread.doKeyUp(keyCode, msg) ||
+           super.onKeyUp(keyCode, msg);
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    return mGameThread.doTouchEvent(event) ||
+           super.onTouchEvent(event);
   }
 
   @Override
   public boolean onTrackballEvent(MotionEvent event) {
     //Log.i("frozen-bubble", "event.getX(): " + event.getX());
     //Log.i("frozen-bubble", "event.getY(): " + event.getY());
-    return mGameThread.doTrackballEvent(event);
-  }
-
-  @Override
-  public boolean onTouchEvent(MotionEvent event) {
-    return mGameThread.doTouchEvent(event);
+    return mGameThread.doTrackballEvent(event) ||
+           super.onTrackballEvent(event);
   }
 
   @Override
