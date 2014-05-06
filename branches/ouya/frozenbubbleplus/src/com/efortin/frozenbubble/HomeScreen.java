@@ -605,12 +605,11 @@ public class HomeScreen extends Activity {
     }
     else {
       long currentTime = System.currentTimeMillis();
-      //
-      // If the player presses back twice in less than three seconds,
-      // then exit the game.  Otherwise pop up a toast telling them that
-      // if they press the button again the game will exit.
-      //
-      //
+      /*
+       * If the player presses back twice in less than three seconds,
+       * then exit the game.  Otherwise pop up a toast telling them that
+       * if they press the button again the game will exit.
+       */
       if ((currentTime - lastBackPressTime) < 3000) {
         finished = true;
         cleanUp();
@@ -676,11 +675,12 @@ public class HomeScreen extends Activity {
 
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
+    boolean handled = false;
     if (keyCode == KeyEvent.KEYCODE_BACK) {
       backKeyPress();
-      return true;
+      handled = true;
     }
-    return super.onKeyDown(keyCode, event);
+    return handled || super.onKeyDown(keyCode, event);
   }
 
   /*

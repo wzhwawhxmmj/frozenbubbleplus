@@ -96,6 +96,7 @@ import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.Window;
@@ -281,47 +282,30 @@ public class FrozenBubble extends Activity
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     boolean handled = false;
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      long currentTime = System.currentTimeMillis();
-      //
-      // If the player presses back twice in less than three seconds,
-      // then exit the game.  Otherwise pop up a toast telling them that
-      // if they press the button again the game will exit.
-      //
-      //
-      if ((currentTime - lastBackPressTime) < 3000) {
-        /*
-         * The current game was exited, so reset the static game state
-         * variables.
-         */
-        gameLocale = LOCALE_LOCAL;
-        myPlayerId = VirtualInput.PLAYER1; 
-        numPlayers = 0;
-        opponentId = CPU;
-        /*
-         * Preserve game information and perform activity cleanup.
-         */
-        pause();
-        if (mGameView != null)
-          mGameView.getThread().setRunning(false);
-        if (mMultiplayerGameView != null)
-          mMultiplayerGameView.getThread().setRunning(false);
-        cleanUp();
-        /*
-         * Create an intent to launch the home screen.
-         */
-        Intent intent = new Intent(this, HomeScreen.class);
-        intent.putExtra("startHomeScreen", true);
-        startActivity(intent);
-        finish();
-      }
-      else
-        Toast.makeText(getApplicationContext(), "Press again to exit...",
-                       Toast.LENGTH_SHORT).show();
-
-      lastBackPressTime = currentTime;
+      backKeyPress();
       handled = true;
     }
+    else {
+      if (mGameThread != null) {
+        handled = mGameThread.doKeyDown(keyCode, event);
+      }
+      if (mMultiplayerGameThread != null) {
+        handled = mMultiplayerGameThread.doKeyDown(keyCode, event);
+      }
+    }
     return handled || super.onKeyDown(keyCode, event);
+  }
+
+  @Override
+  public boolean onKeyUp(int keyCode, KeyEvent event) {
+    boolean handled = false;
+    if (mGameThread != null) {
+      handled = mGameThread.doKeyUp(keyCode, event);
+    }
+    if (mMultiplayerGameThread != null) {
+      handled = mMultiplayerGameThread.doKeyUp(keyCode, event);
+    }
+    return handled || super.onKeyUp(keyCode, event);
   }
 
   /* (non-Javadoc)
@@ -381,11 +365,11 @@ public class FrozenBubble extends Activity
         soundOptionsDialog();
         return true;
       case MENU_ABOUT:
-        if (mGameView != null)
-          mGameView.getThread().setState(stateEnum.ABOUT);
+        if (mGameThread != null)
+          mGameThread.setState(stateEnum.ABOUT);
 
-        if (mMultiplayerGameView != null)
-          mMultiplayerGameView.getThread().setState(stateEnum.ABOUT);
+        if (mMultiplayerGameThread != null)
+          mMultiplayerGameThread.setState(stateEnum.ABOUT);
         return true;
       case MENU_DONT_RUSH_ME:
         setDontRushMe(true);
@@ -452,6 +436,30 @@ public class FrozenBubble extends Activity
 
     if (mMultiplayerGameThread != null)
       mMultiplayerGameThread.saveState(outState);
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    boolean handled = false;
+    if (mGameThread != null) {
+      handled = mGameThread.doTouchEvent(event);
+    }
+    if (mMultiplayerGameThread != null) {
+      handled = mMultiplayerGameThread.doTouchEvent(event);
+    }
+    return handled || super.onTouchEvent(event);
+  }
+
+  @Override
+  public boolean onTrackballEvent(MotionEvent event) {
+    boolean handled = false;
+    if (mGameThread != null) {
+      handled = mGameThread.doTrackballEvent(event);
+    }
+    if (mMultiplayerGameThread != null) {
+      handled = mMultiplayerGameThread.doTrackballEvent(event);
+    }
+    return handled || super.onTrackballEvent(event);
   }
 
   @Override
@@ -547,9 +555,51 @@ public class FrozenBubble extends Activity
    * Following are general utility functions.
    */
 
+  private void backKeyPress() {
+    long currentTime = System.currentTimeMillis();
+    /*
+     * If the player presses back twice in less than three seconds,
+     * then exit the game.  Otherwise pop up a toast telling them that
+     * if they press the button again the game will exit.
+     */
+    if ((currentTime - lastBackPressTime) < 3000) {
+      /*
+       * The current game was exited, so reset the static game state
+       * variables.
+       */
+      gameLocale = LOCALE_LOCAL;
+      myPlayerId = VirtualInput.PLAYER1; 
+      numPlayers = 0;
+      opponentId = CPU;
+      /*
+       * Preserve game information and perform activity cleanup.
+       */
+      pause();
+      if (mGameThread != null)
+        mGameThread.setRunning(false);
+      if (mMultiplayerGameThread != null)
+        mMultiplayerGameThread.setRunning(false);
+      cleanUp();
+      /*
+       * Create an intent to launch the home screen.
+       */
+      Intent intent = new Intent(this, HomeScreen.class);
+      intent.putExtra("startHomeScreen", true);
+      startActivity(intent);
+      finish();
+    }
+    else {
+      Toast.makeText(getApplicationContext(), "Press again to exit...",
+                     Toast.LENGTH_SHORT).show();
+    }
+
+    lastBackPressTime = currentTime;
+  }
+
   public void cleanUp() {
-    if (AccelerometerManager.isListening())
+    if (AccelerometerManager.isListening()) {
       AccelerometerManager.stopListening();
+    }
 
     if (myOrientationEventListener != null) {
       myOrientationEventListener.disable();
@@ -558,21 +608,24 @@ public class FrozenBubble extends Activity
 
     cleanUpGameView();
 
-    if (myModPlayer != null)
+    if (myModPlayer != null) {
       myModPlayer.destroyMusicPlayer();
+    }
     myModPlayer = null;
   }
 
   private void cleanUpGameView() {
-    if (mGameView != null)
-      mGameView.cleanUp();
-    mGameView   = null;
     mGameThread = null;
+    if (mGameView != null) {
+      mGameView.cleanUp();
+    }
+    mGameView = null;
 
-    if (mMultiplayerGameView != null)
-      mMultiplayerGameView.cleanUp();
-    mMultiplayerGameView   = null;
     mMultiplayerGameThread = null;
+    if (mMultiplayerGameView != null) {
+      mMultiplayerGameView.cleanUp();
+    }
+    mMultiplayerGameView = null;
   }
 
   private int getScreenOrientation() {
@@ -749,8 +802,8 @@ public class FrozenBubble extends Activity
         break;
 
       case LEVEL_START:
-        if ((mGameView != null) &&
-            (mGameView.getThread().getCurrentLevelIndex() == 0)) {
+        if ((mGameThread != null) &&
+            (mGameThread.getCurrentLevelIndex() == 0)) {
           /*
            * Destroy the current music player, which will free audio
            * stream resources and allow the system to use them.
@@ -788,11 +841,11 @@ public class FrozenBubble extends Activity
    * Pause the game.
    */
   private void pause() {
-    if (mGameView != null)
-      mGameView.getThread().pause();
+    if (mGameThread != null)
+      mGameThread.pause();
 
-    if (mMultiplayerGameView != null)
-      mMultiplayerGameView.getThread().pause();
+    if (mMultiplayerGameThread != null)
+      mMultiplayerGameThread.pause();
 
     /*
      * Pause the MOD player.
@@ -816,8 +869,8 @@ public class FrozenBubble extends Activity
     /*
      * Ascertain which song to play.
      */
-    if (mGameView != null)
-      modNow = mGameView.getThread().getCurrentLevelIndex() % MODlist.length;
+    if (mGameThread != null)
+      modNow = mGameThread.getCurrentLevelIndex() % MODlist.length;
     else
     {
       Random rand = new Random();
