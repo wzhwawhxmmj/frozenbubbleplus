@@ -93,6 +93,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
@@ -2390,36 +2391,23 @@ public class MultiplayerGameView extends SurfaceView
   }
 
   @Override
-  public boolean onKeyDown(int keyCode, KeyEvent msg) {
-    //Log.i("frozen-bubble", "MultiplayerGameView.onKeyDown()");
-    return mGameThread.doKeyDown(keyCode, msg) ||
-           super.onKeyDown(keyCode, msg);
-  }
-
-  @Override
-  public boolean onKeyUp(int keyCode, KeyEvent msg) {
-    //Log.i("frozen-bubble", "MultiplayerGameView.onKeyUp()");
-    return mGameThread.doKeyUp(keyCode, msg) ||
-           super.onKeyUp(keyCode, msg);
-  }
-
-  @Override
-  public boolean onTouchEvent(MotionEvent event) {
-    return mGameThread.doTouchEvent(event) ||
-           super.onTouchEvent(event);
-  }
-
-  @Override
-  public boolean onTrackballEvent(MotionEvent event) {
-    //Log.i("frozen-bubble", "event.getX(): " + event.getX());
-    //Log.i("frozen-bubble", "event.getY(): " + event.getY());
-    return mGameThread.doTrackballEvent(event) ||
-           super.onTrackballEvent(event);
+  /*
+   * When this view loses input focus, request it again immediately to
+   * continue processing input events.
+   * (non-Javadoc)
+   * @see android.view.View#onFocusChanged(boolean, int, android.graphics.Rect)
+   */
+  protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
+    if (!gainFocus) {
+      this.requestFocus();
+    }
+    super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
   }
 
   @Override
   public void onWindowFocusChanged(boolean hasWindowFocus) {
     //Log.i("frozen-bubble", "MultiplayerGameView.onWindowFocusChanged()");
+    super.onWindowFocusChanged(hasWindowFocus);
     if (!hasWindowFocus) {
       if (mNetworkManager != null) {
         mNetworkManager.pause();
@@ -2427,10 +2415,8 @@ public class MultiplayerGameView extends SurfaceView
       if (mGameThread != null)
         mGameThread.pause();
     }
-    else {
-      if (mNetworkManager != null) {
-        mNetworkManager.unPause();
-      }
+    else if (mNetworkManager != null) {
+      mNetworkManager.unPause();
     }
   }
 
