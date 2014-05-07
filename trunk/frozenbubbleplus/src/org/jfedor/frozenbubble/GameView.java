@@ -177,34 +177,6 @@ public class GameView extends SurfaceView
    */
   public interface NetGameInterface {
     /**
-     * This class encapsulates player action and game field storage for
-     * use by the game thread to determine when to process remote player
-     * actions and game field bubble grid synchronization tasks.
-     * @author Eric Fortin
-     *
-     */
-    public class RemoteInterface {
-      public boolean       gotAction;
-      public boolean       gotFieldData;
-      public PlayerAction  playerAction;
-      public GameFieldData gameFieldData;
-
-      public RemoteInterface(PlayerAction action, GameFieldData fieldData) {
-        gotAction = false;
-        gotFieldData = false;
-        playerAction = action;
-        gameFieldData = fieldData;
-      }
-
-      public void cleanUp() {
-        gotAction = false;
-        gotFieldData = false;
-        playerAction = null;
-        gameFieldData = null;
-      }
-    };
-
-    /**
      * A class to encapsulate all network status variables used in
      * drawing the network status screen.
      * @author efortin
@@ -231,6 +203,34 @@ public class GameView extends SurfaceView
         readyToPlay     = false;
         localIpAddress  = null;
         remoteIpAddress = null;
+      }
+    };
+
+    /**
+     * This class encapsulates player action and game field storage for
+     * use by the game thread to determine when to process remote player
+     * actions and game field bubble grid synchronization tasks.
+     * @author Eric Fortin
+     *
+     */
+    public class RemoteInterface {
+      public boolean       gotAction;
+      public boolean       gotFieldData;
+      public PlayerAction  playerAction;
+      public GameFieldData gameFieldData;
+
+      public RemoteInterface(PlayerAction action, GameFieldData fieldData) {
+        gotAction = false;
+        gotFieldData = false;
+        playerAction = action;
+        gameFieldData = fieldData;
+      }
+
+      public void cleanUp() {
+        gotAction = false;
+        gotFieldData = false;
+        playerAction = null;
+        gameFieldData = null;
       }
     };
 
@@ -544,120 +544,6 @@ public class GameView extends SurfaceView
     public void setTrackBallDx(double trackBallDX) {
       mTrackballDx += trackBallDX;
     }
-  }
-
-  private boolean checkImmediateAction() {
-    boolean actNow = false;
-    /*
-     * Preview the current action if one is available to see if it
-     * contains an asynchronous action (e.g., launch bubble swap).
-     */
-    PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
-
-    if (previewAction != null) {
-      actNow = previewAction.compress || previewAction.swapBubble;
-    }
-
-    return actNow;
-  }
-
-  private void monitorRemotePlayer() {
-    if ((mNetworkManager != null) && (mRemoteInput != null)) {
-      /*
-       * Check the remote player interface for game field updates.
-       * Reject the game field data if it doesn't correspond to the
-       * latest remote player game field.  This is determined based on
-       * whether the game field data action ID matches the latest remote
-       * player action ID.
-       */
-      if (remoteInterface.gotFieldData) {
-        if (mNetworkManager.getLatestRemoteActionId() ==
-            remoteInterface.gameFieldData.localActionID) {
-          setPlayerGameField(remoteInterface.gameFieldData);
-        }
-        remoteInterface.gotFieldData = false;
-      }
-
-      /*
-       * Once the game is ready, if the game thread is not running, then
-       * allow the remote player to update the game thread state.
-       *
-       * If an asynchronous action is available or we are clear to
-       * perform a synchronous action, retrieve and clear the current
-       * available action from the action queue.
-       */
-      if (mNetworkManager.gameIsReadyForAction() && (checkImmediateAction() ||
-          mRemoteInput.mGameRef.getOkToFire() ||
-          (mGameThread.mMode != stateEnum.RUNNING))) {
-        if (mNetworkManager.getRemoteAction()) {
-          setPlayerAction(remoteInterface.playerAction);
-          remoteInterface.gotAction = false;
-        }
-        else if (mRemoteInput.mGameRef.getOkToFire()) {
-          mNetworkManager.checkRemoteChecksum();
-        }
-      }
-    }
-  }
-
-  /**
-   * Set the player action for a remote player - as in a person playing
-   * via a client device over a network.
-   * @param newAction - the object containing the remote input info.
-   */
-  private void setPlayerAction(PlayerAction newAction) {
-    if ((newAction != null) && (mGameThread != null)) {
-      mGameThread.setPlayerAction(newAction);
-    }
-  }
-
-  /**
-   * Set the game field for a remote player - as in a person playing
-   * via a client device over a network.
-   * @param newGameField - the object containing the remote field data.
-   */
-  private void setPlayerGameField(GameFieldData newField) {
-    if (newField == null) {
-      return;
-    }
-
-    VirtualInput playerRef;
-
-    if (newField.playerID == VirtualInput.PLAYER1) {
-      playerRef = mPlayer1;
-    }
-    else if (newField.playerID == VirtualInput.PLAYER2) {
-      playerRef = mPlayer2;
-    }
-    else {
-      return;
-    }
-
-    /*
-     * Set the bubble grid.  Note this must be done before lowering the
-     * compressor, as bubbles will be created using a non-compressed
-     * game field!
-     */
-    playerRef.mGameRef.setGrid(newField.gameField);
-
-    /*
-     * Lower the compressor and bubbles in play to the required number
-     * of compressor steps.
-     */
-    playerRef.mGameRef.setCompressorSteps(newField.compressorSteps);
-
-    /*
-     * Set the launcher bubble colors.
-     */
-    playerRef.mGameRef.setLaunchBubbleColors(newField.launchBubbleColor,
-                                             newField.nextBubbleColor,
-                                             playerRef.mGameRef.getNewNextColor());
-
-    /*
-     * Set the current value of the attack bar.
-     */
-    playerRef.mGameRef.malusBar.setAttackBubbles(newField.attackBarBubbles,
-                                                 null);
   }
 
   class GameThread extends Thread {
@@ -1408,23 +1294,26 @@ public class GameView extends SurfaceView
             (Math.abs(y - 460) <= TOUCH_BUTTON_THRESHOLD)) {
           toggleKeyPress(KeyEvent.KEYCODE_P, false, true);
         }
-        else if (toggleKeyState(KeyEvent.KEYCODE_P))
+        else if (toggleKeyState(KeyEvent.KEYCODE_P)) {
           return false;
+        }
       }
 
       /*
        * Update the game state (paused, running, etc.) if necessary.
        */
-      if(updateStateOnEvent(event))
+      if(updateStateOnEvent(event)) {
         return true;
+      }
 
       /*
        * If the game is running and the pause button sprite was pressed,
        * pause the game.
        */
       if ((mMode == stateEnum.RUNNING) &&
-          (toggleKeyState(KeyEvent.KEYCODE_P)))
+          (toggleKeyState(KeyEvent.KEYCODE_P))) {
         pause();
+      }
 
       /*
        * Process the screen touch event.
@@ -2678,6 +2567,21 @@ public class GameView extends SurfaceView
     init(context, numPlayers, myPlayerId, opponentId, gameLocale, null, 0);
   }
 
+  private boolean checkImmediateAction() {
+    boolean actNow = false;
+    /*
+     * Preview the current action if one is available to see if it
+     * contains an asynchronous action (e.g., launch bubble swap).
+     */
+    PlayerAction previewAction = mNetworkManager.getRemoteActionPreview();
+
+    if (previewAction != null) {
+      actNow = previewAction.compress || previewAction.swapBubble;
+    }
+
+    return actNow;
+  }
+
   public void cleanUp() {
     //Log.i("frozen-bubble", "GameView.cleanUp()");
     cleanUpNetworkManager();
@@ -2712,7 +2616,7 @@ public class GameView extends SurfaceView
       if (clearScreen) {
         mGameThread.setState(stateEnum.ABOUT);
         Timer timer = new Timer();
-        timer.schedule(new resumeGameScreenTask(), wait, wait + 1);
+        timer.schedule(new ResumeGameScreenTask(), wait, wait + 1);
       }
     } catch (IllegalArgumentException illArgEx) {
       illArgEx.printStackTrace();
@@ -2750,8 +2654,8 @@ public class GameView extends SurfaceView
     numPlayer1GamesWon = 0;
     numPlayer2GamesWon = 0;
 
-    boolean isCPU    = opponentId == FrozenBubble.CPU;
     boolean isRemote = gameLocale != FrozenBubble.LOCALE_LOCAL;
+    boolean isCPU    = (opponentId == FrozenBubble.CPU) && !isRemote;
 
     if (myPlayerId == VirtualInput.PLAYER1) {
       mPlayer1 = new PlayerInput(VirtualInput.PLAYER1, false, false);
@@ -2808,6 +2712,45 @@ public class GameView extends SurfaceView
 
   public GameThread getThread() {
     return mGameThread;
+  }
+
+  private void monitorRemotePlayer() {
+    if ((mNetworkManager != null) && (mRemoteInput != null)) {
+      /*
+       * Check the remote player interface for game field updates.
+       * Reject the game field data if it doesn't correspond to the
+       * latest remote player game field.  This is determined based on
+       * whether the game field data action ID matches the latest remote
+       * player action ID.
+       */
+      if (remoteInterface.gotFieldData) {
+        if (mNetworkManager.getLatestRemoteActionId() ==
+            remoteInterface.gameFieldData.localActionID) {
+          setPlayerGameField(remoteInterface.gameFieldData);
+        }
+        remoteInterface.gotFieldData = false;
+      }
+
+      /*
+       * Once the game is ready, if the game thread is not running, then
+       * allow the remote player to update the game thread state.
+       *
+       * If an asynchronous action is available or we are clear to
+       * perform a synchronous action, retrieve and clear the current
+       * available action from the action queue.
+       */
+      if (mNetworkManager.gameIsReadyForAction() && (checkImmediateAction() ||
+          mRemoteInput.mGameRef.getOkToFire() ||
+          (mGameThread.mMode != stateEnum.RUNNING))) {
+        if (mNetworkManager.getRemoteAction()) {
+          setPlayerAction(remoteInterface.playerAction);
+          remoteInterface.gotAction = false;
+        }
+        else if (mRemoteInput.mGameRef.getOkToFire()) {
+          mNetworkManager.checkRemoteChecksum();
+        }
+      }
+    }
   }
 
   @Override
@@ -2875,13 +2818,73 @@ public class GameView extends SurfaceView
    * @author Eric Fortin
    *
    */
-  class resumeGameScreenTask extends TimerTask {
+  class ResumeGameScreenTask extends TimerTask {
     @Override
     public void run() {
       mBlankScreen = false;
       cancel();
     }
   };
+
+  /**
+   * Set the player action for a remote player - as in a person playing
+   * via a client device over a network.
+   * @param newAction - the object containing the remote input info.
+   */
+  private void setPlayerAction(PlayerAction newAction) {
+    if ((newAction != null) && (mGameThread != null)) {
+      mGameThread.setPlayerAction(newAction);
+    }
+  }
+
+  /**
+   * Set the game field for a remote player - as in a person playing
+   * via a client device over a network.
+   * @param newGameField - the object containing the remote field data.
+   */
+  private void setPlayerGameField(GameFieldData newField) {
+    if (newField == null) {
+      return;
+    }
+
+    VirtualInput playerRef;
+
+    if (newField.playerID == VirtualInput.PLAYER1) {
+      playerRef = mPlayer1;
+    }
+    else if (newField.playerID == VirtualInput.PLAYER2) {
+      playerRef = mPlayer2;
+    }
+    else {
+      return;
+    }
+
+    /*
+     * Set the bubble grid.  Note this must be done before lowering the
+     * compressor, as bubbles will be created using a non-compressed
+     * game field!
+     */
+    playerRef.mGameRef.setGrid(newField.gameField);
+
+    /*
+     * Lower the compressor and bubbles in play to the required number
+     * of compressor steps.
+     */
+    playerRef.mGameRef.setCompressorSteps(newField.compressorSteps);
+
+    /*
+     * Set the launcher bubble colors.
+     */
+    playerRef.mGameRef.setLaunchBubbleColors(newField.launchBubbleColor,
+                                             newField.nextBubbleColor,
+                                             playerRef.mGameRef.getNewNextColor());
+
+    /*
+     * Set the current value of the attack bar.
+     */
+    playerRef.mGameRef.malusBar.setAttackBubbles(newField.attackBarBubbles,
+                                                 null);
+  }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
                              int height) {
