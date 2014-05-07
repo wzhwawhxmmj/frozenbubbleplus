@@ -217,7 +217,9 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start/resume a 1 player game.
          */
-        startFrozenBubble(VirtualInput.PLAYER1, 1, FrozenBubble.LOCALE_LOCAL);
+        startFrozenBubble(VirtualInput.PLAYER1, 1,
+                          FrozenBubble.HUMAN,
+                          FrozenBubble.LOCALE_LOCAL);
       }
     });
     start1pGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -351,7 +353,9 @@ public class HomeScreen extends Activity {
         /*
          * Process the button tap and start a 2 player game.
          */
-        startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LOCAL);
+        startFrozenBubble(VirtualInput.PLAYER1, 2,
+                          FrozenBubble.CPU,
+                          FrozenBubble.LOCALE_LOCAL);
       }
     });
     startCPUGameButton.setOnTouchListener(new Button.OnTouchListener(){
@@ -447,10 +451,13 @@ public class HomeScreen extends Activity {
          */
         if (buttonSelPage2 == BTN6_ID) {
           startFrozenBubble(VirtualInput.PLAYER2, 2,
+                            FrozenBubble.HUMAN,
                             FrozenBubble.LOCALE_INTERNET);
         }
         else {
-          startFrozenBubble(VirtualInput.PLAYER2, 2, FrozenBubble.LOCALE_LAN);
+          startFrozenBubble(VirtualInput.PLAYER2, 2,
+                            FrozenBubble.HUMAN,
+                            FrozenBubble.LOCALE_LAN);
         }
       }
     });
@@ -493,10 +500,13 @@ public class HomeScreen extends Activity {
          */
         if (buttonSelPage2 == BTN6_ID) {
           startFrozenBubble(VirtualInput.PLAYER1, 2,
+                            FrozenBubble.HUMAN,
                             FrozenBubble.LOCALE_INTERNET);
         }
         else {
-          startFrozenBubble(VirtualInput.PLAYER1, 2, FrozenBubble.LOCALE_LAN);
+          startFrozenBubble(VirtualInput.PLAYER1, 2,
+                            FrozenBubble.HUMAN,
+                            FrozenBubble.LOCALE_LAN);
         }
       }
     });
@@ -647,6 +657,7 @@ public class HomeScreen extends Activity {
     if (FrozenBubble.numPlayers != 0)
       startFrozenBubble(FrozenBubble.myPlayerId,
                         FrozenBubble.numPlayers,
+                        FrozenBubble.opponentId,
                         FrozenBubble.gameLocale);
     else if (getIntent().hasExtra("startHomeScreen")) {
       setBackgroundImage(R.drawable.home_screen);
@@ -797,7 +808,8 @@ public class HomeScreen extends Activity {
    * Start the game with the specified number of players in the
    * specified locale.  A 1 player game can only be played locally.
    * @param myPlayerId - the local player ID.
-   * @param numPlayers - the number of players (1 or 2)
+   * @param numPlayers - the number of players (1 or 2).
+   * @param opponentId - the opponent type ID, human or CPU.
    * @param gameLocale - the location of the opponent.  A local opponent
    * will be played by the CPU.  A LAN opponent will be played over the
    * network using multicasting, and an internet opponent will be played
@@ -805,6 +817,7 @@ public class HomeScreen extends Activity {
    */
   private void startFrozenBubble(int myPlayerId,
                                  int numPlayers,
+                                 int opponentId,
                                  int gameLocale) {
     finished = true;
     /*
@@ -818,6 +831,7 @@ public class HomeScreen extends Activity {
     Intent intent = new Intent(this, FrozenBubble.class);
     intent.putExtra("myPlayerId", (int)myPlayerId);
     intent.putExtra("numPlayers", (int)numPlayers);
+    intent.putExtra("opponentId", (int)opponentId);
     intent.putExtra("gameLocale", (int)gameLocale);
     startActivity(intent);
     /*
