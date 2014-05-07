@@ -606,11 +606,7 @@ public class GameView extends SurfaceView
    * @param newAction - the object containing the remote input info.
    */
   private void setPlayerAction(PlayerAction newAction) {
-    if (newAction == null) {
-      return;
-    }
-
-    if (mGameThread != null) {
+    if ((newAction != null) && (mGameThread != null)) {
       mGameThread.setPlayerAction(newAction);
     }
   }
