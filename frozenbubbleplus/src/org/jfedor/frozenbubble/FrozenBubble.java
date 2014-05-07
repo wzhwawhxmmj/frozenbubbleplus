@@ -272,10 +272,6 @@ public class FrozenBubble extends Activity
   protected void onDestroy() {
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
-    gameLocale = LOCALE_LOCAL;
-    myPlayerId = VirtualInput.PLAYER1;
-    numPlayers = 0;
-    opponentId = CPU;
     cleanUp();
   }
 
@@ -522,14 +518,6 @@ public class FrozenBubble extends Activity
      */
     if ((currentTime - lastBackPressTime) < 3000) {
       /*
-       * The current game was exited, so reset the static game state
-       * variables.
-       */
-      gameLocale = LOCALE_LOCAL;
-      myPlayerId = VirtualInput.PLAYER1; 
-      numPlayers = 0;
-      opponentId = CPU;
-      /*
        * Preserve game information and perform activity cleanup.
        */
       pause();
@@ -552,14 +540,27 @@ public class FrozenBubble extends Activity
     lastBackPressTime = currentTime;
   }
 
+  /**
+   * Perform activity cleanup.  <b>This must only be called when the
+   * activity is being destroyed.</b>
+   */
   public void cleanUp() {
+    /*
+     * The current game is being destroyed, so reset the static game
+     * state variables.
+     */
+    gameLocale = LOCALE_LOCAL;
+    myPlayerId = VirtualInput.PLAYER1; 
+    numPlayers = 0;
+    opponentId = CPU;
+
     if (AccelerometerManager.isListening())
       AccelerometerManager.stopListening();
 
     if (myOrientationEventListener != null) {
       myOrientationEventListener.disable();
-      myOrientationEventListener = null;
     }
+    myOrientationEventListener = null;
 
     cleanUpGameView();
 
@@ -848,7 +849,7 @@ public class FrozenBubble extends Activity
    * Save critically important game information.
    */
   public void saveState() {
-    if (mGameView != null) {
+    if ((mGameView != null) && (numPlayers == 1)) {
       /*
        * Allow level editor functionalities.
        */
@@ -1022,13 +1023,17 @@ public class FrozenBubble extends Activity
     /*
      * Check if this is a single player or multiplayer game.
      */
-    numPlayers = 1;
     gameLocale = LOCALE_LOCAL;
+    myPlayerId = VirtualInput.PLAYER1;
+    numPlayers = 1;
+    opponentId = CPU;
     if (intent != null) {
       if (intent.hasExtra("myPlayerId"))
         myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
       if (intent.hasExtra("numPlayers"))
         numPlayers = intent.getIntExtra("numPlayers", 1);
+      if (intent.hasExtra("opponentId"))
+        opponentId = intent.getIntExtra("opponentId", CPU);
       if (intent.hasExtra("gameLocale"))
         gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
     }

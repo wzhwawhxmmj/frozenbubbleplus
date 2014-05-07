@@ -213,6 +213,10 @@ public class FrozenGame extends GameScreen {
                                           playButton_arg);
       this.addSprite(pauseButtonSprite);
     }
+    else {
+      pauseButtonSprite = null;
+      playButtonSprite  = null;
+    }
 
     penguin = new PenguinSprite(getPenguinRect(player), penguins_arg, random);
     this.addSprite(penguin);
@@ -618,14 +622,22 @@ public class FrozenGame extends GameScreen {
 
   public void pauseButtonPressed(boolean paused) {
     if (paused) {
-      this.removeSprite(pauseButtonSprite);
-      this.removeSprite(playButtonSprite);
-      this.addSprite(playButtonSprite);
+      if (pauseButtonSprite != null) {
+        this.removeSprite(pauseButtonSprite);
+      }
+      if (playButtonSprite != null) {
+        this.removeSprite(playButtonSprite);
+        this.addSprite(playButtonSprite);
+      }
     }
     else {
-      this.removeSprite(pauseButtonSprite);
-      this.removeSprite(playButtonSprite);
-      this.addSprite(pauseButtonSprite);
+      if (playButtonSprite != null) {
+        this.removeSprite(playButtonSprite);
+      }
+      if (pauseButtonSprite != null) {
+        this.removeSprite(pauseButtonSprite);
+        this.addSprite(pauseButtonSprite);
+      }
     }
   }
 
