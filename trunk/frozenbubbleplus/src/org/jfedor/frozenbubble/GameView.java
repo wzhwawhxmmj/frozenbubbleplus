@@ -2325,8 +2325,17 @@ public class GameView extends SurfaceView
       if (event_action_down) {
         switch (mMode) {
           case ABOUT:
-            setState(stateEnum.RUNNING);
-            return true;
+            if (numPlayers > 1) {
+              setState(stateEnum.RUNNING);
+              return true;
+            }
+            else {
+              if (!mBlankScreen) {
+                setState(stateEnum.RUNNING);
+                return true;
+              }
+            }
+            break;
 
           case PAUSED:
             if (mNetworkManager != null) {
@@ -2343,7 +2352,15 @@ public class GameView extends SurfaceView
             }
             else if (mShowScores) {
               mShowScores = false;
-              setState(stateEnum.RUNNING);
+              if (numPlayers > 1) {
+                setState(stateEnum.RUNNING);
+              }
+              else {
+                nextLevel();
+                if (getCurrentLevelIndex() != 0) {
+                  setState(stateEnum.RUNNING);
+                }
+              }
               if (mGameListener != null) {
                 mGameListener.onGameEvent(eventEnum.LEVEL_START);
               }
