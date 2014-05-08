@@ -1204,13 +1204,12 @@ public class GameView extends SurfaceView
         canvas.drawRGB(0, 0, 0);
       }
       drawBackground(canvas);
+      mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
       if (numPlayers > 1) {
-        mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
         mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
         drawWinTotals(canvas);
       }
       else {
-        mFrozenGame1.paint(canvas, mDisplayScale, mDisplayDX, mDisplayDY);
         drawLevelNumber(canvas);
       }
     }
@@ -2198,29 +2197,38 @@ public class GameView extends SurfaceView
              * to landscape.
              *
              * In portrait mode during a multiplayer game, display just
-             * one game field.  Depending on which portrait mode it is,
-             * display player one or player two.  For normal portrait
-             * orientation, show player one, and for reverse portrait,
-             * show player two.
+             * one game field.  Depending on which player is the local
+             * player, display the game field for just that player. This
+             * is useful for devices with small screens.
              */
             if (FrozenBubble.getTargetMode() == FrozenBubble.ROTATE_TO_SHOOT) {
               mDisplayDX = 0;
             }
             else {
               int orientation = getScreenOrientation();
-              if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-                mDisplayDX = (int)(-mDisplayScale * gameWidth);
-              else
-                mDisplayDX = 0;
+              if ((orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
+                  (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
+                if (mLocalInput.playerID == VirtualInput.PLAYER2) {
+                  mDisplayDX = (int)(-mDisplayScale * gameWidth);
+                }
+                else {
+                  mDisplayDX = 0;
+                }
+              }
             }
           }
           else {
-            mDisplayDX = (int)(-mDisplayScale * (extGameWidth - gameWidth) / 2);
+            mDisplayDX = (int)(mDisplayScale * (gameWidth - extGameWidth) / 2);
           }
           mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
-        mPlayer1DX = (int) (mDisplayDX - (mDisplayScale * ( gameWidth / 2 )));
-        mPlayer2DX = (int) (mDisplayDX + (mDisplayScale * ( gameWidth / 2 )));
+        if (numPlayers > 1) {
+          mPlayer1DX = (int)(mDisplayDX - (mDisplayScale * (gameWidth / 2)));
+        }
+        else {
+          mPlayer1DX = mDisplayDX;
+        }
+        mPlayer2DX = (int)(mDisplayDX + (mDisplayScale * (gameWidth / 2)));
         resizeBitmaps();
       }
     }
@@ -2384,31 +2392,28 @@ public class GameView extends SurfaceView
         return;
       }
 
-      gameEnum game1State;
-      gameEnum game2State;
-
-      game1State = mFrozenGame1.play(mPlayer1.actionLeft(),
-                                     mPlayer1.actionRight(),
-                                     mPlayer1.actionUp(),
-                                     mPlayer1.actionDown(),
-                                     mPlayer1.getTrackBallDx(),
-                                     mPlayer1.actionTouchFire(),
-                                     mPlayer1.getTouchX(),
-                                     mPlayer1.getTouchY(),
-                                     mPlayer1.actionTouchFireATS(),
-                                     mPlayer1.getTouchDxATS());
+      gameEnum game1State = mFrozenGame1.play(mPlayer1.actionLeft(),
+                                              mPlayer1.actionRight(),
+                                              mPlayer1.actionUp(),
+                                              mPlayer1.actionDown(),
+                                              mPlayer1.getTrackBallDx(),
+                                              mPlayer1.actionTouchFire(),
+                                              mPlayer1.getTouchX(),
+                                              mPlayer1.getTouchY(),
+                                              mPlayer1.actionTouchFireATS(),
+                                              mPlayer1.getTouchDxATS());
 
       if (numPlayers > 1) {
-        game2State = mFrozenGame2.play(mPlayer2.actionLeft(),
-                                       mPlayer2.actionRight(),
-                                       mPlayer2.actionUp(),
-                                       mPlayer2.actionDown(),
-                                       mPlayer2.getTrackBallDx(),
-                                       mPlayer2.actionTouchFire(),
-                                       mPlayer2.getTouchX(),
-                                       mPlayer2.getTouchY(),
-                                       mPlayer2.actionTouchFireATS(),
-                                       mPlayer2.getTouchDxATS());
+        gameEnum game2State = mFrozenGame2.play(mPlayer2.actionLeft(),
+                                                mPlayer2.actionRight(),
+                                                mPlayer2.actionUp(),
+                                                mPlayer2.actionDown(),
+                                                mPlayer2.getTrackBallDx(),
+                                                mPlayer2.actionTouchFire(),
+                                                mPlayer2.getTouchX(),
+                                                mPlayer2.getTouchY(),
+                                                mPlayer2.actionTouchFireATS(),
+                                                mPlayer2.getTouchDxATS());
 
         /*
          * If playing a network game, update the bubble grid checksums.
@@ -2433,13 +2438,14 @@ public class GameView extends SurfaceView
         malusBar1.addBubbles(mFrozenGame1.getSendToOpponent());
         malusBar2.addBubbles(mFrozenGame2.getSendToOpponent());
 
+        /*
+         * Use the immediate game play result to determine when a player
+         * wins or loses during a multiplayer game, as the other player
+         * will automatically lose or win, respectively.
+         */
         gameEnum game1Result = mFrozenGame1.getGameResult();
         gameEnum game2Result = mFrozenGame2.getGameResult();
 
-        /*
-         * When one player wins or loses, the other player is
-         * automatically designated the loser or winner, respectively.
-         */
         if (game1Result != gameEnum.PLAYING) {
           if ((game1Result == gameEnum.WON) ||
               (game1Result == gameEnum.NEXT_WON)) {
@@ -2520,19 +2526,13 @@ public class GameView extends SurfaceView
     }
 
     /**
-     * During a multiplayer game, use the player 1 offset to calculate
-     * the horizontal offset to apply a raw horizontal position to the
-     * playfield.
-     * @param x - the raw horizontal position.
-     * @return The adjusted horizontal position.
+     * Use the player 1 horizontal screen offset to adjust the
+     * playfield horizontal touch position.
+     * @param x - the raw horizontal touch coordinate.
+     * @return The adjusted horizontal touch position.
      */
     private double xFromScr(float x) {
-      if (numPlayers > 1) {
-        return (x - mPlayer1DX) / mDisplayScale;
-      }
-      else {
-        return (x - mDisplayDX) / mDisplayScale;
-      }
+      return (x - mPlayer1DX) / mDisplayScale;
     }
 
     private double yFromScr(float y) {
