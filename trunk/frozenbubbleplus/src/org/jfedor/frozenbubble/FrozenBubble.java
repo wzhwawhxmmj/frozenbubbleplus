@@ -746,34 +746,36 @@ public class FrozenBubble extends Activity
         break;
 
       case LEVEL_START:
-        if ((mGameView != null) &&
-            (mGameView.getThread().getCurrentLevelIndex() == 0)) {
-          /*
-           * Destroy the current music player, which will free audio
-           * stream resources and allow the system to use them.
-           */
-          if (myModPlayer != null)
-            myModPlayer.destroyMusicPlayer();
-          myModPlayer = null;
-          /*
-           * Clear the game screen and suspend input processing for
-           * three seconds.
-           *
-           * Afterwards,  the "About" screen will be displayed as a
-           * backup just in case anything goes awry with displaying
-           * the end-of-game credits.  It will be displayed after the
-           * user touches the screen when the credits are finished.
-           */
-          mGameView.clearGameScreen(true, 3000);
-          /*
-           * Create an intent to launch the activity to display the
-           * credits screen.
-           */
-          Intent intent = new Intent(this, ScrollingCredits.class);
-          startActivity(intent);
+        if ((mGameView != null) && (mGameThread != null) &&
+            (numPlayers == 1)) {
+          if (mGameThread.getCurrentLevelIndex() == 0) {
+            /*
+             * Destroy the current music player, which will free audio
+             * stream resources and allow the system to use them.
+             */
+            if (myModPlayer != null)
+              myModPlayer.destroyMusicPlayer();
+            myModPlayer = null;
+            /*
+             * Clear the game screen and suspend input processing for
+             * three seconds.
+             *
+             * Afterwards,  the "About" screen will be displayed as a
+             * backup just in case anything goes awry with displaying
+             * the end-of-game credits.  It will be displayed after the
+             * user touches the screen when the credits are finished.
+             */
+            mGameView.clearGameScreen(true, 3000);
+            /*
+             * Create an intent to launch the activity to display the
+             * credits screen.
+             */
+            Intent intent = new Intent(this, ScrollingCredits.class);
+            startActivity(intent);
+            break;
+          }
         }
-        else
-          playMusic(true);
+        playMusic(true);
         break;
 
       default:
