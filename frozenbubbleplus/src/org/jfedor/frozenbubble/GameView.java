@@ -97,7 +97,6 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
@@ -2768,20 +2767,6 @@ public class GameView extends SurfaceView
         }
       }
     }
-  }
-
-  @Override
-  /*
-   * When this view loses input focus, request it again immediately to
-   * continue processing input events.
-   * (non-Javadoc)
-   * @see android.view.View#onFocusChanged(boolean, int, android.graphics.Rect)
-   */
-  protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
-    if (!gainFocus) {
-      this.requestFocus();
-    }
-    super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
   }
 
   @Override

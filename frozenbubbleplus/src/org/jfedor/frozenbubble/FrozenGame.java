@@ -577,6 +577,15 @@ public class FrozenGame extends GameScreen {
       movingBubble.move();
       if (movingBubble.fixed()) {
         if (!checkLost()) {
+          /*
+           * If there are no bubbles in the bubble manager, then the
+           * player has won the game.  The bubble manager counts bubbles
+           * that are fixed in position on the bubble grid.  Thus if
+           * there are attack bubbles in motion when the bubble manager
+           * is cleared, then the attack bubbles will be added to the
+           * bubble manager when they stick to the bubble grid after the
+           * player has already won the game.  This may need to change.
+           */
           if (bubbleManager.countBubbles() == 0) {
             penguin.updateState(PenguinSprite.STATE_GAME_WON);
             this.addSprite(new ImageSprite(new Rect(152, 190,
