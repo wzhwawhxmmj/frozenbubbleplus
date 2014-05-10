@@ -17,7 +17,7 @@
 
 struct _ModPlugFile
 {
-	CSoundFile mSoundFile;
+  CSoundFile mSoundFile;
 };
 
 // for using usleep() when debugging crashes (to give time for log text to show up??)
@@ -26,81 +26,81 @@ struct _ModPlugFile
 #include "andmodplug_PlayerThread.h"
 
 
-	const ModPlug_Settings gSettings8000 =
-	{
-		MODPLUG_ENABLE_OVERSAMPLING    |
-		MODPLUG_ENABLE_NOISE_REDUCTION |
-		MODPLUG_ENABLE_REVERB,
+  const ModPlug_Settings gSettings8000 =
+  {
+    MODPLUG_ENABLE_OVERSAMPLING    |
+    MODPLUG_ENABLE_NOISE_REDUCTION |
+    MODPLUG_ENABLE_REVERB,
 
-		2,
-		16,
-		8000,
-		MODPLUG_RESAMPLE_LINEAR,
-		128,
-		32,
-		50,
-		100,
-		0,
-		0,
-		0
-	};
+    2,
+    16,
+    8000,
+    MODPLUG_RESAMPLE_LINEAR,
+    128,
+    32,
+    50,
+    100,
+    0,
+    0,
+    0
+  };
 
-	const ModPlug_Settings gSettings16000 =
-	{
-		MODPLUG_ENABLE_OVERSAMPLING    |
-		MODPLUG_ENABLE_NOISE_REDUCTION |
-		MODPLUG_ENABLE_REVERB,
+  const ModPlug_Settings gSettings16000 =
+  {
+    MODPLUG_ENABLE_OVERSAMPLING    |
+    MODPLUG_ENABLE_NOISE_REDUCTION |
+    MODPLUG_ENABLE_REVERB,
 
-		2,
-		16,
-		16000,
-		MODPLUG_RESAMPLE_LINEAR,
-		128,
-		32,
-		50,
-		100,
-		0,
-		0,
-		0
-	};
+    2,
+    16,
+    16000,
+    MODPLUG_RESAMPLE_LINEAR,
+    128,
+    32,
+    50,
+    100,
+    0,
+    0,
+    0
+  };
 
-	const ModPlug_Settings gSettings22000 =
-	{
-		MODPLUG_ENABLE_OVERSAMPLING    |
-		MODPLUG_ENABLE_NOISE_REDUCTION |
-		MODPLUG_ENABLE_REVERB,
+  const ModPlug_Settings gSettings22000 =
+  {
+    MODPLUG_ENABLE_OVERSAMPLING    |
+    MODPLUG_ENABLE_NOISE_REDUCTION |
+    MODPLUG_ENABLE_REVERB,
 
-		2,
-		16,
-		22000,
-		MODPLUG_RESAMPLE_LINEAR,
-		128,
-		32,
-		50,
-		100,
-		0,
-		0,
-		0
-	};
+    2,
+    16,
+    22000,
+    MODPLUG_RESAMPLE_LINEAR,
+    128,
+    32,
+    50,
+    100,
+    0,
+    0,
+    0
+  };
 
-	const ModPlug_Settings gSettings32000 =
-	{
-		MODPLUG_ENABLE_OVERSAMPLING    |
-		MODPLUG_ENABLE_NOISE_REDUCTION |
-		MODPLUG_ENABLE_REVERB,
+  const ModPlug_Settings gSettings32000 =
+  {
+    MODPLUG_ENABLE_OVERSAMPLING    |
+    MODPLUG_ENABLE_NOISE_REDUCTION |
+    MODPLUG_ENABLE_REVERB,
 
-		2,
-		16,
-		32000,
-		MODPLUG_RESAMPLE_LINEAR,
-		128,
-		32,
-		50,
-		100,
-		0,
-		0,
-		0
-	};
+    2,
+    16,
+    32000,
+    MODPLUG_RESAMPLE_LINEAR,
+    128,
+    32,
+    50,
+    100,
+    0,
+    0,
+    0
+  };
 
 //
 // ADD FOLLOWING JNI INTERFACE FUNCTIONS after the header files
@@ -152,44 +152,44 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
 {
   // if trying to make this truly re-entrant, separate buffers could be allocated here
 
-	__android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "Initializing modplug with rate %d", rate);
+  __android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "Initializing modplug with rate %d", rate);
 
-	//usleep(16*1000);
+  //usleep(16*1000);
 
-	switch (rate) {
-	case 8000:
-		ModPlug_SetSettings(&gSettings8000);
-		break;
-	case 16000:
-		ModPlug_SetSettings(&gSettings16000);
-		break;
-	case 22000:
-		ModPlug_SetSettings(&gSettings22000);
-		break;
-	case 32000:
-		ModPlug_SetSettings(&gSettings32000);
-		break;
-	case 44100:
-		// this is the default, so settings needn't be changed
-		break;
-	}
+  switch (rate) {
+  case 8000:
+    ModPlug_SetSettings(&gSettings8000);
+    break;
+  case 16000:
+    ModPlug_SetSettings(&gSettings16000);
+    break;
+  case 22000:
+    ModPlug_SetSettings(&gSettings22000);
+    break;
+  case 32000:
+    ModPlug_SetSettings(&gSettings32000);
+    break;
+  case 44100:
+    // this is the default, so settings needn't be changed
+    break;
+  }
 
-	// DIAB pitch mod
-	//DIABpitchchange = 0;
-	DIABtempochange = 0;
-	DIABtempooverride = 0;
+  // DIAB pitch mod
+  //DIABpitchchange = 0;
+  DIABtempochange = 0;
+  DIABtempooverride = 0;
 
-	DIABpatternchanged = 0;
+  DIABpatternchanged = 0;
 
 
-	ANDMODPLUGpatternrangeset = 0;
+  ANDMODPLUGpatternrangeset = 0;
 
-	ANDMODPLUGnextpattern = -1;
-	ANDMODPLUGnextpatternmode = 0;
+  ANDMODPLUGnextpattern = -1;
+  ANDMODPLUGnextpatternmode = 0;
 
-	ANDMODPLUGjumpeffect = -1;
+  ANDMODPLUGjumpeffect = -1;
 
-	ANDMODPLUGlogoutput = 0;
+  ANDMODPLUGlogoutput = 0;
 
   return 1;
 }
@@ -229,8 +229,7 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
 
   ANDMODPLUGjumpeffect = -1;
 
-
-  if (currmodFile) {
+  if (currmodFile != 0) {
     return 1;
   }
   else {
@@ -246,7 +245,10 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
 JNIEXPORT jstring JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1JGetName
   (JNIEnv *env, jobject obj)
 {
-  return env->NewStringUTF(ModPlug_GetName(currmodFile));
+  if (currmodFile != 0)
+    return env->NewStringUTF(ModPlug_GetName(currmodFile));
+  else
+    return NULL;
 }
 
 /*
@@ -257,9 +259,10 @@ JNIEXPORT jstring JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1JNumChannels
   (JNIEnv *env, jobject obj)
 {
-  jint numchannels;
+  jint numchannels = 0;
 
-  numchannels = ModPlug_NumChannels(currmodFile);
+  if (currmodFile != 0)
+    numchannels = ModPlug_NumChannels(currmodFile);
   return numchannels;
 }
 
@@ -271,10 +274,11 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1J
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetCurrentPos
   (JNIEnv *, jobject)
 {
-	  jint curr;
-	  //curr = ModPlug_GetCurrentOrder(currmodFile);
-	  curr = currmodFile->mSoundFile.GetCurrentPos();
-	  return curr;
+  jint curr = 0;
+
+  if (currmodFile != 0)
+    curr = currmodFile->mSoundFile.GetCurrentPos();
+  return curr;
 }
 
 /*
@@ -285,9 +289,11 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetMaxPos
   (JNIEnv *, jobject)
 {
-	  jint maxpos;
-	  maxpos = currmodFile->mSoundFile.GetMaxPosition();
-	  return maxpos;
+  jint maxpos = 0;
+
+  if (currmodFile != 0)
+    maxpos = currmodFile->mSoundFile.GetMaxPosition();
+  return maxpos;
 }
 
 /*
@@ -298,10 +304,11 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetCurrentOrder
   (JNIEnv *env, jobject obj)
 {
-	  jint curr;
+  jint curr = 0;
 
-	  curr = ModPlug_GetCurrentOrder(currmodFile);
-	  return curr;
+  if (currmodFile != 0)
+    curr = ModPlug_GetCurrentOrder(currmodFile);
+  return curr;
 }
 
 /*
@@ -312,10 +319,11 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetCurrentPattern
   (JNIEnv *env, jobject obj)
 {
-	  jint curr;
+  jint curr = 0;
 
-	  curr = ModPlug_GetCurrentPattern(currmodFile);
-	  return curr;
+  if (currmodFile != 0)
+    curr = ModPlug_GetCurrentPattern(currmodFile);
+  return curr;
 }
 
 /*
@@ -326,10 +334,11 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetCurrentRow
   (JNIEnv *env, jobject obj)
 {
-	  jint curr;
+  jint curr = 0;
 
-	  curr = ModPlug_GetCurrentRow(currmodFile);
-	  return curr;
+  if (currmodFile != 0)
+    curr = ModPlug_GetCurrentRow(currmodFile);
+  return curr;
 }
 
 /*
@@ -342,8 +351,8 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1J
 {
   jint smpsize = 0;
 
-   if (currmodFile == 0)
-     return 0;
+  if (currmodFile == 0)
+    return 0;
 
 #ifndef SMALLER_READS
   if (currsample >= SAMPLEBUFFERSIZE) {
@@ -381,7 +390,7 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1J
 JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1JUnload
   (JNIEnv *env, jclass cls)
 {
-  if (currmodFile) {
+  if (currmodFile != 0) {
     ModPlug_Unload(currmodFile);
     currmodFile = 0;
   }
@@ -413,7 +422,7 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
 JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1GetNativeTempo
   (JNIEnv *env, jclass cls)
 {
-	return currmodFile->mSoundFile.m_nMusicTempo;
+  return currmodFile->mSoundFile.m_nMusicTempo;
 }
 
 /*
@@ -424,8 +433,8 @@ JNIEXPORT jint JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1G
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1ChangeTempo
   (JNIEnv *env, jclass cls, jint tc)
 {
-	// hack the tempo
-	DIABtempochange = tc;
+  // hack the tempo
+  DIABtempochange = tc;
 
 }
 
@@ -437,8 +446,8 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1C
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetTempo
   (JNIEnv *env, jclass cls, jint to)
 {
-	// hack the tempo
-	DIABtempooverride = to;
+  // hack the tempo
+  DIABtempooverride = to;
 
 }
 
@@ -450,17 +459,17 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1S
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1ChangePattern
   (JNIEnv *env, jclass cls, jint newpattern)
 {
-	// test out looping
-	////currmodFile->mSoundFile.LoopPattern(newpattern,0);
-	//currmodFile->mSoundFile.SetCurrentOrder(newpattern);
-	//currmodFile->mSoundFile.SetCurrentPos(newpattern);
+  // test out looping
+  ////currmodFile->mSoundFile.LoopPattern(newpattern,0);
+  //currmodFile->mSoundFile.SetCurrentOrder(newpattern);
+  //currmodFile->mSoundFile.SetCurrentPos(newpattern);
 
 
 
-	//currmodFile->mSoundFile.m_nNextPattern = newpattern;
-	//currmodFile->mSoundFile.m_nRestartPos = newpattern;
-	DIABnextpattern = newpattern-1;
-	DIABpatternchanged = 0;
+  //currmodFile->mSoundFile.m_nNextPattern = newpattern;
+  //currmodFile->mSoundFile.m_nRestartPos = newpattern;
+  DIABnextpattern = newpattern-1;
+  DIABpatternchanged = 0;
 
 }
 
@@ -472,11 +481,11 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1C
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1RepeatPattern
   (JNIEnv *env, jclass cls, jint pattern)
 {
-	  // test out looping
-	  DIABholdpattern = 1;
-	  DIABnextpattern = pattern-1;
+  // test out looping
+  DIABholdpattern = 1;
+  DIABnextpattern = pattern-1;
 
-	  DIABpatternchanged = 0;
+  DIABpatternchanged = 0;
 }
 
 /*
@@ -487,12 +496,12 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1R
 JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1CheckPatternChange
   (JNIEnv *env, jclass cls)
 {
-	if (DIABpatternchanged) {
-		DIABpatternchanged = 0;
-		return JNI_TRUE;
-	}
-	else
-		return JNI_FALSE;
+  if (DIABpatternchanged) {
+    DIABpatternchanged = 0;
+    return JNI_TRUE;
+  }
+  else
+    return JNI_FALSE;
 }
 
 /*
@@ -503,10 +512,10 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetPatternLoopMode
   (JNIEnv *env, jclass cls, jboolean flag)
 {
-	if (flag == JNI_TRUE)
-		DIABholdpattern = 1;
-	else
-		DIABholdpattern = 0;
+  if (flag == JNI_TRUE)
+    DIABholdpattern = 1;
+  else
+    DIABholdpattern = 0;
 }
 
 /*
@@ -517,41 +526,41 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1S
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetPatternLoopRange
   (JNIEnv *env, jclass cls, jint from, jint to, jint when)
 {
-	if (ANDMODPLUGpatternrangeset == 0) {
-	//if (ANDMODPLUGpatternfrom == 0 && ANDMODPLUGpatternto == 0) {
-		ANDMODPLUGpatternrangeset = 1;
+  if (ANDMODPLUGpatternrangeset == 0) {
+  //if (ANDMODPLUGpatternfrom == 0 && ANDMODPLUGpatternto == 0) {
+    ANDMODPLUGpatternrangeset = 1;
 
-		ANDMODPLUGpatternfrom = from;
-		ANDMODPLUGpatternto = to;
-		__android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "ANDMODPLUGpatternfrom=%d to=%d",
-				ANDMODPLUGpatternfrom, ANDMODPLUGpatternto);
+    ANDMODPLUGpatternfrom = from;
+    ANDMODPLUGpatternto = to;
+    __android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "ANDMODPLUGpatternfrom=%d to=%d",
+        ANDMODPLUGpatternfrom, ANDMODPLUGpatternto);
 
-	}
-	else {
-		ANDMODPLUGpendingfrom = from;
-		ANDMODPLUGpendingto = to;
-		__android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "ANDMODPLUGpendingfrom=%d to=%d",
-				ANDMODPLUGpendingfrom, ANDMODPLUGpendingto);
-	}
+  }
+  else {
+    ANDMODPLUGpendingfrom = from;
+    ANDMODPLUGpendingto = to;
+    __android_log_print(ANDROID_LOG_INFO, "JNI_STUBS", "ANDMODPLUGpendingfrom=%d to=%d",
+        ANDMODPLUGpendingfrom, ANDMODPLUGpendingto);
+  }
 
-	switch(when) {
-	case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_IMMEDIATE:
-		// normal SetCurrentPos() libmodplug call handles this!
-		//currmodFile->mSoundFile.SetCurrentPos(from); not really
-		ANDMODPLUGpatternfrom = ANDMODPLUGpendingfrom;
-		ANDMODPLUGpatternto = ANDMODPLUGpendingto;
-		break;
-	case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_AFTER_CURRENT:
-		// tweak current/next pattern to force change at end
-		////currmodFile->mSoundFile.m_nNextPattern = to+1;
-		////currmodFile->mSoundFile.m_nCurrentPattern = to+1;
-		//ANDMODPLUGpatternto = ANDMODPLUGpatternfrom;
-		ANDMODPLUGpatternto = currmodFile->mSoundFile.GetCurrentPattern();
-		break;
-	case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_AFTER_GROUP:
-	default:
-		break;
-	}
+  switch(when) {
+  case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_IMMEDIATE:
+    // normal SetCurrentPos() libmodplug call handles this!
+    //currmodFile->mSoundFile.SetCurrentPos(from); not really
+    ANDMODPLUGpatternfrom = ANDMODPLUGpendingfrom;
+    ANDMODPLUGpatternto = ANDMODPLUGpendingto;
+    break;
+  case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_AFTER_CURRENT:
+    // tweak current/next pattern to force change at end
+    ////currmodFile->mSoundFile.m_nNextPattern = to+1;
+    ////currmodFile->mSoundFile.m_nCurrentPattern = to+1;
+    //ANDMODPLUGpatternto = ANDMODPLUGpatternfrom;
+    ANDMODPLUGpatternto = currmodFile->mSoundFile.GetCurrentPattern();
+    break;
+  case com_peculiargames_andmodplug_PlayerThread_PATTERN_CHANGE_AFTER_GROUP:
+  default:
+    break;
+  }
 
 }
 
@@ -563,8 +572,8 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1S
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetCurrentPattern
   (JNIEnv *env, jobject obj, jint pattern)
 {
-	ANDMODPLUGnextpattern = pattern;
-	ANDMODPLUGnextpatternmode = 1;
+  ANDMODPLUGnextpattern = pattern;
+  ANDMODPLUGnextpatternmode = 1;
 }
 
 /*
@@ -575,8 +584,8 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1S
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetNextPattern
   (JNIEnv *env, jobject obj, jint pattern)
 {
-	ANDMODPLUGnextpattern = pattern;
-	ANDMODPLUGnextpatternmode = 0;
+  ANDMODPLUGnextpattern = pattern;
+  ANDMODPLUGnextpatternmode = 0;
 }
 
 
@@ -588,10 +597,10 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1S
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1LogOutput
   (JNIEnv *env, jclass cls, jboolean flag)
 {
-	if (flag == JNI_TRUE)
-		ANDMODPLUGlogoutput = 1;
-	else
-		ANDMODPLUGlogoutput = 0;
+  if (flag == JNI_TRUE)
+    ANDMODPLUGlogoutput = 1;
+  else
+    ANDMODPLUGlogoutput = 0;
 }
 
 /*
@@ -602,11 +611,11 @@ JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1L
 JNIEXPORT void JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlug_1SetLoopCount
   (JNIEnv *env, jclass cls, jint loopcount)
 {
-	ModPlug_Settings settings;
+  ModPlug_Settings settings;
 
-	ModPlug_GetSettings( &settings );
-	settings.mLoopCount = loopcount;
-	ModPlug_SetSettings( &settings );
+  ModPlug_GetSettings( &settings );
+  settings.mLoopCount = loopcount;
+  ModPlug_SetSettings( &settings );
 }
 
 // ************************************************************ 
