@@ -79,7 +79,6 @@ import java.util.Random;
 import org.jfedor.frozenbubble.GameScreen.eventEnum;
 import org.jfedor.frozenbubble.GameScreen.stateEnum;
 import org.jfedor.frozenbubble.GameView.GameThread;
-import org.jfedor.frozenbubble.MultiplayerGameView.MultiplayerGameThread;
 
 import tv.ouya.console.api.OuyaController;
 import android.app.Activity;
@@ -111,7 +110,6 @@ import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenBubble extends Activity
   implements GameView.GameListener,
-             MultiplayerGameView.GameListener,
              AccelerometerManager.AccelerometerListener {
   /*
    * The following screen orientation definitions were added to
@@ -152,8 +150,8 @@ public class FrozenBubble extends Activity
   public final static int ROTATE_TO_SHOOT = 2;
 
   public final static int LOCALE_LOCAL    = 0;
-  public final static int LOCALE_LAN      = 2;
-  public final static int LOCALE_INTERNET = 3;
+  public final static int LOCALE_LAN      = 1;
+  public final static int LOCALE_INTERNET = 2;
 
   public final static int CPU   = 0;
   public final static int HUMAN = 1;
@@ -178,14 +176,12 @@ public class FrozenBubble extends Activity
   public final static String EDITORACTION = "org.jfedor.frozenbubble.GAME";
 
   private boolean activityCustomStarted = false;
-  private boolean allowUnpause;
+  private boolean allowUnpause = true;
   private int     currentOrientation;
   private long    lastBackPressTime = 0;
 
   private GameThread mGameThread = null;
-  private MultiplayerGameThread mMultiplayerGameThread = null;
   private GameView mGameView = null;
-  private MultiplayerGameView mMultiplayerGameView = null;
   private OrientationEventListener myOrientationEventListener = null;
   private ModPlayer myModPlayer = null;
 
@@ -273,8 +269,6 @@ public class FrozenBubble extends Activity
   protected void onDestroy() {
     //Log.i(TAG, "FrozenBubble.onDestroy()");
     super.onDestroy();
-    numPlayers = 0;
-    gameLocale = LOCALE_LOCAL;
     cleanUp();
   }
 
@@ -285,13 +279,8 @@ public class FrozenBubble extends Activity
       backKeyPress();
       handled = true;
     }
-    else {
-      if (mGameThread != null) {
-        handled = mGameThread.doKeyDown(keyCode, event);
-      }
-      if (mMultiplayerGameThread != null) {
-        handled = mMultiplayerGameThread.doKeyDown(keyCode, event);
-      }
+    else if (mGameThread != null) {
+      handled = mGameThread.doKeyDown(keyCode, event);
     }
     return handled || super.onKeyDown(keyCode, event);
   }
@@ -301,9 +290,6 @@ public class FrozenBubble extends Activity
     boolean handled = false;
     if (mGameThread != null) {
       handled = mGameThread.doKeyUp(keyCode, event);
-    }
-    if (mMultiplayerGameThread != null) {
-      handled = mMultiplayerGameThread.doKeyUp(keyCode, event);
     }
     return handled || super.onKeyUp(keyCode, event);
   }
@@ -367,9 +353,6 @@ public class FrozenBubble extends Activity
       case MENU_ABOUT:
         if (mGameThread != null)
           mGameThread.setState(stateEnum.ABOUT);
-
-        if (mMultiplayerGameThread != null)
-          mMultiplayerGameThread.setState(stateEnum.ABOUT);
         return true;
       case MENU_DONT_RUSH_ME:
         setDontRushMe(true);
@@ -433,9 +416,6 @@ public class FrozenBubble extends Activity
 
     if (mGameThread != null)
       mGameThread.saveState(outState);
-
-    if (mMultiplayerGameThread != null)
-      mMultiplayerGameThread.saveState(outState);
   }
 
   @Override
@@ -443,9 +423,6 @@ public class FrozenBubble extends Activity
     boolean handled = false;
     if (mGameThread != null) {
       handled = mGameThread.doTouchEvent(event);
-    }
-    if (mMultiplayerGameThread != null) {
-      handled = mMultiplayerGameThread.doTouchEvent(event);
     }
     return handled || super.onTouchEvent(event);
   }
@@ -455,9 +432,6 @@ public class FrozenBubble extends Activity
     boolean handled = false;
     if (mGameThread != null) {
       handled = mGameThread.doTrackballEvent(event);
-    }
-    if (mMultiplayerGameThread != null) {
-      handled = mMultiplayerGameThread.doTrackballEvent(event);
     }
     return handled || super.onTrackballEvent(event);
   }
@@ -485,6 +459,7 @@ public class FrozenBubble extends Activity
 
   public synchronized static void setCollision(int newCollision) {
     collision = newCollision;
+    BubbleSprite.setCollisionThreshold(collision);
   }
 
   public synchronized static boolean getCompressor() {
@@ -564,21 +539,11 @@ public class FrozenBubble extends Activity
      */
     if ((currentTime - lastBackPressTime) < 3000) {
       /*
-       * The current game was exited, so reset the static game state
-       * variables.
-       */
-      gameLocale = LOCALE_LOCAL;
-      myPlayerId = VirtualInput.PLAYER1; 
-      numPlayers = 0;
-      opponentId = CPU;
-      /*
        * Preserve game information and perform activity cleanup.
        */
       pause();
       if (mGameThread != null)
         mGameThread.setRunning(false);
-      if (mMultiplayerGameThread != null)
-        mMultiplayerGameThread.setRunning(false);
       cleanUp();
       /*
        * Create an intent to launch the home screen.
@@ -596,15 +561,27 @@ public class FrozenBubble extends Activity
     lastBackPressTime = currentTime;
   }
 
+  /**
+   * Perform activity cleanup.  <b>This must only be called when the
+   * activity is being destroyed.</b>
+   */
   public void cleanUp() {
-    if (AccelerometerManager.isListening()) {
+    /*
+     * The current game is being destroyed, so reset the static game
+     * state variables.
+     */
+    gameLocale = LOCALE_LOCAL;
+    myPlayerId = VirtualInput.PLAYER1; 
+    numPlayers = 0;
+    opponentId = CPU;
+
+    if (AccelerometerManager.isListening())
       AccelerometerManager.stopListening();
-    }
 
     if (myOrientationEventListener != null) {
       myOrientationEventListener.disable();
-      myOrientationEventListener = null;
     }
+    myOrientationEventListener = null;
 
     cleanUpGameView();
 
@@ -620,12 +597,6 @@ public class FrozenBubble extends Activity
       mGameView.cleanUp();
     }
     mGameView = null;
-
-    mMultiplayerGameThread = null;
-    if (mMultiplayerGameView != null) {
-      mMultiplayerGameView.cleanUp();
-    }
-    mMultiplayerGameView = null;
   }
 
   private int getScreenOrientation() {
@@ -722,12 +693,11 @@ public class FrozenBubble extends Activity
    * Start a new game and music player.
    */
   public void newGame() {
-    if (mGameThread != null)
+    if (mGameThread != null) {
       mGameThread.newGame();
-
-    if (mMultiplayerGameThread != null) {
-      mMultiplayerGameThread.newGame();
-      mMultiplayerGameThread.startOpponent();
+      if (numPlayers > 1) {
+        mGameThread.startOpponent();
+      }
     }
 
     playMusic(false);
@@ -761,21 +731,18 @@ public class FrozenBubble extends Activity
 
   public void onAccelerationChanged(float x, float y, float z) {
     if (mGameThread != null) {
-      if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+      if (numPlayers > 1) {
+        if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
+          x = -y;
+        else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
+          x = y;
+        else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+          x = -x;
+      }
+      else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT) {
         x = -x;
-
+      }
       mGameThread.setPosition(20.0f+x*2.0f);
-    }
-
-    if (mMultiplayerGameThread != null) {
-      if (currentOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE)
-        x = -y;
-      else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_LANDSCAPE)
-        x = y;
-      else if (currentOrientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-        x = -x;
-
-      mMultiplayerGameThread.setPosition(20.0f+x*2.0f);
     }
   }
 
@@ -802,34 +769,36 @@ public class FrozenBubble extends Activity
         break;
 
       case LEVEL_START:
-        if ((mGameThread != null) &&
-            (mGameThread.getCurrentLevelIndex() == 0)) {
-          /*
-           * Destroy the current music player, which will free audio
-           * stream resources and allow the system to use them.
-           */
-          if (myModPlayer != null)
-            myModPlayer.destroyMusicPlayer();
-          myModPlayer = null;
-          /*
-           * Clear the game screen and suspend input processing for
-           * three seconds.
-           *
-           * Afterwards,  the "About" screen will be displayed as a
-           * backup just in case anything goes awry with displaying
-           * the end-of-game credits.  It will be displayed after the
-           * user touches the screen when the credits are finished.
-           */
-          mGameView.clearGameScreen(true, 3000);
-          /*
-           * Create an intent to launch the activity to display the
-           * credits screen.
-           */
-          Intent intent = new Intent(this, ScrollingCredits.class);
-          startActivity(intent);
+        if ((mGameView != null) && (mGameThread != null) &&
+            (numPlayers == 1)) {
+          if (mGameThread.getCurrentLevelIndex() == 0) {
+            /*
+             * Destroy the current music player, which will free audio
+             * stream resources and allow the system to use them.
+             */
+            if (myModPlayer != null)
+              myModPlayer.destroyMusicPlayer();
+            myModPlayer = null;
+            /*
+             * Clear the game screen and suspend input processing for
+             * three seconds.
+             *
+             * Afterwards,  the "About" screen will be displayed as a
+             * backup just in case anything goes awry with displaying
+             * the end-of-game credits.  It will be displayed after the
+             * user touches the screen when the credits are finished.
+             */
+            mGameView.clearGameScreen(true, 3000);
+            /*
+             * Create an intent to launch the activity to display the
+             * credits screen.
+             */
+            Intent intent = new Intent(this, ScrollingCredits.class);
+            startActivity(intent);
+            break;
+          }
         }
-        else
-          playMusic(true);
+        playMusic(true);
         break;
 
       default:
@@ -843,9 +812,6 @@ public class FrozenBubble extends Activity
   private void pause() {
     if (mGameThread != null)
       mGameThread.pause();
-
-    if (mMultiplayerGameThread != null)
-      mMultiplayerGameThread.pause();
 
     /*
      * Pause the MOD player.
@@ -887,6 +853,9 @@ public class FrozenBubble extends Activity
     allowUnpause = true;
   }
 
+  /**
+   * Load the game options from the saved shared preferences.
+   */
   private void restoreGamePrefs() {
     SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
                                                      Context.MODE_PRIVATE);
@@ -900,6 +869,10 @@ public class FrozenBubble extends Activity
     soundOn    = mConfig.getBoolean("soundOn",    true                 );
     targetMode = POINT_TO_SHOOT;
 
+    /*
+     * Some game options require additional handling to fully implement
+     * changes to game play.
+     */
     BubbleSprite.setCollisionThreshold(collision);
     setTargetModeOrientation();
   }
@@ -908,7 +881,7 @@ public class FrozenBubble extends Activity
    * Save critically important game information.
    */
   public void saveState() {
-    if (mGameView != null) {
+    if ((mGameThread != null) && (numPlayers == 1)) {
       /*
        * Allow level editor functionalities.
        */
@@ -948,9 +921,6 @@ public class FrozenBubble extends Activity
 
     if (mGameView != null)
       mGameView.requestLayout();
-
-    if (mMultiplayerGameView != null)
-      mMultiplayerGameView.requestLayout();
   }
 
   private void setTargetModeOrientation() {
@@ -1085,9 +1055,10 @@ public class FrozenBubble extends Activity
     /*
      * Check if this is a single player or multiplayer game.
      */
+    gameLocale = LOCALE_LOCAL;
+    myPlayerId = VirtualInput.PLAYER1;
     numPlayers = 1;
     opponentId = CPU;
-    gameLocale = LOCALE_LOCAL;
     if (intent != null) {
       if (intent.hasExtra("myPlayerId"))
         myPlayerId = intent.getIntExtra("myPlayerId", VirtualInput.PLAYER1);
@@ -1104,24 +1075,22 @@ public class FrozenBubble extends Activity
      * Otherwise start a single player game.
      */
     if (numPlayers > 1) {
-      mMultiplayerGameView = new MultiplayerGameView(this,
-                                                     myPlayerId,
-                                                     opponentId,
-                                                     gameLocale);
-      setContentView(mMultiplayerGameView);
-      mMultiplayerGameView.setGameListener(this);
-      mMultiplayerGameThread = mMultiplayerGameView.getThread();
+      mGameView =
+          new GameView(this, numPlayers, myPlayerId, opponentId, gameLocale);
+      setContentView(mGameView);
+      mGameView.setGameListener(this);
+      mGameThread = mGameView.getThread();
       /*
        * Only restore the bundle for a multiplayer game if it was local.
        */
       if ((savedInstanceState != null) && (gameLocale == LOCALE_LOCAL)) {
         int savedPlayers = savedInstanceState.getInt("numPlayers");
         if (savedPlayers == 2) {
-          mMultiplayerGameThread.restoreState(savedInstanceState);
+          mGameThread.restoreState(savedInstanceState);
         }
       }
-      mMultiplayerGameThread.startOpponent();
-      mMultiplayerGameView.requestFocus();
+      mGameThread.startOpponent();
+      mGameView.requestFocus();
     }
     else {
       setContentView(R.layout.activity_frozen_bubble);
