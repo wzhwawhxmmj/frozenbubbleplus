@@ -82,7 +82,6 @@ import org.jfedor.frozenbubbleplus.GameView.GameThread;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -90,7 +89,6 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
