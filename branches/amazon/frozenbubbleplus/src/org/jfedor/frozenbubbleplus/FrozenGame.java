@@ -213,6 +213,10 @@ public class FrozenGame extends GameScreen {
                                           playButton_arg);
       this.addSprite(pauseButtonSprite);
     }
+    else {
+      pauseButtonSprite = null;
+      playButtonSprite  = null;
+    }
 
     penguin = new PenguinSprite(getPenguinRect(player), penguins_arg, random);
     this.addSprite(penguin);
@@ -361,14 +365,16 @@ public class FrozenGame extends GameScreen {
           lost = true;
         }
       }
-  
+
+      int steps = compressor.getSteps();
+
       for (int i = 0; i < 8; i++) {
-        if (bubblePlay[i][12 - compressor.steps] != null) {
+        if (bubblePlay[i][12 - steps] != null) {
           lost = true;
           break;
         }
       }
-  
+
       if (lost) {
         penguin.updateState(PenguinSprite.STATE_GAME_LOST);
         if (highscoreManager != null)
@@ -428,7 +434,7 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    while (bubblePlay[frozenifyX][frozenifyY] == null && frozenifyY >=0) {
+    while ((bubblePlay[frozenifyX][frozenifyY] == null) && (frozenifyY >= 0)) {
       frozenifyX--;
       if (frozenifyX < 0) {
         frozenifyX = 7;
@@ -455,7 +461,7 @@ public class FrozenGame extends GameScreen {
   }
 
   public int getCompressorSteps() {
-    return compressor.steps;
+    return compressor.getSteps();
   }
 
   public int getCurrentColor() {
@@ -573,6 +579,15 @@ public class FrozenGame extends GameScreen {
       movingBubble.move();
       if (movingBubble.fixed()) {
         if (!checkLost()) {
+          /*
+           * If there are no bubbles in the bubble manager, then the
+           * player has won the game.  The bubble manager counts bubbles
+           * that are fixed in position on the bubble grid.  Thus if
+           * there are attack bubbles in motion when the bubble manager
+           * is cleared, then the attack bubbles will be added to the
+           * bubble manager when they stick to the bubble grid after the
+           * player has already won the game.  This may need to change.
+           */
           if (bubbleManager.countBubbles() == 0) {
             penguin.updateState(PenguinSprite.STATE_GAME_WON);
             this.addSprite(new ImageSprite(new Rect(152, 190,
@@ -618,14 +633,22 @@ public class FrozenGame extends GameScreen {
 
   public void pauseButtonPressed(boolean paused) {
     if (paused) {
-      this.removeSprite(pauseButtonSprite);
-      this.removeSprite(playButtonSprite);
-      this.addSprite(playButtonSprite);
+      if (pauseButtonSprite != null) {
+        this.removeSprite(pauseButtonSprite);
+      }
+      if (playButtonSprite != null) {
+        this.removeSprite(playButtonSprite);
+        this.addSprite(playButtonSprite);
+      }
     }
     else {
-      this.removeSprite(pauseButtonSprite);
-      this.removeSprite(playButtonSprite);
-      this.addSprite(pauseButtonSprite);
+      if (playButtonSprite != null) {
+        this.removeSprite(playButtonSprite);
+      }
+      if (pauseButtonSprite != null) {
+        this.removeSprite(pauseButtonSprite);
+        this.addSprite(pauseButtonSprite);
+      }
     }
   }
 
@@ -715,9 +738,9 @@ public class FrozenGame extends GameScreen {
 
         /*
          * If the game is over because of bubble overflow, wait until
-         * all the bubbles are fixed in place to freeze them.
+         * all the bubbles have stopped moving to freeze them.
          */
-        if (frozenify && (goingUp.size() == 0)) {
+        if (frozenify && (goingUp.size() == 0) && (movingBubble == null)) {
           frozenify();
         }
       }
@@ -868,6 +891,9 @@ public class FrozenGame extends GameScreen {
       checkLost();
     }
 
+    /*
+     * Perform game synchronization tasks.
+     */
     synchronizeBubbleManager();
 
     /*
@@ -1221,25 +1247,6 @@ public class FrozenGame extends GameScreen {
   }
 
   /**
-   * Lower the compressor to the specified number of steps.
-   * @param steps - the number of compressor steps to lower to.
-   */
-  public void setCompressorSteps(byte steps) {
-    byte stepsNow = (byte) compressor.getSteps();
-
-    if ((steps < 0) || (steps > 13)) {
-      return;
-    }
-
-    if (steps > stepsNow) {
-      stepsNow = (byte) (steps - stepsNow);
-      while (stepsNow-- > 0) {
-        lowerCompressor(false);
-      }
-    }
-  }
-
-  /**
    * Set the game result associated with this player.
    * @param result - GAME_WON if this player won the game, GAME_LOST if
    * this player lost the game.
@@ -1265,25 +1272,38 @@ public class FrozenGame extends GameScreen {
     }
   }
 
-  public void setGrid(byte[][] newGrid) {
-    bubbleManager.initialize();
-    removeAllBubbleSprites();
-    falling.clear();
-    goingUp.clear();
-    jumping.clear();
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
-        bubblePlay[i][j] = null;
-        if (newGrid[i][j] != -1) {
-          bubblePlay[i][j] = new BubbleSprite(
-              new Rect(190+i*32-(j%2)*16, 44+j*28, 32, 32),
-              newGrid[i][j],
-              bubbles[newGrid[i][j]], bubblesBlind[newGrid[i][j]],
-              frozenBubbles[newGrid[i][j]], bubbleBlink, bubbleManager,
-              soundManager, this);
-          this.addSprite(bubblePlay[i][j]);
+  /**
+   * Perform bubble grid and compressor synchronization.
+   * <p>To prevent the appearance of glitches, the game field should not
+   * be synchronized while bubbles are in motion.
+   * @param newGrid - the new bubble grid to apply to the game field.
+   * @param newSteps - the number of compressor steps to lower to.
+   */
+  public void setGrid(byte[][] newGrid, byte newSteps) {
+    if (newGrid != null) {
+      compressor.init();
+      falling.clear();
+      goingUp.clear();
+      jumping.clear();
+      bubbleManager.initialize();
+      removeAllBubbleSprites();
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 13; j++) {
+          bubblePlay[i][j] = null;
+          if (newGrid[i][j] != -1) {
+            bubblePlay[i][j] = new BubbleSprite(
+                new Rect(190+i*32-(j%2)*16, 44+j*28, 32, 32),
+                newGrid[i][j],
+                bubbles[newGrid[i][j]], bubblesBlind[newGrid[i][j]],
+                frozenBubbles[newGrid[i][j]], bubbleBlink, bubbleManager,
+                soundManager, this);
+            this.addSprite(bubblePlay[i][j]);
+          }
         }
       }
+    }
+    for (int index = 0; index < newSteps; index++) {
+      lowerCompressor(false);
     }
   }
 
