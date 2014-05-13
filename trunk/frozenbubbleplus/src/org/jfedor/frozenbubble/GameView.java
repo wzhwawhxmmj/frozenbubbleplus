@@ -2840,8 +2840,7 @@ public class GameView extends SurfaceView
   }
 
   /**
-   * Set the game field for a remote player - as in a person playing
-   * via a client device over a network.
+   * Set the remote player client game field.
    * @param newGameField - the object containing the remote field data.
    */
   private void setPlayerGameField(GameFieldData newField) {
@@ -2849,43 +2848,35 @@ public class GameView extends SurfaceView
       return;
     }
 
-    VirtualInput playerRef;
+    FrozenGame gameRef;
 
     if (newField.playerID == VirtualInput.PLAYER1) {
-      playerRef = mPlayer1;
+      gameRef = mPlayer1.mGameRef;
     }
     else if (newField.playerID == VirtualInput.PLAYER2) {
-      playerRef = mPlayer2;
+      gameRef = mPlayer2.mGameRef;
     }
     else {
       return;
     }
 
     /*
-     * Set the bubble grid.  Note this must be done before lowering the
-     * compressor, as bubbles will be created using a non-compressed
-     * game field!
+     * Set the bubble grid, and lower the compressor and bubbles in play
+     * to the required number of compressor steps.
      */
-    playerRef.mGameRef.setGrid(newField.gameField);
-
-    /*
-     * Lower the compressor and bubbles in play to the required number
-     * of compressor steps.
-     */
-    playerRef.mGameRef.setCompressorSteps(newField.compressorSteps);
+    gameRef.setGrid(newField.gameField, newField.compressorSteps);
 
     /*
      * Set the launcher bubble colors.
      */
-    playerRef.mGameRef.setLaunchBubbleColors(newField.launchBubbleColor,
-                                             newField.nextBubbleColor,
-                                             playerRef.mGameRef.getNewNextColor());
+    gameRef.setLaunchBubbleColors(newField.launchBubbleColor,
+                                  newField.nextBubbleColor,
+                                  gameRef.getNewNextColor());
 
     /*
      * Set the current value of the attack bar.
      */
-    playerRef.mGameRef.malusBar.setAttackBubbles(newField.attackBarBubbles,
-                                                 null);
+    gameRef.malusBar.setAttackBubbles(newField.attackBarBubbles, null);
   }
 
   public void surfaceChanged(SurfaceHolder holder, int format, int width,
