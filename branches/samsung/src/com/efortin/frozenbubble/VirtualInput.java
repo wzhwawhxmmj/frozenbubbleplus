@@ -52,9 +52,9 @@
 
 package com.efortin.frozenbubble;
 
-import com.jfedor.frozenbubble.FrozenGame;
-
 import android.view.KeyEvent;
+
+import com.jfedor.frozenbubble.FrozenGame;
 
 /**
  * This class encapsulates variables used to interface all possible
