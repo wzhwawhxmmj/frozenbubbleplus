@@ -52,9 +52,9 @@
 
 package org.gsanson.frozenbubble;
 
-import com.jfedor.frozenbubble.BubbleSprite;
-
 import android.view.KeyEvent;
+
+import com.jfedor.frozenbubble.BubbleSprite;
 
 public class Freile implements Opponent, Runnable {
 

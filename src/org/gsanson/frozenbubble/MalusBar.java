@@ -52,12 +52,12 @@
 
 package org.gsanson.frozenbubble;
 
-import com.jfedor.frozenbubble.BmpWrap;
-import com.jfedor.frozenbubble.Sprite;
-
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.os.Bundle;
+
+import com.jfedor.frozenbubble.BmpWrap;
+import com.jfedor.frozenbubble.Sprite;
 
 public class MalusBar extends Sprite {
 
