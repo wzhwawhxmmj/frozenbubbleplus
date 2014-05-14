@@ -99,7 +99,7 @@ public class NetworkGameManager extends Thread
   public static final int  ACTION_BYTES = 37;
   public static final int  FIELD_BYTES  = 112;
   public static final int  PREFS_BYTES  = Preferences.PREFS_BYTES;
-  public static final int  STATUS_BYTES = 13;
+  public static final int  STATUS_BYTES = 14;
 
   /*
    * Network game management definitions.
@@ -223,7 +223,7 @@ public class NetworkGameManager extends Thread
      */
     localStatus = new PlayerStatus((byte) localPlayer.playerID,
                                    (short) 0, (short) 1,
-                                   false, false, requestPrefs,
+                                   false, false, false, requestPrefs,
                                    (short) 0, (short) 0);
   }
 
@@ -551,9 +551,10 @@ public class NetworkGameManager extends Thread
     public short localActionID;
     public short remoteActionID;
     /*
-     * The following flag is used to manage game synchronization.
+     * The following flags are used to manage game synchronization.
      */
     public boolean readyToPlay;
+    public boolean gameWonLost;
     /*
      * The following flags are used to request data from the remote
      * player(s) - either their game preferences, or game field data.
@@ -576,6 +577,7 @@ public class NetworkGameManager extends Thread
      * @param localId - the local last transmitted action ID.
      * @param remoteId - the remote current pending action ID.
      * @param ready - player is ready to play flag.
+     * @param wonLost - player won or lost the game.
      * @param field - request field data.
      * @param prefs - request preference data.
      * @param localCRC - the local player bubble grid CRC16 checksum.
@@ -585,11 +587,13 @@ public class NetworkGameManager extends Thread
                         short localId,
                         short remoteId,
                         boolean ready,
+                        boolean wonLost,
                         boolean field,
                         boolean prefs,
                         short localCRC,
                         short remoteCRC) {
-      init(id, localId, remoteId, ready, field, prefs, localCRC, remoteCRC);
+      init(id, localId, remoteId, ready, wonLost, field, prefs,
+           localCRC, remoteCRC);
     }
 
     /**
@@ -619,6 +623,7 @@ public class NetworkGameManager extends Thread
         this.localActionID   = status.localActionID;
         this.remoteActionID  = status.remoteActionID;
         this.readyToPlay     = status.readyToPlay;
+        this.gameWonLost     = status.gameWonLost;
         this.fieldRequest    = status.fieldRequest;
         this.prefsRequest    = status.prefsRequest;
         this.localChecksum   = status.localChecksum;
@@ -644,6 +649,7 @@ public class NetworkGameManager extends Thread
         shortBytes[1]        = buffer[startIndex++];
         this.remoteActionID  = toShort(shortBytes);
         this.readyToPlay     = buffer[startIndex++] == 1;
+        this.gameWonLost     = buffer[startIndex++] == 1;
         this.fieldRequest    = buffer[startIndex++] == 1;
         this.prefsRequest    = buffer[startIndex++] == 1;
         shortBytes[0]        = buffer[startIndex++];
@@ -673,6 +679,7 @@ public class NetworkGameManager extends Thread
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
         buffer[startIndex++] = (byte) ((this.readyToPlay == true)?1:0);
+        buffer[startIndex++] = (byte) ((this.gameWonLost == true)?1:0);
         buffer[startIndex++] = (byte) ((this.fieldRequest == true)?1:0);
         buffer[startIndex++] = (byte) ((this.prefsRequest == true)?1:0);
         toByteArray(this.localChecksum, shortBytes);
@@ -690,6 +697,7 @@ public class NetworkGameManager extends Thread
      * @param localId - the local last transmitted action ID.
      * @param remoteId - the remote current pending action ID.
      * @param ready - player is ready to play.
+     * @param wonLost - player won or lost the game.
      * @param field - request field data
      * @param prefs - request preference data
      * @param localCRC - the local player bubble grid CRC16 checksum.
@@ -699,6 +707,7 @@ public class NetworkGameManager extends Thread
                      short localId,
                      short remoteId,
                      boolean ready,
+                     boolean wonLost,
                      boolean field,
                      boolean prefs,
                      short localCRC,
@@ -708,6 +717,7 @@ public class NetworkGameManager extends Thread
       this.localActionID   = localId;
       this.remoteActionID  = remoteId;
       this.readyToPlay     = ready;
+      this.gameWonLost     = wonLost;
       this.fieldRequest    = field;
       this.prefsRequest    = prefs;
       this.localChecksum   = localCRC;
@@ -953,6 +963,17 @@ public class NetworkGameManager extends Thread
       buffer[startIndex++] = intBytes[2];
       buffer[startIndex++] = intBytes[3];
     }
+  }
+
+  /**
+   * Check if the network game is finished.  The game is finished when
+   * each player has either won or lost the game.
+   */
+  public boolean getGameIsFinished() {
+    if (remoteStatus == null)
+      return false;
+    else
+      return localStatus.gameWonLost && remoteStatus.gameWonLost;
   }
 
   /**
@@ -1375,6 +1396,7 @@ public class NetworkGameManager extends Thread
                 !localStatus.fieldRequest &&
                 !localStatus.readyToPlay) {
               localStatus.readyToPlay = true;
+              localStatus.gameWonLost = false;
             }
             /*
              * The local player status was updated.  Set the status
@@ -1390,10 +1412,10 @@ public class NetworkGameManager extends Thread
 
         /*
          * If the message contains a remote player game action, add it
-         * to the appropriate action list.
+         * to the remote player action list if we are ready to play.
          */
         if ((msgId == MSG_ID_ACTION) && (length == (ACTION_BYTES + 2))) {
-          if (playerId == remotePlayer.playerID) {
+          if (localStatus.readyToPlay && (playerId == remotePlayer.playerID)) {
             addAction(new PlayerAction(buffer, 2));
           }
         }
@@ -1415,6 +1437,7 @@ public class NetworkGameManager extends Thread
             localStatus.fieldRequest = false;
             if (!localStatus.prefsRequest && !localStatus.readyToPlay) {
               localStatus.readyToPlay = true;
+              localStatus.gameWonLost = false;
             }
             /*
              * The local player status was updated.  Set the status
@@ -1571,6 +1594,27 @@ public class NetworkGameManager extends Thread
    */
   public void setActionTimeout(long timeout) {
     actionTxTime = System.currentTimeMillis() + timeout;
+  }
+
+  /**
+   * Set the flag to indicate that the local player won or lost the
+   * network game.  Only set it once, otherwise calling this function
+   * multiple times in succession would flood the network with player
+   * status messages due to how an immediate local player status message
+   * transmission is initiated whenever the player status changes.
+   */
+  public void setGameIsFinished() {
+    if (!localStatus.gameWonLost) {
+      localStatus.gameWonLost = true;
+      /*
+       * The local player status was updated.  Set the status timeout to
+       * expire immediately and wake up the network manager thread.
+       */
+      setStatusTimeout(0L);
+      synchronized(this) {
+        notify();
+      }
+    }
   }
 
   /**
