@@ -2036,7 +2036,13 @@ public class GameView extends SurfaceView
            * inconsistent state.
            */
           if (c != null) {
-            mSurfaceHolder.unlockCanvasAndPost(c);
+            try {
+              mSurfaceHolder.unlockCanvasAndPost(c);
+            } catch (IllegalStateException ise) {
+              /*
+               * Surface has already been released.
+               */
+            }
           }
         }
       }
