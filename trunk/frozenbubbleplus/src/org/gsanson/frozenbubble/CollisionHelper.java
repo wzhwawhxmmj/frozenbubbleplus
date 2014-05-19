@@ -369,13 +369,25 @@ public class CollisionHelper {
    * @param alreadyChecked
    * @return
    */
-  private static boolean isColor(int x, int y, int color, BubbleSprite[][] grid, boolean[][] alreadyChecked) {
+  private static boolean isColor(int x, int y, int color,
+                                 BubbleSprite[][] grid,
+                                 boolean[][] alreadyChecked) {
     boolean isColor = false;
+    boolean checked = false;
 
-    if (grid[x][y] != null && grid[x][y].getColor() == color && (alreadyChecked == null || !alreadyChecked[x][y])) {
-      isColor = true;
-      if (alreadyChecked != null) {
-        alreadyChecked[x][y] = true;
+    if (alreadyChecked != null) {
+      checked = alreadyChecked[x][y];
+    }
+
+    if (grid != null) {
+      if (grid[x][y] != null) {
+        if ((grid[x][y].getColor() == color) &&
+            ((alreadyChecked == null) || !checked)) {
+          isColor = true;
+          if (alreadyChecked != null) {
+            alreadyChecked[x][y] = true;
+          }
+        }
       }
     }
 

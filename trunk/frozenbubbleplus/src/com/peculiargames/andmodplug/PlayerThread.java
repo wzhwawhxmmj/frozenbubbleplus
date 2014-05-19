@@ -568,16 +568,37 @@ public class PlayerThread extends Thread {
       mPlaying = true;
     }
 
-    /*
-     * Main play loop.
-     */
     if ((mMytrack != null) && (mBuffer != null)) {
-      mMytrack.play();
+      boolean startedPlaying = false;
+      while (mRunning && !startedPlaying) {
+        try {
+          mMytrack.play();
+          startedPlaying = true;
+        } catch (IllegalStateException ise) {
+          /*
+           * The audio track isn't initialized yet.  Wait a short
+           * duration, then try again.
+           */
+          startedPlaying = false;
+          synchronized(this) {
+            try {
+              sleep(20);
+            } catch (InterruptedException ie) {
+              /*
+               * This is expected behavior.
+               */
+            }
+          }
+        }
+      }
     }
     else {
       mRunning = false;
     }
 
+    /*
+     * Main play loop.
+     */
     while (mRunning) {
       while (mPlaying) {
         /*
@@ -639,8 +660,10 @@ public class PlayerThread extends Thread {
             if (mFlushedData) {
               sleep(20);
             }
-          } catch (Exception e) {
-            e.getCause().printStackTrace();
+          } catch (InterruptedException ie) {
+            /*
+             * This is expected behavior.
+             */
           }
         }
       }
