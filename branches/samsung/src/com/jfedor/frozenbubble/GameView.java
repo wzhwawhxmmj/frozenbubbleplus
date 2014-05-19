@@ -988,6 +988,7 @@ public class GameView extends SurfaceView
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
                                     mHighScoreManager);
+      mPlayer1.setGameRef(mFrozenGame1);
       mFrozenGame2 = null;
       mNetworkManager = null;
       mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
@@ -1003,9 +1004,9 @@ public class GameView extends SurfaceView
          * the pointers to null to facilitate garbage collection.  So I did
          * and the crashes went away.
          */
+        mImagesReady = false;
         mFrozenGame1 = null;
         mFrozenGame2 = null;
-        mImagesReady = false;
 
         boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
         mBackgroundOrig.recycle();
@@ -1196,7 +1197,7 @@ public class GameView extends SurfaceView
 
     private void doDraw(Canvas canvas) {
       //Log.i("frozen-bubble", "doDraw()");
-      if (! mImagesReady) {
+      if (!mImagesReady) {
         //Log.i("frozen-bubble", "!mImagesReady, returning");
         return;
       }
@@ -1205,9 +1206,13 @@ public class GameView extends SurfaceView
         canvas.drawRGB(0, 0, 0);
       }
       drawBackground(canvas);
-      mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
+      if (mFrozenGame1 != null) {
+        mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
+      }
       if (numPlayers > 1) {
-        mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
+        if (mFrozenGame2 != null) {
+          mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
+        }
         drawWinTotals(canvas);
       }
       else {
@@ -1796,6 +1801,8 @@ public class GameView extends SurfaceView
           mLevelManager.goToFirstLevel();
         }
 
+        mImagesReady = false;
+        mPlayer1.setGameRef(null);
         mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                       mFrozenBubbles, mTargetedBubbles,
                                       mBubbleBlink, mGameWon, mGameLost,
@@ -1809,6 +1816,7 @@ public class GameView extends SurfaceView
         mPlayer1.setGameRef(mFrozenGame1);
 
         if (numPlayers > 1) {
+          mPlayer2.setGameRef(null);
           mFrozenGame2 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                         mFrozenBubbles, mTargetedBubbles,
                                         mBubbleBlink, mGameWon, mGameLost,
@@ -1827,6 +1835,8 @@ public class GameView extends SurfaceView
           }
         }
 
+        mImagesReady = true;
+
         if (mHighScoreManager != null) {
           mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
         }
@@ -1834,6 +1844,8 @@ public class GameView extends SurfaceView
     }
 
     private void nextLevel() {
+      mImagesReady = false;
+      mPlayer1.setGameRef(null);
       mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
                                     mFrozenBubbles, mTargetedBubbles,
                                     mBubbleBlink, mGameWon, mGameLost,
@@ -1841,6 +1853,8 @@ public class GameView extends SurfaceView
                                     mCompressorHead, mCompressor, mLauncher,
                                     mSoundManager, mLevelManager,
                                     mHighScoreManager);
+      mPlayer1.setGameRef(mFrozenGame1);
+      mImagesReady = true;
       if (mHighScoreManager != null) {
         mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
       }
@@ -1922,13 +1936,19 @@ public class GameView extends SurfaceView
     public void restoreState(Bundle map) {
       synchronized(mSurfaceHolder) {
         setState(stateEnum.PAUSED);
-        mFrozenGame1.restoreState(map, mImageList);
+        if (mFrozenGame1 != null) {
+          mFrozenGame1.restoreState(map, mImageList);
+        }
         if (numPlayers > 1) {
           numPlayer1GamesWon = map.getInt("numPlayer1GamesWon", 0);
           numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
-          mFrozenGame2.restoreState(map, mImageList);
+          if (mFrozenGame2 != null) {
+            mFrozenGame2.restoreState(map, mImageList);
+          }
         }
-        mLevelManager.restoreState(map);
+        if (mLevelManager != null) {
+          mLevelManager.restoreState(map);
+        }
         if (mHighScoreManager != null) {
           mHighScoreManager.restoreState(map);
         }
@@ -2030,17 +2050,23 @@ public class GameView extends SurfaceView
     public Bundle saveState(Bundle map) {
       synchronized(mSurfaceHolder) {
         if (map != null) {
-          mFrozenGame1.saveState(map);
+          if (mFrozenGame1 != null) {
+            mFrozenGame1.saveState(map);
+          }
           if (numPlayers > 1) {
             map.putInt("numPlayers", 2);
             map.putInt("numPlayer1GamesWon", numPlayer1GamesWon);
             map.putInt("numPlayer2GamesWon", numPlayer2GamesWon);
-            mFrozenGame2.saveState(map);
+            if (mFrozenGame2 != null) {
+              mFrozenGame2.saveState(map);
+            }
           }
           else {
             map.putInt("numPlayers", 1);
           }
-          mLevelManager.saveState(map);
+          if (mLevelManager != null) {
+            mLevelManager.saveState(map);
+          }
           if (mHighScoreManager != null) {
             mHighScoreManager.saveState(map);
           }
@@ -2071,12 +2097,20 @@ public class GameView extends SurfaceView
      */
     public void setPlayerAction(PlayerAction newAction) {
       VirtualInput playerRef;
+      FrozenGame   gameRef;
 
       if (newAction.playerID == VirtualInput.PLAYER1) {
         playerRef = mPlayer1;
       }
       else if (newAction.playerID == VirtualInput.PLAYER2) {
         playerRef = mPlayer2;
+      }
+      else {
+        return;
+      }
+
+      if (playerRef.mGameRef != null) {
+        gameRef = playerRef.mGameRef;
       }
       else {
         return;
@@ -2095,21 +2129,21 @@ public class GameView extends SurfaceView
             (newAction.nextBubbleColor    <  8) &&
             (newAction.newNextBubbleColor > -1) &&
             (newAction.newNextBubbleColor <  8)) {
-          playerRef.mGameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
-                                                   newAction.nextBubbleColor,
-                                                   newAction.newNextBubbleColor);
+          gameRef.setLaunchBubbleColors(newAction.launchBubbleColor,
+                                        newAction.nextBubbleColor,
+                                        newAction.newNextBubbleColor);
         }
 
         /*
          * Set the launcher aim position.
          */
-        playerRef.mGameRef.setPosition(newAction.aimPosition);
+        gameRef.setPosition(newAction.aimPosition);
 
         /*
          * Process a compressor lower request.
          */
         if (newAction.compress) {
-          playerRef.mGameRef.lowerCompressor(true);
+          gameRef.lowerCompressor(true);
         }
 
         /*
@@ -2139,14 +2173,16 @@ public class GameView extends SurfaceView
          * Set the current value of the attack bar.
          */
         if (newAction.attackBarBubbles > -1) {
-          playerRef.mGameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
-                                                       newAction.attackBubbles);
+          gameRef.malusBar.setAttackBubbles(newAction.attackBarBubbles,
+                                            newAction.attackBubbles);
         }
       }
     }
 
     public void setPosition(double value) {
-      mLocalInput.mGameRef.setPosition(value);
+      if (mLocalInput.mGameRef != null) {
+        mLocalInput.mGameRef.setPosition(value);
+      }
     }
 
     public void setRunning(boolean b) {
