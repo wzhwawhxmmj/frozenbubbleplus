@@ -177,10 +177,14 @@ public class PlayerThread extends Thread {
    * PlayerThread object in whichever Activity shuts it down.
    */
   public  boolean mPlayerValid = false;
-  private boolean mWaitFlag    = false;
-  private boolean mFlushedData = false;
-  private boolean mPlaying     = true;
-  private boolean mRunning     = true;
+
+  /*
+   * Private audio playback control flags.
+   */
+  private boolean mFlushed   = false;
+  private boolean mPaused    = false;
+  private boolean mPausedWas = false;
+  private boolean mRunning   = true;
 
   /*
    * Android will report the minimum buffer size needed to keep playing
@@ -189,8 +193,8 @@ public class PlayerThread extends Thread {
   private int mMinbuffer;
   private int mModsize;  // holds the size in bytes of the mod file
   private final static int BUFFERSIZE = 20000;  // the sample buffer size
-  private AudioTrack mMytrack;
-  private boolean mLoad_ok;
+  private AudioTrack mMyTrack;
+  private boolean mLoadOk;
 
   /*
    * Variables for storing info about the MOD file currently loaded.
@@ -205,12 +209,12 @@ public class PlayerThread extends Thread {
   /*
    * Track if player has started (after loading a new mod).
    */
-  private boolean sPlayerStarted;
+  private boolean playerStarted;
 
   /*
    * Start the player in a paused state?
    */
-  private boolean mStart_paused;
+  private boolean startPaused;
 
   /*
    * Audio sampling rate definitions.
@@ -332,10 +336,10 @@ public class PlayerThread extends Thread {
     /*
      * No Activity owns this player yet.
      */
-    mMytrack       = null;
-    mOwner         = null;
-    mStart_paused  = false;
-    sPlayerStarted = false;
+    mMyTrack      = null;
+    mOwner        = null;
+    startPaused   = false;
+    playerStarted = false;
 
     /*
      * Try to get the audio track.
@@ -366,6 +370,23 @@ public class PlayerThread extends Thread {
   }
 
   /**
+   * Close the native internal tracker library (libmodplug) and
+   * deallocate any resources.
+   */
+  public void CloseLIBMODPLUG() {
+    ModPlug_JUnload();
+    ModPlug_CloseDown();
+    /*
+     * Release the audio track resources.
+     */
+    if (mMyTrack != null)
+    {
+      mMyTrack.release();
+      mMyTrack = null;
+    }
+  }
+
+  /**
    * Try to get an Android stereo audio track used by the various
    * constructors.
    */
@@ -390,7 +411,7 @@ public class PlayerThread extends Thread {
           mMinbuffer = AudioTrack.getMinBufferSize(try_rates[rateindex],
             AudioFormat.CHANNEL_CONFIGURATION_STEREO,
             AudioFormat.ENCODING_PCM_16BIT);
-          mMytrack = new AudioTrack(AudioManager.STREAM_MUSIC,
+          mMyTrack = new AudioTrack(AudioManager.STREAM_MUSIC,
                                     try_rates[rateindex],
                                     AudioFormat.CHANNEL_CONFIGURATION_STEREO,
                                     AudioFormat.ENCODING_PCM_16BIT,
@@ -409,7 +430,7 @@ public class PlayerThread extends Thread {
       mMinbuffer = AudioTrack.getMinBufferSize(desiredrate,
         AudioFormat.CHANNEL_CONFIGURATION_STEREO,
         AudioFormat.ENCODING_PCM_16BIT);
-      mMytrack = new AudioTrack(AudioManager.STREAM_MUSIC, desiredrate,
+      mMyTrack = new AudioTrack(AudioManager.STREAM_MUSIC, desiredrate,
                                 AudioFormat.CHANNEL_CONFIGURATION_STEREO,
                                 AudioFormat.ENCODING_PCM_16BIT,
                                 mMinbuffer, AudioTrack.MODE_STREAM);
@@ -426,7 +447,7 @@ public class PlayerThread extends Thread {
       mRate = desiredrate;
     }
 
-    if (mMytrack == null) {
+    if (mMyTrack == null) {
       mPlayerValid = false;
       /*
        * Couldn't get an audio track so return false to caller.
@@ -434,15 +455,15 @@ public class PlayerThread extends Thread {
       return false;
     }
     else {
-      switch(mMytrack.getState()) {
+      switch(mMyTrack.getState()) {
         case AudioTrack.STATE_INITIALIZED:
            break;
         default:
-          mMytrack = new AudioTrack(AudioManager.STREAM_MUSIC, mRate,
+          mMyTrack = new AudioTrack(AudioManager.STREAM_MUSIC, mRate,
                                     AudioFormat.CHANNEL_CONFIGURATION_STEREO,
                                     AudioFormat.ENCODING_PCM_16BIT,
                                     mMinbuffer*2, AudioTrack.MODE_STREAM);
-          switch(mMytrack.getState()) {
+          switch(mMyTrack.getState()) {
             case AudioTrack.STATE_INITIALIZED:
               break;
             default:
@@ -487,7 +508,7 @@ public class PlayerThread extends Thread {
      * I assume music will actually start playing...
      */
     synchronized(this) {
-      sPlayerStarted = false;
+      playerStarted = false;
     }
   }
 
@@ -497,15 +518,102 @@ public class PlayerThread extends Thread {
    * and number of tracks, track playback location, etc.).
    */
   private void LoadModuleInfo(byte[] modData) {
-    mLoad_ok = ModPlug_JLoad(modData, modData.length);
+    mLoadOk = ModPlug_JLoad(modData, modData.length);
 
-    if (mLoad_ok) {
+    if (mLoadOk) {
       mModname        = ModPlug_JGetName();
       mNumChannels    = ModPlug_JNumChannels();
       posWas          = 0;
       songFinished    = false;
       songFinishedWas = false;
     }
+  }
+
+  /*
+   * MOD file info retrieval methods.
+   */
+
+  /**
+   * Get the name of the song.
+   * @return the name of the song (from the MOD/XM file header)
+   */
+  public String getModName() {
+    return mModname;
+  }
+
+  /**
+   * Get the number of channels used in the song (MOD/XM songs
+   * typically use from 4 to 32 channels in a pattern, mixed together
+   * for awesomeness).
+   * @return the number of channels the song uses
+   */
+  public int getNumChannels() {
+    return mNumChannels;
+  }
+
+  /**
+   * Get the file size of the MOD/XM song.
+   * @return the size of the song file
+   */
+  public int getModSize() {
+    return mModsize;
+  }
+
+  public int getRate() {
+    return mRate;
+  }
+
+  /**
+   * Mark this playerthread as invalid (typically when we're closing
+   * down the main Activity).
+   */
+  public void InvalidatePlayer() {
+    synchronized(sPVlock) {
+      mPlayerValid = false;
+    }
+  }
+
+  /**
+   * Pauses playback of the current song.
+   * @return <code>true</code> if the song was successfully paused.
+   */
+  public boolean PausePlay() {
+    boolean paused = false;
+
+    /*
+     * Set the control flags to stop playback and suspend the thread.
+     */
+    mPaused    = true;
+    mPausedWas = true;
+
+    if (mMyTrack != null)
+    {
+      /*
+       * This check is usually not needed before stop()ing the audio
+       * track, but we seem to get an uninitialized audio track here
+       * occasionally, throwing an IllegalStateException.
+       */
+      if (mMyTrack.getState() == AudioTrack.STATE_INITIALIZED) try {
+        mMyTrack.stop();
+        paused = true;
+      } catch (IllegalStateException ise) {
+        /*
+         * This is a spurious exception that can be mostly ignored, with
+         * the only drawback being that audio may remain playing.
+         * Attempt to flush the audio track buffer so it doesn't start
+         * looping like a broken record.  The flush() method does not
+         * throw an exception since it will simply do nothing if the
+         * audio track state does not permit it.
+         */
+        mMyTrack.flush();
+        paused = false;
+      }
+
+      synchronized(this) {
+        this.notify();
+      }
+    }
+    return paused;
   }
 
   /**
@@ -527,27 +635,17 @@ public class PlayerThread extends Thread {
   }
 
   /**
-   * Mark this playerthread as invalid (typically when we're closing
-   * down the main Activity).
-   */
-  public void InvalidatePlayer() {
-    synchronized(sPVlock) {
-      mPlayerValid = false;
-    }
-  }
-
-  /**
    * The thread's run() call, where the modules are played.
    * <p>Start playing the MOD/XM song (hopefully it's been previously
    * loaded using <code>LoadMODData()</code> or
    * <code>LoadMODResource()</code> ;)
    */
   public void run() {
-    boolean pattern_change = false;
+    boolean patternChange = false;
     /*
      * Set up our audio sample buffer(libmodplug processes the mod file
      * and fills this with sample data).
-     * 
+     *
      * For proper error checking, this should check that BUFFERSIZE is
      * greater than the minbuffer size the audio system reports in the
      * contructors...
@@ -561,18 +659,20 @@ public class PlayerThread extends Thread {
       mBuffer = null;
     }
 
-    if (mStart_paused) {
-      mPlaying = false;
+    if (startPaused) {
+      mPaused    = true;
+      mPausedWas = true;
     }
     else {
-      mPlaying = true;
+      mPaused    = false;
+      mPausedWas = false;
     }
 
-    if ((mMytrack != null) && (mBuffer != null)) {
+    if ((mMyTrack != null) && (mBuffer != null)) {
       boolean startedPlaying = false;
       while (mRunning && !startedPlaying) {
         try {
-          mMytrack.play();
+          mMyTrack.play();
           startedPlaying = true;
         } catch (IllegalStateException ise) {
           /*
@@ -600,16 +700,38 @@ public class PlayerThread extends Thread {
      * Main play loop.
      */
     while (mRunning) {
-      while (mPlaying) {
+      while (!mPaused) {
+        /*
+         * To prevent unwanted playback of prior audio track buffer data,
+         * only unpause the audio track after sufficient time has elapsed
+         * to permit the audio stream to flush the previous audio data if
+         * it was unloaded.  Thus playback is resumed here where the audio
+         * track control timing is managed correctly.
+         */
+        if (mPausedWas) {
+          mPausedWas = false;
+          if ((mMyTrack != null) && mFlushed) {
+            try {
+              sleep(20);
+            } catch (InterruptedException ie) {
+              /*
+               * This is expected behavior.
+               */
+            }
+          }
+          mFlushed = false;
+          unPause();
+        }
+
         /*
          * Pre-load another packet.
          */
         synchronized(sRDlock) {
-          if (mRunning && mPlaying && mLoad_ok) {
+          if (mRunning && !mPaused && mLoadOk) {
             ModPlug_JGetSoundData(mBuffer, BUFFERSIZE);
   
             if (ModPlug_CheckPatternChange()) {
-              pattern_change = true;
+              patternChange = true;
             }
 
             CheckSongCompleted();
@@ -620,21 +742,21 @@ public class PlayerThread extends Thread {
          * Pass a packet of sound sample data to the audio track
          * (blocks until audio track can accept the new data).
          */
-        mMytrack.write(mBuffer, 0, BUFFERSIZE);
+        mMyTrack.write(mBuffer, 0, BUFFERSIZE);
 
         /*
          * Send player events.
          */
         synchronized(this) {
-          if (!sPlayerStarted) {
-            sPlayerStarted = true;
+          if (!playerStarted) {
+            playerStarted = true;
             if (mPlayerListener != null) {
               mPlayerListener.onPlayerEvent(eventEnum.PLAYER_STARTED);
             }
           }
 
-          if (pattern_change) {
-            pattern_change = false;
+          if (patternChange) {
+            patternChange = false;
             if (mPlayerListener != null) {
               mPlayerListener.onPlayerEvent(eventEnum.PATTERN_CHANGE);
             }
@@ -653,13 +775,9 @@ public class PlayerThread extends Thread {
        * Wait until notify() is called.
        */
       synchronized(this) {
-        if (mWaitFlag) {
+        if (mPaused) {
           try {
             wait();
-
-            if (mFlushedData) {
-              sleep(20);
-            }
           } catch (InterruptedException ie) {
             /*
              * This is expected behavior.
@@ -667,41 +785,16 @@ public class PlayerThread extends Thread {
           }
         }
       }
-      /*
-       * Clear flushed flag.
-       */
-      mFlushedData = false;
     }
+
     /*
      * Release the audio track resources.
      */
-    if (mMytrack != null)
+    if (mMyTrack != null)
     {
-      mMytrack.release();
-      mMytrack = null;
+      mMyTrack.release();
+      mMyTrack = null;
     }
-  }
-
-  /*
-   * MOD file info retrieval methods.
-   */
-
-  /**
-   * Get the name of the song.
-   * @return the name of the song (from the MOD/XM file header)
-   */
-  public String getModName() {
-    return mModname;
-  }
-
-  /**
-   * Get the number of channels used in the song (MOD/XM songs
-   * typically use from 4 to 32 channels in a pattern, mixed together
-   * for awesomeness).
-   * @return the number of channels the song uses
-   */
-  public int getNumChannels() {
-    return mNumChannels;
   }
 
   /**
@@ -712,67 +805,6 @@ public class PlayerThread extends Thread {
   }
 
   /**
-   * Get the file size of the MOD/XM song.
-   * @return the size of the song file
-   */
-  public int getModSize() {
-    return mModsize;
-  }
-
-  public int getRate() {
-    return mRate;
-  }
-
-  /**
-   * Pauses playback of the current song.
-   */
-  public void PausePlay() {
-    mPlaying = false;
-    if (mMytrack != null)
-    {
-      /*
-       * This check is usually not needed before stop()ing the audio
-       * track, but seem to get an uninitialized audio track here
-       * occasionally, generating an IllegalStateException.
-       */
-      if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED) {
-        mMytrack.stop();
-      }
-      mWaitFlag = true;
-
-      synchronized(this) {
-        this.notify();
-      }
-    }
-  }
-
-  /**
-   * Resumes playback of the current song.
-   */
-  public void UnPausePlay() {
-    if (mMytrack != null)
-    {
-      mMytrack.play();
-      mPlaying  = true;
-      mWaitFlag = false;
-
-      synchronized(this) {
-        this.notify();
-      }
-    }
-  }
-
-  /**
-   * Flush the audio data still left in mMytrack.
-   */
-  public void Flush() {
-    if (!mPlaying) {
-      mMytrack.flush();
-      mFlushedData = true;
-    }
-  }
-
-  /**
    * Sets playback volume for the MOD/XM player.
    * @param vol - An integer from 0 (sound off) to 255 (full volume).
    */
@@ -780,7 +812,7 @@ public class PlayerThread extends Thread {
     vol = vol>>5;
     if (vol>7) vol = 7;
     if (vol<0) vol = 0;
-    mMytrack.setStereoVolume(sVolume_floats[vol], sVolume_floats[vol]);
+    mMyTrack.setStereoVolume(sVolume_floats[vol], sVolume_floats[vol]);
   }
 
   /**
@@ -791,7 +823,7 @@ public class PlayerThread extends Thread {
   public void setVolume(float vol) {
     if (vol>1.0f) vol = 1.0f;
     if (vol<0) vol = 0;
-    mMytrack.setStereoVolume(vol, vol);
+    mMyTrack.setStereoVolume(vol, vol);
   }
 
   /**
@@ -806,7 +838,7 @@ public class PlayerThread extends Thread {
      * Set before calling the thread's start() method.  This will cause
      * it to start in paused mode.
      */
-    mStart_paused = flag;
+    startPaused = flag;
   }
 
   /**
@@ -821,16 +853,17 @@ public class PlayerThread extends Thread {
     /*
      * Stops the music player thread (see run() above).
      */
-    mPlaying = false;
-    mRunning = false;
+    mRunning   = false;
+    mPaused    = false;
+    mPausedWas = false;
     /*
      * This check is usually not needed before stop()ing the audio
      * track, but seem to get an uninitialized audio track here
      * occasionally, generating an IllegalStateException.
      */
-    if (mMytrack != null) try {
-      if (mMytrack.getState() == AudioTrack.STATE_INITIALIZED) {
-        mMytrack.stop();
+    if (mMyTrack != null) try {
+      if (mMyTrack.getState() == AudioTrack.STATE_INITIALIZED) {
+        mMyTrack.stop();
       }
     } catch (NullPointerException npe) {
       npe.printStackTrace();
@@ -839,28 +872,42 @@ public class PlayerThread extends Thread {
       ise.printStackTrace();
     }
 
-    mPlayerValid = false;
-    mWaitFlag = false;
-
     synchronized(this) {
       this.notify();
     }
   }
 
   /**
-   * Close the native internal tracker library (libmodplug) and
-   * deallocate any resources.
+   * Resumes playback of the current song.
+   * @return <code>true</code> if the song was successfully unpaused.
    */
-  public void CloseLIBMODPLUG() {
-    ModPlug_JUnload();
-    ModPlug_CloseDown();
-    /*
-     * Release the audio track resources.
-     */
-    if (mMytrack != null)
+  private boolean unPause() {
+    boolean unPaused = false;
+    if (mMyTrack != null)
     {
-      mMytrack.release();
-      mMytrack = null;
+      try {
+        mMyTrack.play();
+        unPaused = true;
+      } catch (IllegalStateException ise) {
+        /*
+         * This is a spurious exception, with the only drawback being
+         * that audio will remain stopped.  Nothing to do here but
+         * continue gracefully and wait for the next attempt.
+         */
+        unPaused = false;
+      }
+    }
+    return unPaused;
+  }
+
+  /**
+   * Resumes playback of the current song.
+   */
+  public void UnPausePlay() {
+    mPaused = false;
+
+    synchronized(this) {
+      this.notify();
     }
   }
 
@@ -873,6 +920,7 @@ public class PlayerThread extends Thread {
   public void modifyTempo(int mt) {
     ModPlug_ChangeTempo(mt);
   }
+
   /**
    * EXPERIMENTAL method for setting the song's tempo to
    * <code>tempo</code>.
@@ -882,6 +930,7 @@ public class PlayerThread extends Thread {
   public void setTempo(int tempo) {
     ModPlug_SetTempo(tempo);
   }
+
   /**
    * EXPERIMENTAL: Get the default tempo from the song's header.
    * @return the tempo.
@@ -889,6 +938,7 @@ public class PlayerThread extends Thread {
   public int getSongDefaultTempo() {
     return ModPlug_GetNativeTempo();
   }
+
   /**
    * EXPERIMENTAL: Get the current "position" in song
    * @return the position.
@@ -896,6 +946,7 @@ public class PlayerThread extends Thread {
   public int getCurrentPos() {
     return ModPlug_GetCurrentPos();
   }
+
   /**
    * EXPERIMENTAL: Get the maximum "position" in song
    * @return the maximum position.
@@ -903,6 +954,7 @@ public class PlayerThread extends Thread {
   public int getMaxPos() {
     return ModPlug_GetMaxPos();
   }
+
   /**
    * EXPERIMENTAL: Get the current order
    * @return the order.
@@ -910,6 +962,7 @@ public class PlayerThread extends Thread {
   public int getCurrentOrder() {
     return ModPlug_GetCurrentOrder();
   }
+
   /**
    * EXPERIMENTAL: Get the current pattern
    * @return the pattern.
@@ -917,6 +970,7 @@ public class PlayerThread extends Thread {
   public int getCurrentPattern() {
     return ModPlug_GetCurrentPattern();
   }
+
   /**
    * EXPERIMENTAL: set the current pattern (pattern is changed but
    * plays from current row in pattern).
@@ -925,6 +979,7 @@ public class PlayerThread extends Thread {
   public void setCurrentPattern(int pattern) {
     ModPlug_SetCurrentPattern(pattern);
   }
+
   /**
    * EXPERIMENTAL: set the next pattern to play after current pattern
    * finishes.
@@ -934,6 +989,7 @@ public class PlayerThread extends Thread {
   public void setNextPattern(int pattern) {
     ModPlug_SetNextPattern(pattern);
   }
+
   /**
    * EXPERIMENTAL: Get the current row in the pattern
    * @return the row.
@@ -941,6 +997,7 @@ public class PlayerThread extends Thread {
   public int getCurrentRow() {
     return ModPlug_GetCurrentRow();
   }
+
   /**
    * EXPERIMENTAL: Set log printing flag
    * @param flag - <code>true</code> to start printing debug information
@@ -949,6 +1006,7 @@ public class PlayerThread extends Thread {
   public void setLogOutput(boolean flag) {
     ModPlug_LogOutput(flag);
   }
+
   /**
    * EXPERIMENTAL method to change patterns in a song (playing in
    * PATTERN LOOP mode). Waits for the currently playing pattern to
@@ -959,6 +1017,7 @@ public class PlayerThread extends Thread {
   public void changePattern(int newpattern) {
     ModPlug_ChangePattern(newpattern);
   }
+
   /**
    * EXPERIMENTAL method to change song to PATTERN LOOP mode, repeating
    * <code>pattern</code>
@@ -968,6 +1027,7 @@ public class PlayerThread extends Thread {
   public void repeatPattern(int pattern) {
     ModPlug_RepeatPattern(pattern);
   }
+
   /**
    * EXPERIMENTAL method to loop song in a group of patterns.
    * @param from - Start of pattern range to play in loop.
@@ -979,6 +1039,7 @@ public class PlayerThread extends Thread {
   public void setPatternLoopRange(int from, int to, int when) {
     ModPlug_SetPatternLoopRange(from, to, when);
   }
+
   /**
    * EXPERIMENTAL method to loop song the specified number of times.
    * @param number - The number of times to loop (-1 = forever).
@@ -986,6 +1047,7 @@ public class PlayerThread extends Thread {
   public void setLoopCount(int loopcount) {
     ModPlug_SetLoopCount(loopcount);
   }
+
   /**
    * EXPERIMENTAL method to set song to PATTERN LOOP mode, repeating
    * any pattern playing or subsequently set via
@@ -996,6 +1058,7 @@ public class PlayerThread extends Thread {
   public void setPatternLoopMode(boolean flag) {
     ModPlug_SetPatternLoopMode(flag);
   }
+
   /**
    * Unload the current mod from libmodplug, but make sure to wait
    * until any GetSoundData() call in the player thread has finished.
@@ -1010,8 +1073,12 @@ public class PlayerThread extends Thread {
      * run() above).
      */
     synchronized(sRDlock) {
-      mLoad_ok = false;
+      mLoadOk = false;
       ModPlug_JUnload();
+    }
+    if (mMyTrack != null) {
+      mMyTrack.flush();
+      mFlushed = true;
     }
   }
 
