@@ -709,7 +709,7 @@ public class PlayerThread extends Thread {
          */
         if (mRunning && !mPaused && mPausedWas) {
           mPausedWas = false;
-          if ((mMyTrack != null) && mFlushed) {
+          if (mFlushed) {
             try {
               sleep(200);
             } catch (InterruptedException ie) {
