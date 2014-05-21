@@ -183,7 +183,6 @@ public class MODResourcePlayer extends PlayerThread {
    * <code>onPause()</code> method.
    */
   public void StopAndClose() {
-    PausePlay();
     StopThread();
     /*
      * Now close and join() the MOD player thread.
