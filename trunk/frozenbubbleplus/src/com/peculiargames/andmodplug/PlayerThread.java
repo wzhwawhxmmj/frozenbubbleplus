@@ -597,22 +597,10 @@ public class PlayerThread extends Thread {
         mMyTrack.stop();
         paused = true;
       } catch (IllegalStateException ise) {
-        /*
-         * This is a spurious exception that can be mostly ignored, with
-         * the only drawback being that audio may remain playing.
-         * Attempt to flush the audio track buffer so it doesn't start
-         * looping like a broken record.  The flush() method does not
-         * throw an exception since it will simply do nothing if the
-         * audio track state does not permit it.
-         */
-        mMyTrack.flush();
         paused = false;
       }
-
-      synchronized(this) {
-        this.notify();
-      }
     }
+
     return paused;
   }
 
@@ -702,17 +690,18 @@ public class PlayerThread extends Thread {
     while (mRunning) {
       while (!mPaused) {
         /*
-         * To prevent unwanted playback of prior audio track buffer data,
-         * only unpause the audio track after sufficient time has elapsed
-         * to permit the audio stream to flush the previous audio data if
-         * it was unloaded.  Thus playback is resumed here where the audio
-         * track control timing is managed correctly.
+         * To prevent unwanted playback of prior audio track buffer
+         * data, only unpause the audio track after sufficient time has
+         * elapsed to permit the audio stream to flush the previous
+         * audio data if the song was unloaded.  Thus playback is
+         * resumed here where the audio track control timing is managed
+         * correctly.
          */
-        if (mPausedWas) {
+        if (mRunning && !mPaused && mPausedWas) {
           mPausedWas = false;
           if ((mMyTrack != null) && mFlushed) {
             try {
-              sleep(20);
+              sleep(100);
             } catch (InterruptedException ie) {
               /*
                * This is expected behavior.
@@ -742,7 +731,9 @@ public class PlayerThread extends Thread {
          * Pass a packet of sound sample data to the audio track
          * (blocks until audio track can accept the new data).
          */
-        mMyTrack.write(mBuffer, 0, BUFFERSIZE);
+        if (mRunning && !mPaused) {
+          mMyTrack.write(mBuffer, 0, BUFFERSIZE);
+        }
 
         /*
          * Send player events.
@@ -775,7 +766,7 @@ public class PlayerThread extends Thread {
        * Wait until notify() is called.
        */
       synchronized(this) {
-        if (mPaused) {
+        if (mRunning && mPaused) {
           try {
             wait();
           } catch (InterruptedException ie) {
@@ -842,8 +833,7 @@ public class PlayerThread extends Thread {
   }
 
   /**
-   * This completely stops the thread, which will also stop the current
-   * song if it is playing.
+   * This stops the current song if it is playing, and stops the thread.
    * <p>Typically the player should then be <code>join()</code>ed to
    * completely remove the thread from the application's Android
    * process, and also call <code>CloseLIBMODPLUG()</code> to close
@@ -853,24 +843,8 @@ public class PlayerThread extends Thread {
     /*
      * Stops the music player thread (see run() above).
      */
-    mRunning   = false;
-    mPaused    = false;
-    mPausedWas = false;
-    /*
-     * This check is usually not needed before stop()ing the audio
-     * track, but seem to get an uninitialized audio track here
-     * occasionally, generating an IllegalStateException.
-     */
-    if (mMyTrack != null) try {
-      if (mMyTrack.getState() == AudioTrack.STATE_INITIALIZED) {
-        mMyTrack.stop();
-      }
-    } catch (NullPointerException npe) {
-      npe.printStackTrace();
-    }
-      catch (IllegalStateException ise) {
-      ise.printStackTrace();
-    }
+    mRunning = false;
+    PausePlay();
 
     synchronized(this) {
       this.notify();
