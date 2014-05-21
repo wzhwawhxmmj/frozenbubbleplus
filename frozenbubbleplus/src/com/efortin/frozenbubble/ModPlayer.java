@@ -73,7 +73,7 @@ public class ModPlayer {
   public void destroyMusicPlayer() {
     synchronized(this) {
       if (resPlayer != null) {
-        resPlayer.StopAndClose();
+        resPlayer.stopAndClose();
         resPlayer = null;
       }
     }
@@ -89,11 +89,11 @@ public class ModPlayer {
   public void loadNewSong(int songId, boolean startPlaying) {
     if (resPlayer != null) {
       // Pause the current song.
-      resPlayer.PausePlay();
+      resPlayer.pausePlay(true);
       // Load the current MOD into the player.
-      resPlayer.LoadMODResource(songId, true);
+      resPlayer.loadModuleResource(songId, true);
       if (startPlaying)
-        resPlayer.UnPausePlay();
+        resPlayer.unPausePlay();
     }
   }
 
@@ -111,8 +111,8 @@ public class ModPlayer {
                               boolean startPaused) {
     // Create a new music player.
     resPlayer = new MODResourcePlayer(context);
-    // Load the mod file.
-    resPlayer.LoadMODResource(songId, false);
+    // Load the MOD file.
+    resPlayer.loadModuleResource(songId, false);
     // Loop the song forever.
     resPlayer.setLoopCount(PlayerThread.LOOP_SONG_FOREVER);
     // Turn the music on or off.
@@ -124,7 +124,7 @@ public class ModPlayer {
 
   public void pausePlay() {
     if (resPlayer != null)
-      resPlayer.PausePlay();
+      resPlayer.pausePlay(false);
   }
 
   public void setMusicOn(boolean musicOn) {
@@ -138,6 +138,6 @@ public class ModPlayer {
 
   public void unPausePlay() {
     if (resPlayer != null)
-      resPlayer.UnPausePlay();
+      resPlayer.unPausePlay();
   }
 }
