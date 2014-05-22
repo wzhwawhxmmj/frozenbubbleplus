@@ -196,11 +196,14 @@ public class Freile implements Opponent, Runnable {
   }
 
   public void run() {
+    int[][] gridOptions = new int[8][13];
+
     while (running) {
       if (computing) {
         computing = false;
-        if (mOpponentListener != null)
+        if (mOpponentListener != null) {
           mOpponentListener.onOpponentEvent(eventEnum.DONE_COMPUTING);
+        }
       }
 
       while (running && !computing) {
@@ -216,19 +219,23 @@ public class Freile implements Opponent, Runnable {
 
       if (running) {
         /*
-         * Compute grid options.
+         * Initialize grid options.
          */
-        int[][] gridOptions = new int[8][13];
-  
+        for (int i = 0; i < 8; i++) {
+          for (int j = 0; j < 13; j++) {
+            gridOptions[i][j] = 0;
+          }
+        }
+
         /*
          * Check for best option.
          */
         int bestOption = -1;
-        bestDirection = 0.;
-        colorSwap = false;
-  
         int newOption;
         int[] position = null;
+
+        bestDirection = 0.;
+        colorSwap = false;
         for (double direction = 0.;
              direction < MAX_LAUNCHER;
              direction += LAUNCHER_ROTATION) {
@@ -321,12 +328,10 @@ public class Freile implements Opponent, Runnable {
   private int[] getCollision(double direction) {
 
     int[] position = null;
-
-    double speedX = MOVE_SPEED * Math.cos(direction - Math.PI / 2.);
-    double speedY = MOVE_SPEED * Math.sin(direction - Math.PI / 2.);
-
-    double posX = 112.;
-    double posY = 350. - compressor * 28.;
+    double speedX  = MOVE_SPEED * Math.cos(direction - Math.PI / 2.);
+    double speedY  = MOVE_SPEED * Math.sin(direction - Math.PI / 2.);
+    double posX    = 112.;
+    double posY    = 350. - compressor * 28.;
 
     while (position == null) {
       posX += speedX;
