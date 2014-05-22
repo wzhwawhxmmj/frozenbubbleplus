@@ -310,57 +310,6 @@ public class CollisionHelper {
   }
 
   /**
-   * Check if a bubble falling at a given position has a neighbor of the same color
-   * @param x grid X-Coord of the bubble 
-   * @param y grid Y-Coord of the bubble
-   * @param color Color of the bubble
-   * @param grid Grid of all known bubbles
-   * @param alreadyChecked Balls alread reviewed (may be null)
-   * @return
-   */
-  private static boolean hasNeighbor(int x, int y, int color, BubbleSprite[][] grid, boolean[][] alreadyChecked) {
-    boolean neighbor = false;
-
-    if (x > 0) {
-      neighbor |= isColor(x-1, y, color, grid, alreadyChecked);
-    }
-
-    if (x < 7) {
-      neighbor |= isColor(x+1, y, color, grid, alreadyChecked);
-    }
-
-    if (y > 0) {
-      neighbor |= isColor(x, y-1, color, grid, alreadyChecked);
-      if (y % 2 == 0) {
-        if (x < 7) {
-          neighbor |= isColor(x+1, y-1, color, grid, alreadyChecked);
-        }
-      }
-      else {
-        if (x > 0) {
-          neighbor |= isColor(x-1, y-1, color, grid, alreadyChecked);
-        }        
-      }
-    }
-
-    if (y < 11) {
-      neighbor |= isColor(x, y+1, color, grid, alreadyChecked);
-      if (y % 2 == 0) {
-        if (x < 7) {
-          neighbor |= isColor(x+1, y+1, color, grid, alreadyChecked);
-        }
-      }
-      else {
-        if (x > 0) {
-          neighbor |= isColor(x-1, y+1, color, grid, alreadyChecked);
-        }        
-      }
-    }
-
-    return neighbor;
-  }
-
-  /**
    * Check if a specific position is of a given color
    * @param x
    * @param y
@@ -392,58 +341,5 @@ public class CollisionHelper {
     }
 
     return isColor;
-  }
-
-  // TODO : A remplacer par une version prenant toutes les boules d'un coup???
-  // XXX utiliser hasNeighbor
-
-  /**
-   * @param grid
-   * @return {x, y, points} or null if no position is available
-   */
-  public static int[] chainReaction(int color, BubbleSprite[][] grid) {
-
-    int bestX = 0;
-    int bestY = 0;
-    int bestCount = 0;
-
-    int[] output = null;
-    boolean[][] alreadyChecked = new boolean[8][13]; 
-
-    for (int j = 0; j < 13; j++) {
-      for (int i = 0; i < 8; i++) {
-        if (grid[i][j] == null && (i != 0 || (j & 1) == 0)) {
-          if (hasNeighbor(i, j, color, grid, alreadyChecked)) {
-
-            // Check grid
-            int newCount = 0;
-            int[][] cGrid = checkState(i, j, color, grid);
-
-            if (cGrid != null) {            
-              for (int cj = 0; cj < 13; cj++) {
-                for (int ci = 0; ci < 8; ci++) {
-                  if (cGrid[ci][cj] == STATE_REMOVE || cGrid[ci][cj] == STATE_DETACHED) {
-                    newCount++;
-                    alreadyChecked[ci][cj] = true;
-                  }
-                }
-              }
-
-              if (newCount > bestCount) {
-                bestX = i;
-                bestY = j;
-                bestCount = newCount;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (bestCount > 0) {
-      output = new int[] {bestX, bestY, bestCount};
-    }
-
-    return output;
   }
 }
