@@ -66,23 +66,28 @@ public class CollisionHelper {
   public static final int STATE_POTENTIAL_DETACHED = 4;
   public static final int STATE_DETACHED = 5;
 
-  private CollisionHelper() {}
+  private CollisionHelper() {
+  }
 
   /**
-   * Checks whether a moving ball collides with fixed balls
-   * @param x X-coord of the moving ball, relative to the game area
-   * @param y Y-coord of the moving ball, relative to the game area (right under the compressor)
-   * @param grid The grid of fixed balls
-   * @return the position in the grid of the moving ball or null if no collision occurs
+   * Checks whether a moving ball collides with fixed balls.
+   * @param x X-coord of the moving ball, relative to the game area.
+   * @param y Y-coord of the moving ball, relative to the game area
+   * (right under the compressor).
+   * @param grid The grid of fixed bubbles.
+   * @param toCheck The array of bubbles to check.
+   * @param minCoords The collision distance coordinates.
+   * @return <code>true</code> if a collision was detected.
    */
-  public static int[] collide(int x, int y, BubbleSprite[][] grid) {
-
+  public static boolean collide(int x, int y, BubbleSprite[][] grid,
+                                int[][] toCheck, int[] minCoords) {
+    boolean collision = false;
     int minDist = (int)BubbleSprite.minDistance;
-    int[] minCoords = null;
-    int[][] toCheck = toCheck(x, y);
+    minCoords[0] = 0;
+    minCoords[1] = 0;
+    toCheck(x, y, toCheck);
 
     // Check for collision
-    boolean collision = false;
     int i = 0;
     while (!collision && i < 4) {
       collision = collision(x, y, toCheck[i][0], toCheck[i][1], grid);
@@ -91,25 +96,25 @@ public class CollisionHelper {
 
     // Check for position
     if (collision) {
-      minCoords = new int[2];
-
       for (i = 0; i < 4; i++) {
         minDist = distance(x, y, toCheck[i][0], toCheck[i][1], minDist, minCoords);
       }
     }
 
-    return minCoords;
+    return collision;
   }
 
   /**
-   * Calculates the distance between real position and a specific point in the grid
-   * @param x real X-coord
-   * @param y real Y-coord
-   * @param targetX X target point (grid)
-   * @param targetY Y target point (grid)
-   * @param minDist current minimum distance
-   * @param outCoords the coordinates associated with the minimum distance found
-   * @return The real distance or the current minDist if the point is out of the grid or empty
+   * Calculates the distance between real position and a specific point
+   * in the grid.
+   * @param x real X-coord.
+   * @param y real Y-coord.
+   * @param targetX X target point (grid).
+   * @param targetY Y target point (grid).
+   * @param minDist current minimum distance.
+   * @param outCoords the coordinates associated with the minimum distance found.
+   * @return The real distance or the current minDist if the point is
+   * out of the grid or empty.
    */
   private static int distance(int x, int y, int targetX, int targetY, int minDist, int[] outCoords) {
     int distance = minDist;
@@ -131,13 +136,15 @@ public class CollisionHelper {
   }
 
   /**
-   * Calculates the distance between real position and a specific point in the grid
-   * @param x real X-coord
-   * @param y real Y-coord
-   * @param targetX X target point (grid)
-   * @param targetY Y target point (grid)
-   * @param grid reference grid
-   * @return The real distance or the current minDist if the point is out of the grid or empty
+   * Calculates the distance between real position and a specific point
+   * in the grid.
+   * @param x real X-coord.
+   * @param y real Y-coord.
+   * @param targetX X target point (grid).
+   * @param targetY Y target point (grid).
+   * @param grid reference grid.
+   * @return The real distance or the current minDist if the point is
+   * out of the grid or empty.
    */
   private static boolean collision(int x, int y, int targetX, int targetY, BubbleSprite[][] grid) {
     boolean collision = false;
@@ -153,14 +160,12 @@ public class CollisionHelper {
   }
 
   /**
-   * Retrieves the set of position in the grid that are currently under the moving ball 
-   * @param x real X-coord
-   * @param y real Y-coord
-   * @return 
+   * Retrieves the set of positions in the grid that are currently under
+   * the moving ball.
+   * @param x real X-coord.
+   * @param y real Y-coord.
    */
-  private static int[][] toCheck(int x, int y) {
-    int[][] toCheck = new int[4][2];
-
+  private static void toCheck(int x, int y, int[][] toCheck) {
     int topY = y / 28;
     int topX = (x + ((topY % 2) << 4)) >> 5;
 
@@ -177,24 +182,28 @@ public class CollisionHelper {
     } else {
       toCheck[3][0] = topX + 2 - (topY % 2);
     }
-
-    return toCheck;
   }
 
   /**
-   * Check state of all bubbles
-   * @param x X-coord of the new bubble
-   * @param y Y-Coord of the new bubble
-   * @param color Color of new new bubble
-   * @param grid Grid of all known bubbles
-   * @return A grid with all the new states. If the new bubble doesn't change anything, values are only potential
+   * Check states of all bubbles.
+   * @param x X-coord of the new bubble.
+   * @param y Y-Coord of the new bubble.
+   * @param color Color of new new bubble.
+   * @param grid Grid of all known bubbles.
+   * @param outGrid Grid to store all the new states in.  If the new
+   * bubble doesn't change anything, values are only potential.
    */
-  public static int[][] checkState(int x, int y, int color, BubbleSprite[][] grid) {
-    int[][] outGrid = new int[8][13];
+  public static void checkState(int x, int y, int color, BubbleSprite[][] grid,
+                                int[][] outGrid) {
+    for (int i = 0; i < 8; i++) {
+      for (int j = 0; j < 13; j++) {
+        outGrid[i][j] = 0;
+      }
+    }
+
     outGrid[x][y] = STATE_REMOVE;
     checkNeighbors(x, y, grid, outGrid, false);
     int nbRemove = 1;
-
     boolean changed = true;
     while (changed) {
       changed = false;
@@ -241,7 +250,9 @@ public class CollisionHelper {
 
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
-        if (grid[i][j] != null && (outGrid[i][j] == STATE_UNDEFINED || outGrid[i][j] == STATE_INTERMEDIATE_CHECK)) {
+        if ((grid[i][j] != null) &&
+            ((outGrid[i][j] == STATE_UNDEFINED) ||
+             (outGrid[i][j] == STATE_INTERMEDIATE_CHECK))) {
           if (nbRemove >= 3) {
             outGrid[i][j] = STATE_DETACHED;
           } else {
@@ -254,11 +265,11 @@ public class CollisionHelper {
         }
       }
     }
-
-    return outGrid;
   }
 
-  private static void checkNeighbors(int x, int y, BubbleSprite[][] grid, int[][] outGrid, boolean ignoreStayState) {
+  private static void checkNeighbors(int x, int y,
+                                     BubbleSprite[][] grid, int[][] outGrid,
+                                     boolean ignoreStayState) {
 
     if (x > 0) {
       changeState(x-1, y, grid, outGrid, ignoreStayState);

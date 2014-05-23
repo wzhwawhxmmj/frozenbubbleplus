@@ -856,8 +856,11 @@ public class PlayerThread extends Thread {
     mRunning = false;
     pausePlay(true);
 
+    /*
+     * Interrupt the thread if it is sleeping or waiting.
+     */
     synchronized(this) {
-      this.notify();
+      this.interrupt();
     }
   }
 

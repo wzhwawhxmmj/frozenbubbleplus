@@ -1715,7 +1715,7 @@ public class GameView extends SurfaceView
        * For API level 8 or greater, use getRotation().
        */
       int rotation = ((Activity) mContext).getWindowManager().
-        getDefaultDisplay().getOrientation();
+          getDefaultDisplay().getOrientation();
       DisplayMetrics dm = new DisplayMetrics();
       ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
       int width  = dm.widthPixels;
