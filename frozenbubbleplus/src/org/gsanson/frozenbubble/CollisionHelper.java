@@ -116,7 +116,8 @@ public class CollisionHelper {
    * @return The real distance or the current minDist if the point is
    * out of the grid or empty.
    */
-  private static int distance(int x, int y, int targetX, int targetY, int minDist, int[] outCoords) {
+  private static int distance(int x, int y, int targetX, int targetY,
+                              int minDist, int[] outCoords) {
     int distance = minDist;
 
     if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 13) {
