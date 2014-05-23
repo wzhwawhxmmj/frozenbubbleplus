@@ -70,9 +70,9 @@ import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenGame extends GameScreen {
-  private final int[] columnX = { 190, 206, 232, 248, 264,
-                                  280, 296, 312, 328, 344,
-                                  360, 376, 392, 408, 424 };
+  private final int[] columnX = { 190, 206, 222, 238, 254,
+                                  270, 286, 302, 318, 334,
+                                  350, 366, 382, 398, 414 };
 
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
