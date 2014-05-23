@@ -127,11 +127,23 @@ public class Freile implements Opponent, Runnable {
   private double bestDirection;  
   /* Best ball destination */
   private int[] bestDestination;
+  /* Grid to compute best options */
+  int[][] gridOptions;
+  /* Grid to compute bubble states */
+  int[][] outGrid;
+  /* Collision coordinates */
+  int[] position;
+  /* Neighbor bubble locations to check for collision */
+  int[][] toCheck;
 
   public Freile(BubbleSprite[][] grid) {
-    this.grid = grid;
+    this.grid         = grid;
+    gridOptions       = new int[8][13];
+    outGrid           = new int[8][13];
+    position          = new int[2];
+    toCheck           = new int[4][2];
     mOpponentListener = null;
-    running = true;
+    running           = true;
 
     new Thread(this).start();
   }
@@ -196,8 +208,6 @@ public class Freile implements Opponent, Runnable {
   }
 
   public void run() {
-    int[][] gridOptions = new int[8][13];
-
     while (running) {
       if (computing) {
         computing = false;
@@ -232,16 +242,17 @@ public class Freile implements Opponent, Runnable {
          */
         int bestOption = -1;
         int newOption;
-        int[] position = null;
 
+        position[0]   = 0;
+        position[1]   = 0;
         bestDirection = 0.;
-        colorSwap = false;
+        colorSwap     = false;
         for (double direction = 0.;
              direction < MAX_LAUNCHER;
              direction += LAUNCHER_ROTATION) {
-          position = getCollision(direction);
+          getCollision(direction, position);
           newOption = computeOption(position[0], position[1],
-                                    color, gridOptions);
+                                    color, gridOptions, outGrid);
           if (newOption > bestOption) {
             bestOption = newOption;
             bestDirection = direction;
@@ -251,9 +262,9 @@ public class Freile implements Opponent, Runnable {
         for (double direction = -LAUNCHER_ROTATION;
              direction > MIN_LAUNCHER;
              direction -= LAUNCHER_ROTATION) {
-          position = getCollision(direction);
+          getCollision(direction, position);
           newOption = computeOption(position[0], position[1],
-                                    color, gridOptions);
+                                    color, gridOptions, outGrid);
           if (newOption > bestOption) {
             bestOption = newOption;
             bestDirection = direction;
@@ -264,9 +275,9 @@ public class Freile implements Opponent, Runnable {
           for (double direction = 0.;
                direction < MAX_LAUNCHER;
                direction += LAUNCHER_ROTATION) {
-            position = getCollision(direction);
+            getCollision(direction, position);
             newOption = computeOption(position[0], position[1],
-                                      nextColor, gridOptions);
+                                      nextColor, gridOptions, outGrid);
             if (newOption > bestOption) {
               bestOption = newOption;
               bestDirection = direction;
@@ -277,9 +288,9 @@ public class Freile implements Opponent, Runnable {
           for (double direction = -LAUNCHER_ROTATION;
                direction > MIN_LAUNCHER;
                direction -= LAUNCHER_ROTATION) {
-            position = getCollision(direction);
+            getCollision(direction, position);
             newOption = computeOption(position[0], position[1],
-                                      nextColor, gridOptions);
+                                      nextColor, gridOptions, outGrid);
             if (newOption > bestOption) {
               bestOption = newOption;
               bestDirection = direction;
@@ -290,18 +301,23 @@ public class Freile implements Opponent, Runnable {
         }
       }
     }
+    gridOptions = null;
+    outGrid     = null;
+    position    = null;
+    toCheck     = null;
   }
 
-  private int computeOption(int posX, int posY, int color, int[][] gridOptions) {
+  private int computeOption(int posX, int posY, int color,
+                            int[][] gridOptions, int[][] outGrid) {
 
     if (gridOptions[posX][posY] == 0) {
       int option = BACKGROUND_GRID[posX][posY];
 
-      int[][] states = CollisionHelper.checkState(posX, posY, color, grid);
+      CollisionHelper.checkState(posX, posY, color, grid, outGrid);
       for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 12; j++) {
           if (i != posX || j != posY) {
-            switch (states[i][j]) {
+            switch (outGrid[i][j]) {
               case CollisionHelper.STATE_REMOVE:
                 option += BONUS_SAME_COLOR;
               break;
@@ -325,15 +341,15 @@ public class Freile implements Opponent, Runnable {
     return gridOptions[posX][posY];
   }
 
-  private int[] getCollision(double direction) {
+  private boolean getCollision(double direction, int[] position) {
 
-    int[] position = null;
+    boolean collision = false;
     double speedX  = MOVE_SPEED * Math.cos(direction - Math.PI / 2.);
     double speedY  = MOVE_SPEED * Math.sin(direction - Math.PI / 2.);
     double posX    = 112.;
     double posY    = 350. - compressor * 28.;
 
-    while (position == null) {
+    while (!collision) {
       posX += speedX;
       posY += speedY;
 
@@ -351,7 +367,7 @@ public class Freile implements Opponent, Runnable {
       if (posY < 0.) {
         int valX = (int) posX;
 
-        position = new int[2];
+        collision = true;
         position[0] = valX >> 5;
         if ((valX & 16) > 0) {
           position[0]++;
@@ -361,11 +377,12 @@ public class Freile implements Opponent, Runnable {
         /*
          * Check other collision.
          */
-        position = CollisionHelper.collide((int) posX, (int) posY, grid);
+        collision = CollisionHelper.collide((int) posX, (int) posY,
+                                            grid, toCheck, position);
       }
     }
 
-    return position;
+    return collision;
   }
 
   /**
