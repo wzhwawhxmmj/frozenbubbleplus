@@ -147,10 +147,12 @@ public class CollisionHelper {
    * @return The real distance or the current minDist if the point is
    * out of the grid or empty.
    */
-  private static boolean collision(int x, int y, int targetX, int targetY, BubbleSprite[][] grid) {
+  private static boolean collision(int x, int y, int targetX, int targetY,
+                                   BubbleSprite[][] grid) {
     boolean collision = false;
 
-    if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 13 && grid[targetX][targetY] != null) {
+    if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 13 &&
+        grid[targetX][targetY] != null) {
       int dx = (targetX << 5) - ((targetY % 2) << 4) - x;
       int dy = targetY * 28 - y;
 
@@ -176,8 +178,7 @@ public class CollisionHelper {
     toCheck[1][1] = topY;
     toCheck[2][0] = topX + 1 - (topY % 2);
     toCheck[2][1] = topY + 1;
-
-    toCheck[3][1] = topY + 1;    
+    toCheck[3][1] = topY + 1;
     if (((x & 16) ^ (((topY & 1) << 4))) == 0) {
       toCheck[3][0] = topX - (topY % 2);
     } else {
@@ -198,7 +199,7 @@ public class CollisionHelper {
                                 int[][] outGrid) {
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 13; j++) {
-        outGrid[i][j] = 0;
+        outGrid[i][j] = STATE_UNDEFINED;
       }
     }
 
@@ -216,7 +217,6 @@ public class CollisionHelper {
               outGrid[i][j] = STATE_REMOVE;
               nbRemove++;
               changed = true;
-
               checkNeighbors(i, j, grid, outGrid, false);
             } else {
               outGrid[i][j] = STATE_INTERMEDIATE_CHECK;
@@ -228,7 +228,8 @@ public class CollisionHelper {
 
     // Check for positions that are (potentially) not attached anymore
     for (int i = 0; i < 8; i++) {
-      if (grid[i][0] != null && (outGrid[i][0] == STATE_UNDEFINED || outGrid[i][0] == STATE_INTERMEDIATE_CHECK)) {
+      if (grid[i][0] != null && (outGrid[i][0] == STATE_UNDEFINED ||
+                                 outGrid[i][0] == STATE_INTERMEDIATE_CHECK)) {
         outGrid[i][0] = STATE_CHECK_NEXT;
       }
     }
@@ -242,7 +243,6 @@ public class CollisionHelper {
           if (outGrid[i][j] == STATE_CHECK_NEXT) {
             outGrid[i][j] = STATE_ATTACHED;
             changed = true;
-
             checkNeighbors(i, j, grid, outGrid, true);
           }
         }
@@ -268,9 +268,8 @@ public class CollisionHelper {
     }
   }
 
-  private static void checkNeighbors(int x, int y,
-                                     BubbleSprite[][] grid, int[][] outGrid,
-                                     boolean ignoreStayState) {
+  private static void checkNeighbors(int x, int y, BubbleSprite[][] grid,
+                                     int[][] outGrid, boolean ignoreStayState) {
 
     if (x > 0) {
       changeState(x-1, y, grid, outGrid, ignoreStayState);
@@ -309,15 +308,17 @@ public class CollisionHelper {
     }
   }
 
-  private static void changeState(int x, int y, BubbleSprite[][] grid, int[][] outGrid, boolean ignoreStayState) {
+  private static void changeState(int x, int y, BubbleSprite[][] grid,
+                                  int[][] outGrid, boolean ignoreStayState) {
     if (ignoreStayState) {
-      if (grid[x][y] != null && (outGrid[x][y] == STATE_UNDEFINED || outGrid[x][y] == STATE_INTERMEDIATE_CHECK)) {
+      if (grid[x][y] != null && (outGrid[x][y] == STATE_UNDEFINED ||
+                                 outGrid[x][y] == STATE_INTERMEDIATE_CHECK)) {
         outGrid[x][y] = STATE_CHECK_NEXT;
       }
     } else {
       if (grid[x][y] != null && outGrid[x][y] == STATE_UNDEFINED) {
         outGrid[x][y] = STATE_CHECK_NEXT;
-      }      
+      }
     }
   }
 
