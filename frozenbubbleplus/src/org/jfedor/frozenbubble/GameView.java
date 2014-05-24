@@ -100,10 +100,8 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -122,15 +120,6 @@ public class GameView extends SurfaceView
   public static final int  GAMEFIELD_WIDTH          = 320;
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
-
-  /*
-   * The following screen orientation definitions were added to
-   * ActivityInfo in API level 9.
-   */
-  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
-  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
-  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
-  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
 
   private boolean               mBlankScreen   = false;
   private boolean               muteKeyToggle  = false;
@@ -1502,7 +1491,7 @@ public class GameView extends SurfaceView
       int indent = 10;
       int orientation = getScreenOrientation();
 
-      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+      if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x += GAMEFIELD_WIDTH/2;
       else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         x -= GAMEFIELD_WIDTH/2;
@@ -1551,7 +1540,7 @@ public class GameView extends SurfaceView
       int ysp = 26;
       int orientation = getScreenOrientation();
 
-      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+      if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x += GAMEFIELD_WIDTH/2;
       else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         x -= GAMEFIELD_WIDTH/2;
@@ -1700,75 +1689,8 @@ public class GameView extends SurfaceView
     }
 
     private int getScreenOrientation() {
-      /*
-       * The method getOrientation() was deprecated in API level 8.
-       *
-       * For API level 8 or greater, use getRotation().
-       */
-      int rotation = ((Activity) mContext).getWindowManager().
-          getDefaultDisplay().getOrientation();
-      DisplayMetrics dm = new DisplayMetrics();
-      ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
-      int width  = dm.widthPixels;
-      int height = dm.heightPixels;
-      int orientation;
-      /*
-       * The orientation determination is based on the natural orienation
-       * mode of the device, which can be either portrait, landscape, or
-       * square.
-       *
-       * After the natural orientation is determined, convert the device
-       * rotation into a fully qualified orientation.
-       */
-      if ((((rotation == Surface.ROTATION_0  ) ||
-            (rotation == Surface.ROTATION_180)) && (height > width)) ||
-          (((rotation == Surface.ROTATION_90 ) ||
-            (rotation == Surface.ROTATION_270)) && (width  > height))) {
-        /*
-         * Natural orientation is portrait.
-         */
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;              
-        }
-      }
-      else {
-        /*
-         * Natural orientation is landscape or square.
-         */
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;              
-        }
-      }
-
-      return orientation;
+      return FrozenBubble.getScreenOrientation(((Activity) mContext).
+                                               getWindowManager());
     }
 
     private BmpWrap NewBmpWrap() {
@@ -2239,7 +2161,7 @@ public class GameView extends SurfaceView
             }
             else {
               int orientation = getScreenOrientation();
-              if ((orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
+              if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
                   (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
                 if (mLocalInput.playerID == VirtualInput.PLAYER2) {
                   mDisplayDX = (int)(-mDisplayScale * gameWidth);
