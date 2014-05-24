@@ -139,6 +139,7 @@ public class GameView extends SurfaceView
   private int                   numPlayer1GamesWon;
   private int                   numPlayer2GamesWon;
   private Context               mContext;
+  private gameEnum              game1Status;
   private GameThread            mGameThread;
   private NetworkGameManager    mNetworkManager;
   private RemoteInterface       remoteInterface;
@@ -798,7 +799,7 @@ public class GameView extends SurfaceView
       }
 
       mLevelManager = new LevelManager(0, FrozenBubble.getDifficulty());
-      newGame();
+      newGame(false);
     }
 
     public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
@@ -981,17 +982,7 @@ public class GameView extends SurfaceView
         mLevelManager = new LevelManager(customLevels, startingLevel);
       }
 
-      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighScoreManager);
-      mPlayer1.setGameRef(mFrozenGame1);
-      mFrozenGame2 = null;
-      mNetworkManager = null;
-      mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
+      newGame(false);
     }
 
     public void cleanUp() {
@@ -1787,7 +1778,13 @@ public class GameView extends SurfaceView
       return new_img;
     }
 
-    public void newGame() {
+    /**
+     * Start a new game.
+     * @param firstLevel if <code>true</code>, start a new game in
+     * puzzle mode beginning at the first level. 
+     */
+    public void newGame(boolean firstLevel) {
+      game1Status = gameEnum.PLAYING;
       synchronized(mSurfaceHolder) {
         if (numPlayers > 1) {
           malusBar1 = new MalusBar(GameView.GAMEFIELD_WIDTH - 164, 40,
@@ -1798,7 +1795,9 @@ public class GameView extends SurfaceView
         else {
           malusBar1 = null;
           malusBar2 = null;
-          mLevelManager.goToFirstLevel();
+          if (firstLevel) {
+            mLevelManager.goToFirstLevel();
+          }
         }
 
         mImagesReady = false;
@@ -1836,28 +1835,18 @@ public class GameView extends SurfaceView
         }
 
         mImagesReady = true;
-
-        if (mHighScoreManager != null) {
-          mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
-        }
       }
-    }
 
-    private void nextLevel() {
-      mImagesReady = false;
-      mPlayer1.setGameRef(null);
-      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighScoreManager);
-      mPlayer1.setGameRef(mFrozenGame1);
-      mImagesReady = true;
       if (mHighScoreManager != null) {
         mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
       }
+
+      startOpponent();
+    }
+
+    private void nextLevel() {
+      mLevelManager.goToNextLevel();
+      newGame(false);
     }
 
     public void pause() {
@@ -1944,6 +1933,7 @@ public class GameView extends SurfaceView
           numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
           if (mFrozenGame2 != null) {
             mFrozenGame2.restoreState(map, mImageList);
+            startOpponent();
           }
         }
         if (mLevelManager != null) {
@@ -2279,7 +2269,7 @@ public class GameView extends SurfaceView
     /**
      * Create a CPU opponent object (if necessary) and start the thread.
      */
-    public void startOpponent() {
+    private void startOpponent() {
       if (mOpponent != null) {
         mOpponent.stopThread();
         mOpponent = null;
@@ -2407,7 +2397,9 @@ public class GameView extends SurfaceView
                 setState(stateEnum.RUNNING);
               }
               else {
-                nextLevel();
+                if (game1Status == gameEnum.WON) {
+                  nextLevel();
+                }
                 if (getCurrentLevelIndex() != 0) {
                   setState(stateEnum.RUNNING);
                 }
@@ -2557,30 +2549,28 @@ public class GameView extends SurfaceView
           }
 
           pause();
-          newGame();
-
-          if (mRemoteInput.isCPU) {
-            startOpponent();
-          }
+          nextLevel();
         }
       }
       else if ((game1State == gameEnum.NEXT_LOST) ||
                (game1State == gameEnum.NEXT_WON )) {
         if (game1State == gameEnum.NEXT_WON) {
+          game1Status = gameEnum.WON;
           mShowScores = true;
           pause();
         }
         else {
-          nextLevel();
+          game1Status = gameEnum.LOST;
+          newGame(false);
         }
+      }
 
-        if (mGameListener != null) {
-          if (game1State == gameEnum.NEXT_WON) {
-            mGameListener.onGameEvent(eventEnum.GAME_WON);
-          }
-          else {
-            mGameListener.onGameEvent(eventEnum.GAME_LOST);
-          }
+      if (mGameListener != null) {
+        if (game1State == gameEnum.NEXT_WON) {
+          mGameListener.onGameEvent(eventEnum.GAME_WON);
+        }
+        else if (game1State == gameEnum.NEXT_LOST){
+          mGameListener.onGameEvent(eventEnum.GAME_LOST);
         }
       }
     }

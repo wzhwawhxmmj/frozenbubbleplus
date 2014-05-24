@@ -725,7 +725,6 @@ public class FrozenGame extends GameScreen {
     if (endOfGame && readyToFire) {
       if (move[FIRE] == KEY_UP) {
         if (playResult == gameEnum.WON) {
-          levelManager.goToNextLevel();
           playResult = gameEnum.NEXT_WON;
         }
         else {

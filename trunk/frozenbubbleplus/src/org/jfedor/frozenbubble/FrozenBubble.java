@@ -672,12 +672,8 @@ public class FrozenBubble extends Activity
    */
   public void newGame() {
     if (mGameThread != null) {
-      mGameThread.newGame();
-      if (numPlayers > 1) {
-        mGameThread.startOpponent();
-      }
+      mGameThread.newGame(true);
     }
-
     playMusic(false);
   }
 
@@ -1072,7 +1068,6 @@ public class FrozenBubble extends Activity
           mGameThread.restoreState(savedInstanceState);
         }
       }
-      mGameThread.startOpponent();
       mGameView.requestFocus();
     }
     else {
