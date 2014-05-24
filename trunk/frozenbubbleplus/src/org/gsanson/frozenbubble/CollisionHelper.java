@@ -53,18 +53,19 @@
 package org.gsanson.frozenbubble;
 
 import org.jfedor.frozenbubble.BubbleSprite;
+import org.jfedor.frozenbubble.LevelManager;
 
 public class CollisionHelper {
 
   private static final int STATE_INTERMEDIATE_CHECK = -2;
-  private static final int STATE_CHECK_NEXT = -1;
+  private static final int STATE_CHECK_NEXT         = -1;
 
-  public static final int STATE_UNDEFINED = 0;
-  public static final int STATE_POTENTIAL_REMOVE = 1;
-  public static final int STATE_REMOVE = 2;
-  public static final int STATE_ATTACHED = 3;
+  public static final int STATE_UNDEFINED          = 0;
+  public static final int STATE_POTENTIAL_REMOVE   = 1;
+  public static final int STATE_REMOVE             = 2;
+  public static final int STATE_ATTACHED           = 3;
   public static final int STATE_POTENTIAL_DETACHED = 4;
-  public static final int STATE_DETACHED = 5;
+  public static final int STATE_DETACHED           = 5;
 
   private CollisionHelper() {
   }
@@ -120,7 +121,8 @@ public class CollisionHelper {
                               int minDist, int[] outCoords) {
     int distance = minDist;
 
-    if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 13) {
+    if ((targetX >= 0) && (targetX < LevelManager.NUM_COLS) &&
+        (targetY >= 0) && (targetY < LevelManager.NUM_ROWS)) {
       int dx = (targetX << 5) - ((targetY % 2) << 4) - x;
       int dy = targetY * 28 - y;
 
@@ -151,7 +153,8 @@ public class CollisionHelper {
                                    BubbleSprite[][] grid) {
     boolean collision = false;
 
-    if (targetX >= 0 && targetX < 8 && targetY >= 0 && targetY < 13 &&
+    if ((targetX >= 0) && (targetX < LevelManager.NUM_COLS) &&
+        (targetY >= 0) && (targetY < LevelManager.NUM_ROWS) &&
         grid[targetX][targetY] != null) {
       int dx = (targetX << 5) - ((targetY % 2) << 4) - x;
       int dy = targetY * 28 - y;
@@ -197,8 +200,8 @@ public class CollisionHelper {
    */
   public static void checkState(int x, int y, int color, BubbleSprite[][] grid,
                                 int[][] outGrid) {
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         outGrid[i][j] = STATE_UNDEFINED;
       }
     }
@@ -210,8 +213,8 @@ public class CollisionHelper {
     while (changed) {
       changed = false;
 
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 13; j++) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
           if (outGrid[i][j] == STATE_CHECK_NEXT) {
             if (isColor(i, j, color, grid, null)) {
               outGrid[i][j] = STATE_REMOVE;
@@ -227,7 +230,7 @@ public class CollisionHelper {
     }
 
     // Check for positions that are (potentially) not attached anymore
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
       if (grid[i][0] != null && (outGrid[i][0] == STATE_UNDEFINED ||
                                  outGrid[i][0] == STATE_INTERMEDIATE_CHECK)) {
         outGrid[i][0] = STATE_CHECK_NEXT;
@@ -238,8 +241,8 @@ public class CollisionHelper {
     while (changed) {
       changed = false;
 
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 13; j++) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
           if (outGrid[i][j] == STATE_CHECK_NEXT) {
             outGrid[i][j] = STATE_ATTACHED;
             changed = true;
@@ -249,8 +252,8 @@ public class CollisionHelper {
       }
     }
 
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         if ((grid[i][j] != null) &&
             ((outGrid[i][j] == STATE_UNDEFINED) ||
              (outGrid[i][j] == STATE_INTERMEDIATE_CHECK))) {
@@ -261,7 +264,7 @@ public class CollisionHelper {
           }
         }
 
-        if (outGrid[i][j] == STATE_REMOVE && nbRemove < 3) {
+        if (outGrid[i][j] == STATE_REMOVE && (nbRemove < 3)) {
           outGrid[i][j] = STATE_POTENTIAL_REMOVE;
         }
       }
@@ -275,14 +278,14 @@ public class CollisionHelper {
       changeState(x-1, y, grid, outGrid, ignoreStayState);
     }
 
-    if (x < 7) {
+    if (x < (LevelManager.NUM_COLS - 1)) {
       changeState(x+1, y, grid, outGrid, ignoreStayState);
     }
 
     if (y > 0) {
       changeState(x, y-1, grid, outGrid, ignoreStayState);
       if (y % 2 == 0) {
-        if (x < 7) {
+        if (x < (LevelManager.NUM_COLS - 1)) {
           changeState(x+1, y-1, grid, outGrid, ignoreStayState);
         }
       }
@@ -293,10 +296,10 @@ public class CollisionHelper {
       }
     }
 
-    if (y < 11) {
+    if (y < (LevelManager.NUM_ROWS - 2)) {
       changeState(x, y+1, grid, outGrid, ignoreStayState);
       if (y % 2 == 0) {
-        if (x < 7) {
+        if (x < (LevelManager.NUM_COLS - 1)) {
           changeState(x+1, y+1, grid, outGrid, ignoreStayState);
         }
       }

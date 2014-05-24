@@ -53,6 +53,7 @@
 package org.gsanson.frozenbubble;
 
 import org.jfedor.frozenbubble.BubbleSprite;
+import org.jfedor.frozenbubble.LevelManager;
 
 import android.view.KeyEvent;
 
@@ -136,8 +137,8 @@ public class Freile implements Opponent, Runnable {
 
   public Freile(BubbleSprite[][] grid) {
     this.grid         = grid;
-    gridOptions       = new int[8][13];
-    outGrid           = new int[8][13];
+    gridOptions       = new int[LevelManager.NUM_COLS][LevelManager.NUM_ROWS];
+    outGrid           = new int[LevelManager.NUM_COLS][LevelManager.NUM_ROWS];
     mOpponentListener = null;
     running           = true;
 
@@ -161,8 +162,8 @@ public class Freile implements Opponent, Runnable {
       int option = BACKGROUND_GRID[posX][posY];
 
       CollisionHelper.checkState(posX, posY, color, grid, outGrid);
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 12; j++) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        for (int j = 0; j < (LevelManager.NUM_ROWS - 1); j++) {
           if (i != posX || j != posY) {
             switch (outGrid[i][j]) {
               case CollisionHelper.STATE_REMOVE:
@@ -301,8 +302,8 @@ public class Freile implements Opponent, Runnable {
         /*
          * Initialize grid options.
          */
-        for (int i = 0; i < 8; i++) {
-          for (int j = 0; j < 13; j++) {
+        for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+          for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
             gridOptions[i][j] = 0;
           }
         }
