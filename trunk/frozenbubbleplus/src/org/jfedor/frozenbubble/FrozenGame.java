@@ -963,7 +963,7 @@ public class FrozenGame extends GameScreen {
           numBubblesLaunched++;
           int color = malusBar.attackBubbles[i];
           BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+(LevelManager.ALL_ROWS*28), 32, 32),
+            new Rect(columnX[i], 44+(LevelManager.MAX_ROWS*28), 32, 32),
             START_LAUNCH_DIRECTION,
             color, bubbles[color], bubblesBlind[color],
             frozenBubbles[color], targetedBubbles, bubbleBlink,
@@ -993,7 +993,7 @@ public class FrozenGame extends GameScreen {
           int color = random.nextInt(FrozenBubble.getDifficulty());
           malusBar.setAttackBubble(i, color);
           BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+(LevelManager.ALL_ROWS*28), 32, 32),
+            new Rect(columnX[i], 44+(LevelManager.MAX_ROWS*28), 32, 32),
             START_LAUNCH_DIRECTION,
             color, bubbles[color], bubblesBlind[color],
             frozenBubbles[color], targetedBubbles, bubbleBlink,

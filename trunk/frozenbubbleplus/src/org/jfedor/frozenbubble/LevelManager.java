@@ -62,8 +62,8 @@ public class LevelManager {
   /*
    * Level row and column definitions.
    */
-  public static final int ALL_ROWS = 15;
   public static final int LANES    = 15;
+  public static final int MAX_ROWS = 15;
   public static final int NUM_COLS = 8;
   public static final int NUM_ROWS = 13;
   public static final int VS_ROWS  = 5;
