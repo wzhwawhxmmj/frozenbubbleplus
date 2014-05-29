@@ -1259,12 +1259,12 @@ public class NetworkGameManager extends Thread
           session = new MulticastManager(myContext, MCAST_BYTE_ADDR, PORT);
         }
         session.setMulticastListener(this);
-      } catch(UnknownHostException uhe) {
+      } catch (UnknownHostException uhe) {
         if (session != null) {
           session.cleanUp();
         }
         session = null;
-      } catch(IOException ioe) {
+      } catch (IOException ioe) {
         if (session != null) {
           session.cleanUp();
         }
@@ -1275,7 +1275,7 @@ public class NetworkGameManager extends Thread
        */
       try {
         start();
-      } catch(IllegalThreadStateException itse) {
+      } catch (IllegalThreadStateException itse) {
         /*
          * The thread was already started.
          */
