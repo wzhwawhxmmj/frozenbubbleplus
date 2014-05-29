@@ -1273,7 +1273,14 @@ public class NetworkGameManager extends Thread
       /*
        * Start the network manager thread.
        */
-      start();
+      try {
+        start();
+      } catch(IllegalThreadStateException itse) {
+        /*
+         * The thread was already started.
+         */
+        itse.printStackTrace();
+      }
     }
     else {
       /*
