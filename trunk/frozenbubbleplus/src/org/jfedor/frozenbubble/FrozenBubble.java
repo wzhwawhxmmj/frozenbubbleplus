@@ -158,10 +158,11 @@ public class FrozenBubble extends Activity
   public final static int CPU   = 0;
   public final static int HUMAN = 1;
 
-  public static int gameLocale = LOCALE_LOCAL;
-  public static int myPlayerId = VirtualInput.PLAYER1; 
-  public static int numPlayers = 0;
-  public static int opponentId = CPU;
+  public static boolean arcadeGame = false;
+  public static int     gameLocale = LOCALE_LOCAL;
+  public static int     myPlayerId = VirtualInput.PLAYER1; 
+  public static int     numPlayers = 0;
+  public static int     opponentId = CPU;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
@@ -550,6 +551,7 @@ public class FrozenBubble extends Activity
      * The current game is being destroyed, so reset the static game
      * state variables.
      */
+    arcadeGame = false;
     gameLocale = LOCALE_LOCAL;
     myPlayerId = VirtualInput.PLAYER1; 
     numPlayers = 0;
@@ -754,7 +756,7 @@ public class FrozenBubble extends Activity
         break;
 
       case LEVEL_START:
-        if ((mGameView != null) && (mGameThread != null) &&
+        if (!arcadeGame && (mGameView != null) && (mGameThread != null) &&
             (numPlayers == 1)) {
           if (mGameThread.getCurrentLevelIndex() == 0) {
             /*
@@ -819,10 +821,11 @@ public class FrozenBubble extends Activity
     int modNow;
     /*
      * Ascertain which song to play.  For a single player game, the song
-     * is based on the current level.  For a two player game, or if the
-     * game thread has been destroyed, the song is selected at random.
+     * is based on the current level.  For an arcade game, a two player
+     * game, or if the game thread has been destroyed, the song is
+     * selected at random.
      */
-    if ((mGameThread != null) && (numPlayers == 1)) {
+    if (!arcadeGame && (mGameThread != null) && (numPlayers == 1)) {
       modNow = mGameThread.getCurrentLevelIndex() % MODlist.length;
     }
     else
@@ -871,7 +874,7 @@ public class FrozenBubble extends Activity
    * Save critically important game information.
    */
   public void saveState() {
-    if ((mGameThread != null) && (numPlayers == 1)) {
+    if (!arcadeGame && (mGameThread != null) && (numPlayers == 1)) {
       /*
        * Allow level editor functionalities.
        */
@@ -1045,6 +1048,7 @@ public class FrozenBubble extends Activity
     /*
      * Check if this is a single player or multiplayer game.
      */
+    arcadeGame = false;
     gameLocale = LOCALE_LOCAL;
     myPlayerId = VirtualInput.PLAYER1;
     numPlayers = 1;
@@ -1058,6 +1062,8 @@ public class FrozenBubble extends Activity
         opponentId = intent.getIntExtra("opponentId", CPU);
       if (intent.hasExtra("gameLocale"))
         gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
+      if (intent.hasExtra("arcadeGame"))
+        arcadeGame = intent.getBooleanExtra("arcadeGame", false);
     }
     initGameOptions();
     /*
@@ -1065,8 +1071,12 @@ public class FrozenBubble extends Activity
      * Otherwise start a single player game.
      */
     if (numPlayers > 1) {
-      mGameView =
-          new GameView(this, numPlayers, myPlayerId, opponentId, gameLocale);
+      mGameView = new GameView(this,
+                               numPlayers,
+                               myPlayerId,
+                               opponentId,
+                               gameLocale,
+                               arcadeGame);
       setContentView(mGameView);
       mGameView.setGameListener(this);
       mGameThread = mGameView.getThread();
