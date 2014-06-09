@@ -997,7 +997,6 @@ public class GameView extends SurfaceView
         mFrozenGame1 = null;
         mFrozenGame2 = null;
 
-        boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
         mBackgroundOrig.recycle();
         mBackgroundOrig = null;
 
@@ -1055,6 +1054,8 @@ public class GameView extends SurfaceView
         mCompressorOrig = null;
         mLifeOrig.recycle();
         mLifeOrig = null;
+        mFontImageOrig.recycle();
+        mFontImageOrig = null;
         if (mBananaOrig != null) {
           mBananaOrig.recycle();
         }
@@ -1064,49 +1065,50 @@ public class GameView extends SurfaceView
         }
         mTomatoOrig = null;
 
-        if (imagesScaled) {
-          mBackground.bmp.recycle();
-          for (int i = 0; i < mBubbles.length; i++) {
-            mBubbles[i].bmp.recycle();
-          }
+        mBackground.bmp.recycle();
 
-          for (int i = 0; i < mBubblesBlind.length; i++) {
-            mBubblesBlind[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mFrozenBubbles.length; i++) {
-            mFrozenBubbles[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mTargetedBubbles.length; i++) {
-            mTargetedBubbles[i].bmp.recycle();
-          }
-
-          mBubbleBlink.bmp.recycle();
-          mGameWon.bmp.recycle();
-          mGameLost.bmp.recycle();
-          mGamePaused.bmp.recycle();
-          mHurry.bmp.recycle();
-          if (mPauseButton != null) {
-            mPauseButton.bmp.recycle();
-          }
-          if (mPlayButton != null) {
-            mPlayButton.bmp.recycle();
-          }
-          mPenguins.bmp.recycle();
-          if (mPenguins2 != null) {
-            mPenguins2.bmp.recycle();
-          }
-          mCompressorHead.bmp.recycle();
-          mCompressor.bmp.recycle();
-          mLife.bmp.recycle();
-          if (mBanana != null) {
-            mBanana.bmp.recycle();
-          }
-          if (mTomato != null) {
-            mTomato.bmp.recycle();
-          }
+        for (int i = 0; i < mBubbles.length; i++) {
+          mBubbles[i].bmp.recycle();
         }
+
+        for (int i = 0; i < mBubblesBlind.length; i++) {
+          mBubblesBlind[i].bmp.recycle();
+        }
+
+        for (int i = 0; i < mFrozenBubbles.length; i++) {
+          mFrozenBubbles[i].bmp.recycle();
+        }
+
+        for (int i = 0; i < mTargetedBubbles.length; i++) {
+          mTargetedBubbles[i].bmp.recycle();
+        }
+
+        mBubbleBlink.bmp.recycle();
+        mGameWon.bmp.recycle();
+        mGameLost.bmp.recycle();
+        mGamePaused.bmp.recycle();
+        mHurry.bmp.recycle();
+        if (mPauseButton != null) {
+          mPauseButton.bmp.recycle();
+        }
+        if (mPlayButton != null) {
+          mPlayButton.bmp.recycle();
+        }
+        mPenguins.bmp.recycle();
+        if (mPenguins2 != null) {
+          mPenguins2.bmp.recycle();
+        }
+        mCompressorHead.bmp.recycle();
+        mCompressor.bmp.recycle();
+        mLife.bmp.recycle();
+        mFontImage.bmp.recycle();
+        if (mBanana != null) {
+          mBanana.bmp.recycle();
+        }
+        if (mTomato != null) {
+          mTomato.bmp.recycle();
+        }
+
         mBackground.bmp = null;
         mBackground = null;
 
@@ -1164,6 +1166,8 @@ public class GameView extends SurfaceView
         mCompressor = null;
         mLife.bmp = null;
         mLife = null;
+        mFontImage.bmp = null;
+        mFontImage = null;
         if (mBanana != null) {
           mBanana.bmp = null;
         }
@@ -1741,7 +1745,7 @@ public class GameView extends SurfaceView
         else {
           malusBar1 = null;
           malusBar2 = null;
-          if (firstLevel) {
+          if (!FrozenBubble.arcadeGame && firstLevel && (numPlayers == 1)) {
             mLevelManager.goToFirstLevel();
           }
         }
