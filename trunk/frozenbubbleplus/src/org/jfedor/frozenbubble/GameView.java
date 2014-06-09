@@ -1065,119 +1065,58 @@ public class GameView extends SurfaceView
         }
         mTomatoOrig = null;
 
-        mBackground.bmp.recycle();
+        /*
+         * All the scalable bitmaps are located within the image list,
+         * so recycling all the bitmaps in this list ensures they are
+         * all recycled.
+         */
+        int size = mImageList.size();
+        while (size > 0) {
+          BmpWrap bmpWrap = mImageList.elementAt(--size);
+          bmpWrap.bmp.recycle();
+          bmpWrap.bmp = null;
+        }
+        mImageList.clear();
+        mImageList = null;
 
-        for (int i = 0; i < mBubbles.length; i++) {
-          mBubbles[i].bmp.recycle();
-        }
-
-        for (int i = 0; i < mBubblesBlind.length; i++) {
-          mBubblesBlind[i].bmp.recycle();
-        }
-
-        for (int i = 0; i < mFrozenBubbles.length; i++) {
-          mFrozenBubbles[i].bmp.recycle();
-        }
-
-        for (int i = 0; i < mTargetedBubbles.length; i++) {
-          mTargetedBubbles[i].bmp.recycle();
-        }
-
-        mBubbleBlink.bmp.recycle();
-        mGameWon.bmp.recycle();
-        mGameLost.bmp.recycle();
-        mGamePaused.bmp.recycle();
-        mHurry.bmp.recycle();
-        if (mPauseButton != null) {
-          mPauseButton.bmp.recycle();
-        }
-        if (mPlayButton != null) {
-          mPlayButton.bmp.recycle();
-        }
-        mPenguins.bmp.recycle();
-        if (mPenguins2 != null) {
-          mPenguins2.bmp.recycle();
-        }
-        mCompressorHead.bmp.recycle();
-        mCompressor.bmp.recycle();
-        mLife.bmp.recycle();
-        mFontImage.bmp.recycle();
-        if (mBanana != null) {
-          mBanana.bmp.recycle();
-        }
-        if (mTomato != null) {
-          mTomato.bmp.recycle();
-        }
-
-        mBackground.bmp = null;
         mBackground = null;
 
         for (int i = 0; i < mBubbles.length; i++) {
-          mBubbles[i].bmp = null;
           mBubbles[i] = null;
         }
         mBubbles = null;
 
         for (int i = 0; i < mBubblesBlind.length; i++) {
-          mBubblesBlind[i].bmp = null;
           mBubblesBlind[i] = null;
         }
         mBubblesBlind = null;
 
         for (int i = 0; i < mFrozenBubbles.length; i++) {
-          mFrozenBubbles[i].bmp = null;
           mFrozenBubbles[i] = null;
         }
         mFrozenBubbles = null;
 
         for (int i = 0; i < mTargetedBubbles.length; i++) {
-          mTargetedBubbles[i].bmp = null;
           mTargetedBubbles[i] = null;
         }
         mTargetedBubbles = null;
 
-        mBubbleBlink.bmp = null;
-        mBubbleBlink = null;
-        mGameWon.bmp = null;
-        mGameWon = null;
-        mGameLost.bmp = null;
-        mGameLost = null;
-        mGamePaused.bmp = null;
-        mGamePaused = null;
-        mHurry.bmp = null;
-        mHurry = null;
-        if (mPauseButton != null) {
-          mPauseButton.bmp = null;
-        }
-        mPauseButton = null;
-        if (mPlayButton != null) {
-          mPlayButton.bmp = null;
-        }
-        mPlayButton = null;
-        mPenguins.bmp = null;
-        mPenguins = null;
-        if (mPenguins2 != null) {
-          mPenguins2.bmp = null;
-        }
-        mPenguins2 = null;
-        mCompressorHead.bmp = null;
+        mBubbleBlink    = null;
+        mGameWon        = null;
+        mGameLost       = null;
+        mGamePaused     = null;
+        mHurry          = null;
+        mPauseButton    = null;
+        mPlayButton     = null;
+        mPenguins       = null;
+        mPenguins2      = null;
         mCompressorHead = null;
-        mCompressor.bmp = null;
-        mCompressor = null;
-        mLife.bmp = null;
-        mLife = null;
-        mFontImage.bmp = null;
-        mFontImage = null;
-        if (mBanana != null) {
-          mBanana.bmp = null;
-        }
-        mBanana = null;
-        if (mTomato != null) {
-          mTomato.bmp = null;
-        }
-        mTomato = null;
+        mCompressor     = null;
+        mLife           = null;
+        mFontImage      = null;
+        mBanana         = null;
+        mTomato         = null;
 
-        mImageList = null;
         mSoundManager.cleanUp();
         mSoundManager = null;
         mLevelManager = null;
