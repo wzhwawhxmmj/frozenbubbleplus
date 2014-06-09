@@ -105,7 +105,7 @@ const ModPlug_Settings gSettings32000 =
 // ************************************************************ 
 // Start of JNI stub code
 // ************************************************************ 
-ModPlugFile *currmodFile;
+ModPlugFile* currmodFile;
 
 #define SAMPLEBUFFERSIZE 40000
 
