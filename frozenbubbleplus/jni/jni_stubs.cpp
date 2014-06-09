@@ -112,7 +112,6 @@ ModPlugFile *currmodFile;
 unsigned char samplebuffer[SAMPLEBUFFERSIZE];
 
 int currsample;
-void *Cbuffer;
 
 /*
  * DIAB hack to change tempo!!
@@ -205,8 +204,7 @@ JNIEXPORT jboolean JNICALL Java_com_peculiargames_andmodplug_PlayerThread_ModPlu
   /*
    * Convert from Java buffer into a C buffer.
    */
-  Cbuffer = (void *) env->GetByteArrayElements(buffer, 0);
-  currmodFile = ModPlug_Load(Cbuffer, csize);
+  currmodFile = ModPlug_Load((void *) env->GetByteArrayElements(buffer, 0), csize);
 
   DIABpatternchanged = 0;
   ANDMODPLUGpatternfrom = 0;
