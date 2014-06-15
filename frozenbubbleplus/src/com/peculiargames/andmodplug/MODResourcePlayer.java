@@ -65,16 +65,17 @@ import android.content.Context;
  * <br><code>// get player instance (in topmost activity, etc.)
  * <br>mrp = MODResourcePlayer();
  * <br>// load MOD/XM data into player
- * <br>mrp.LoadMODResource(R.raw.coolsong);
+ * <br>mrp.loadModuleResource(R.raw.coolsong);
  * <br>mrp.start();  // start thread (playing song)</code>
  * <br><b>Then when changing songs (new game level or transition to
  * another sub-activity, etc.):</b> 
- * <br><code>mrp.PausePlay();
- * <br>mrp.LoadMODResource(R.raw.newcoolsong);
- * <br>mrp.UnPausePlay();
+ * <br><code>mrp.pausePlay();
+ * <br>mrp.loadModuleResource(R.raw.newcoolsong);
+ * <br>mrp.unPausePlay();
  * <br>// repeat...</code>
  * @version 1.0
  * @author P.A. Casey (crow) Peculiar-Games.com
+ * @author Eric Fortin
  *
  */
 public class MODResourcePlayer extends PlayerThread {
@@ -95,8 +96,7 @@ public class MODResourcePlayer extends PlayerThread {
    * extensions.
    * <p>The <code>context</code> argument is the application context
    * which allows MODResourcePlayer to load resources directly.
-   * @param context - Application context that is creating this
-   * instance.
+   * @param context - Application context creating this instance.
    */
   public MODResourcePlayer(Context context) {
     // Get super class (PlayerThread) with default rate.
@@ -112,30 +112,35 @@ public class MODResourcePlayer extends PlayerThread {
    * <br>Developers using Eclipse as an IDE should note that it allows
    * the .xm file extension but may be fussy about other tracker format
    * extensions.
-   * <p>The <code>modresource</code> argument is the resource id for the
+   * <p>The <code>modResource</code> argument is the resource id for the
    * MOD/XM song file, e.g. R.raw.coolsong
-   * @param modresource - Android resource id for a MOD/XM/etc. (tracker
+   * @param modResource - Android resource ID for a MOD/XM/etc. (tracker
    * format) song file.
-   * @param gc - if <code>true</code>, perform garbage collection prior
-   * to loading the file.
    */
-  public boolean LoadMODResource(int modresource, boolean gc) {
-    byte[] modData = null;
-    int currfilesize = 0;
+  public boolean loadModuleResource(int modResource) {
+    byte[]      modData      = null;
+    int         currfilesize = 0;
     InputStream mModfileInStream;
 
     /*
-     * Unload any mod file we have currently loaded.
+     * Unload any MOD file we have currently loaded.
      */
-    UnLoadMod();
+    unLoadMod();
 
     /*
      * Get an input stream for the MOD file resource.
      */
-    mModfileInStream = mContext.getResources().openRawResource(modresource);
+    mModfileInStream = mContext.getResources().openRawResource(modResource);
     try {
       currfilesize = mModfileInStream.available();
-    } catch (IOException e) {
+    } catch (IOException ioe1) {
+      try {
+        mModfileInStream.close();
+      } catch (IOException ioe2) {
+        /*
+         * Should never happen.
+         */
+      }
       return false;
     }
 
@@ -143,27 +148,23 @@ public class MODResourcePlayer extends PlayerThread {
      * Allocate a buffer that can hold the current MOD file data.
      */
     try {
-      /*
-       * This is a very critical and often very large memory allocation.
-       * Force the system to perform garbage collection to free up
-       * memory for the allocation.
-       *
-       * This is not recommended practice, as it can affect system
-       * performance.  This should only be called when the user is not
-       * interacting with the system.
-       */
-      if (gc) {
-        System.gc();
-      }
       modData = new byte[currfilesize];
     } catch (OutOfMemoryError oome) {
       // Auto-generated catch block.
       oome.printStackTrace();
+      try {
+        mModfileInStream.close();
+      } catch (IOException e) {
+        /*
+         * Should never happen.
+         */
+      }
       return false;
     }
 
     try {
-      setModSize(mModfileInStream.read(modData,0, currfilesize));
+      setModSize(mModfileInStream.read(modData, 0, currfilesize));
+      mModfileInStream.close();
     } catch (IOException e) {
       // Auto-generated catch block.
       e.printStackTrace();
@@ -172,19 +173,18 @@ public class MODResourcePlayer extends PlayerThread {
     /*
      * Load the song into the player.
      */
-    LoadMODData(modData);
+    loadModuleData(modData);
     return true;
   }
 
   /**
    * Stop playing the song, close down the player and
    * <code>join()</code> the player thread.
-   * <p>Typically called in the application's (Activity's)
-   * <code>onPause()</code> method.
+   * <p>Typically called in the application's main activity
+   * <code>onDestroy()</code> method.
    */
-  public void StopAndClose() {
-    PausePlay();
-    StopThread();
+  public void stopAndClose() {
+    stopThread();
     /*
      * Now close and join() the MOD player thread.
      */
@@ -199,7 +199,6 @@ public class MODResourcePlayer extends PlayerThread {
          */
       }
     }
-    CloseLIBMODPLUG();
-    InvalidatePlayer();
+    closeLibModPlug();
   }
 }
