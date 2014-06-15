@@ -98,14 +98,11 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -125,15 +122,6 @@ public class GameView extends SurfaceView
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
 
-  /*
-   * The following screen orientation definitions were added to
-   * ActivityInfo in API level 9.
-   */
-  public final static int SCREEN_ORIENTATION_SENSOR_LANDSCAPE  = 6;
-  public final static int SCREEN_ORIENTATION_SENSOR_PORTRAIT   = 7;
-  public final static int SCREEN_ORIENTATION_REVERSE_LANDSCAPE = 8;
-  public final static int SCREEN_ORIENTATION_REVERSE_PORTRAIT  = 9;
-
   private boolean               mBlankScreen   = false;
   private boolean               muteKeyToggle  = false;
   private boolean               pauseKeyToggle = false;
@@ -141,6 +129,7 @@ public class GameView extends SurfaceView
   private int                   numPlayer1GamesWon;
   private int                   numPlayer2GamesWon;
   private Context               mContext;
+  private gameEnum              game1Status;
   private GameThread            mGameThread;
   private NetworkGameManager    mNetworkManager;
   private RemoteInterface       remoteInterface;
@@ -800,11 +789,11 @@ public class GameView extends SurfaceView
       }
 
       mLevelManager = new LevelManager(0, FrozenBubble.getDifficulty());
-      newGame();
+      newGame(false);
     }
 
     public GameThread(SurfaceHolder surfaceHolder, byte[] customLevels,
-                      int startingLevel) {
+                      int startingLevel, boolean arcadeGame) {
       //Log.i("frozen-bubble", "GameThread()");
       mSurfaceHolder = surfaceHolder;
       Resources res = mContext.getResources();
@@ -954,46 +943,45 @@ public class GameView extends SurfaceView
       mFont             = new BubbleFont(mFontImage);
       mLauncher         = res.getDrawable(R.drawable.launcher);
       mSoundManager     = new SoundManager(mContext);
-      mHighScoreManager =
-          new HighscoreManager(getContext(),
-                               HighscoreManager.PUZZLE_DATABASE_NAME);
 
-      if (null == customLevels) {
-        try {
-          InputStream is     = mContext.getAssets().open("levels.txt");
-          int         size   = is.available();
-          byte[]      levels = new byte[size];
-          is.read(levels);
-          is.close();
-          SharedPreferences sp = mContext.getSharedPreferences(
-          FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
-          startingLevel = sp.getInt("level", 0);
-          mLevelManager = new LevelManager(levels, startingLevel);
-        } catch (IOException e) {
-          /*
-           *  Should never happen.
-           */
-          throw new RuntimeException(e);
-        }
+      if (arcadeGame) {
+        mHighScoreManager =
+            new HighscoreManager(getContext(),
+                                 HighscoreManager.ARCADE_DATABASE_NAME);
+        mLevelManager = new LevelManager(System.currentTimeMillis(),
+                                         FrozenBubble.getDifficulty());
       }
       else {
-        /*
-         *  We were launched by the level editor.
-         */
-        mLevelManager = new LevelManager(customLevels, startingLevel);
+        mHighScoreManager =
+            new HighscoreManager(getContext(),
+                                 HighscoreManager.PUZZLE_DATABASE_NAME);
+        if (null == customLevels) {
+          try {
+            InputStream is     = mContext.getAssets().open("levels.txt");
+            int         size   = is.available();
+            byte[]      levels = new byte[size];
+            is.read(levels);
+            is.close();
+            SharedPreferences sp = mContext.getSharedPreferences(
+            FrozenBubble.PREFS_NAME, Context.MODE_PRIVATE);
+            startingLevel = sp.getInt("level", 0);
+            mLevelManager = new LevelManager(levels, startingLevel);
+          } catch (IOException e) {
+            /*
+             *  Should never happen.
+             */
+            throw new RuntimeException(e);
+          }
+        }
+        else {
+          /*
+           *  We were launched by the level editor.
+           */
+          mLevelManager = new LevelManager(customLevels, startingLevel);
+        }
       }
 
-      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighScoreManager);
-      mPlayer1.setGameRef(mFrozenGame1);
-      mFrozenGame2 = null;
-      mNetworkManager = null;
-      mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
+      newGame(false);
     }
 
     public void cleanUp() {
@@ -1010,7 +998,6 @@ public class GameView extends SurfaceView
         mFrozenGame1 = null;
         mFrozenGame2 = null;
 
-        boolean imagesScaled = (mBackgroundOrig == mBackground.bmp);
         mBackgroundOrig.recycle();
         mBackgroundOrig = null;
 
@@ -1068,6 +1055,8 @@ public class GameView extends SurfaceView
         mCompressorOrig = null;
         mLifeOrig.recycle();
         mLifeOrig = null;
+        mFontImageOrig.recycle();
+        mFontImageOrig = null;
         if (mBananaOrig != null) {
           mBananaOrig.recycle();
         }
@@ -1077,116 +1066,58 @@ public class GameView extends SurfaceView
         }
         mTomatoOrig = null;
 
-        if (imagesScaled) {
-          mBackground.bmp.recycle();
-          for (int i = 0; i < mBubbles.length; i++) {
-            mBubbles[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mBubblesBlind.length; i++) {
-            mBubblesBlind[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mFrozenBubbles.length; i++) {
-            mFrozenBubbles[i].bmp.recycle();
-          }
-
-          for (int i = 0; i < mTargetedBubbles.length; i++) {
-            mTargetedBubbles[i].bmp.recycle();
-          }
-
-          mBubbleBlink.bmp.recycle();
-          mGameWon.bmp.recycle();
-          mGameLost.bmp.recycle();
-          mGamePaused.bmp.recycle();
-          mHurry.bmp.recycle();
-          if (mPauseButton != null) {
-            mPauseButton.bmp.recycle();
-          }
-          if (mPlayButton != null) {
-            mPlayButton.bmp.recycle();
-          }
-          mPenguins.bmp.recycle();
-          if (mPenguins2 != null) {
-            mPenguins2.bmp.recycle();
-          }
-          mCompressorHead.bmp.recycle();
-          mCompressor.bmp.recycle();
-          mLife.bmp.recycle();
-          if (mBanana != null) {
-            mBanana.bmp.recycle();
-          }
-          if (mTomato != null) {
-            mTomato.bmp.recycle();
-          }
+        /*
+         * All the scalable bitmaps are located within the image list,
+         * so recycling all the bitmaps in this list ensures they are
+         * all recycled.
+         */
+        int size = mImageList.size();
+        while (size > 0) {
+          BmpWrap bmpWrap = mImageList.elementAt(--size);
+          bmpWrap.bmp.recycle();
+          bmpWrap.bmp = null;
         }
-        mBackground.bmp = null;
+        mImageList.clear();
+        mImageList = null;
+
         mBackground = null;
 
         for (int i = 0; i < mBubbles.length; i++) {
-          mBubbles[i].bmp = null;
           mBubbles[i] = null;
         }
         mBubbles = null;
 
         for (int i = 0; i < mBubblesBlind.length; i++) {
-          mBubblesBlind[i].bmp = null;
           mBubblesBlind[i] = null;
         }
         mBubblesBlind = null;
 
         for (int i = 0; i < mFrozenBubbles.length; i++) {
-          mFrozenBubbles[i].bmp = null;
           mFrozenBubbles[i] = null;
         }
         mFrozenBubbles = null;
 
         for (int i = 0; i < mTargetedBubbles.length; i++) {
-          mTargetedBubbles[i].bmp = null;
           mTargetedBubbles[i] = null;
         }
         mTargetedBubbles = null;
 
-        mBubbleBlink.bmp = null;
-        mBubbleBlink = null;
-        mGameWon.bmp = null;
-        mGameWon = null;
-        mGameLost.bmp = null;
-        mGameLost = null;
-        mGamePaused.bmp = null;
-        mGamePaused = null;
-        mHurry.bmp = null;
-        mHurry = null;
-        if (mPauseButton != null) {
-          mPauseButton.bmp = null;
-        }
-        mPauseButton = null;
-        if (mPlayButton != null) {
-          mPlayButton.bmp = null;
-        }
-        mPlayButton = null;
-        mPenguins.bmp = null;
-        mPenguins = null;
-        if (mPenguins2 != null) {
-          mPenguins2.bmp = null;
-        }
-        mPenguins2 = null;
-        mCompressorHead.bmp = null;
+        mBubbleBlink    = null;
+        mGameWon        = null;
+        mGameLost       = null;
+        mGamePaused     = null;
+        mHurry          = null;
+        mPauseButton    = null;
+        mPlayButton     = null;
+        mPenguins       = null;
+        mPenguins2      = null;
         mCompressorHead = null;
-        mCompressor.bmp = null;
-        mCompressor = null;
-        mLife.bmp = null;
-        mLife = null;
-        if (mBanana != null) {
-          mBanana.bmp = null;
-        }
-        mBanana = null;
-        if (mTomato != null) {
-          mTomato.bmp = null;
-        }
-        mTomato = null;
+        mCompressor     = null;
+        mLife           = null;
+        mFontImage      = null;
+        mBanana         = null;
+        mTomato         = null;
 
-        mImageList = null;
         mSoundManager.cleanUp();
         mSoundManager = null;
         mLevelManager = null;
@@ -1211,7 +1142,10 @@ public class GameView extends SurfaceView
       if (mFrozenGame1 != null) {
         mFrozenGame1.paint(canvas, mDisplayScale, mPlayer1DX, mDisplayDY);
       }
-      if (numPlayers > 1) {
+      if (FrozenBubble.arcadeGame) {
+        drawDifficulty(canvas);
+      }
+      else if (numPlayers > 1) {
         if (mFrozenGame2 != null) {
           mFrozenGame2.paint(canvas, mDisplayScale, mPlayer2DX, mDisplayDY);
         }
@@ -1447,6 +1381,14 @@ public class GameView extends SurfaceView
                        mDisplayDX, mDisplayDY);
     }
 
+    private void drawDifficulty(Canvas canvas) {
+      int y = 433;
+      int x = 159;
+      int level = mLevelManager.getLevelIndex();
+      mFont.print(LevelManager.DifficultyStrings[level], x, y, canvas,
+                  mDisplayScale, mDisplayDX, mDisplayDY);
+    }
+
     /**
      * Draw the high score screen for puzzle game mode.
      * <p>The objective of puzzle game mode is efficiency - fire as few
@@ -1527,10 +1469,11 @@ public class GameView extends SurfaceView
     }
 
     /**
-     * Draw the low score screen for multiplayer game mode.
-     * <p>The objective of multiplayer game mode is endurance - fire as
-     * many bubbles as possible for as long as possible.  Thus the low
-     * score will exhibit the most shots fired during the longest game.
+     * Draw the low score screen for arcade and multiplayer game modes.
+     * <p>The objective of arcade and multiplayer games is endurance -
+     * fire as many bubbles as possible for as long as possible.  Thus
+     * the low score will exhibit the most shots fired during the
+     * longest game.
      * @param canvas - the drawing canvas to display the scores on.
      * @param level - the level difficulty index.
      */
@@ -1545,12 +1488,15 @@ public class GameView extends SurfaceView
       int y = 20;
       int ysp = 26;
       int indent = 10;
-      int orientation = getScreenOrientation();
 
-      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-        x += GAMEFIELD_WIDTH/2;
-      else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-        x -= GAMEFIELD_WIDTH/2;
+      if (!FrozenBubble.arcadeGame) {
+        int orientation = getScreenOrientation();
+  
+        if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+          x += GAMEFIELD_WIDTH/2;
+        else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
+          x -= GAMEFIELD_WIDTH/2;
+      }
 
       mFont.print("highscore for " +
                   LevelManager.DifficultyStrings[mHighScoreManager.getLevel()],
@@ -1596,7 +1542,7 @@ public class GameView extends SurfaceView
       int ysp = 26;
       int orientation = getScreenOrientation();
 
-      if (orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT)
+      if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
         x += GAMEFIELD_WIDTH/2;
       else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
         x -= GAMEFIELD_WIDTH/2;
@@ -1745,75 +1691,8 @@ public class GameView extends SurfaceView
     }
 
     private int getScreenOrientation() {
-      /*
-       * The method getOrientation() was deprecated in API level 8.
-       *
-       * For API level 8 or greater, use getRotation().
-       */
-      int rotation = ((Activity) mContext).getWindowManager().
-        getDefaultDisplay().getOrientation();
-      DisplayMetrics dm = new DisplayMetrics();
-      ((Activity) mContext).getWindowManager().getDefaultDisplay().getMetrics(dm);
-      int width  = dm.widthPixels;
-      int height = dm.heightPixels;
-      int orientation;
-      /*
-       * The orientation determination is based on the natural orienation
-       * mode of the device, which can be either portrait, landscape, or
-       * square.
-       *
-       * After the natural orientation is determined, convert the device
-       * rotation into a fully qualified orientation.
-       */
-      if ((((rotation == Surface.ROTATION_0  ) ||
-            (rotation == Surface.ROTATION_180)) && (height > width)) ||
-          (((rotation == Surface.ROTATION_90 ) ||
-            (rotation == Surface.ROTATION_270)) && (width  > height))) {
-        /*
-         * Natural orientation is portrait.
-         */
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;              
-        }
-      }
-      else {
-        /*
-         * Natural orientation is landscape or square.
-         */
-        switch(rotation) {
-          case Surface.ROTATION_0:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case Surface.ROTATION_90:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case Surface.ROTATION_180:
-            orientation = SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
-          case Surface.ROTATION_270:
-            orientation = SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          default:
-            orientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;              
-        }
-      }
-
-      return orientation;
+      return FrozenBubble.getScreenOrientation(((Activity) mContext).
+                                               getWindowManager());
     }
 
     private BmpWrap NewBmpWrap() {
@@ -1823,7 +1702,13 @@ public class GameView extends SurfaceView
       return new_img;
     }
 
-    public void newGame() {
+    /**
+     * Start a new game.
+     * @param firstLevel if <code>true</code>, start a new game in
+     * puzzle mode beginning at the first level. 
+     */
+    public void newGame(boolean firstLevel) {
+      game1Status = gameEnum.PLAYING;
       synchronized(mSurfaceHolder) {
         if (numPlayers > 1) {
           malusBar1 = new MalusBar(GameView.GAMEFIELD_WIDTH - 164, 40,
@@ -1834,7 +1719,9 @@ public class GameView extends SurfaceView
         else {
           malusBar1 = null;
           malusBar2 = null;
-          mLevelManager.goToFirstLevel();
+          if (!FrozenBubble.arcadeGame && firstLevel && (numPlayers == 1)) {
+            mLevelManager.goToFirstLevel();
+          }
         }
 
         mImagesReady = false;
@@ -1872,28 +1759,18 @@ public class GameView extends SurfaceView
         }
 
         mImagesReady = true;
-
-        if (mHighScoreManager != null) {
-          mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
-        }
       }
-    }
 
-    private void nextLevel() {
-      mImagesReady = false;
-      mPlayer1.setGameRef(null);
-      mFrozenGame1 = new FrozenGame(mBackground, mBubbles, mBubblesBlind,
-                                    mFrozenBubbles, mTargetedBubbles,
-                                    mBubbleBlink, mGameWon, mGameLost,
-                                    mGamePaused, mHurry, mPenguins,
-                                    mCompressorHead, mCompressor, mLauncher,
-                                    mSoundManager, mLevelManager,
-                                    mHighScoreManager);
-      mPlayer1.setGameRef(mFrozenGame1);
-      mImagesReady = true;
       if (mHighScoreManager != null) {
         mHighScoreManager.startLevel(mLevelManager.getLevelIndex());
       }
+
+      startOpponent();
+    }
+
+    private void nextLevel() {
+      mLevelManager.goToNextLevel();
+      newGame(false);
     }
 
     public void pause() {
@@ -1980,6 +1857,7 @@ public class GameView extends SurfaceView
           numPlayer2GamesWon = map.getInt("numPlayer2GamesWon", 0);
           if (mFrozenGame2 != null) {
             mFrozenGame2.restoreState(map, mImageList);
+            startOpponent();
           }
         }
         if (mLevelManager != null) {
@@ -2037,7 +1915,7 @@ public class GameView extends SurfaceView
                       }
                     }
                     else if ((mHighScoreManager != null) && mShowScores) {
-                      if (numPlayers > 1) {
+                      if (FrozenBubble.arcadeGame || (numPlayers > 1)) {
                         drawLowScoreScreen(c, mHighScoreManager.getLevel());
                       }
                       else {
@@ -2072,7 +1950,13 @@ public class GameView extends SurfaceView
            * inconsistent state.
            */
           if (c != null) {
-            mSurfaceHolder.unlockCanvasAndPost(c);
+            try {
+              mSurfaceHolder.unlockCanvasAndPost(c);
+            } catch (IllegalStateException ise) {
+              /*
+               * Surface has already been released.
+               */
+            }
           }
         }
       }
@@ -2279,7 +2163,7 @@ public class GameView extends SurfaceView
             }
             else {
               int orientation = getScreenOrientation();
-              if ((orientation == SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
+              if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
                   (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
                 if (mLocalInput.playerID == VirtualInput.PLAYER2) {
                   mDisplayDX = (int)(-mDisplayScale * gameWidth);
@@ -2309,7 +2193,7 @@ public class GameView extends SurfaceView
     /**
      * Create a CPU opponent object (if necessary) and start the thread.
      */
-    public void startOpponent() {
+    private void startOpponent() {
       if (mOpponent != null) {
         mOpponent.stopThread();
         mOpponent = null;
@@ -2437,7 +2321,9 @@ public class GameView extends SurfaceView
                 setState(stateEnum.RUNNING);
               }
               else {
-                nextLevel();
+                if (game1Status == gameEnum.WON) {
+                  nextLevel();
+                }
                 if (getCurrentLevelIndex() != 0) {
                   setState(stateEnum.RUNNING);
                 }
@@ -2587,30 +2473,33 @@ public class GameView extends SurfaceView
           }
 
           pause();
-          newGame();
-
-          if (mRemoteInput.isCPU) {
-            startOpponent();
-          }
+          nextLevel();
         }
       }
       else if ((game1State == gameEnum.NEXT_LOST) ||
                (game1State == gameEnum.NEXT_WON )) {
-        if (game1State == gameEnum.NEXT_WON) {
+        if (FrozenBubble.arcadeGame) {
+          game1Status = gameEnum.WON;
+          mShowScores = true;
+          pause();
+        }
+        else if (game1State == gameEnum.NEXT_WON) {
+          game1Status = gameEnum.WON;
           mShowScores = true;
           pause();
         }
         else {
-          nextLevel();
+          game1Status = gameEnum.LOST;
+          newGame(false);
         }
+      }
 
-        if (mGameListener != null) {
-          if (game1State == gameEnum.NEXT_WON) {
-            mGameListener.onGameEvent(eventEnum.GAME_WON);
-          }
-          else {
-            mGameListener.onGameEvent(eventEnum.GAME_LOST);
-          }
+      if (mGameListener != null) {
+        if (game1State == gameEnum.NEXT_WON) {
+          mGameListener.onGameEvent(eventEnum.GAME_WON);
+        }
+        else if (game1State == gameEnum.NEXT_LOST){
+          mGameListener.onGameEvent(eventEnum.GAME_LOST);
         }
       }
     }
@@ -2639,7 +2528,7 @@ public class GameView extends SurfaceView
     super(context, attrs);
     //Log.i("frozen-bubble", "GameView constructor");
     init(context, 1, (int) VirtualInput.PLAYER1, FrozenBubble.HUMAN,
-         FrozenBubble.LOCALE_LOCAL, null, 0);
+         FrozenBubble.LOCALE_LOCAL, FrozenBubble.arcadeGame, null, 0);
   }
 
   /**
@@ -2652,7 +2541,8 @@ public class GameView extends SurfaceView
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
     init(context, 1, (int) VirtualInput.PLAYER1, FrozenBubble.HUMAN,
-         FrozenBubble.LOCALE_LOCAL, levels, startingLevel);
+         FrozenBubble.LOCALE_LOCAL, FrozenBubble.arcadeGame, levels,
+         startingLevel);
   }
 
   /**
@@ -2663,15 +2553,17 @@ public class GameView extends SurfaceView
    * @param opponentId - the opponent type ID, human or CPU.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
+   * @param arcadeGame - arcade game mode flag.
    */
   public GameView(Context context,
                   int numPlayers,
                   int myPlayerId,
                   int opponentId,
-                  int gameLocale) {
+                  int gameLocale,
+                  boolean arcadeGame) {
     super(context);
     //Log.i("frozen-bubble", "GameView constructor");
-    init(context, numPlayers, myPlayerId, opponentId, gameLocale, null, 0);
+    init(context, numPlayers, myPlayerId, opponentId, gameLocale, arcadeGame, null, 0);
   }
 
   private boolean checkImmediateAction() {
@@ -2742,6 +2634,7 @@ public class GameView extends SurfaceView
    * @param opponentId - the opponent type ID, human or CPU.
    * @param gameLocale - the game topology, which can be either local,
    * or distributed over various network types.
+   * @param arcadeGame - arcade game mode flag.
    * @param levels - the single player game levels (can be null).
    * @param startingLevel - the single player game starting level.
    */
@@ -2750,6 +2643,7 @@ public class GameView extends SurfaceView
                     int myPlayerId,
                     int opponentId,
                     int gameLocale,
+                    boolean arcadeGame,
                     byte[] levels,
                     int startingLevel) {
     mContext = context;
@@ -2811,7 +2705,7 @@ public class GameView extends SurfaceView
       mGameThread = new GameThread(holder);
     }
     else {
-      mGameThread = new GameThread(holder, levels, startingLevel);
+      mGameThread = new GameThread(holder, levels, startingLevel, arcadeGame);
     }
     mGameThread.setRunning(true);
     mGameThread.start();
@@ -2858,20 +2752,6 @@ public class GameView extends SurfaceView
         }
       }
     }
-  }
-
-  /*
-   * When this view loses input focus, request it again immediately to
-   * continue processing input events.
-   * (non-Javadoc)
-   * @see android.view.View#onFocusChanged(boolean, int, android.graphics.Rect)
-   */
-  @Override
-  protected void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
-    if (!gainFocus) {
-      this.requestFocus();
-    }
-    super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
   }
 
   @Override
