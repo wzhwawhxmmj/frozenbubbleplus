@@ -94,8 +94,8 @@ public class BubbleSprite extends Sprite {
   public BubbleSprite(Rect area, int color, double moveX, double moveY,
                       double realX, double realY, boolean fixed, boolean blink,
                       boolean released, boolean checkJump, boolean checkFall,
-                      int fixedAnim, BmpWrap bubbleFace,
-                      Point lastOpenPosition,
+                      int fixedAnim, int scroll, int scrollMax,
+                      BmpWrap bubbleFace, Point lastOpenPosition,
                       BmpWrap bubbleBlindFace, BmpWrap frozenFace,
                       BmpWrap[] bubbleFixed, BmpWrap bubbleBlink,
                       BubbleManager bubbleManager, SoundManager soundManager,
@@ -149,7 +149,7 @@ public class BubbleSprite extends Sprite {
     this.realY = area.top;
     this.lastOpenPosition = currentPosition();
 
-    fixed = false;
+    fixed     = false;
     fixedAnim = -1;
   }
 
@@ -174,7 +174,7 @@ public class BubbleSprite extends Sprite {
     this.realY = area.top;
     this.lastOpenPosition = currentPosition();
 
-    fixed = true;
+    fixed     = true;
     fixedAnim = -1;
     addToManager();
   }
@@ -221,7 +221,7 @@ public class BubbleSprite extends Sprite {
     }
 
     checkFall = true;
-    Vector<BubbleSprite> v = this.getNeighbors(this.lastOpenPosition);
+    Vector<BubbleSprite> v = this.getNeighbors(this.currentPosition());
 
     for (int i=0 ; i<v.size() ; i++) {
       BubbleSprite current = (BubbleSprite)v.elementAt(i);
@@ -240,14 +240,14 @@ public class BubbleSprite extends Sprite {
     checkJump = true;
 
     if (this.bubbleFace == compare) {
-      checkJump(jump, this.getNeighbors(this.lastOpenPosition));
+      checkJump(jump, this.getNeighbors(this.currentPosition()));
     }
   }
 
   void checkJump(Vector<Sprite> jump, Vector<BubbleSprite> neighbors) {
     jump.addElement(this);
 
-    for (int i=0 ; i<neighbors.size() ; i++) {
+    for (int i = 0; i < neighbors.size(); i++) {
       BubbleSprite current = (BubbleSprite)neighbors.elementAt(i);
 
       if (current != null) {
@@ -257,18 +257,23 @@ public class BubbleSprite extends Sprite {
   }
 
   Point currentPosition() {
+    int rowOffset = frozen.getRowOffset();
     int posY = (int)Math.floor((realY-28.-frozen.getMoveDown())/28.);
-    int posX = (int)Math.floor((realX-174.)/32. + 0.5*(posY%2));
+    int posX = (int)Math.floor((realX-174.)/32. + 0.5*((posY+rowOffset)%2));
 
-    if (posX>7) {
-      posX = 7;
+    if (posX > (LevelManager.NUM_COLS - 1)) {
+      posX = LevelManager.NUM_COLS - 1;
     }
 
-    if (posX<0) {
+    if (posX < 0) {
       posX = 0;
     }
 
-    if (posY<0) {
+    if (posY > (LevelManager.NUM_ROWS - 1)) {
+      posY = LevelManager.NUM_ROWS - 1;
+    }
+
+    if (posY < 0) {
       posY = 0;
     }
 
@@ -293,12 +298,13 @@ public class BubbleSprite extends Sprite {
     BubbleSprite[][] grid = frozen.getGrid();
     Vector<BubbleSprite> list = new Vector<BubbleSprite>();
 
-    if ((p.y % 2) == 0) {
+    int rowOffset = frozen.getRowOffset();
+    if (((p.y + rowOffset) % 2) == 0) {
       if (p.x > 0) {
         list.addElement(grid[p.x-1][p.y]);
       }
 
-      if (p.x < 7) {
+      if (p.x < (LevelManager.NUM_COLS - 1)) {
         list.addElement(grid[p.x+1][p.y]);
 
         if (p.y > 0) {
@@ -306,7 +312,7 @@ public class BubbleSprite extends Sprite {
           list.addElement(grid[p.x+1][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < (LevelManager.NUM_ROWS - 1)) {
           list.addElement(grid[p.x][p.y+1]);
           list.addElement(grid[p.x+1][p.y+1]);
         }
@@ -316,13 +322,13 @@ public class BubbleSprite extends Sprite {
           list.addElement(grid[p.x][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < (LevelManager.NUM_ROWS - 1)) {
           list.addElement(grid[p.x][p.y+1]);
         }
       }
     }
     else {
-      if (p.x < 7) {
+      if (p.x < (LevelManager.NUM_COLS - 1)) {
         list.addElement(grid[p.x+1][p.y]);
       }
 
@@ -334,7 +340,7 @@ public class BubbleSprite extends Sprite {
           list.addElement(grid[p.x-1][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < (LevelManager.NUM_ROWS - 1)) {
           list.addElement(grid[p.x][p.y+1]);
           list.addElement(grid[p.x-1][p.y+1]);
         }
@@ -344,7 +350,7 @@ public class BubbleSprite extends Sprite {
           list.addElement(grid[p.x][p.y-1]);
         }
 
-        if (p.y < 12) {
+        if (p.y < (LevelManager.NUM_ROWS - 1)) {
           list.addElement(grid[p.x][p.y+1]);
         }
       }
@@ -393,8 +399,10 @@ public class BubbleSprite extends Sprite {
      * bubble corresponds to a fixed grid location.  Otherwise just move
      * the bubble.
      */
-    if ((currentPosition.x >= 0) && (currentPosition.x < 8) &&
-        (currentPosition.y >= 0) && (currentPosition.y < 13)) {
+    if ((currentPosition.x >= 0) &&
+        (currentPosition.x < LevelManager.NUM_COLS) &&
+        (currentPosition.y >= 0) &&
+        (currentPosition.y < LevelManager.NUM_ROWS)) {
       BubbleSprite[][] grid = frozen.getGrid();
 
       if (grid[currentPosition.x][currentPosition.y] == null)
@@ -468,7 +476,8 @@ public class BubbleSprite extends Sprite {
     Vector<BubbleSprite> neighbors = getNeighbors(lastOpenPosition);
 
     if (checkCollision(neighbors) || realY < 44.+frozen.getMoveDown()) {
-      realX = 190.+lastOpenPosition.x*32-(lastOpenPosition.y%2)*16;
+      int rowOffset = frozen.getRowOffset();
+      realX = 190.+lastOpenPosition.x*32-((lastOpenPosition.y+rowOffset)%2)*16;
       realY = 44.+lastOpenPosition.y*28+frozen.getMoveDown();
       fixed = true;
 
@@ -487,17 +496,18 @@ public class BubbleSprite extends Sprite {
           if (i>0) {
             current.removeFromManager();
           }
+
           grid[currentPoint.x][currentPoint.y] = null;
         }
 
-        for (int i=0 ; i<8 ; i++) {
+        for (int i = 0; i < LevelManager.NUM_COLS; i++) {
           if (grid[i][0] != null) {
             grid[i][0].checkFall();
           }
         }
 
-        for (int i=0 ; i<8 ; i++) {
-          for (int j=0 ; j<12 ; j++) {
+        for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+          for (int j = 0; j < (LevelManager.NUM_ROWS - 1); j++) {
             if (grid[i][j] != null) {
               if (!grid[i][j].checked()) {
                 frozen.addFallingBubble(grid[i][j]);
@@ -618,6 +628,11 @@ public class BubbleSprite extends Sprite {
                lastOpenPosition.x);
     map.putInt(String.format("%d-%d-lastOpenPosition.y", id, getSavedId()),
                lastOpenPosition.y);
+  }
+
+  public void scroll(int moveDown) {
+    realY += 1.;
+    super.absoluteMove(new Point((int)realX, (int)realY));
   }
 
   public static void setCollisionThreshold(int collision) {
