@@ -52,8 +52,8 @@
 
 package com.efortin.frozenbubble;
 
-import org.jfedor.frozenbubbleplus.FrozenBubble;
 import org.jfedor.frozenbubbleplus.R;
+import org.jfedor.frozenbubbleplus.FrozenBubble;
 
 import android.app.Activity;
 import android.content.Context;

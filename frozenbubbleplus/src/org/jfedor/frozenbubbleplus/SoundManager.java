@@ -52,6 +52,8 @@
 
 package org.jfedor.frozenbubbleplus;
 
+import org.jfedor.frozenbubbleplus.R;
+
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.SoundPool;
