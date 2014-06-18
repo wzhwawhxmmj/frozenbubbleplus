@@ -78,6 +78,7 @@ import java.util.Random;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -85,6 +86,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.hardware.SensorManager;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
@@ -139,9 +141,10 @@ public class FrozenBubble extends Activity
   public final static int MENU_SOUND_OPTIONS  = 5;
   public final static int MENU_DONT_RUSH_ME   = 6;
   public final static int MENU_RUSH_ME        = 7;
-  public final static int MENU_TARGET_MODE    = 8;
-  public final static int MENU_NEW_GAME       = 9;
-  public final static int MENU_ABOUT          = 10;
+  public final static int MENU_NEW_GAME       = 8;
+  public final static int MENU_ABOUT          = 9;
+  public final static int MENU_EDITOR         = 10;
+  public final static int MENU_TARGET_MODE    = 11;
 
   public final static int AIM_TO_SHOOT    = 0;
   public final static int POINT_TO_SHOOT  = 1;
@@ -154,10 +157,11 @@ public class FrozenBubble extends Activity
   public final static int CPU   = 0;
   public final static int HUMAN = 1;
 
-  public static int gameLocale = LOCALE_LOCAL;
-  public static int myPlayerId = VirtualInput.PLAYER1; 
-  public static int numPlayers = 0;
-  public static int opponentId = CPU;
+  public static boolean arcadeGame = false;
+  public static int     gameLocale = LOCALE_LOCAL;
+  public static int     myPlayerId = VirtualInput.PLAYER1; 
+  public static int     numPlayers = 0;
+  public static int     opponentId = CPU;
 
   private static int     collision  = BubbleSprite.MIN_PIX;
   private static boolean compressor = false;
@@ -256,6 +260,7 @@ public class FrozenBubble extends Activity
     menu.add(0, MENU_RUSH_ME,        0, R.string.menu_rush_me);
     menu.add(0, MENU_ABOUT,          0, R.string.menu_about);
     menu.add(0, MENU_NEW_GAME,       0, R.string.menu_new_game);
+    menu.add(0, MENU_EDITOR,         0, R.string.menu_editor);
     return true;
   }
 
@@ -352,6 +357,9 @@ public class FrozenBubble extends Activity
         setDontRushMe(false);
         editor.putBoolean("dontRushMe", dontRushMe);
         editor.commit();
+        return true;
+      case MENU_EDITOR:
+        startEditor();
         return true;
     }
 
@@ -542,6 +550,7 @@ public class FrozenBubble extends Activity
      * The current game is being destroyed, so reset the static game
      * state variables.
      */
+    arcadeGame = false;
     gameLocale = LOCALE_LOCAL;
     myPlayerId = VirtualInput.PLAYER1; 
     numPlayers = 0;
@@ -569,15 +578,26 @@ public class FrozenBubble extends Activity
     mGameView = null;
   }
 
-  private int getScreenOrientation() {
+  /**
+   * Obtain the screen orientation.
+   * @param windowManager - used to get a reference to the display to
+   * obtain display information.
+   * @return The screen orientation, which can be among the following
+   * values:<br><code>
+   * ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE<br>
+   * ActivityInfo.SCREEN_ORIENTATION_PORTRAIT<br>
+   * FrozenBubble.SCREEN_ORIENTATION_REVERSE_LANDSCAPE<br>
+   * FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT</code>
+   */
+  public static int getScreenOrientation(WindowManager windowManager) {
     /*
      * The method getOrientation() was deprecated in API level 8.
      *
      * For API level 8 or greater, use getRotation().
      */
-    int rotation = getWindowManager().getDefaultDisplay().getOrientation();
+    int rotation = windowManager.getDefaultDisplay().getOrientation();
     DisplayMetrics dm = new DisplayMetrics();
-    getWindowManager().getDefaultDisplay().getMetrics(dm);
+    windowManager.getDefaultDisplay().getMetrics(dm);
     int width  = dm.widthPixels;
     int height = dm.heightPixels;
     int orientation;
@@ -647,12 +667,12 @@ public class FrozenBubble extends Activity
   private void initGameOptions() {
     restoreGamePrefs();
 
-    currentOrientation = getScreenOrientation();
+    currentOrientation = getScreenOrientation(getWindowManager());
     myOrientationEventListener =
       new OrientationEventListener(this, SensorManager.SENSOR_DELAY_NORMAL) {
         @Override
         public void onOrientationChanged(int arg0) {
-          currentOrientation = getScreenOrientation();
+          currentOrientation = getScreenOrientation(getWindowManager());
         }
       };
     if (myOrientationEventListener.canDetectOrientation())
@@ -664,12 +684,8 @@ public class FrozenBubble extends Activity
    */
   public void newGame() {
     if (mGameThread != null) {
-      mGameThread.newGame();
-      if (numPlayers > 1) {
-        mGameThread.startOpponent();
-      }
+      mGameThread.newGame(true);
     }
-
     playMusic(false);
   }
 
@@ -739,7 +755,7 @@ public class FrozenBubble extends Activity
         break;
 
       case LEVEL_START:
-        if ((mGameView != null) && (mGameThread != null) &&
+        if (!arcadeGame && (mGameView != null) && (mGameThread != null) &&
             (numPlayers == 1)) {
           if (mGameThread.getCurrentLevelIndex() == 0) {
             /*
@@ -804,10 +820,11 @@ public class FrozenBubble extends Activity
     int modNow;
     /*
      * Ascertain which song to play.  For a single player game, the song
-     * is based on the current level.  For a two player game, or if the
-     * game thread has been destroyed, the song is selected at random.
+     * is based on the current level.  For an arcade game, a two player
+     * game, or if the game thread has been destroyed, the song is
+     * selected at random.
      */
-    if ((mGameThread != null) && (numPlayers == 1)) {
+    if (!arcadeGame && (mGameThread != null) && (numPlayers == 1)) {
       modNow = mGameThread.getCurrentLevelIndex() % MODlist.length;
     }
     else
@@ -856,7 +873,7 @@ public class FrozenBubble extends Activity
    * Save critically important game information.
    */
   public void saveState() {
-    if ((mGameThread != null) && (numPlayers == 1)) {
+    if (!arcadeGame && (mGameThread != null) && (numPlayers == 1)) {
       /*
        * Allow level editor functionalities.
        */
@@ -1030,6 +1047,7 @@ public class FrozenBubble extends Activity
     /*
      * Check if this is a single player or multiplayer game.
      */
+    arcadeGame = false;
     gameLocale = LOCALE_LOCAL;
     myPlayerId = VirtualInput.PLAYER1;
     numPlayers = 1;
@@ -1043,6 +1061,8 @@ public class FrozenBubble extends Activity
         opponentId = intent.getIntExtra("opponentId", CPU);
       if (intent.hasExtra("gameLocale"))
         gameLocale = intent.getIntExtra("gameLocale", LOCALE_LOCAL);
+      if (intent.hasExtra("arcadeGame"))
+        arcadeGame = intent.getBooleanExtra("arcadeGame", false);
     }
     initGameOptions();
     /*
@@ -1050,8 +1070,12 @@ public class FrozenBubble extends Activity
      * Otherwise start a single player game.
      */
     if (numPlayers > 1) {
-      mGameView =
-          new GameView(this, numPlayers, myPlayerId, opponentId, gameLocale);
+      mGameView = new GameView(this,
+                               numPlayers,
+                               myPlayerId,
+                               opponentId,
+                               gameLocale,
+                               arcadeGame);
       setContentView(mGameView);
       mGameView.setGameListener(this);
       mGameThread = mGameView.getThread();
@@ -1064,7 +1088,6 @@ public class FrozenBubble extends Activity
           mGameThread.restoreState(savedInstanceState);
         }
       }
-      mGameThread.startOpponent();
       mGameView.requestFocus();
     }
     else {
@@ -1081,6 +1104,51 @@ public class FrozenBubble extends Activity
     }
     setFullscreen();
     playMusic(false);
+  }
+
+  /**
+   * Starts editor / market with editor's download.
+   */
+  private void startEditor() {
+    Intent i = new Intent();
+    /*
+     * First try to run the plus version of the level editor.
+     */
+    i.setClassName("sk.halmi.fbeditplus", 
+                   "sk.halmi.fbeditplus.EditorActivity");
+    try {
+      startActivity(i);
+      finish();
+    } catch (ActivityNotFoundException e) {
+      /*
+       * If not found, try to run the normal version.
+       */
+      i.setClassName("sk.halmi.fbedit", 
+                     "sk.halmi.fbedit.EditorActivity");
+      try {
+        startActivity(i);
+        finish();
+      } catch (ActivityNotFoundException ex) {
+        /*
+         * If the user doesn't have the Frozen Bubble Level Editor, take
+         * him to the application market.
+         */
+        try {
+          Toast.makeText(getApplicationContext(), 
+                         R.string.install_editor, Toast.LENGTH_SHORT).show();
+          i = new Intent(Intent.ACTION_VIEW,
+                         Uri.parse(
+                         "market://search?q=frozen bubble level editor"));
+          startActivity(i);
+        } catch (Exception exc) {
+          /*
+           * Damn, you don't have market?
+           */
+          Toast.makeText(getApplicationContext(), 
+                         R.string.market_missing, Toast.LENGTH_SHORT).show();
+        }
+      }
+    }
   }
 
   private void targetOptionsDialog() {

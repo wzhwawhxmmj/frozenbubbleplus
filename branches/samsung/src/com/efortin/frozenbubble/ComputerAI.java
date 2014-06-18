@@ -55,10 +55,10 @@ package com.efortin.frozenbubble;
 import org.gsanson.frozenbubble.Freile;
 import org.gsanson.frozenbubble.Freile.eventEnum;
 
-import android.view.KeyEvent;
-
 import com.jfedor.frozenbubble.FrozenGame;
 import com.jfedor.frozenbubble.GameScreen.gameEnum;
+
+import android.view.KeyEvent;
 
 public class ComputerAI extends Thread implements Freile.OpponentListener {
   private int action;

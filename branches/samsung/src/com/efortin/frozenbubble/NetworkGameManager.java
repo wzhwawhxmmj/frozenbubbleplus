@@ -66,6 +66,7 @@ import com.efortin.frozenbubble.MulticastManager.eventEnum;
 import com.jfedor.frozenbubble.BubbleSprite;
 import com.jfedor.frozenbubble.FrozenBubble;
 import com.jfedor.frozenbubble.FrozenGame;
+import com.jfedor.frozenbubble.LevelManager;
 import com.jfedor.frozenbubble.GameView.NetGameInterface;
 
 /**
@@ -285,8 +286,8 @@ public class NetworkGameManager extends Thread
         this.nextBubbleColor   = fieldData.nextBubbleColor;
         this.attackBarBubbles  = fieldData.attackBarBubbles;
 
-        for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 13; y++) {
+        for (int x = 0; x < LevelManager.NUM_COLS; x++) {
+          for (int y = 0; y < LevelManager.NUM_ROWS; y++) {
             this.gameField[x][y] = fieldData.gameField[x][y];
           }
         }
@@ -313,8 +314,8 @@ public class NetworkGameManager extends Thread
         shortBytes[1]          = buffer[startIndex++];
         this.attackBarBubbles  = toShort(shortBytes);
 
-        for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 13; y++) {
+        for (int x = 0; x < LevelManager.NUM_COLS; x++) {
+          for (int y = 0; y < LevelManager.NUM_ROWS; y++) {
             this.gameField[x][y] = buffer[startIndex++];
           }
         }
@@ -341,8 +342,8 @@ public class NetworkGameManager extends Thread
         buffer[startIndex++] = shortBytes[0];
         buffer[startIndex++] = shortBytes[1];
 
-        for (int x = 0; x < 8; x++) {
-          for (int y = 0; y < 13; y++) {
+        for (int x = 0; x < LevelManager.NUM_COLS; x++) {
+          for (int y = 0; y < LevelManager.NUM_ROWS; y++) {
             buffer[startIndex++] = this.gameField[x][y];
           }
         }
@@ -995,8 +996,8 @@ public class NetworkGameManager extends Thread
     gameData.attackBarBubbles   = (short) gameRef.getAttackBarBubbles();
 
     BubbleSprite[][] bubbleGrid = gameRef.getGrid();
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         if (bubbleGrid[i][j] != null) {
           gameData.gameField[i][j] = (byte) bubbleGrid[i][j].getColor();
         }
@@ -1257,12 +1258,12 @@ public class NetworkGameManager extends Thread
           session = new MulticastManager(myContext, MCAST_BYTE_ADDR, PORT);
         }
         session.setMulticastListener(this);
-      } catch(UnknownHostException uhe) {
+      } catch (UnknownHostException uhe) {
         if (session != null) {
           session.cleanUp();
         }
         session = null;
-      } catch(IOException ioe) {
+      } catch (IOException ioe) {
         if (session != null) {
           session.cleanUp();
         }
@@ -1271,7 +1272,14 @@ public class NetworkGameManager extends Thread
       /*
        * Start the network manager thread.
        */
-      start();
+      try {
+        start();
+      } catch (IllegalThreadStateException itse) {
+        /*
+         * The thread was already started.
+         */
+        itse.printStackTrace();
+      }
     }
     else {
       /*

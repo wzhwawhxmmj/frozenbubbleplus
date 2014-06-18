@@ -70,9 +70,9 @@ import com.efortin.frozenbubble.NetworkGameManager;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class FrozenGame extends GameScreen {
-  private final int[] columnX = { 190, 206, 232, 248, 264,
-                                  280, 296, 312, 328, 344,
-                                  360, 376, 392, 408, 424 };
+  private final int[] columnX = {190, 206, 222, 238, 254,
+                                 270, 286, 302, 318, 334,
+                                 350, 366, 382, 398, 414};
 
   public final static int HORIZONTAL_MOVE = 0;
   public final static int FIRE            = 1;
@@ -117,6 +117,7 @@ public class FrozenGame extends GameScreen {
   Vector<Sprite> jumping;
 
   BubbleSprite[][] bubblePlay;
+  BubbleSprite[]   scrolling;
 
   BmpWrap gameWon, gameLost;
 
@@ -134,6 +135,7 @@ public class FrozenGame extends GameScreen {
 
   boolean endOfGame;
   boolean frozenify;
+  boolean isArcade;
   boolean isRemote;
   boolean readyToFire;
   boolean swapPressed;
@@ -203,6 +205,8 @@ public class FrozenGame extends GameScreen {
       isRemote  = false;
     }
 
+    isArcade = FrozenBubble.arcadeGame;
+
     /*
      * Create objects for all the game graphics.
      */
@@ -234,7 +238,9 @@ public class FrozenGame extends GameScreen {
     goingUp = new Vector<Sprite>();
     jumping = new Vector<Sprite>();
 
-    bubblePlay    = new BubbleSprite[8][13];
+    bubblePlay    = new BubbleSprite[LevelManager.NUM_COLS]
+                                    [LevelManager.NUM_ROWS];
+    scrolling     = new BubbleSprite[LevelManager.NUM_COLS];
     bubbleManager = new BubbleManager(bubbles);
 
     /*
@@ -246,8 +252,8 @@ public class FrozenGame extends GameScreen {
       return;
     }
 
-    for (int j = 0; j < 12; j++) {
-      for (int i = j%2; i < 8; i++) {
+    for (int j = 0; j < (LevelManager.NUM_ROWS - 1); j++) {
+      for (int i = j%2; i < LevelManager.NUM_COLS; i++) {
         if (currentLevel[i][j] != -1) {
           BubbleSprite newOne = new BubbleSprite(
             new Rect(190+i*32-(j%2)*16, 44+j*28, 32, 32),
@@ -259,6 +265,10 @@ public class FrozenGame extends GameScreen {
           this.addSprite(newOne);
         }
       }
+    }
+
+    if (isArcade) {
+      addScrollRow();
     }
 
     /*
@@ -330,11 +340,33 @@ public class FrozenGame extends GameScreen {
     jumping.addElement(sprite);
   }
 
+  private void addScrollRow() {
+    byte[] newRow = levelManager.getNewRow(bubblePlay);
+    int colIdx = (levelManager.getRowOffset() + 1) % 2;
+    int rowMove = (int) compressor.getMoveDown();
+    for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+      scrolling[column] = null;
+    }
+    for (int column = colIdx; column < LevelManager.NUM_COLS; column++) {
+      if (newRow[column] != -1) {
+        int color = newRow[column];
+        BubbleSprite tempBubble = new BubbleSprite(
+          new Rect(columnX[colIdx], 44 - 28 + rowMove, 32, 32),
+          color, bubbles[color], bubblesBlind[color], frozenBubbles[color],
+          bubbleBlink, bubbleManager, soundManager, this);
+        scrolling[column] = tempBubble;
+        this.addSprite(tempBubble);
+        this.spriteToBack(tempBubble);
+      }
+      colIdx += 2;
+    }
+  }
+
   private void blinkLine(int number) {
     int move = number%2;
     int column = (number+1) >> 1;
 
-    for (int i = move; i < 13; i++) {
+    for (int i = move; i < LevelManager.NUM_ROWS; i++) {
       if (bubblePlay[column][i] != null) {
         bubblePlay[column][i].blink();
       }
@@ -344,8 +376,8 @@ public class FrozenGame extends GameScreen {
   public void calculateGridChecksum() {
     CRC16 gridCRC = new CRC16(0);
 
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < (LevelManager.NUM_ROWS - 1); j++) {
         if (bubblePlay[i][j] != null) {
           gridCRC.update(bubblePlay[i][j].getColor());
         }
@@ -368,8 +400,8 @@ public class FrozenGame extends GameScreen {
 
       int steps = compressor.getSteps();
 
-      for (int i = 0; i < 8; i++) {
-        if (bubblePlay[i][12 - steps] != null) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        if (bubblePlay[i][(LevelManager.NUM_ROWS - 1) - steps] != null) {
           lost = true;
           break;
         }
@@ -377,8 +409,14 @@ public class FrozenGame extends GameScreen {
 
       if (lost) {
         penguin.updateState(PenguinSprite.STATE_GAME_LOST);
-        if (highscoreManager != null)
-          highscoreManager.lostLevel();
+        if (highscoreManager != null) {
+          if (isArcade) {
+            highscoreManager.endLevel(nbBubbles);
+          }
+          else {
+            highscoreManager.lostLevel();
+          }
+        }
         playResult = gameEnum.LOST;
         endOfGame = true;
         initFrozenify();
@@ -419,17 +457,29 @@ public class FrozenGame extends GameScreen {
     jumping.removeElement(sprite);
   }
 
+  private void finishFrozenify() {
+    if (isArcade) {
+      for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+        if (scrolling[column] != null) {
+          this.spriteToBack(scrolling[column]);
+          scrolling[column].frozenify();
+        }
+      }
+    }
+    frozenify = false;
+    this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
+                                   gameLost));
+    soundManager.playSound(FrozenBubble.SOUND_NOH);
+  }
+
   private void frozenify() {
     frozenifyX--;
     if (frozenifyX < 0) {
-      frozenifyX = 7;
+      frozenifyX = LevelManager.NUM_COLS - 1;
       frozenifyY--;
 
       if (frozenifyY < 0) {
-        frozenify = false;
-        this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                       gameLost));
-        soundManager.playSound(FrozenBubble.SOUND_NOH);
+        finishFrozenify();
         return;
       }
     }
@@ -437,14 +487,11 @@ public class FrozenGame extends GameScreen {
     while ((bubblePlay[frozenifyX][frozenifyY] == null) && (frozenifyY >= 0)) {
       frozenifyX--;
       if (frozenifyX < 0) {
-        frozenifyX = 7;
+        frozenifyX = LevelManager.NUM_COLS - 1;
         frozenifyY--;
 
         if (frozenifyY < 0) {
-          frozenify = false;
-          this.addSprite(new ImageSprite(new Rect(152, 190, 337, 116),
-                                         gameLost));
-          soundManager.playSound(FrozenBubble.SOUND_NOH);
+          finishFrozenify();
           return;
         }
       }
@@ -510,6 +557,10 @@ public class FrozenGame extends GameScreen {
     return random;
   }
 
+  public int getRowOffset() {
+    return levelManager.getRowOffset();
+  }
+
   /**
    * Obtain this player's <code>sendToOpponent</code> value, which is
    * the number of attack bubbles to add to the opponent's attack bar.
@@ -529,8 +580,8 @@ public class FrozenGame extends GameScreen {
     this.addSprite(freezeLaunchBubble);
     this.addSprite(freezeNextBubble);
 
-    frozenifyX = 7;
-    frozenifyY = 12;
+    frozenifyX = LevelManager.NUM_COLS;
+    frozenifyY = LevelManager.NUM_ROWS - 1;
     frozenify  = true;
   }
 
@@ -541,12 +592,16 @@ public class FrozenGame extends GameScreen {
   public void lowerCompressor(boolean playSound) {
     fixedBubbles = 0;
 
+    if (isArcade) {
+      return;
+    }
+
     if (playSound) {
       soundManager.playSound(FrozenBubble.SOUND_NEWROOT);
     }
 
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 12; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < (LevelManager.NUM_ROWS - 1); j++) {
         if (bubblePlay[i][j] != null) {
           bubblePlay[i][j].moveDown();
 
@@ -557,9 +612,7 @@ public class FrozenGame extends GameScreen {
             playResult = gameEnum.LOST;
             endOfGame = true;
             initFrozenify();
-            if (playSound) {
-              soundManager.playSound(FrozenBubble.SOUND_LOST);
-            }
+            soundManager.playSound(FrozenBubble.SOUND_LOST);
           }
         }
       }
@@ -578,7 +631,7 @@ public class FrozenGame extends GameScreen {
     if (movingBubble != null) {
       movingBubble.move();
       if (movingBubble.fixed()) {
-        if (!checkLost()) {
+        if (!checkLost() && !isArcade) {
           /*
            * If there are no bubbles in the bubble manager, then the
            * player has won the game.  The bubble manager counts bubbles
@@ -616,7 +669,6 @@ public class FrozenGame extends GameScreen {
   }
 
   public void paint(Canvas c, double scale, int dx, int dy) {
-    compressor.paint(c, scale, dx, dy);
     if (FrozenBubble.getMode() == FrozenBubble.GAME_NORMAL) {
       nextBubble.changeImage(bubbles[nextColor]);
     }
@@ -624,6 +676,7 @@ public class FrozenGame extends GameScreen {
       nextBubble.changeImage(bubblesBlind[nextColor]);
     }
     super.paint(c, scale, dx, dy);
+    compressor.paint(c, scale, dx, dy);
   }
 
   public void pause() {
@@ -725,7 +778,6 @@ public class FrozenGame extends GameScreen {
     if (endOfGame && readyToFire) {
       if (move[FIRE] == KEY_UP) {
         if (playResult == gameEnum.WON) {
-          levelManager.goToNextLevel();
           playResult = gameEnum.NEXT_WON;
         }
         else {
@@ -850,7 +902,7 @@ public class FrozenGame extends GameScreen {
       }
     }
 
-    if ((malusBar == null) || FrozenBubble.getCompressor()) {
+    if (!isArcade && ((malusBar == null) || FrozenBubble.getCompressor())) {
       if (fixedBubbles == 6) {
         if (blinkDelay < 15) {
           blinkLine(blinkDelay);
@@ -871,6 +923,10 @@ public class FrozenGame extends GameScreen {
       }
     }
 
+    if (!endOfGame && isArcade) {
+      scrollBubbles();
+    }
+
     for (int i = 0; i < falling.size(); i++) {
       ((BubbleSprite)falling.elementAt(i)).fall();
     }
@@ -884,17 +940,19 @@ public class FrozenGame extends GameScreen {
     }
 
     /*
-     * In a multiplayer game, check if the player lost due to attack
-     * bubbles overflowing the play area.
+     * Perform game synchronization tasks.
      */
-    if (malusBar != null) {
-      checkLost();
+    if (!endOfGame && movingBubble == null) {
+      synchronizeBubbleManager();
     }
 
     /*
-     * Perform game synchronization tasks.
+     * In an arcade or multiplayer game, check if the player lost due to
+     * scrolling or attack bubbles overflowing the play area.
      */
-    synchronizeBubbleManager();
+    if ((malusBar != null) || isArcade) {
+      checkLost();
+    }
 
     /*
      * If this player is the local player and is participating in a
@@ -958,12 +1016,12 @@ public class FrozenGame extends GameScreen {
      * bubble launches. 
      */
     if (isRemote) {
-      for (int i = 0; i < 15; i++) {
+      for (int i = 0; i < LevelManager.LANES; i++) {
         if (malusBar.attackBubbles[i] >= 0) {
           numBubblesLaunched++;
           int color = malusBar.attackBubbles[i];
           BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+15*28, 32, 32),
+            new Rect(columnX[i], 44+(LevelManager.MAX_ROWS*28), 32, 32),
             START_LAUNCH_DIRECTION,
             color, bubbles[color], bubblesBlind[color],
             frozenBubbles[color], targetedBubbles, bubbleBlink,
@@ -975,25 +1033,25 @@ public class FrozenGame extends GameScreen {
       malusBar.removeAttackBubbles(numBubblesLaunched);
     }
     else if (malusBar.getAttackBarBubbles() > 0) {
-      boolean[] lanes = new boolean[15];
+      boolean[] lanes = new boolean[LevelManager.LANES];
       int malusBalls = malusBar.removeLine();
       int pos;
 
       while (malusBalls > 0) {
-        pos = random.nextInt(15);
+        pos = random.nextInt(LevelManager.LANES);
         if (!lanes[pos]) {
           lanes[pos] = true;
           malusBalls--;
         }
       }
 
-      for (int i = 0; i < 15; i++) {
+      for (int i = 0; i < LevelManager.LANES; i++) {
         if (lanes[i]) {
           numBubblesLaunched++;
           int color = random.nextInt(FrozenBubble.getDifficulty());
           malusBar.setAttackBubble(i, color);
           BubbleSprite malusBubble = new BubbleSprite(
-            new Rect(columnX[i], 44+15*28, 32, 32),
+            new Rect(columnX[i], 44+(LevelManager.MAX_ROWS*28), 32, 32),
             START_LAUNCH_DIRECTION,
             color, bubbles[color], bubblesBlind[color],
             frozenBubbles[color], targetedBubbles, bubbleBlink,
@@ -1033,10 +1091,12 @@ public class FrozenGame extends GameScreen {
       Point lastOpenPosition = new Point(
           map.getInt(String.format("%d-%d-lastOpenPosition.x", player, i)),
           map.getInt(String.format("%d-%d-lastOpenPosition.y", player, i)));
+      int scroll = map.getInt(String.format("%d-%d-scroll", player, i));
+      int scrollMax = map.getInt(String.format("%d-%d-scrollMax", player, i));
       return new BubbleSprite(new Rect(left, top, right, bottom),
                               color, moveX, moveY, realX, realY,
                               fixed, blink, released, checkJump, checkFall,
-                              fixedAnim,
+                              fixedAnim, scroll, scrollMax,
                               (frozen ? frozenBubbles[color] : bubbles[color]),
                               lastOpenPosition,
                               bubblesBlind[color],
@@ -1086,30 +1146,39 @@ public class FrozenGame extends GameScreen {
 
     restoreSprites(map, savedSprites, player);
 
-    jumping = new Vector<Sprite>();
+    if (jumping == null) {
+      jumping = new Vector<Sprite>();
+    }
     int numJumpingSprites =
         map.getInt(String.format("%d-numJumpingSprites", player));
     for (int i = 0; i < numJumpingSprites; i++) {
       int spriteIdx = map.getInt(String.format("%d-jumping-%d", player, i));
       jumping.addElement(savedSprites.elementAt(spriteIdx));
     }
-    goingUp = new Vector<Sprite>();
+    if (goingUp == null) {
+      goingUp = new Vector<Sprite>();
+    }
     int numGoingUpSprites =
         map.getInt(String.format("%d-numGoingUpSprites", player));
     for (int i = 0; i < numGoingUpSprites; i++) {
       int spriteIdx = map.getInt(String.format("%d-goingUp-%d", player, i));
       goingUp.addElement(savedSprites.elementAt(spriteIdx));
     }
-    falling = new Vector<Sprite>();
+    if (falling == null) {
+      falling = new Vector<Sprite>();
+    }
     int numFallingSprites =
         map.getInt(String.format("%d-numFallingSprites", player));
     for (int i = 0; i < numFallingSprites; i++) {
       int spriteIdx = map.getInt(String.format("%d-falling-%d", player, i));
       falling.addElement(savedSprites.elementAt(spriteIdx));
     }
-    bubblePlay = new BubbleSprite[8][13];
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    if (bubblePlay == null) {
+      bubblePlay = new BubbleSprite[LevelManager.NUM_COLS]
+                                   [LevelManager.NUM_ROWS];
+    }
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         int spriteIdx =
             map.getInt(String.format("%d-play-%d-%d", player, i, j));
         if (spriteIdx != -1) {
@@ -1117,6 +1186,21 @@ public class FrozenGame extends GameScreen {
         }
         else {
           bubblePlay[i][j] = null;
+        }
+      }
+    }
+    if (isArcade) {
+      if (scrolling == null) {
+        scrolling = new BubbleSprite[LevelManager.NUM_COLS];
+      }
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        int spriteIdx =
+            map.getInt(String.format("%d-scrolling-%d", player, i));
+        if (spriteIdx != -1) {
+          scrolling[i] = (BubbleSprite)savedSprites.elementAt(spriteIdx);
+        }
+        else {
+          scrolling[i] = null;
         }
       }
     }
@@ -1188,8 +1272,8 @@ public class FrozenGame extends GameScreen {
                  ((Sprite)falling.elementAt(i)).getSavedId());
     }
     map.putInt(String.format("%d-numFallingSprites", player), falling.size());
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         if (bubblePlay[i][j] != null) {
           bubblePlay[i][j].saveState(map, savedSprites, player);
           map.putInt(String.format("%d-play-%d-%d", player, i, j),
@@ -1197,6 +1281,18 @@ public class FrozenGame extends GameScreen {
         }
         else {
           map.putInt(String.format("%d-play-%d-%d", player, i, j), -1);
+        }
+      }
+    }
+    if (isArcade) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        if (scrolling[i] != null) {
+          scrolling[i].saveState(map, savedSprites, player);
+          map.putInt(String.format("%d-scrolling-%d", player, i),
+                     scrolling[i].getSavedId());
+        }
+        else {
+          map.putInt(String.format("%d-scrolling-%d", player, i), -1);
         }
       }
     }
@@ -1246,6 +1342,38 @@ public class FrozenGame extends GameScreen {
     }
   }
 
+  void scrollBubbles() {
+    boolean scroll = compressor.checkScroll();
+    int moveDown = (int) compressor.getMoveDown();
+    if (scroll) {
+      for (int row = LevelManager.NUM_ROWS - 1; row >= 0; row--) {
+        for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+          if (bubblePlay[column][row] != null) {
+            bubblePlay[column][row].scroll(moveDown);
+          }
+        }
+      }
+      for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+        if (scrolling[column] != null) {
+          scrolling[column].scroll(moveDown);
+        }
+      }
+    }
+    if ((movingBubble == null) && (moveDown >= 28.)) {
+      compressor.moveDownSubtract(28.);
+      for (int row = LevelManager.NUM_ROWS - 1; row > 0; row--) {
+        for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+          bubblePlay[column][row    ] = bubblePlay[column][row - 1];
+          bubblePlay[column][row - 1] = null;
+        }
+      }
+      for (int column = 0; column < LevelManager.NUM_COLS; column++) {
+        bubblePlay[column][0] = scrolling[column];
+      }
+      addScrollRow();
+    }
+  }
+
   /**
    * Set the game result associated with this player.
    * @param result - GAME_WON if this player won the game, GAME_LOST if
@@ -1287,8 +1415,8 @@ public class FrozenGame extends GameScreen {
       jumping.clear();
       bubbleManager.initialize();
       removeAllBubbleSprites();
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 13; j++) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
           bubblePlay[i][j] = null;
           if (newGrid[i][j] != -1) {
             bubblePlay[i][j] = new BubbleSprite(
@@ -1369,9 +1497,16 @@ public class FrozenGame extends GameScreen {
     /*
      * Check the bubble sprite grid for occupied locations.
      */
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 13; j++) {
+    for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+      for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
         if (bubblePlay[i][j] != null ) {
+          numBubblesPlay++;
+        }
+      }
+    }
+    if (isArcade) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        if (scrolling[i] != null) {
           numBubblesPlay++;
         }
       }
@@ -1388,11 +1523,19 @@ public class FrozenGame extends GameScreen {
     if (numBubblesManager != numBubblesPlay) {
       bubbleManager.initialize();
       removeAllBubbleSprites();
-      for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 13; j++) {
+      for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+        for (int j = 0; j < LevelManager.NUM_ROWS; j++) {
           if (bubblePlay[i][j] != null ) {
             bubblePlay[i][j].addToManager();
             this.addSprite(bubblePlay[i][j]);
+          }
+        }
+      }
+      if (isArcade) {
+        for (int i = 0; i < LevelManager.NUM_COLS; i++) {
+          if (scrolling[i] != null) {
+            scrolling[i].addToManager();
+            this.addSprite(scrolling[i]);
           }
         }
       }
