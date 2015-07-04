@@ -108,10 +108,9 @@ import android.view.SurfaceView;
 import com.efortin.frozenbubble.ComputerAI;
 import com.efortin.frozenbubble.HighscoreDO;
 import com.efortin.frozenbubble.HighscoreManager;
-import com.efortin.frozenbubble.NetworkGameManager;
-import com.efortin.frozenbubble.NetworkGameManager.GameFieldData;
-import com.efortin.frozenbubble.NetworkGameManager.PlayerAction;
-import com.efortin.frozenbubble.NetworkGameManager.connectEnum;
+import com.efortin.frozenbubble.NetworkManager;
+import com.efortin.frozenbubble.NetworkManager.GameFieldData;
+import com.efortin.frozenbubble.NetworkManager.PlayerAction;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class GameView extends SurfaceView
@@ -121,22 +120,22 @@ public class GameView extends SurfaceView
   public static final int  GAMEFIELD_HEIGHT         = 480;
   public static final int  EXTENDED_GAMEFIELD_WIDTH = 640;
 
-  private boolean               mBlankScreen   = false;
-  private boolean               muteKeyToggle  = false;
-  private boolean               pauseKeyToggle = false;
-  private int                   numPlayers;
-  private int                   numPlayer1GamesWon;
-  private int                   numPlayer2GamesWon;
-  private Context               mContext;
-  private gameEnum              game1Status;
-  private GameThread            mGameThread;
-  private NetworkGameManager    mNetworkManager;
-  private RemoteInterface       remoteInterface;
-  private ComputerAI            mOpponent;
-  private VirtualInput          mLocalInput;
-  private VirtualInput          mRemoteInput;
-  private PlayerInput           mPlayer1;
-  private PlayerInput           mPlayer2;
+  private boolean         mBlankScreen   = false;
+  private boolean         muteKeyToggle  = false;
+  private boolean         pauseKeyToggle = false;
+  private int             numPlayers;
+  private int             numPlayer1GamesWon;
+  private int             numPlayer2GamesWon;
+  private Context         mContext;
+  private gameEnum        game1Status;
+  private GameThread      mGameThread;
+  private NetworkManager  mNetworkManager;
+  private RemoteInterface remoteInterface;
+  private ComputerAI      mOpponent;
+  private VirtualInput    mLocalInput;
+  private VirtualInput    mRemoteInput;
+  private PlayerInput     mPlayer1;
+  private PlayerInput     mPlayer2;
 
   //********************************************************************
   // Listener interface for various events
@@ -175,7 +174,6 @@ public class GameView extends SurfaceView
       public int     localPlayerId;
       public int     remotePlayerId;
       public boolean isConnected;
-      public boolean reservedGameId;
       public boolean playerJoined;
       public boolean gotFieldData;
       public boolean gotPrefsData;
@@ -185,7 +183,6 @@ public class GameView extends SurfaceView
 
       public NetworkStatus() {
         isConnected     = false;
-        reservedGameId  = false;
         playerJoined    = false;
         gotFieldData    = false;
         gotPrefsData    = false;
@@ -205,20 +202,23 @@ public class GameView extends SurfaceView
     public class RemoteInterface {
       public boolean       gotAction;
       public boolean       gotFieldData;
+      public boolean       gotPrefsData;
       public PlayerAction  playerAction;
       public GameFieldData gameFieldData;
 
       public RemoteInterface(PlayerAction action, GameFieldData fieldData) {
-        gotAction = false;
-        gotFieldData = false;
-        playerAction = action;
+        gotAction     = false;
+        gotFieldData  = false;
+        gotPrefsData  = false;
+        playerAction  = action;
         gameFieldData = fieldData;
       }
 
       public void cleanUp() {
-        gotAction = false;
-        gotFieldData = false;
-        playerAction = null;
+        gotAction     = false;
+        gotFieldData  = false;
+        gotPrefsData  = false;
+        playerAction  = null;
         gameFieldData = null;
       }
     };
@@ -1540,21 +1540,6 @@ public class GameView extends SurfaceView
           mDisplayScale, mDisplayDX, mDisplayDY);
       y += ysp;
 
-      if (status.reservedGameId) {
-        mFont.print("checking for games...|", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
-      }
-      else {
-        mFont.print("checking for games...", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        return;
-      }
-
-      mFont.print("open game slot found!", x, y, canvas,
-                  mDisplayScale, mDisplayDX, mDisplayDY);
-      y += ysp;
-
       if (status.playerJoined) {
         mFont.print("waiting for player " + status.remotePlayerId + "...|",
                     x, y, canvas, mDisplayScale, mDisplayDX, mDisplayDY);
@@ -2646,19 +2631,10 @@ public class GameView extends SurfaceView
      * Create a network game manager if this is a network game.
      */
     mNetworkManager = null;
-    if ((gameLocale == FrozenBubble.LOCALE_LAN) ||
-        (gameLocale == FrozenBubble.LOCALE_INTERNET)) {
-      connectEnum connectType;
-      if (gameLocale == FrozenBubble.LOCALE_LAN) {
-        connectType = connectEnum.UDP_MULTICAST;
-      }
-      else {
-        connectType = connectEnum.UDP_UNICAST;
-      }
-      mNetworkManager = new NetworkGameManager(context,
-                                               connectType,
-                                               mLocalInput,
-                                               mRemoteInput);
+    if (gameLocale == FrozenBubble.LOCALE_LAN) {
+      mNetworkManager = new NetworkManager(context,
+                                           mLocalInput,
+                                           mRemoteInput);
       remoteInterface = mNetworkManager.getRemoteInterface();
     }
 

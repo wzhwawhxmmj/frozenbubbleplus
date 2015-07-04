@@ -92,6 +92,7 @@ import android.hardware.SensorManager;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.DisplayMetrics;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -105,6 +106,8 @@ import android.widget.Toast;
 import com.efortin.frozenbubble.AccelerometerManager;
 import com.efortin.frozenbubble.HomeScreen;
 import com.efortin.frozenbubble.ModPlayer;
+import com.efortin.frozenbubble.Preferences;
+import com.efortin.frozenbubble.PreferencesActivity;
 import com.efortin.frozenbubble.ScrollingCredits;
 import com.efortin.frozenbubble.VirtualInput;
 
@@ -151,9 +154,10 @@ public class FrozenBubble extends Activity
   public final static int POINT_TO_SHOOT  = 1;
   public final static int ROTATE_TO_SHOOT = 2;
 
-  public final static int LOCALE_LOCAL    = 0;
-  public final static int LOCALE_LAN      = 1;
-  public final static int LOCALE_INTERNET = 2;
+  public final static int LOCALE_LOCAL     = 0;
+  public final static int LOCALE_LAN       = 1;
+  public final static int LOCALE_INTERNET  = 2;
+  public final static int LOCALE_BLUETOOTH = 3;
 
   public final static int CPU   = 0;
   public final static int HUMAN = 1;
@@ -164,15 +168,7 @@ public class FrozenBubble extends Activity
   public static int     numPlayers = 0;
   public static int     opponentId = CPU;
 
-  private static int     collision  = BubbleSprite.MIN_PIX;
-  private static boolean compressor = false;
-  private static int     difficulty = LevelManager.MODERATE;
-  private static boolean dontRushMe = false;
-  private static boolean fullscreen = true;
-  private static int     gameMode   = GAME_NORMAL;
-  private static boolean musicOn    = true;
-  private static boolean soundOn    = true;
-  private static int     targetMode = POINT_TO_SHOOT;
+  private static Preferences prefs = new Preferences();
 
   public final static String PREFS_NAME   = "frozenbubble";
   public final static String TAG          = "FrozenBubble.java";
@@ -309,36 +305,32 @@ public class FrozenBubble extends Activity
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = sp.edit();
+    boolean prefsUpdated = false;
 
     switch (item.getItemId()) {
       case MENU_NEW_GAME:
         newGameDialog();
         return true;
       case MENU_COLORBLIND_ON:
-        setMode(GAME_COLORBLIND);
-        editor.putInt("gameMode", gameMode);
-        editor.commit();
-        return true;
+        prefs.colorMode = true;
+        prefs.gameMode  = GAME_COLORBLIND;
+        prefsUpdated = true;
+        break;
       case MENU_COLORBLIND_OFF:
-        setMode(GAME_NORMAL);
-        editor.putInt("gameMode", gameMode);
-        editor.commit();
-        return true;
+        prefs.colorMode = false;
+        prefs.gameMode  = GAME_NORMAL;
+        prefsUpdated = true;
+        break;
       case MENU_FULLSCREEN_ON:
-        fullscreen = true;
-        editor.putBoolean("fullscreen", fullscreen);
-        editor.commit();
+        prefs.fullscreen = true;
         setFullscreen();
-        return true;
+        prefsUpdated = true;
+        break;
       case MENU_FULLSCREEN_OFF:
-        fullscreen = false;
-        editor.putBoolean("fullscreen", fullscreen);
-        editor.commit();
+        prefs.fullscreen = false;
         setFullscreen();
-        return true;
+        prefsUpdated = true;
+        break;
       case MENU_SOUND_OPTIONS:
         soundOptionsDialog();
         return true;
@@ -350,21 +342,25 @@ public class FrozenBubble extends Activity
         targetOptionsDialog();
         return true;
       case MENU_DONT_RUSH_ME:
-        setDontRushMe(true);
-        editor.putBoolean("dontRushMe", dontRushMe);
-        editor.commit();
-        return true;
+        prefs.dontRushMe = true;
+        prefsUpdated = true;
+        break;
       case MENU_RUSH_ME:
-        setDontRushMe(false);
-        editor.putBoolean("dontRushMe", dontRushMe);
-        editor.commit();
-        return true;
+        prefs.dontRushMe = false;
+        prefsUpdated = true;
+        break;
       case MENU_EDITOR:
         startEditor();
         return true;
     }
 
-    return false;
+    if (prefsUpdated) {
+      SharedPreferences sp =
+          PreferenceManager.getDefaultSharedPreferences(this);
+      PreferencesActivity.saveDefaultPreferences(prefs, sp);
+    }
+
+    return prefsUpdated;
   }
 
   @Override
@@ -387,14 +383,14 @@ public class FrozenBubble extends Activity
   public boolean onPrepareOptionsMenu(Menu menu) {
     super.onPrepareOptionsMenu(menu);
     allowUnpause = false;
-    menu.findItem(MENU_COLORBLIND_ON ).setVisible(getMode() == GAME_NORMAL);
-    menu.findItem(MENU_COLORBLIND_OFF).setVisible(getMode() != GAME_NORMAL);
-    menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!fullscreen);
-    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(fullscreen);
+    menu.findItem(MENU_COLORBLIND_ON ).setVisible(prefs.gameMode == GAME_NORMAL);
+    menu.findItem(MENU_COLORBLIND_OFF).setVisible(prefs.gameMode != GAME_NORMAL);
+    menu.findItem(MENU_FULLSCREEN_ON ).setVisible(!prefs.fullscreen);
+    menu.findItem(MENU_FULLSCREEN_OFF).setVisible(prefs.fullscreen);
     menu.findItem(MENU_SOUND_OPTIONS ).setVisible(true);
     menu.findItem(MENU_TARGET_MODE   ).setVisible(true);
-    menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!getDontRushMe());
-    menu.findItem(MENU_RUSH_ME       ).setVisible(getDontRushMe());
+    menu.findItem(MENU_DONT_RUSH_ME  ).setVisible(!prefs.dontRushMe);
+    menu.findItem(MENU_RUSH_ME       ).setVisible(prefs.dontRushMe);
     return true;
   }
 
@@ -430,81 +426,81 @@ public class FrozenBubble extends Activity
    * application is running.
    */
 
-  public synchronized static boolean getAimThenShoot() {
-    return (targetMode == AIM_TO_SHOOT) || (targetMode == ROTATE_TO_SHOOT);
+  public static boolean getAimThenShoot() {
+    return (prefs.targetMode == AIM_TO_SHOOT) || (prefs.targetMode == ROTATE_TO_SHOOT);
   }
 
-  public synchronized static int getCollision() {
-    return collision;
+  public static int getCollision() {
+    return prefs.collision;
   }
 
-  public synchronized static void setCollision(int newCollision) {
-    collision = newCollision;
-    BubbleSprite.setCollisionThreshold(collision);
+  public static void setCollision(int newCollision) {
+    prefs.collision = newCollision;
+    BubbleSprite.setCollisionThreshold(prefs.collision);
   }
 
-  public synchronized static boolean getCompressor() {
-    return compressor;
+  public static boolean getCompressor() {
+    return prefs.compressor;
   }
 
-  public synchronized static void setCompressor(boolean newCompressor) {
-    compressor = newCompressor;
+  public static void setCompressor(boolean newCompressor) {
+    prefs.compressor = newCompressor;
   }
 
-  public synchronized static int getDifficulty() {
-    return difficulty;
+  public static int getDifficulty() {
+    return prefs.difficulty;
   }
 
-  public synchronized static void setDifficulty(int newDifficulty) {
-    difficulty = newDifficulty;
+  public static void setDifficulty(int newDifficulty) {
+    prefs.difficulty = newDifficulty;
   }
 
-  public synchronized static boolean getDontRushMe() {
-    return dontRushMe;
+  public static boolean getDontRushMe() {
+    return prefs.dontRushMe;
   }
 
-  public synchronized static void setDontRushMe(boolean dont) {
-    dontRushMe = dont;
+  public static void setDontRushMe(boolean dont) {
+    prefs.dontRushMe = dont;
   }
 
-  public synchronized static boolean getFullscreen() {
-    return fullscreen;
+  public static boolean getFullscreen() {
+    return prefs.fullscreen;
   }
 
-  public synchronized static void setFullscreen(boolean newFullscreen) {
-    fullscreen = newFullscreen;
+  public static void setFullscreen(boolean newFullscreen) {
+    prefs.fullscreen = newFullscreen;
   }
 
-  public synchronized static int getMode() {
-    return gameMode;
+  public static int getMode() {
+    return prefs.gameMode;
   }
 
-  public synchronized static void setMode(int newMode) {
-    gameMode = newMode;
+  public static void setMode(int newMode) {
+    prefs.gameMode = newMode;
   }
 
-  public synchronized static boolean getMusicOn() {
-    return musicOn;
+  public static boolean getMusicOn() {
+    return prefs.musicOn;
   }
 
-  public synchronized static void setMusicOn(boolean mo) {
-    musicOn = mo;
+  public static void setMusicOn(boolean mo) {
+    prefs.musicOn = mo;
   }
 
-  public synchronized static boolean getSoundOn() {
-    return soundOn;
+  public static boolean getSoundOn() {
+    return prefs.soundOn;
   }
 
-  public synchronized static void setSoundOn(boolean so) {
-    soundOn = so;
+  public static void setSoundOn(boolean so) {
+    prefs.soundOn = so;
   }
 
-  public synchronized static int getTargetMode() {
-    return targetMode;
+  public static int getTargetMode() {
+    return prefs.targetMode;
   }
 
-  public synchronized static void setTargetMode(int tm) {
-    targetMode = tm;
+  public static void setTargetMode(int tm) {
+    prefs.targetMode = tm;
   }
 
   /*
@@ -567,15 +563,17 @@ public class FrozenBubble extends Activity
 
     cleanUpGameView();
 
-    if (myModPlayer != null)
+    if (myModPlayer != null) {
       myModPlayer.destroyMusicPlayer();
+    }
     myModPlayer = null;
   }
 
   private void cleanUpGameView() {
     mGameThread = null;
-    if (mGameView != null)
+    if (mGameView != null) {
       mGameView.cleanUp();
+    }
     mGameView = null;
   }
 
@@ -687,6 +685,7 @@ public class FrozenBubble extends Activity
     if (mGameThread != null) {
       mGameThread.newGame(true);
     }
+
     playMusic(false);
   }
 
@@ -850,23 +849,15 @@ public class FrozenBubble extends Activity
    * Load the game options from the saved shared preferences.
    */
   private void restoreGamePrefs() {
-    SharedPreferences mConfig = getSharedPreferences(PREFS_NAME,
-                                                     Context.MODE_PRIVATE);
-    collision  = mConfig.getInt    ("collision",  BubbleSprite.MIN_PIX );
-    compressor = mConfig.getBoolean("compressor", false                );
-    difficulty = mConfig.getInt    ("difficulty", LevelManager.MODERATE);
-    dontRushMe = mConfig.getBoolean("dontRushMe", false                );
-    fullscreen = mConfig.getBoolean("fullscreen", true                 );
-    gameMode   = mConfig.getInt    ("gameMode",   GAME_NORMAL          );
-    musicOn    = mConfig.getBoolean("musicOn",    true                 );
-    soundOn    = mConfig.getBoolean("soundOn",    true                 );
-    targetMode = mConfig.getInt    ("targetMode", POINT_TO_SHOOT       );
+    SharedPreferences sp =
+        PreferenceManager.getDefaultSharedPreferences(this);
+    prefs = PreferencesActivity.getDefaultPrefs(sp);
 
     /*
      * Some game options require additional handling to fully implement
      * changes to game play.
      */
-    BubbleSprite.setCollisionThreshold(collision);
+    BubbleSprite.setCollisionThreshold(prefs.collision);
     setTargetModeOrientation();
   }
 
@@ -903,7 +894,7 @@ public class FrozenBubble extends Activity
     final int flagFs   = WindowManager.LayoutParams.FLAG_FULLSCREEN;
     final int flagNoFs = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN;
 
-    if (fullscreen) {
+    if (prefs.fullscreen) {
       getWindow().addFlags(flagFs);
       getWindow().clearFlags(flagNoFs);
     }
@@ -917,7 +908,7 @@ public class FrozenBubble extends Activity
   }
 
   private void setTargetModeOrientation() {
-    if ((targetMode == ROTATE_TO_SHOOT) &&
+    if ((prefs.targetMode == ROTATE_TO_SHOOT) &&
         AccelerometerManager.isSupported(getApplicationContext())) {
       AccelerometerManager.startListening(getApplicationContext(),this);
       /*
@@ -943,7 +934,7 @@ public class FrozenBubble extends Activity
       }
     }
 
-    if ((targetMode != ROTATE_TO_SHOOT) &&
+    if ((prefs.targetMode != ROTATE_TO_SHOOT) &&
         AccelerometerManager.isListening()) {
       AccelerometerManager.stopListening();
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
@@ -967,24 +958,26 @@ public class FrozenBubble extends Activity
                          new DialogInterface.OnMultiChoiceClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
+        boolean prefsUpdated = false;
 
         switch (which) {
           case 0:
             setSoundOn(isChecked);
-            editor.putBoolean("soundOn", soundOn);
-            editor.commit();
+            prefsUpdated = true;
             break;
           case 1:
             setMusicOn(isChecked);
             if (myModPlayer != null) {
               myModPlayer.setMusicOn(isChecked);
             }
-            editor.putBoolean("musicOn", musicOn);
-            editor.commit();
+            prefsUpdated = true;
             break;
+        }
+        
+        if (prefsUpdated) {
+          SharedPreferences sp =
+              PreferenceManager.getDefaultSharedPreferences(getApplication());
+          PreferencesActivity.saveDefaultPreferences(prefs, sp);
         }
       }
     })
@@ -999,6 +992,22 @@ public class FrozenBubble extends Activity
     });
     builder.create();
     builder.show();
+  }
+
+  /**
+   * Update the game preferences to the desired values.
+   * @param prefs - the desired game preferences.
+   */
+  public static void setPrefs(Preferences prefs) {
+    FrozenBubble.setCollision (prefs.collision );
+    FrozenBubble.setMode      (prefs.gameMode  );
+    FrozenBubble.setCompressor(prefs.compressor);
+    FrozenBubble.setDifficulty(prefs.difficulty);
+    FrozenBubble.setDontRushMe(prefs.dontRushMe);
+    FrozenBubble.setFullscreen(prefs.fullscreen);
+    FrozenBubble.setMusicOn   (prefs.musicOn   );
+    FrozenBubble.setSoundOn   (prefs.soundOn   );
+    FrozenBubble.setTargetMode(prefs.targetMode);
   }
 
   /**
@@ -1163,7 +1172,7 @@ public class FrozenBubble extends Activity
      * the listener through which to receive callbacks when the item is
      * selected.
      */
-    .setSingleChoiceItems(R.array.shoot_mode_array, targetMode,
+    .setSingleChoiceItems(R.array.shoot_mode_array, prefs.targetMode,
                           new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface builder, int which) {
@@ -1188,11 +1197,9 @@ public class FrozenBubble extends Activity
       @Override
       public void onClick(DialogInterface builder, int id) {
         // User clicked OK.
-        SharedPreferences sp = getSharedPreferences(PREFS_NAME,
-                                                    Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-        editor.putInt("targetMode", targetMode);
-        editor.commit();
+        SharedPreferences sp =
+            PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        PreferencesActivity.saveDefaultPreferences(prefs, sp);
       }
     });
 
