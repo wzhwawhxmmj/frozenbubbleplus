@@ -155,7 +155,7 @@ public class FrozenBubble extends Activity
   public final static int ROTATE_TO_SHOOT = 2;
 
   public final static int LOCALE_LOCAL     = 0;
-  public final static int LOCALE_LAN       = 1;
+  public final static int LOCALE_WIFI      = 1;
   public final static int LOCALE_INTERNET  = 2;
   public final static int LOCALE_BLUETOOTH = 3;
 

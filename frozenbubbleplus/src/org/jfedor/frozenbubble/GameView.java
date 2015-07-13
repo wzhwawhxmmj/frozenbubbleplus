@@ -111,6 +111,7 @@ import com.efortin.frozenbubble.HighscoreManager;
 import com.efortin.frozenbubble.NetworkManager;
 import com.efortin.frozenbubble.NetworkManager.GameFieldData;
 import com.efortin.frozenbubble.NetworkManager.PlayerAction;
+import com.efortin.frozenbubble.NetworkManager.connectEnum;
 import com.efortin.frozenbubble.VirtualInput;
 
 public class GameView extends SurfaceView
@@ -123,6 +124,7 @@ public class GameView extends SurfaceView
   private boolean         mBlankScreen   = false;
   private boolean         muteKeyToggle  = false;
   private boolean         pauseKeyToggle = false;
+  private int             gameLocale;
   private int             numPlayers;
   private int             numPlayer1GamesWon;
   private int             numPlayer2GamesWon;
@@ -1511,25 +1513,33 @@ public class GameView extends SurfaceView
       int x = 168;
       int y = 20;
       int ysp = 26;
-      int orientation = getScreenOrientation();
-
-      if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-        x += GAMEFIELD_WIDTH/2;
-      else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-        x -= GAMEFIELD_WIDTH/2;
 
       NetworkStatus status = new NetworkStatus();
       mNetworkManager.updateNetworkStatus(status);
 
-      if (status.isConnected) {
-        mFont.print("internet status: ]", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
+      if (gameLocale == FrozenBubble.LOCALE_WIFI) {
+        if (status.isConnected) {
+          mFont.print("wifi status: ]", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          y += ysp;
+        }
+        else {
+          mFont.print("wifi status: _", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          y += ysp;
+        }
       }
-      else {
-        mFont.print("internet status: _", x, y, canvas,
-                    mDisplayScale, mDisplayDX, mDisplayDY);
-        y += ysp;
+      else if (gameLocale == FrozenBubble.LOCALE_BLUETOOTH) {
+        if (status.isConnected) {
+          mFont.print("bluetooth status: ]", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          y += ysp;
+        }
+        else {
+          mFont.print("bluetooth status: _", x, y, canvas,
+                      mDisplayScale, mDisplayDX, mDisplayDY);
+          y += ysp;
+        }
       }
 
       mFont.print("my address: " + status.localIpAddress, x, y, canvas,
@@ -2603,6 +2613,7 @@ public class GameView extends SurfaceView
                     byte[] levels,
                     int startingLevel) {
     mContext = context;
+    this.gameLocale = gameLocale;
     this.numPlayers = numPlayers;
     SurfaceHolder holder = getHolder();
     holder.addCallback(this);
@@ -2631,8 +2642,17 @@ public class GameView extends SurfaceView
      * Create a network game manager if this is a network game.
      */
     mNetworkManager = null;
-    if (gameLocale == FrozenBubble.LOCALE_LAN) {
+    if ((gameLocale == FrozenBubble.LOCALE_BLUETOOTH) ||
+        (gameLocale == FrozenBubble.LOCALE_WIFI     )) {
+      connectEnum mode;
+      if (gameLocale == FrozenBubble.LOCALE_BLUETOOTH) {
+        mode = connectEnum.BLUETOOTH;
+      }
+      else {
+        mode = connectEnum.UDP_MULTICAST;
+      }
       mNetworkManager = new NetworkManager(context,
+                                           mode,
                                            mLocalInput,
                                            mRemoteInput);
       remoteInterface = mNetworkManager.getRemoteInterface();
