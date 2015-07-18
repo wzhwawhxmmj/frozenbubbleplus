@@ -64,6 +64,7 @@ import java.util.UUID;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.os.ParcelUuid;
 import android.util.Log;
@@ -74,22 +75,25 @@ import android.util.Log;
  * @author Eric Fortin, Wednesday, May 8, 2013
  */
 public class BluetoothManager {
-  private static final String LOG_TAG = UDPSocket.class.getSimpleName();
+  private static final String LOG_TAG  = UDPSocket.class.getSimpleName();
+  private static final UUID   SPP_UUID = UUID.
+      fromString("00001101-0000-1000-8000-00805F9B34FB");
 
   /*
    * BluetoothManager class member variables.
    */
+  private boolean                      isServer;
   private boolean                      paused;
   private boolean                      running;
-  private ArrayList<byte[]>            txList        = null;
-  private ArrayList<BluetoothListener> listenerList  = null;
-  private BluetoothAdapter             mAdapter      = null;
-  private BluetoothSocket              mSocket       = null;
-  private InputStream                  mInputStream  = null;
-  private OutputStream                 mOutputStream = null;
-  private Set<BluetoothDevice>         pairedDevices = null;
-  private String                       remoteName    = "not available";
-  private Thread                       mThread       = null;
+  private ArrayList<byte[]>            txList         = null;
+  private ArrayList<BluetoothListener> listenerList   = null;
+  private BluetoothAdapter             myAdapter      = null;
+  private BluetoothSocket              mySocket       = null;
+  private InputStream                  myInputStream  = null;
+  private OutputStream                 myOutputStream = null;
+  private String                       remoteName     = "not available";
+  private Thread                       myRxThread     = null;
+  private Thread                       myTxThread     = null;
 
   /*
    * Listener interface for various UDP socket events.
@@ -110,16 +114,21 @@ public class BluetoothManager {
   /**
    * Bluetooth socket class constructor.
    */
-  public BluetoothManager() {
-    mInputStream  = null;
-    mOutputStream = null;
-    mThread       = null;
-    txList        = null;
-    configureBluetoothSocket();
-    txList        = new ArrayList<byte[]>();
-    listenerList  = new ArrayList<BluetoothListener>();
-    mThread       = new Thread(new BluetoothThread(), "mBluetoothThread");
-    mThread.start();
+  public BluetoothManager(boolean isServer) {
+    this.isServer  = isServer;
+    myInputStream  = null;
+    myOutputStream = null;
+    myRxThread     = null;
+    myTxThread     = null;
+    txList         = null;
+    txList         = new ArrayList<byte[]>();
+    listenerList   = new ArrayList<BluetoothListener>();
+    paused         = false;
+    running        = true;
+    myRxThread     = new Thread(new BluetoothRxThread(), "myRxThread");
+    myRxThread.start();
+    myTxThread     = new Thread(new BluetoothTxThread(), "myTxThread");
+    myTxThread.start();
   }
 
   final protected static char[] hexArray = "0123456789ABCDEF".toCharArray();
@@ -143,33 +152,33 @@ public class BluetoothManager {
     }
     listenerList = null;
     stopThread();
-    if (mSocket != null) {
+    if (mySocket != null) {
       try {
-        mSocket.close();
+        mySocket.close();
       } catch (IOException e) {
-        // TODO Auto-generated catch block
+        // Auto-generated catch block
         e.printStackTrace();
       }
     }
-    mSocket = null;
-    if (mInputStream != null) {
+    mySocket = null;
+    if (myInputStream != null) {
       try {
-        mInputStream.close();
+        myInputStream.close();
       } catch (IOException e) {
-        // TODO Auto-generated catch block
+        // Auto-generated catch block
         e.printStackTrace();
       }
     }
-    mInputStream = null;
-    if (mOutputStream != null) {
+    myInputStream = null;
+    if (myOutputStream != null) {
       try {
-        mOutputStream.close();
+        myOutputStream.close();
       } catch (IOException e) {
-        // TODO Auto-generated catch block
+        // Auto-generated catch block
         e.printStackTrace();
       }
     }
-    mOutputStream = null;
+    myOutputStream = null;
     if (txList != null) {
       txList.clear();
     }
@@ -180,101 +189,67 @@ public class BluetoothManager {
    * Configure the Bluetooth socket settings.
    */
   private void configureBluetoothSocket() {
-    boolean fallback = false;
+    mySocket  = null;
+    myAdapter = BluetoothAdapter.getDefaultAdapter();
 
-    mSocket  = null;
-    mAdapter = BluetoothAdapter.getDefaultAdapter();
-
-    if (mAdapter != null) {
-      if (!mAdapter.isEnabled())
-      {
-        mAdapter.enable();
-      }
-
-      pairedDevices = mAdapter.getBondedDevices();
-
-      for(BluetoothDevice device : pairedDevices) {
-        Method       method;
-        ParcelUuid[] uuids = null;
-
-        remoteName = device.getName();
-
+    if (myAdapter != null) {
+      if (isServer) {
         try {
-          method = device.getClass().getMethod("getUuids",  (Class<?>[])null);
-          uuids  = (ParcelUuid[]) method.invoke(device, (Object[])null);
-        } catch (SecurityException e1) {
-          // TODO Auto-generated catch block
-          e1.printStackTrace();
-        } catch (NoSuchMethodException e1) {
-          // TODO Auto-generated catch block
-          e1.printStackTrace();
-        } catch (IllegalArgumentException e) {
-          // TODO Auto-generated catch block
+          BluetoothServerSocket myServer =
+              myAdapter.listenUsingInsecureRfcommWithServiceRecord(getLocalName(),
+                                                                   SPP_UUID);
+          myAdapter.cancelDiscovery();
+          mySocket   = myServer.accept();
+          myServer .close();
+          remoteName = mySocket.getRemoteDevice().getName();
+        } catch (IOException e) {
+          // Auto-generated catch block
           e.printStackTrace();
-        } catch (IllegalAccessException e) {
-          // TODO Auto-generated catch block
+          mySocket = null;
+        } catch (NullPointerException e) {
           e.printStackTrace();
-        } catch (InvocationTargetException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
+          mySocket = null;
         }
-
-        for (ParcelUuid parcelUuid : uuids) {
+      }
+      else {
+        Set<BluetoothDevice> pairedDevices = myAdapter.getBondedDevices();
+        /*
+         * TODO: Allow the user to select which paired device to connect
+         *       to.  Currently this implementation attempts to connect
+         *       to just the first device in the list.
+         */
+        for(BluetoothDevice device : pairedDevices) {
+          remoteName = device.getName();
           try {
-            mSocket = device.createInsecureRfcommSocketToServiceRecord(UUID.fromString(parcelUuid.toString()));
-            mSocket.connect();
-            fallback = false;
+            mySocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+            myAdapter.cancelDiscovery();
+            mySocket .connect();
             break;
           } catch (IOException e) {
-            // TODO Auto-generated catch block
+            // Auto-generated catch block
             e.printStackTrace();
-            mSocket  = null;
-            fallback = true;
+            mySocket = null;
+          } catch (NullPointerException e) {
+            e.printStackTrace();
+            mySocket = null;
           }
         }
+      }
 
-        if (fallback) {
+      if (mySocket != null) {
+        try {
+          myInputStream  = mySocket.getInputStream();
+          myOutputStream = mySocket.getOutputStream();
+        } catch (IOException e) {
+          // Auto-generated catch block
+          e.printStackTrace();
           try {
-            method  = device.getClass().getMethod("createInsecureRfcommSocket", new Class[] {int.class});
-            mSocket = (BluetoothSocket) method.invoke(device, 1);
-            mSocket.connect();
-          } catch (SecurityException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
-          } catch (NoSuchMethodException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
-          } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
-          } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
-          } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
-          } catch (InvocationTargetException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            mSocket = null;
+            mySocket.close();
+          } catch (IOException ioe) {
+            ioe.printStackTrace();
           }
+          mySocket = null;
         }
-
-        if (mSocket != null) {
-          try {
-            mInputStream  = mSocket.getInputStream();
-            mOutputStream = mSocket.getOutputStream();
-          } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-          }
-        }
-        break;
       }
     }
   }
@@ -296,27 +271,108 @@ public class BluetoothManager {
     return name;
   }
 
+  public UUID getLocalUuid() {
+    UUID serverUuid = null;
+    ParcelUuid[] parcelUuids = getLocalUuids();
+    for (ParcelUuid uuid : parcelUuids) {
+      serverUuid = UUID.fromString(uuid.toString());
+      break;
+    }
+    return serverUuid;
+  }
+
+  public ParcelUuid[] getLocalUuids() {
+    Method       method = null;
+    ParcelUuid[] uuids  = null;
+
+    if (myAdapter != null) {
+      try {
+        method = myAdapter.getClass().getMethod("getUuids",  (Class<?>[])null);
+        uuids  = (ParcelUuid[]) method.invoke(myAdapter, (Object[])null);
+      } catch (SecurityException e1) {
+        // Auto-generated catch block
+        e1.printStackTrace();
+      } catch (NoSuchMethodException e1) {
+        // Auto-generated catch block
+        e1.printStackTrace();
+      } catch (IllegalArgumentException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      } catch (IllegalAccessException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      } catch (InvocationTargetException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    return (uuids);
+  }
+
+  public UUID getPairedUuid() {
+    UUID pairedUuid = null;
+    ParcelUuid[] parcelUuids = getPairedUuids();
+    for (ParcelUuid uuid : parcelUuids) {
+      pairedUuid = UUID.fromString(uuid.toString());
+      break;
+    }
+    return pairedUuid;
+  }
+
+  public ParcelUuid[] getPairedUuids() {
+    Method       method = null;
+    ParcelUuid[] uuids  = null;
+
+    Set<BluetoothDevice> pairedDevices = myAdapter.getBondedDevices();
+    /*
+     * TODO: Allow the user to select which paired device to connect
+     *       to.  Currently this implementation attempts to connect
+     *       to just the first device in the list.
+     */
+    for(BluetoothDevice device : pairedDevices) {
+      remoteName = device.getName();
+
+      try {
+        method = device.getClass().getMethod("getUuids",  (Class<?>[])null);
+        uuids  = (ParcelUuid[]) method.invoke(device, (Object[])null);
+      } catch (SecurityException e1) {
+        // Auto-generated catch block
+        e1.printStackTrace();
+      } catch (NoSuchMethodException e1) {
+        // Auto-generated catch block
+        e1.printStackTrace();
+      } catch (IllegalArgumentException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      } catch (IllegalAccessException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      } catch (InvocationTargetException e) {
+        // Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+    return (uuids);
+  }
+
   public String getRemoteName() {
     return remoteName;
   }
 
+  public boolean getIsConnected() {
+    return (mySocket != null);
+  }
+
   /**
-   * This is the UDP socket receive and transmit thread declaration.
-   * <p>To support being able to send and receive packets in the same
-   * thread, a nonzero socket read timeout must be set, because
-   * <code>MulticastSocket.receive()</code> blocks until a packet is
-   * received or the socket times out.  Thus, if a timeout of zero is
-   * set (which is the default, and denotes that the socket will never
-   * time out), a datagram will never be sent unless one has just been
-   * received.
-   * @author Eric Fortin, Wednesday, May 8, 2013
-   * @see <code>configureUDPSocket()</code>
+   * This is the Bluetooth InputStream receive thread declaration.
+   * @author Eric Fortin, Saturday, July 18, 2015
+   * @see <code>configureBluetoothSocket()</code>
    */
-  private class BluetoothThread implements Runnable {
+  private class BluetoothRxThread implements Runnable {
     private byte[] rxBuffer = new byte[256];
 
     /**
-     * Receive a UDP datagram.
+     * Receive a Bluetooth InputStream message.
      * <p>Given a nonzero socket timeout, it is expected behavior for
      * this method to catch an <code>InterruptedIOException</code>.
      * This method posts an <code>EVENT_PACKET_RX</code> event to the
@@ -324,8 +380,8 @@ public class BluetoothManager {
      */
     private void receiveDatagram() {
       if (!paused && running) try {
-        if (mInputStream != null) {
-          mInputStream.read(rxBuffer, 0, rxBuffer.length);
+        if (myInputStream != null) {
+          myInputStream.read(rxBuffer, 0, rxBuffer.length);
           byte[] buffer  = rxBuffer.clone();
           int    length  = rxBuffer.length;
   
@@ -351,34 +407,67 @@ public class BluetoothManager {
 
     /**
      * This is the thread's <code>run()</code> call.
-     * <p>Send and receive Bluetooth data.
+     * <p>Receive Bluetooth data.
      */
     @Override
     public void run() {
-      paused  = false;
-      running = true;
-
       while (running) {
-        if (paused) try {
-          synchronized(this) {
-            wait();
-          }
-        } catch (InterruptedException ie) {
-          /*
-           * Interrupted.  This is expected behavior.
-           */
+        if (mySocket == null) {
+          configureBluetoothSocket();
         }
+        else {
+          if (paused) try {
+            synchronized(this) {
+              wait();
+            }
+          } catch (InterruptedException ie) {
+            /*
+             * Interrupted.  This is expected behavior.
+             */
+          }
+  
+          if (!paused && running) {
+            receiveDatagram();
+          }
+        }
+      }
+    }
+  }
 
-        if (!paused && running) {
-          sendDatagram();
-          receiveDatagram();
+  /**
+   * This is the Bluetooth OutputStream transmit thread declaration.
+   * @author Eric Fortin, Saturday, July 18, 2015
+   * @see <code>configureBluetoothSocket()</code>
+   */
+  private class BluetoothTxThread implements Runnable {
+    /**
+     * This is the thread's <code>run()</code> call.
+     * <p>Send Bluetooth data.
+     */
+    @Override
+    public void run() {
+      while (running) {
+        if (mySocket != null) {
+          if (paused) try {
+            synchronized(this) {
+              wait();
+            }
+          } catch (InterruptedException ie) {
+            /*
+             * Interrupted.  This is expected behavior.
+             */
+          }
+  
+          if (!paused && running) {
+            sendDatagram();
+          }
         }
       }
     }
 
     /**
      * Extract the next buffer from the FIFO transmit list and send it
-     * as a UDP datagram packet.
+     * as a Bluetooth OutputStream message.
      */
     private void sendDatagram() {
       if (!paused && running && (txList != null) && txList.size() > 0) try {
@@ -386,8 +475,8 @@ public class BluetoothManager {
         synchronized(txList) {
           bytes = txList.get(0);
         }
-        if (mOutputStream != null) {
-          mOutputStream.write(bytes, 0, bytes.length);
+        if (myOutputStream != null) {
+          myOutputStream.write(bytes, 0, bytes.length);
           Log.d(LOG_TAG, "transmitted "+bytes.length+" bytes: 0x" +
               bytesToHex(bytes, bytes.length));
           synchronized(txList) {
@@ -409,23 +498,39 @@ public class BluetoothManager {
   }
 
   /**
-   * Stop and <code>join()</code> the UDP thread.
+   * Stop and <code>join()</code> the Bluetooth RX and TX threads.
    */
   private void stopThread() {
     paused  = false;
     running = false;
-    if (mThread != null) {
-      synchronized(mThread) {
-        mThread.interrupt();
+    if (myRxThread != null) {
+      synchronized(myRxThread) {
+        myRxThread.interrupt();
+      }
+    }
+    if (myTxThread != null) {
+      synchronized(myTxThread) {
+        myTxThread.interrupt();
       }
     }
     /*
      * Close and join() the Bluetooth thread.
      */
     boolean retry = true;
-    while (retry && (mThread != null)) {
+    while (retry && (myRxThread != null)) {
       try {
-        mThread.join();
+        myRxThread.join();
+        retry = false;
+      } catch (InterruptedException e) {
+        /*
+         * Keep trying to close the Bluetooth thread.
+         */
+      }
+    }
+    retry = true;
+    while (retry && (myTxThread != null)) {
+      try {
+        myTxThread.join();
         retry = false;
       } catch (InterruptedException e) {
         /*
@@ -443,7 +548,7 @@ public class BluetoothManager {
    * buffer was unable to be added to the transmit list.
    */
   public boolean transmit(byte[] buffer) {
-    if ((mThread != null) && running) {
+    if ((mySocket != null) && (myTxThread != null) && running) {
       synchronized(txList) {
         txList.add(buffer);
       }
@@ -454,9 +559,14 @@ public class BluetoothManager {
 
   public void unPause() {
     paused = false;
-    if (mThread != null) {
-      synchronized(mThread) {
-        mThread.interrupt();
+    if (myRxThread != null) {
+      synchronized(myRxThread) {
+        myRxThread.interrupt();
+      }
+    }
+    if (myTxThread != null) {
+      synchronized(myTxThread) {
+        myTxThread.interrupt();
       }
     }
   }
