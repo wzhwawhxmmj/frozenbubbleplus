@@ -104,6 +104,8 @@ public class NetworkManager extends Thread
   private static final String HOST = "225.0.0.15";
   private static final int    PORT = 5500;
 
+  private static boolean hasBluetooth = false;
+
   /*
    * Message identifier definitions.
    */
@@ -133,7 +135,7 @@ public class NetworkManager extends Thread
   private boolean          missedAction;
   private boolean          newGameStarted;
   private boolean          paused;
-  private boolean          running;
+  private boolean          running;           
   private long             actionTxTime;
   private long             statusTxTime;
   private connectEnum      mode;
@@ -173,14 +175,10 @@ public class NetworkManager extends Thread
                         connectEnum  mode,
                         VirtualInput localPlayer,
                         VirtualInput remotePlayer) {
-    this.myContext    = myContext.getApplicationContext();
-    this.mode         = mode;
-    this.localPlayer  = localPlayer;
-    this.remotePlayer = remotePlayer;
-    /*
-     * The game ID is used as the transport layer receive filter.  Do
-     * not filter messages until we have obtained a game ID.
-     */
+    this.myContext      = myContext.getApplicationContext();
+    this.mode           = mode;
+    this.localPlayer    = localPlayer;
+    this.remotePlayer   = remotePlayer;
     missedAction        = false;
     newGameStarted      = false;
     localIpAddress      = getLocalIPaddress();
@@ -196,6 +194,13 @@ public class NetworkManager extends Thread
                                               remoteGameFieldData);
     session             = null;
     sessionBluetooth    = null;
+    /*
+     * Determine if the local device has bluetooth hardware.
+     */
+    hasBluetooth = hasBluetooth();
+    /*
+     * Obtain a copy of the local game preferences.
+     */
     SharedPreferences sp =
         PreferenceManager.getDefaultSharedPreferences(myContext);
     localPrefs = PreferencesActivity.getDefaultPrefs(sp);
@@ -1166,10 +1171,13 @@ public class NetworkManager extends Thread
    * <code>BLUETOOTH</code>
    * @return <code>true</code> if Bluetooth is enabled.
    */
-  public boolean hasBluetooth()
+  public static boolean hasBluetooth()
   {
     BluetoothAdapter myAdapter = BluetoothAdapter.getDefaultAdapter();
-    if ((myAdapter != null) && myAdapter.isEnabled()) {
+    if (myAdapter != null) {
+      if (!myAdapter.isEnabled()) {
+        myAdapter.enable();
+      }
       return true;
     }
     return false;
@@ -1253,9 +1261,11 @@ public class NetworkManager extends Thread
        * opponent has been identified.  Until then, transmit the network
        * peer discovery message.
        */
-      if ((mode == connectEnum.UDP_MULTICAST) ||
-          (remoteStatus == null)) {
-        transmitHello();
+      if (mode != connectEnum.BLUETOOTH) {
+        if ((mode == connectEnum.UDP_MULTICAST) ||
+            (remoteStatus == null)) {
+          transmitHello();
+        }
       }
 
       if (remoteStatus != null) {
@@ -1281,7 +1291,7 @@ public class NetworkManager extends Thread
         if (remoteStatus.fieldRequest &&
             ((localStatus.localActionID + 1) == remoteStatus.remoteActionID)) {
           GameFieldData tempField = new GameFieldData(null);
-          getGameFieldData(tempField);
+          getGameFieldData (tempField);
           transmitGameField(tempField);
           /*
            * Clear the remote request flag to potentially reduce network
@@ -1292,7 +1302,7 @@ public class NetworkManager extends Thread
         }
       }
 
-      transmitStatus(localStatus);
+      transmitStatus  (localStatus   );
       setStatusTimeout(STATUS_TIMEOUT);
     }
   }
@@ -1345,8 +1355,21 @@ public class NetworkManager extends Thread
       }
     }
     else if ((mode == connectEnum.BLUETOOTH) && (sessionBluetooth == null)) {
-      sessionBluetooth = new BluetoothManager();
+      sessionBluetooth = new BluetoothManager(localPlayer.playerID ==
+                                              VirtualInput.PLAYER1);
       sessionBluetooth.setBluetoothListener(this);
+
+      /*
+       * Start the network manager thread.
+       */
+      try {
+        start();
+      } catch (IllegalThreadStateException itse) {
+        /*
+         * The thread was already started.
+         */
+        itse.printStackTrace();
+      }
     }
     else {
       /*
@@ -1425,7 +1448,7 @@ public class NetworkManager extends Thread
 
       if ((mode == connectEnum.UDP_MULTICAST) &&
           (playerId == remotePlayer.playerID) &&
-          (msgId == MSG_ID_HELLO) && (length == HELLO_BYTES)) {
+          (msgId == MSG_ID_HELLO) && (length >= HELLO_BYTES)) {
         opponentAddress = address;
         /*
          * If the payload of the message is the IP address of this local
@@ -1459,9 +1482,11 @@ public class NetworkManager extends Thread
         return;
       }
 
-      if ((opponentAddress != null) && (playerId == remotePlayer.playerID) &&
-          opponentAddress.equals(address)) {
-        processEventData(buffer, length);
+      if (mode == connectEnum.UDP_UNICAST) {
+        if ((opponentAddress != null) && (playerId == remotePlayer.playerID) &&
+            opponentAddress.equals(address)) {
+          processEventData(buffer, length);
+        }
       }
     }
   }
@@ -1491,7 +1516,7 @@ public class NetworkManager extends Thread
      * If the game ID has not yet been set, then player status
      * messages are the only messages that will be processed.
      */
-    if ((msgId == MSG_ID_STATUS) && (length == (STATUS_BYTES + 1))) {
+    if ((msgId == MSG_ID_STATUS) && (length >= (STATUS_BYTES + 1))) {
       /*
        * Process the remote player status.
        */
@@ -1508,7 +1533,7 @@ public class NetworkManager extends Thread
      * update the game preferences.  The game preferences for all
      * players are set per player 1.
      */
-    if ((msgId == MSG_ID_PREFS) && (length == (PREFS_BYTES + 2))) {
+    if ((msgId == MSG_ID_PREFS) && (length >= (PREFS_BYTES + 2))) {
       if ((playerId == VirtualInput.PLAYER1) && localStatus.prefsRequest) {
         copyPrefsFromBuffer(remotePrefs, buffer, 2);
         /*
@@ -1551,7 +1576,7 @@ public class NetworkManager extends Thread
      * If the message contains a remote player game action, add it
      * to the remote player action list if we are ready to play.
      */
-    if ((msgId == MSG_ID_ACTION) && (length == (ACTION_BYTES + 1))) {
+    if ((msgId == MSG_ID_ACTION) && (length >= (ACTION_BYTES + 1))) {
       if (localStatus.readyToPlay && (playerId == remotePlayer.playerID)) {
         addAction(new PlayerAction(buffer, 1));
       }
@@ -1561,7 +1586,7 @@ public class NetworkManager extends Thread
      * If the message contains the remote player game field, update
      * the remote player interface game field object.
      */
-    if ((msgId == MSG_ID_FIELD) && (length == (FIELD_BYTES + 1))) {
+    if ((msgId == MSG_ID_FIELD) && (length >= (FIELD_BYTES + 1))) {
       if ((playerId == remotePlayer.playerID) &&
           localStatus.fieldRequest) {
         remoteInterface.gameFieldData.copyFromBuffer(buffer, 1);
@@ -1998,13 +2023,14 @@ public class NetworkManager extends Thread
       status.isConnected     = hasInternetConnection();
       status.localIpAddress  = localIpAddress.getHostAddress();
       status.remoteIpAddress = remoteIpAddress;
+      status.playerJoined    = opponentAddress != null;
     }
     else if (mode == connectEnum.BLUETOOTH) {
-      status.isConnected     = hasBluetooth();
-      status.localIpAddress  = sessionBluetooth.getLocalName ().toLowerCase();
-      status.remoteIpAddress = sessionBluetooth.getRemoteName().toLowerCase();
+      status.isConnected     = hasBluetooth;
+      status.localIpAddress  = sessionBluetooth.getLocalName   ().toLowerCase();
+      status.remoteIpAddress = sessionBluetooth.getRemoteName  ().toLowerCase();
+      status.playerJoined    = sessionBluetooth.getIsConnected();
     }
-    status.playerJoined = opponentAddress != null;
     if (localStatus != null) {
       status.gotFieldData = remoteInterface.gotFieldData;
       status.gotPrefsData = remoteInterface.gotPrefsData;
