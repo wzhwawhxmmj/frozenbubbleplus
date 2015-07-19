@@ -1668,6 +1668,10 @@ public class GameView extends SurfaceView
       }
     }
 
+    public boolean gameInProgress() {
+      return !mShowNetwork;
+    }
+
     public int getCurrentLevelIndex() {
       return mLevelManager.getLevelIndex();
     }

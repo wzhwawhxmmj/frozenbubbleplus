@@ -101,6 +101,7 @@ import android.view.OrientationEventListener;
 import android.view.Surface;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.efortin.frozenbubble.AccelerometerManager;
@@ -177,7 +178,6 @@ public class FrozenBubble extends Activity
   private boolean    activityCustomStarted = false;
   private boolean    allowUnpause          = true;
   private int        currentOrientation;
-  private long       lastBackPressTime     = 0;
   private GameThread mGameThread           = null;
   private GameView   mGameView             = null;
   private ModPlayer  myModPlayer           = null;
@@ -275,7 +275,16 @@ public class FrozenBubble extends Activity
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     boolean handled = false;
     if (keyCode == KeyEvent.KEYCODE_BACK) {
-      backKeyPress();
+      /*
+       * Only show the game exit dialog while a game is in progress,
+       * otherwise simply exit.
+       */
+      if ((mGameThread != null) && mGameThread.gameInProgress()) {
+        exitGameDialog();
+      }
+      else {
+        exit(true);
+      }
       handled = true;
     }
     return handled || super.onKeyDown(keyCode, event);
@@ -514,37 +523,6 @@ public class FrozenBubble extends Activity
    * Following are general utility functions.
    */
 
-  private void backKeyPress() {
-    long currentTime = System.currentTimeMillis();
-    /*
-     * If the player presses back twice in less than three seconds,
-     * then exit the game.  Otherwise pop up a toast telling them that
-     * if they press the button again the game will exit.
-     */
-    if ((currentTime - lastBackPressTime) < 3000) {
-      /*
-       * Preserve game information and perform activity cleanup.
-       */
-      pause();
-      if (mGameThread != null)
-        mGameThread.setRunning(false);
-      cleanUp();
-      /*
-       * Create an intent to launch the home screen.
-       */
-      Intent intent = new Intent(this, HomeScreen.class);
-      intent.putExtra("startHomeScreen", true);
-      startActivity(intent);
-      finish();
-    }
-    else {
-      Toast.makeText(getApplicationContext(), "Press again to exit...",
-                     Toast.LENGTH_SHORT).show();
-    }
-
-    lastBackPressTime = currentTime;
-  }
-
   /**
    * Perform activity cleanup.  <b>This must only be called when the
    * activity is being destroyed.</b>
@@ -582,6 +560,81 @@ public class FrozenBubble extends Activity
       mGameView.cleanUp();
     }
     mGameView = null;
+  }
+
+  private void exit(boolean goToHomeScreen) {
+    /*
+     * Preserve game information and perform activity cleanup.
+     */
+    pause();
+    if (mGameThread != null)
+      mGameThread.setRunning(false);
+    cleanUp();
+    /*
+     * Clear the flag indicating that the system passed us a bundle to
+     * save the game state.
+     */
+    SharedPreferences.Editor editor =
+        PreferenceManager.getDefaultSharedPreferences(this).edit();
+    editor.putBoolean("systemSave", false);
+    editor.commit();
+    /*
+     * Create an intent to launch the home screen.
+     */
+    if (goToHomeScreen) {
+      Intent intent = new Intent(this, HomeScreen.class);
+      intent.putExtra("startHomeScreen", true);
+      startActivity(intent);
+    }
+    /*
+     * Finish the current activity.
+     */
+    finish();
+  }
+
+  private void exitGameDialog() {
+    AlertDialog.Builder builder = new AlertDialog.Builder(FrozenBubble.this);
+    /*
+     * Set the dialog title.
+     */
+    builder.setTitle(R.string.exit)
+    /*
+     * Set the action buttons.
+     */
+    .setPositiveButton(R.string.exit,
+                       new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked OK.  Quit.
+        exit(true);
+      }
+    })
+    .setOnCancelListener(new DialogInterface.OnCancelListener() {
+      @Override
+      public void onCancel(DialogInterface dialog) {
+        // User canceled.  Do nothing.
+        if (mGameThread != null) {
+          mGameThread.resumeGame();
+        }
+      }
+    })
+    .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int id) {
+        // User clicked Cancel.  Do nothing.
+        if (mGameThread != null) {
+          mGameThread.resumeGame();
+        }
+      }
+    });
+    AlertDialog alert = builder.create();
+    alert.show();
+    Button btn1 = alert.getButton(DialogInterface.BUTTON_NEGATIVE);
+    btn1.setTextSize(18);
+    Button btn2 = alert.getButton(DialogInterface.BUTTON_NEUTRAL);
+    btn2.setTextSize(18);
+    Button btn3 = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+    btn3.setTextSize(18);
   }
 
   /**
