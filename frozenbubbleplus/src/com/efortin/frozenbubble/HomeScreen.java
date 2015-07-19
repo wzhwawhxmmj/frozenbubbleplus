@@ -56,7 +56,6 @@ import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.R;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -460,7 +459,7 @@ public class HomeScreen extends Activity {
     startBluetoothGameButton.setId(BTN7_ID);
     startBluetoothGameButton.setFocusable(true);
     startBluetoothGameButton.setFocusableInTouchMode(true);
-    if (BluetoothAdapter.getDefaultAdapter() == null) {
+    if (BluetoothManager.getPairedDevices() == null) {
       startBluetoothGameButton.setEnabled(false);
     }
     LayoutParams myParams3 = new LayoutParams(LayoutParams.WRAP_CONTENT,

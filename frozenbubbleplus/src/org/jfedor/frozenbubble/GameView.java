@@ -1299,9 +1299,9 @@ public class GameView extends SurfaceView
     private void drawAboutScreen(Canvas canvas) {
       canvas.drawRGB(0, 0, 0);
       if (!mBlankScreen) {
-        int x = 168;
-        int y = 20;
-        int ysp = 26;
+        int x      = drawTextOffsetX();
+        int y      = 20;
+        int ysp    = 26;
         int indent = 10;
         mFont.print("original frozen bubble:", x, y, canvas,
                     mDisplayScale, mDisplayDX, mDisplayDY);
@@ -1355,8 +1355,8 @@ public class GameView extends SurfaceView
     }
 
     private void drawDifficulty(Canvas canvas) {
-      int y = 433;
-      int x = 159;
+      int y     = 433;
+      int x     = 159;
       int level = mLevelManager.getLevelIndex();
       mFont.print(LevelManager.DifficultyStrings[level], x, y, canvas,
                   mDisplayScale, mDisplayDX, mDisplayDY);
@@ -1377,9 +1377,9 @@ public class GameView extends SurfaceView
       }
 
       canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
-      int ysp = 26;
+      int x      = drawTextOffsetX();
+      int y      = 20;
+      int ysp    = 26;
       int indent = 10;
 
       mFont.print("highscore for level " + (level + 1), x, y, canvas,
@@ -1457,19 +1457,10 @@ public class GameView extends SurfaceView
       }
 
       canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
-      int ysp = 26;
+      int x      = drawTextOffsetX();
+      int y      = 20;
+      int ysp    = 26;
       int indent = 10;
-
-      if (!FrozenBubble.arcadeGame) {
-        int orientation = getScreenOrientation();
-  
-        if (orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT)
-          x += GAMEFIELD_WIDTH/2;
-        else if (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)
-          x -= GAMEFIELD_WIDTH/2;
-      }
 
       mFont.print("highscore for " +
                   LevelManager.DifficultyStrings[mHighScoreManager.getLevel()],
@@ -1510,8 +1501,8 @@ public class GameView extends SurfaceView
       }
 
       canvas.drawRGB(0, 0, 0);
-      int x = 168;
-      int y = 20;
+      int x   = drawTextOffsetX();
+      int y   = 20;
       int ysp = 26;
 
       NetworkStatus status = new NetworkStatus();
@@ -1598,6 +1589,31 @@ public class GameView extends SurfaceView
 
       mFont.print("tap to begin playing!", x, y, canvas,
                   mDisplayScale, mDisplayDX, mDisplayDY);
+    }
+
+    /**
+     * Obtain the horizontal offset to approximately center a line of
+     * 20 characters in the screen for the current device orientation.
+     * @return The horizontal offset
+     */
+    /**
+     * 
+     * @param needsOffset - <code>true</code> if the offset is not
+     * aleady taken care of via <code>mDisplayDX</code>.
+     * @return
+     */
+    private int drawTextOffsetX() {
+      int x = (int) (GAMEFIELD_WIDTH * 0.55f);
+      int orientation = getScreenOrientation();
+
+      if (numPlayers == 2) {
+        if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
+            (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
+          x = mDisplayDX + 5;
+        }
+      }
+
+      return x;
     }
 
     private void drawWinTotals(Canvas canvas) {
@@ -2108,42 +2124,40 @@ public class GameView extends SurfaceView
       synchronized(mSurfaceHolder) {
         if ((newWidth / newHeight) >= (gameWidth / gameHeight)) {
           mDisplayScale = (1.0 * newHeight) / gameHeight;
-          mDisplayDX = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
-          mDisplayDY = 0;
+          mDisplayDX    = (int)((newWidth - (mDisplayScale * extGameWidth)) / 2);
+          mDisplayDY    = 0;
         }
         else {
           mDisplayScale = (1.0 * newWidth) / gameWidth;
-          if (numPlayers > 1) {
-            /*
-             * When rotate to shoot targeting mode is selected during a
-             * multiplayer game, then the screen orientation is forced
-             * to landscape.
-             *
-             * In portrait mode during a multiplayer game, display just
-             * one game field.  Depending on which player is the local
-             * player, display the game field for just that player. This
-             * is useful for devices with small screens.
-             */
-            if (FrozenBubble.getTargetMode() == FrozenBubble.ROTATE_TO_SHOOT) {
-              mDisplayDX = 0;
-            }
-            else {
-              int orientation = getScreenOrientation();
-              if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
-                  (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
-                if (mLocalInput.playerID == VirtualInput.PLAYER2) {
-                  mDisplayDX = (int)(-mDisplayScale * gameWidth);
-                }
-                else {
-                  mDisplayDX = 0;
-                }
+          mDisplayDX    = (int)(mDisplayScale * (gameWidth - extGameWidth) / 2);
+          mDisplayDY    = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
+        }
+        if (numPlayers > 1) {
+          /*
+           * When rotate to shoot targeting mode is selected during a
+           * multiplayer game, then the screen orientation is forced
+           * to landscape.
+           *
+           * In portrait mode during a multiplayer game, display just
+           * one game field.  Depending on which player is the local
+           * player, display the game field for just that player. This
+           * is useful for devices with small screens.
+           */
+          if (FrozenBubble.getTargetMode() == FrozenBubble.ROTATE_TO_SHOOT) {
+            mDisplayDX = 0;
+          }
+          else {
+            int orientation = getScreenOrientation();
+            if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
+                (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
+              if (mLocalInput.playerID == VirtualInput.PLAYER2) {
+                mDisplayDX = (int)(-mDisplayScale * gameWidth);
+              }
+              else {
+                mDisplayDX = 0;
               }
             }
           }
-          else {
-            mDisplayDX = (int)(mDisplayScale * (gameWidth - extGameWidth) / 2);
-          }
-          mDisplayDY = (int)((newHeight - (mDisplayScale * gameHeight)) / 2);
         }
         if (numPlayers > 1) {
           mPlayer1DX = (int)(mDisplayDX - (mDisplayScale * (gameWidth / 2)));

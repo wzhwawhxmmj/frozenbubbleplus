@@ -59,6 +59,7 @@ import org.jfedor.frozenbubble.LevelManager;
 public class Preferences {
   public static final int PREFS_BYTES = 22;
 
+  public int     bluetooth;
   public int     collision;
   public boolean colorMode;
   public boolean compressor;
@@ -75,6 +76,7 @@ public class Preferences {
    * initialized to defaults.
    */
   public Preferences() {
+    bluetooth  = 0;
     collision  = BubbleSprite.MIN_PIX;
     colorMode  = false;
     compressor = false;
@@ -102,6 +104,7 @@ public class Preferences {
    */
   public void copy(Preferences prefs) {
     if (prefs != null) {
+      this.bluetooth  = prefs.bluetooth;
       this.collision  = prefs.collision;
       this.colorMode  = prefs.colorMode;
       this.compressor = prefs.compressor;

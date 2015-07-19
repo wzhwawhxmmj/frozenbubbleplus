@@ -1356,7 +1356,8 @@ public class NetworkManager extends Thread
     }
     else if ((mode == connectEnum.BLUETOOTH) && (sessionBluetooth == null)) {
       sessionBluetooth = new BluetoothManager(localPlayer.playerID ==
-                                              VirtualInput.PLAYER1);
+                                              VirtualInput.PLAYER1,
+                                              FrozenBubble.getBluetooth());
       sessionBluetooth.setBluetoothListener(this);
 
       /*
