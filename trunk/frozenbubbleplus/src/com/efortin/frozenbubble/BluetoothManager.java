@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2000-2003 Guillaume Cottenceau.
  * Java sourcecode - Copyright (c) 2003 Glenn Sanson.
- * Additional source - Copyright (c) 2013 Eric Fortin.
+ * Additional source - Copyright (c) 2015 Eric Fortin.
  *
  * This code is distributed under the GNU General Public License
  *
@@ -70,8 +70,10 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 /**
- * Bluetooth socket class.
+ * <p>Bluetooth socket class.
+ * <p>Requires the following permissions:
  * <code>BLUETOOTH</code>
+ * <code>BLUETOOTH_ADMIN</code>
  * @author Eric Fortin, Wednesday, May 8, 2013
  */
 public class BluetoothManager {
@@ -85,6 +87,7 @@ public class BluetoothManager {
   private boolean                      isServer;
   private boolean                      paused;
   private boolean                      running;
+  private int                          deviceIndex;
   private ArrayList<byte[]>            txList         = null;
   private ArrayList<BluetoothListener> listenerList   = null;
   private BluetoothAdapter             myAdapter      = null;
@@ -114,20 +117,21 @@ public class BluetoothManager {
   /**
    * Bluetooth socket class constructor.
    */
-  public BluetoothManager(boolean isServer) {
-    this.isServer  = isServer;
-    myInputStream  = null;
-    myOutputStream = null;
-    myRxThread     = null;
-    myTxThread     = null;
-    txList         = null;
-    txList         = new ArrayList<byte[]>();
-    listenerList   = new ArrayList<BluetoothListener>();
-    paused         = false;
-    running        = true;
-    myRxThread     = new Thread(new BluetoothRxThread(), "myRxThread");
+  public BluetoothManager(boolean isServer, int deviceIndex) {
+    this.isServer    = isServer;
+    this.deviceIndex = deviceIndex;
+    myInputStream    = null;
+    myOutputStream   = null;
+    myRxThread       = null;
+    myTxThread       = null;
+    txList           = null;
+    txList           = new ArrayList<byte[]>();
+    listenerList     = new ArrayList<BluetoothListener>();
+    paused           = false;
+    running          = true;
+    myRxThread       = new Thread(new BluetoothRxThread(), "myRxThread");
     myRxThread.start();
-    myTxThread     = new Thread(new BluetoothTxThread(), "myTxThread");
+    myTxThread       = new Thread(new BluetoothTxThread(), "myTxThread");
     myTxThread.start();
   }
 
@@ -212,27 +216,19 @@ public class BluetoothManager {
         }
       }
       else {
-        Set<BluetoothDevice> pairedDevices = myAdapter.getBondedDevices();
-        /*
-         * TODO: Allow the user to select which paired device to connect
-         *       to.  Currently this implementation attempts to connect
-         *       to just the first device in the list.
-         */
-        for(BluetoothDevice device : pairedDevices) {
-          remoteName = device.getName();
-          try {
-            mySocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
-            myAdapter.cancelDiscovery();
-            mySocket .connect();
-            break;
-          } catch (IOException e) {
-            // Auto-generated catch block
-            e.printStackTrace();
-            mySocket = null;
-          } catch (NullPointerException e) {
-            e.printStackTrace();
-            mySocket = null;
-          }
+        BluetoothDevice device = getPairedDevice(deviceIndex);
+        remoteName = device.getName();
+        try {
+          mySocket = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID);
+          myAdapter.cancelDiscovery();
+          mySocket .connect();
+        } catch (IOException e) {
+          // Auto-generated catch block
+          e.printStackTrace();
+          mySocket = null;
+        } catch (NullPointerException e) {
+          e.printStackTrace();
+          mySocket = null;
         }
       }
 
@@ -271,17 +267,62 @@ public class BluetoothManager {
     return name;
   }
 
-  public UUID getLocalUuid() {
+  /**
+   * Obtain the desired paired Bluetooth device.  If the desired index
+   * is greater than the number of entries in the device list, the last
+   * entry is provided instead.
+   * @param deviceIndex - the index of the desired Bluetooth device.
+   * @return The desired Bluetooth device if it exists, otherwise
+   * <code>null</code>.
+   */
+  public static BluetoothDevice getPairedDevice(int deviceIndex) {
+    BluetoothDevice[] pairedDevices = getPairedDevices();
+
+    if ((pairedDevices != null) && (pairedDevices.length > 0)) {
+      if (deviceIndex >= pairedDevices.length) {
+        deviceIndex = pairedDevices.length - 1;
+      }
+      return pairedDevices[deviceIndex];
+    }
+    return null;
+  }
+
+  /**
+   * Obtain an array of the paired Bluetooth devices.
+   * @return The array of paired Bluetooth devices if it exists,
+   * otherwise <code>null</code>.
+   */
+  public static BluetoothDevice[] getPairedDevices() {
+    BluetoothAdapter localAdapter = null;
+
+    localAdapter = BluetoothAdapter.getDefaultAdapter();
+    if ((localAdapter != null) && !localAdapter.getBondedDevices().isEmpty()) {
+      Set<BluetoothDevice> deviceSet = localAdapter.getBondedDevices();
+      return deviceSet.toArray(new BluetoothDevice[deviceSet.size()]);
+    }
+    return null;
+  }
+
+  /**
+   * Obtain the desired local UUID.  If the desired index is greater
+   * than the number of entries in the UUID list, the last entry is
+   * provided instead.
+   * @param uuidIndex - the index to pull from the local UUID list.
+   * @return The desired UUID.
+   */
+  public UUID getLocalUuid(int uuidIndex) {
     UUID serverUuid = null;
     ParcelUuid[] parcelUuids = getLocalUuids();
-    for (ParcelUuid uuid : parcelUuids) {
-      serverUuid = UUID.fromString(uuid.toString());
-      break;
+    if ((parcelUuids != null) && (parcelUuids.length > 0 )) {
+      if (uuidIndex >= parcelUuids.length) {
+        uuidIndex = parcelUuids.length - 1;
+      }
+      serverUuid = UUID.fromString(parcelUuids[uuidIndex].toString());
     }
     return serverUuid;
   }
 
-  public ParcelUuid[] getLocalUuids() {
+  private ParcelUuid[] getLocalUuids() {
     Method       method = null;
     ParcelUuid[] uuids  = null;
 
@@ -309,32 +350,42 @@ public class BluetoothManager {
     return (uuids);
   }
 
-  public UUID getPairedUuid() {
+  /**
+   * Obtain the desired UUID of the desired bonded device.  If either
+   * index is greater than the number of entries, the last entry is
+   * provided instead.
+   * @param pairedIndex - the paired device index.
+   * @param uuidIndex   - the index of the desired device UUID.
+   * @return
+   */
+  public UUID getPairedUuid(int pairedIndex, int uuidIndex) {
     UUID pairedUuid = null;
-    ParcelUuid[] parcelUuids = getPairedUuids();
-    for (ParcelUuid uuid : parcelUuids) {
-      pairedUuid = UUID.fromString(uuid.toString());
-      break;
+    ParcelUuid[] parcelUuids = getPairedUuids(pairedIndex);
+    if ((parcelUuids != null) && (parcelUuids.length > 0 )) {
+      if (uuidIndex >= parcelUuids.length) {
+        uuidIndex = parcelUuids.length - 1;
+      }
+      pairedUuid = UUID.fromString(parcelUuids[uuidIndex].toString());
     }
     return pairedUuid;
   }
 
-  public ParcelUuid[] getPairedUuids() {
-    Method       method = null;
-    ParcelUuid[] uuids  = null;
+  private ParcelUuid[] getPairedUuids(int pairedIndex) {
+    Method            method      = null;
+    ParcelUuid[]      uuids       = null;
+    BluetoothDevice[] pairedArray = null;
 
-    Set<BluetoothDevice> pairedDevices = myAdapter.getBondedDevices();
-    /*
-     * TODO: Allow the user to select which paired device to connect
-     *       to.  Currently this implementation attempts to connect
-     *       to just the first device in the list.
-     */
-    for(BluetoothDevice device : pairedDevices) {
-      remoteName = device.getName();
-
+    if (myAdapter != null) {
+      Set<BluetoothDevice> pairedDevices = myAdapter.getBondedDevices();
+      if ((pairedDevices != null) && (pairedDevices.size() > 0 )) {
+        pairedArray = (BluetoothDevice[]) pairedDevices.toArray();
+        if (pairedIndex >= pairedArray.length) {
+          pairedIndex = pairedArray.length - 1;
+        }
+      }
       try {
-        method = device.getClass().getMethod("getUuids",  (Class<?>[])null);
-        uuids  = (ParcelUuid[]) method.invoke(device, (Object[])null);
+        method = pairedArray[pairedIndex].getClass().getMethod("getUuids",  (Class<?>[])null);
+        uuids  = (ParcelUuid[]) method.invoke(pairedArray[pairedIndex], (Object[])null);
       } catch (SecurityException e1) {
         // Auto-generated catch block
         e1.printStackTrace();

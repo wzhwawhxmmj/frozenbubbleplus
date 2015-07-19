@@ -174,15 +174,14 @@ public class FrozenBubble extends Activity
   public final static String TAG          = "FrozenBubble.java";
   public final static String EDITORACTION = "org.jfedor.frozenbubble.GAME";
 
-  private boolean activityCustomStarted = false;
-  private boolean allowUnpause = true;
-  private int     currentOrientation;
-  private long    lastBackPressTime = 0;
-
-  private GameThread mGameThread = null;
-  private GameView mGameView = null;
+  private boolean    activityCustomStarted = false;
+  private boolean    allowUnpause          = true;
+  private int        currentOrientation;
+  private long       lastBackPressTime     = 0;
+  private GameThread mGameThread           = null;
+  private GameView   mGameView             = null;
+  private ModPlayer  myModPlayer           = null;
   private OrientationEventListener myOrientationEventListener = null;
-  private ModPlayer myModPlayer = null;
 
   private final int[] MODlist = {
     R.raw.ambientpower,
@@ -428,6 +427,14 @@ public class FrozenBubble extends Activity
 
   public static boolean getAimThenShoot() {
     return (prefs.targetMode == AIM_TO_SHOOT) || (prefs.targetMode == ROTATE_TO_SHOOT);
+  }
+
+  public static int getBluetooth() {
+    return prefs.bluetooth;
+  }
+
+  public static void setBluetooth(int newBluetooth) {
+    prefs.bluetooth = newBluetooth;
   }
 
   public static int getCollision() {
@@ -999,6 +1006,7 @@ public class FrozenBubble extends Activity
    * @param prefs - the desired game preferences.
    */
   public static void setPrefs(Preferences prefs) {
+    FrozenBubble.setBluetooth (prefs.bluetooth );
     FrozenBubble.setCollision (prefs.collision );
     FrozenBubble.setMode      (prefs.gameMode  );
     FrozenBubble.setCompressor(prefs.compressor);

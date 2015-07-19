@@ -52,19 +52,26 @@
 
 package com.efortin.frozenbubble;
 
+import java.util.ArrayList;
+
 import org.jfedor.frozenbubble.BubbleSprite;
 import org.jfedor.frozenbubble.FrozenBubble;
 import org.jfedor.frozenbubble.LevelManager;
 import org.jfedor.frozenbubble.R;
 
+import android.bluetooth.BluetoothDevice;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.ListPreference;
+import android.preference.Preference;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 
 public class PreferencesActivity extends PreferenceActivity{
 
+  private ListPreference    bluetoothDeviceList;
   private SeekBarPreference collisionSlider;
   private SeekBarPreference difficultySlider;
 
@@ -75,6 +82,7 @@ public class PreferencesActivity extends PreferenceActivity{
   
   public static Preferences getDefaultPrefs(SharedPreferences sp) {
     Preferences prefs = new Preferences();
+    prefs.bluetooth  = Integer.valueOf(sp.getString("bluetooth_list", "0"));
     prefs.collision  = sp.getInt("collision_option", BubbleSprite.MIN_PIX);
     prefs.compressor = sp.getBoolean("compressor_option", false);
     prefs.difficulty = sp.getInt("difficulty_option", LevelManager.MODERATE);
@@ -99,8 +107,19 @@ public class PreferencesActivity extends PreferenceActivity{
      super.onCreate(savedInstanceState);
 
      addPreferencesFromResource(R.layout.activity_preferences_screen);
-     collisionSlider  = (SeekBarPreference) findPreference("collision_option");
-     difficultySlider = (SeekBarPreference) findPreference("difficulty_option");
+     collisionSlider     = (SeekBarPreference) findPreference("collision_option" );
+     difficultySlider    = (SeekBarPreference) findPreference("difficulty_option");
+     bluetoothDeviceList = (ListPreference   ) findPreference("bluetooth_list"   );
+
+     setBluetoothListPreferenceData(bluetoothDeviceList);
+
+     bluetoothDeviceList.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+       @Override
+       public boolean onPreferenceClick(Preference preference) {
+         setBluetoothListPreferenceData(bluetoothDeviceList);
+         return false;
+       }
+     });
   }
 
   @Override
@@ -120,7 +139,7 @@ public class PreferencesActivity extends PreferenceActivity{
       finish();
     }
     else {
-      result = collisionSlider.onKey(keyCode, msg);
+      result  = collisionSlider .onKey(keyCode, msg);
       result |= difficultySlider.onKey(keyCode, msg);
     }
 
@@ -130,15 +149,39 @@ public class PreferencesActivity extends PreferenceActivity{
   public static void saveDefaultPreferences(Preferences prefs,
                                             SharedPreferences sp) {
     SharedPreferences.Editor editor = sp.edit();
-    editor.putInt("collision_option", prefs.collision);
-    editor.putBoolean("compressor_option", prefs.compressor);
-    editor.putInt("difficulty_option", prefs.difficulty);
-    editor.putBoolean("rush_me_option", !prefs.dontRushMe);
-    editor.putBoolean("fullscreen_option", prefs.fullscreen);
-    editor.putBoolean("colorblind_option", prefs.colorMode);
-    editor.putBoolean("play_music_option", prefs.musicOn);
-    editor.putBoolean("sound_effects_option", prefs.soundOn);
-    editor.putString("targeting_option", Integer.toString(prefs.targetMode));
+    editor.putString ("bluetooth_list",       Integer.toString(prefs.bluetooth));
+    editor.putInt    ("collision_option",     prefs.collision  );
+    editor.putBoolean("compressor_option",    prefs.compressor );
+    editor.putInt    ("difficulty_option",    prefs.difficulty );
+    editor.putBoolean("rush_me_option",      !prefs.dontRushMe );
+    editor.putBoolean("fullscreen_option",    prefs.fullscreen );
+    editor.putBoolean("colorblind_option",    prefs.colorMode  );
+    editor.putBoolean("play_music_option",    prefs.musicOn    );
+    editor.putBoolean("sound_effects_option", prefs.soundOn    );
+    editor.putString ("targeting_option",     Integer.toString(prefs.targetMode));
     editor.commit();
+  }
+
+  protected static void setBluetoothListPreferenceData(ListPreference lp) {
+    ArrayList<String> entryStrings = new ArrayList<String>();
+    ArrayList<String> valueStrings = new ArrayList<String>();
+    
+    BluetoothDevice[] devices = BluetoothManager.getPairedDevices();
+    if ((devices != null) && (devices.length > 0)) {
+      int index = 0;
+      while (index < devices.length) {
+        entryStrings.add(devices[index++].getName());
+        valueStrings.add(Integer.toString(index));
+      }
+      CharSequence[] entries     = entryStrings.toArray(new CharSequence[entryStrings.size()]);
+      CharSequence[] entryValues = valueStrings.toArray(new CharSequence[valueStrings.size()]);
+      lp.setEntries     (entries       );
+      lp.setDefaultValue(entryValues[0]);
+      lp.setEntryValues (entryValues   );
+      lp.setEnabled     (true          );
+    }
+    else {
+      lp.setEnabled(false);
+    }
   }
 }
