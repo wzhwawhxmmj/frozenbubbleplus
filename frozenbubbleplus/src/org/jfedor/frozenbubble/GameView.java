@@ -1594,23 +1594,17 @@ public class GameView extends SurfaceView
     /**
      * Obtain the horizontal offset to approximately center a line of
      * 20 characters in the screen for the current device orientation.
-     * @return The horizontal offset
-     */
-    /**
-     * 
-     * @param needsOffset - <code>true</code> if the offset is not
-     * aleady taken care of via <code>mDisplayDX</code>.
-     * @return
+     * @return The horizontal offset.
      */
     private int drawTextOffsetX() {
-      int x = (int) (GAMEFIELD_WIDTH * 0.55f);
+      int x           = (int) (GAMEFIELD_WIDTH * 0.55f);
       int orientation = getScreenOrientation();
 
       if (numPlayers == 2) {
         if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
             (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
           if (mLocalInput.playerID == VirtualInput.PLAYER2) {
-            x = -mPlayer2DX;
+            x = (int) -((float) mDisplayDX / mDisplayScale) + 5;
           }
           else {
             x = mDisplayDX + 5;
