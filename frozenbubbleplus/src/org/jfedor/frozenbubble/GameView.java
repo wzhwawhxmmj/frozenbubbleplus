@@ -1609,7 +1609,12 @@ public class GameView extends SurfaceView
       if (numPlayers == 2) {
         if ((orientation == FrozenBubble.SCREEN_ORIENTATION_REVERSE_PORTRAIT) ||
             (orientation == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT)) {
-          x = mDisplayDX + 5;
+          if (mLocalInput.playerID == VirtualInput.PLAYER2) {
+            x = -mPlayer2DX;
+          }
+          else {
+            x = mDisplayDX + 5;
+          }
         }
       }
 
