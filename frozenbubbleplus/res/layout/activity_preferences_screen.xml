@@ -70,10 +70,11 @@
   <PreferenceCategory
     android:summary="Frozen Bubble Game Options"
     android:title="2 Player Game Options" >
-  <EditTextPreference
-    android:key="opponent_ip_address"
-    android:summary="Please enter opponent IP address"
-    android:title="Opponent Internet Address" />
+  <ListPreference
+    android:defaultValue="0"
+    android:key="bluetooth_list"
+    android:summary="Select Bluetooth Device"
+    android:title="@string/menu_bluetooth_device" />
   <CheckBoxPreference
     android:defaultValue="true"
     android:key="compressor_option"
